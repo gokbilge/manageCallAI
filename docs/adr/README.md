@@ -12,7 +12,18 @@ ADRs capture decisions that are important enough to preserve beyond informal dis
 
 ## ADR Index
 
-- [ADR-0001: FreeSWITCH Remains the Telecom Runtime](ADR-0001-freeswitch-remains-runtime.md)
-- [ADR-0002: PostgreSQL Stores Canonical Desired State](ADR-0002-postgresql-canonical-desired-state.md)
-- [ADR-0003: Business-Level APIs Over Low-Level Telecom Primitives](ADR-0003-business-level-api-surface.md)
-- [ADR-0004: AI Access Must Be Constrained Through MCP](ADR-0004-constrained-ai-access-through-mcp.md)
+### Current Technology Decisions
+
+- [ADR-001: Use Stock FreeSWITCH, No Fork](adr-001-use-stock-freeswitch-no-fork.md)
+- [ADR-002: Use Node.js + TypeScript for the Control Plane](adr-002-use-nodejs-typescript-control-plane.md)
+- [ADR-003: Use Go for the FreeSWITCH Adapter Service](adr-003-use-go-for-freeswitch-adapter-service.md)
+- [ADR-004: Use Lua Only as a Thin In-Switch Helper](adr-004-use-lua-only-as-thin-in-switch-helper.md)
+- [ADR-005: Use PostgreSQL Desired-State Model](adr-005-use-postgresql-desired-state-model.md)
+- [ADR-006: MCP Must Be Narrower Than the REST API](adr-006-mcp-must-be-narrower-than-rest-api.md)
+
+### Earlier Foundational ADRs
+
+- [ADR-0001: FreeSWITCH Remains the Telecom Runtime](adr-0001-freeswitch-remains-runtime.md)
+- [ADR-0002: PostgreSQL Stores Canonical Desired State](adr-0002-postgresql-canonical-desired-state.md)
+- [ADR-0003: Business-Level APIs Over Low-Level Telecom Primitives](adr-0003-business-level-api-surface.md)
+- [ADR-0004: AI Access Must Be Constrained Through MCP](adr-0004-constrained-ai-access-through-mcp.md)

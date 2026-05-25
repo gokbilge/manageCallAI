@@ -374,6 +374,25 @@ MVP success condition:
 
 An AI agent or n8n workflow can safely create, validate, simulate, and publish a working IVR on FreeSWITCH without needing to understand FreeSWITCH internals.
 
+### 11.1 First Vertical Slice
+
+The first implementation slice should prove the architecture end to end with the smallest useful telecom loop:
+
+1. Create extension in API
+2. Store extension in PostgreSQL
+3. Serve extension directory via `mod_xml_curl`
+4. Register SIP phone to FreeSWITCH
+5. Ingest registration or call event
+6. Show call event through API
+
+This slice proves:
+
+- The backend can own business state
+- PostgreSQL is the source of truth
+- FreeSWITCH can consume runtime state through supported extension interfaces
+- The adapter and event-ingestion layer work
+- The API can expose observed runtime behavior back to the user
+
 ## 12. Safety and Security Model
 
 Telecom systems are sensitive. The safety model is part of the product, not an add-on.
@@ -496,6 +515,21 @@ Suggested future supporting docs:
 
 ## 19. Roadmap
 
+### Priority Implementation Order
+
+1. PostgreSQL migration runnable
+2. Node.js API health + extensions CRUD
+3. FreeSWITCH `mod_xml_curl` directory endpoint
+4. Go adapter connects to ESL and logs events
+5. Lua helper only for `play_prompt` / `play_collect`
+6. OpenAPI generated client
+7. MCP read-only tools
+8. Flow draft / validate / simulate
+9. Publish active version
+10. n8n webhook examples
+
+This order is the preferred execution path for proving the platform architecture incrementally.
+
 ### Milestone 1: FreeSWITCH Control Plane
 
 - Dynamic extension lookup
@@ -503,6 +537,8 @@ Suggested future supporting docs:
 - Basic outbound routing
 - CDR ingestion
 - Call event timeline
+
+Milestone 1 should begin with the first vertical slice above before broader IVR or routing depth.
 
 ### Milestone 2: Visual IVR
 

@@ -131,7 +131,20 @@ Lua executes the requested action and reports the result back to the adapter or 
 
 ## 6. Data Flow View
 
-### 6.1 Configuration Flow
+## 6.1 First Vertical Slice
+
+The first implementation slice should prove the architecture end to end:
+
+1. Create extension in API
+2. Store extension in PostgreSQL
+3. Serve extension directory via `mod_xml_curl`
+4. Register SIP phone to FreeSWITCH
+5. Ingest registration or call event
+6. Show call event through API
+
+This is the minimum slice that demonstrates control-plane state, runtime consumption, event ingestion, and API visibility in one loop.
+
+### 6.2 Configuration Flow
 
 1. UI, API client, MCP tool, or webhook submits a business-level change.
 2. The control plane validates and stores desired state in PostgreSQL.
@@ -139,7 +152,7 @@ Lua executes the requested action and reports the result back to the adapter or 
 4. Publish activates a version.
 5. The adapter layer exposes the active version to stock FreeSWITCH through `mod_xml_curl`, `ESL` / `mod_event_socket`, and minimal Lua helpers.
 
-### 6.2 Runtime Observation Flow
+### 6.3 Runtime Observation Flow
 
 1. FreeSWITCH emits events and CDRs.
 2. The adapter layer ingests and normalizes them.

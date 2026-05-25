@@ -67,7 +67,19 @@ Stores internal callable identities and their default destinations.
 
 ### 4.4 sip_trunks
 
-Stores trunk definitions and metadata. Secrets should be handled carefully and may later move into a dedicated secret store.
+Stores trunk definitions and metadata.
+
+Secret-handling rule:
+
+- Never store raw SIP trunk passwords directly in normal JSONB long-term.
+- Use encrypted columns initially.
+- Migrate to an external secret provider later.
+
+Practical design direction:
+
+- Keep non-secret trunk metadata in `authentication_profile`.
+- Store secret material in dedicated encrypted columns or secret references.
+- Treat external secret-provider integration as the long-term target rather than the initial blocker.
 
 ### 4.5 phone_numbers
 
@@ -119,6 +131,7 @@ Store normalized runtime and ingestion visibility from FreeSWITCH integration pa
 - Use `jsonb` for flexible definitions, rules, metadata, validation details, and simulation payloads
 - Prefer unique indexes for business identifiers within tenant scope
 - Use check constraints for bounded status fields in MVP
+- Do not treat normal JSONB columns as the long-term storage location for raw telecom credentials
 
 ## 7. Key Integrity Rules
 
@@ -127,12 +140,14 @@ Store normalized runtime and ingestion visibility from FreeSWITCH integration pa
 - Published versions must remain immutable
 - Audit and publish records must remain append-only
 - Route and flow version records must not be reused across object identities
+- Raw SIP trunk passwords must not live long-term in general-purpose JSONB fields
 
 ## 8. Important Tradeoffs
 
 - `jsonb` allows rapid iteration for flow definitions and policy rules, but too much unstructured data would weaken queryability
 - A shared `route_versions` table keeps route versioning consistent, but increases conditional logic compared with separate inbound and outbound version tables
 - Storing actor IDs as nullable references where actors may be user, workflow, or system is pragmatic for MVP, but may be refined later into a more formal principal model
+- Encrypted trunk-secret columns are a pragmatic first step, but an external secret provider should replace them when operational maturity requires stronger secret lifecycle management
 
 ## 9. Initial Migration Scope
 

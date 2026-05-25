@@ -243,6 +243,28 @@ Responsibility split:
 - AC-6: FreeSWITCH can consume generated dialplan or directory state for MVP routing behavior.
 - AC-7: An AI agent or n8n workflow can safely create, validate, simulate, and request publication of an IVR without direct FreeSWITCH knowledge.
 
+First vertical slice acceptance path:
+
+1. Create extension in API
+2. Store extension in PostgreSQL
+3. Serve extension directory via `mod_xml_curl`
+4. Register SIP phone to FreeSWITCH
+5. Ingest registration or call event
+6. Show call event through API
+
+Preferred implementation order:
+
+1. PostgreSQL migration runnable
+2. Node.js API health + extensions CRUD
+3. FreeSWITCH `mod_xml_curl` directory endpoint
+4. Go adapter connects to ESL and logs events
+5. Lua helper only for `play_prompt` / `play_collect`
+6. OpenAPI generated client
+7. MCP read-only tools
+8. Flow draft / validate / simulate
+9. Publish active version
+10. n8n webhook examples
+
 ## 9. Traceability Notes
 
 - `../architecture/source-of-truth.md` defines product intent and architectural boundaries.
