@@ -409,6 +409,7 @@ To keep GitHub documentation clean, the repository should follow this rule:
 Suggested future supporting docs:
 
 - `docs/adr/`
+- `docs/adr/README.MD`
 - `CONTRIBUTING.md`
 - `SECURITY.md`
 - `LICENSE`

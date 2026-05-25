@@ -16,6 +16,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [Architecture.md](Architecture.md)
   System architecture reference covering runtime topology, component boundaries, integration points, data flow, and deployment model.
 
+- [adr/README.MD](adr/README.MD)
+  Architecture Decision Record index and foundational decisions.
+
 ## Historical Documents
 
 - [Initial.MD](Initial.MD)
