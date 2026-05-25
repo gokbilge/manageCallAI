@@ -1,6 +1,6 @@
 # manageCallAI
 
-**AI-native telecom control plane over FreeSWITCH.**
+**AI-native telecom control plane over FreeSWITCH with MCP, n8n, REST API, visual IVR, validation, simulation, and rollback.**
 
 manageCallAI is an open-source platform for building programmable PBX, IVR, and telecom automation systems on top of FreeSWITCH.
 
