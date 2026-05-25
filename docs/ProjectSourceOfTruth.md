@@ -415,6 +415,7 @@ Suggested future supporting docs:
 - `LICENSE`
 - `docs/README.MD`
 - `docs/SRS.md`
+- `docs/DomainModel.md`
 - `docs/SDD.md`
 - `docs/Architecture.md`
 - `docs/api/`
