@@ -14,6 +14,7 @@
     "@fastify/formbody": "^8.0.2",
     "@fastify/jwt": "^9.1.0",
     "bcryptjs": "^2.4.3",
+    "dotenv": "^16.6.1",
     "fastify": "^5.2.0",
     "pg": "^8.13.0"
   },

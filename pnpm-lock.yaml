@@ -26,6 +26,9 @@ importers:
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
+      dotenv:
+        specifier: ^16.6.1
+        version: 16.6.1
       fastify:
         specifier: ^5.2.0
         version: 5.8.5
