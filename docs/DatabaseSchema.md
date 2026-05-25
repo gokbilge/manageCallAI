@@ -136,7 +136,7 @@ Store normalized runtime and ingestion visibility from FreeSWITCH integration pa
 
 ## 9. Initial Migration Scope
 
-The initial SQL DDL should create:
+The initial migration should create:
 
 - Core identity tables
 - Core telecom configuration tables
@@ -145,8 +145,15 @@ The initial SQL DDL should create:
 - Runtime observation tables
 - Basic indexes and unique constraints
 
-## 10. Related Files
+## 10. Migration Layout
+
+- `db/migrations/0001_initial_schema.sql` is the canonical schema baseline
+- Future database changes should be added as new ordered migration files
+- `db/README.MD` documents the migration directory conventions
+
+## 11. Related Files
 
 - [api/openapi.yaml](api/openapi.yaml)
 - [DomainModel.md](DomainModel.md)
-- [../db/init.sql](../db/init.sql)
+- [../db/README.MD](../db/README.MD)
+- [../db/migrations/0001_initial_schema.sql](../db/migrations/0001_initial_schema.sql)
