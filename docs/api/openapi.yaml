@@ -1,0 +1,1955 @@
+openapi: 3.1.0
+info:
+  title: manageCallAI API
+  version: 0.1.0
+  summary: Business-level telecom control plane API over FreeSWITCH
+  description: |
+    OpenAPI contract for the initial manageCallAI REST API.
+
+    This API exposes business objects and lifecycle operations such as
+    validation, simulation, publish, and rollback. It intentionally avoids
+    exposing low-level FreeSWITCH control primitives as first-class public API
+    operations.
+servers:
+  - url: https://api.example.com/api/v1
+    description: Production placeholder
+  - url: http://localhost:3000/api/v1
+    description: Local development
+tags:
+  - name: Extensions
+  - name: Trunks
+  - name: Numbers
+  - name: InboundRoutes
+  - name: OutboundRoutes
+  - name: Prompts
+  - name: Flows
+  - name: Validations
+  - name: Simulations
+  - name: Publishes
+  - name: Approvals
+  - name: AuditEvents
+  - name: CallEvents
+  - name: CDRs
+security:
+  - bearerAuth: []
+paths:
+  /extensions:
+    get:
+      tags: [Extensions]
+      summary: List extensions
+      parameters:
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Extension collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtensionCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Extensions]
+      summary: Create extension
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExtensionRequest'
+      responses:
+        '201':
+          description: Extension created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Extension'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /extensions/{extensionId}:
+    parameters:
+      - $ref: '#/components/parameters/ExtensionIdParam'
+    get:
+      tags: [Extensions]
+      summary: Get extension
+      responses:
+        '200':
+          description: Extension
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Extension'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [Extensions]
+      summary: Update extension
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExtensionRequest'
+      responses:
+        '200':
+          description: Extension updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Extension'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /extensions/{extensionId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/ExtensionIdParam'
+    post:
+      tags: [Extensions]
+      summary: Deactivate extension
+      responses:
+        '200':
+          description: Extension deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Extension'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /trunks:
+    get:
+      tags: [Trunks]
+      summary: List trunks
+      responses:
+        '200':
+          description: Trunk collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrunkCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Trunks]
+      summary: Create trunk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTrunkRequest'
+      responses:
+        '201':
+          description: Trunk created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trunk'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /trunks/{trunkId}:
+    parameters:
+      - $ref: '#/components/parameters/TrunkIdParam'
+    get:
+      tags: [Trunks]
+      summary: Get trunk
+      responses:
+        '200':
+          description: Trunk
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trunk'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [Trunks]
+      summary: Update trunk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTrunkRequest'
+      responses:
+        '200':
+          description: Trunk updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trunk'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /numbers:
+    get:
+      tags: [Numbers]
+      summary: List numbers
+      responses:
+        '200':
+          description: Number collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Numbers]
+      summary: Create number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePhoneNumberRequest'
+      responses:
+        '201':
+          description: Number created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumber'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /numbers/{numberId}:
+    parameters:
+      - $ref: '#/components/parameters/NumberIdParam'
+    get:
+      tags: [Numbers]
+      summary: Get number
+      responses:
+        '200':
+          description: Number
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumber'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [Numbers]
+      summary: Update number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePhoneNumberRequest'
+      responses:
+        '200':
+          description: Number updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumber'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /inbound-routes:
+    get:
+      tags: [InboundRoutes]
+      summary: List inbound routes
+      responses:
+        '200':
+          description: Inbound route collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundRouteCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [InboundRoutes]
+      summary: Create inbound route
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInboundRouteRequest'
+      responses:
+        '201':
+          description: Inbound route created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundRoute'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /inbound-routes/{routeId}:
+    parameters:
+      - $ref: '#/components/parameters/RouteIdParam'
+    get:
+      tags: [InboundRoutes]
+      summary: Get inbound route
+      responses:
+        '200':
+          description: Inbound route
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundRoute'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [InboundRoutes]
+      summary: Update inbound route draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInboundRouteRequest'
+      responses:
+        '200':
+          description: Inbound route updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundRoute'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /inbound-routes/{routeId}/validate:
+    parameters:
+      - $ref: '#/components/parameters/RouteIdParam'
+    post:
+      tags: [InboundRoutes, Validations]
+      summary: Validate inbound route
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /inbound-routes/{routeId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/RouteIdParam'
+    post:
+      tags: [InboundRoutes, Publishes]
+      summary: Publish inbound route
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '200':
+          description: Publish record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishRecord'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /inbound-routes/{routeId}/rollback:
+    parameters:
+      - $ref: '#/components/parameters/RouteIdParam'
+    post:
+      tags: [InboundRoutes, Publishes]
+      summary: Roll back inbound route
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackRequest'
+      responses:
+        '200':
+          description: Rollback record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishRecord'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /outbound-routes:
+    get:
+      tags: [OutboundRoutes]
+      summary: List outbound routes
+      responses:
+        '200':
+          description: Outbound route collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundRouteCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [OutboundRoutes]
+      summary: Create outbound route
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOutboundRouteRequest'
+      responses:
+        '201':
+          description: Outbound route created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundRoute'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /outbound-routes/{routeId}:
+    parameters:
+      - $ref: '#/components/parameters/RouteIdParam'
+    get:
+      tags: [OutboundRoutes]
+      summary: Get outbound route
+      responses:
+        '200':
+          description: Outbound route
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundRoute'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [OutboundRoutes]
+      summary: Update outbound route draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOutboundRouteRequest'
+      responses:
+        '200':
+          description: Outbound route updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundRoute'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /outbound-routes/{routeId}/validate:
+    parameters:
+      - $ref: '#/components/parameters/RouteIdParam'
+    post:
+      tags: [OutboundRoutes, Validations]
+      summary: Validate outbound route
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /outbound-routes/{routeId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/RouteIdParam'
+    post:
+      tags: [OutboundRoutes, Publishes]
+      summary: Publish outbound route
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '200':
+          description: Publish record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishRecord'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /prompts:
+    get:
+      tags: [Prompts]
+      summary: List prompts
+      responses:
+        '200':
+          description: Prompt collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Prompts]
+      summary: Create prompt metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePromptRequest'
+      responses:
+        '201':
+          description: Prompt created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptAsset'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /prompts/{promptId}:
+    parameters:
+      - $ref: '#/components/parameters/PromptIdParam'
+    get:
+      tags: [Prompts]
+      summary: Get prompt
+      responses:
+        '200':
+          description: Prompt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptAsset'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [Prompts]
+      summary: Update prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePromptRequest'
+      responses:
+        '200':
+          description: Prompt updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptAsset'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /flows:
+    get:
+      tags: [Flows]
+      summary: List flows
+      parameters:
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Flow collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Flows]
+      summary: Create flow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFlowRequest'
+      responses:
+        '201':
+          description: Flow created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /flows/{flowId}:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+    get:
+      tags: [Flows]
+      summary: Get flow
+      responses:
+        '200':
+          description: Flow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [Flows]
+      summary: Update flow draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFlowRequest'
+      responses:
+        '200':
+          description: Flow updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /flows/{flowId}/versions:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+    get:
+      tags: [Flows]
+      summary: List flow versions
+      responses:
+        '200':
+          description: Flow version collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowVersionCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /flows/{flowId}/versions/{versionId}:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+      - $ref: '#/components/parameters/VersionIdParam'
+    get:
+      tags: [Flows]
+      summary: Get flow version
+      responses:
+        '200':
+          description: Flow version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowVersion'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /flows/{flowId}/validate:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+    post:
+      tags: [Flows, Validations]
+      summary: Validate flow
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /flows/{flowId}/simulate:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+    post:
+      tags: [Flows, Simulations]
+      summary: Simulate flow
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulateFlowRequest'
+      responses:
+        '200':
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /flows/{flowId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+    post:
+      tags: [Flows, Publishes]
+      summary: Publish flow
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '200':
+          description: Publish record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishRecord'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /flows/{flowId}/rollback:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+    post:
+      tags: [Flows, Publishes]
+      summary: Roll back flow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackRequest'
+      responses:
+        '200':
+          description: Rollback record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishRecord'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /validations:
+    get:
+      tags: [Validations]
+      summary: List validation results
+      parameters:
+        - $ref: '#/components/parameters/ObjectTypeParam'
+        - $ref: '#/components/parameters/ObjectIdParam'
+        - $ref: '#/components/parameters/VersionQueryParam'
+        - $ref: '#/components/parameters/StatusParam'
+      responses:
+        '200':
+          description: Validation result collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResultCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /validations/{validationId}:
+    parameters:
+      - $ref: '#/components/parameters/ValidationIdParam'
+    get:
+      tags: [Validations]
+      summary: Get validation result
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /simulations:
+    get:
+      tags: [Simulations]
+      summary: List simulation results
+      parameters:
+        - $ref: '#/components/parameters/ObjectTypeParam'
+        - $ref: '#/components/parameters/ObjectIdParam'
+        - $ref: '#/components/parameters/VersionQueryParam'
+        - $ref: '#/components/parameters/StatusParam'
+      responses:
+        '200':
+          description: Simulation result collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResultCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /simulations/{simulationId}:
+    parameters:
+      - $ref: '#/components/parameters/SimulationIdParam'
+    get:
+      tags: [Simulations]
+      summary: Get simulation result
+      responses:
+        '200':
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /publishes:
+    get:
+      tags: [Publishes]
+      summary: List publish records
+      parameters:
+        - $ref: '#/components/parameters/ObjectTypeParam'
+        - $ref: '#/components/parameters/ObjectIdParam'
+        - name: actionType
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Publish record collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishRecordCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /publishes/{publishId}:
+    parameters:
+      - $ref: '#/components/parameters/PublishIdParam'
+    get:
+      tags: [Publishes]
+      summary: Get publish record
+      responses:
+        '200':
+          description: Publish record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishRecord'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /approvals:
+    get:
+      tags: [Approvals]
+      summary: List approval requests
+      responses:
+        '200':
+          description: Approval request collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequestCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Approvals]
+      summary: Create approval request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApprovalRequest'
+      responses:
+        '201':
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequest'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /approvals/{approvalId}/approve:
+    parameters:
+      - $ref: '#/components/parameters/ApprovalIdParam'
+    post:
+      tags: [Approvals]
+      summary: Approve request
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalDecisionRequest'
+      responses:
+        '200':
+          description: Approval request approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequest'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /approvals/{approvalId}/reject:
+    parameters:
+      - $ref: '#/components/parameters/ApprovalIdParam'
+    post:
+      tags: [Approvals]
+      summary: Reject request
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalDecisionRequest'
+      responses:
+        '200':
+          description: Approval request rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequest'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /audit-events:
+    get:
+      tags: [AuditEvents]
+      summary: List audit events
+      parameters:
+        - name: actorType
+          in: query
+          schema:
+            type: string
+        - name: actorId
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/ObjectTypeParam'
+        - $ref: '#/components/parameters/ObjectIdParam'
+        - name: action
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit event collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEventCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /audit-events/{auditEventId}:
+    parameters:
+      - $ref: '#/components/parameters/AuditEventIdParam'
+    get:
+      tags: [AuditEvents]
+      summary: Get audit event
+      responses:
+        '200':
+          description: Audit event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEvent'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /call-events:
+    get:
+      tags: [CallEvents]
+      summary: List call events
+      parameters:
+        - name: callId
+          in: query
+          schema:
+            type: string
+        - name: eventType
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Call event collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallEventCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /call-events/{callEventId}:
+    parameters:
+      - $ref: '#/components/parameters/CallEventIdParam'
+    get:
+      tags: [CallEvents]
+      summary: Get call event
+      responses:
+        '200':
+          description: Call event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallEvent'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /cdrs:
+    get:
+      tags: [CDRs]
+      summary: List call detail records
+      parameters:
+        - name: callId
+          in: query
+          schema:
+            type: string
+        - name: fromNumber
+          in: query
+          schema:
+            type: string
+        - name: toNumber
+          in: query
+          schema:
+            type: string
+        - name: startFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: startTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: CDR collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CDRCollection'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /cdrs/{cdrId}:
+    parameters:
+      - $ref: '#/components/parameters/CDRIdParam'
+    get:
+      tags: [CDRs]
+      summary: Get call detail record
+      responses:
+        '200':
+          description: CDR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallDetailRecord'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    StatusParam:
+      name: status
+      in: query
+      schema:
+        type: string
+    SearchParam:
+      name: search
+      in: query
+      schema:
+        type: string
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    ObjectTypeParam:
+      name: objectType
+      in: query
+      schema:
+        type: string
+    ObjectIdParam:
+      name: objectId
+      in: query
+      schema:
+        type: string
+    VersionQueryParam:
+      name: versionId
+      in: query
+      schema:
+        type: string
+    ExtensionIdParam:
+      name: extensionId
+      in: path
+      required: true
+      schema:
+        type: string
+    TrunkIdParam:
+      name: trunkId
+      in: path
+      required: true
+      schema:
+        type: string
+    NumberIdParam:
+      name: numberId
+      in: path
+      required: true
+      schema:
+        type: string
+    RouteIdParam:
+      name: routeId
+      in: path
+      required: true
+      schema:
+        type: string
+    PromptIdParam:
+      name: promptId
+      in: path
+      required: true
+      schema:
+        type: string
+    FlowIdParam:
+      name: flowId
+      in: path
+      required: true
+      schema:
+        type: string
+    VersionIdParam:
+      name: versionId
+      in: path
+      required: true
+      schema:
+        type: string
+    ValidationIdParam:
+      name: validationId
+      in: path
+      required: true
+      schema:
+        type: string
+    SimulationIdParam:
+      name: simulationId
+      in: path
+      required: true
+      schema:
+        type: string
+    PublishIdParam:
+      name: publishId
+      in: path
+      required: true
+      schema:
+        type: string
+    ApprovalIdParam:
+      name: approvalId
+      in: path
+      required: true
+      schema:
+        type: string
+    AuditEventIdParam:
+      name: auditEventId
+      in: path
+      required: true
+      schema:
+        type: string
+    CallEventIdParam:
+      name: callEventId
+      in: path
+      required: true
+      schema:
+        type: string
+    CDRIdParam:
+      name: cdrId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    ErrorResponse:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    Pagination:
+      type: object
+      required: [page, pageSize, total]
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+    ErrorDetail:
+      type: object
+      required: [reason]
+      properties:
+        field:
+          type: string
+        reason:
+          type: string
+    ErrorEnvelope:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
+        requestId:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorEnvelope'
+    AuthenticationProfile:
+      type: object
+      additionalProperties: true
+    NetworkProfile:
+      type: object
+      additionalProperties: true
+    Extension:
+      type: object
+      required: [id, extensionNumber, displayName, status]
+      properties:
+        id:
+          type: string
+        extensionNumber:
+          type: string
+        displayName:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        defaultDestinationType:
+          type: string
+          enum: [flow, extension, user, queue]
+        defaultDestinationId:
+          type: string
+    CreateExtensionRequest:
+      type: object
+      required: [extensionNumber, displayName]
+      properties:
+        extensionNumber:
+          type: string
+        displayName:
+          type: string
+        defaultDestinationType:
+          type: string
+        defaultDestinationId:
+          type: string
+    UpdateExtensionRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+        status:
+          type: string
+        defaultDestinationType:
+          type: string
+        defaultDestinationId:
+          type: string
+    ExtensionCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Extension'
+    Trunk:
+      type: object
+      required: [id, name, direction, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        direction:
+          type: string
+          enum: [inbound, outbound, bidirectional]
+        status:
+          type: string
+          enum: [active, inactive]
+        providerName:
+          type: string
+        authenticationProfile:
+          $ref: '#/components/schemas/AuthenticationProfile'
+        networkProfile:
+          $ref: '#/components/schemas/NetworkProfile'
+    CreateTrunkRequest:
+      type: object
+      required: [name, direction]
+      properties:
+        name:
+          type: string
+        direction:
+          type: string
+          enum: [inbound, outbound, bidirectional]
+        providerName:
+          type: string
+        authenticationProfile:
+          $ref: '#/components/schemas/AuthenticationProfile'
+        networkProfile:
+          $ref: '#/components/schemas/NetworkProfile'
+    UpdateTrunkRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+        providerName:
+          type: string
+        authenticationProfile:
+          $ref: '#/components/schemas/AuthenticationProfile'
+        networkProfile:
+          $ref: '#/components/schemas/NetworkProfile'
+    TrunkCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Trunk'
+    PhoneNumber:
+      type: object
+      required: [id, e164Number, status]
+      properties:
+        id:
+          type: string
+        e164Number:
+          type: string
+        displayLabel:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        trunkId:
+          type: string
+        assignedTargetType:
+          type: string
+          enum: [inbound_route, flow, extension]
+        assignedTargetId:
+          type: string
+    CreatePhoneNumberRequest:
+      type: object
+      required: [e164Number]
+      properties:
+        e164Number:
+          type: string
+        displayLabel:
+          type: string
+        trunkId:
+          type: string
+        assignedTargetType:
+          type: string
+        assignedTargetId:
+          type: string
+    UpdatePhoneNumberRequest:
+      type: object
+      properties:
+        displayLabel:
+          type: string
+        status:
+          type: string
+        trunkId:
+          type: string
+        assignedTargetType:
+          type: string
+        assignedTargetId:
+          type: string
+    PhoneNumberCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PhoneNumber'
+    InboundRoute:
+      type: object
+      required: [id, name, matchType, matchValue, targetType, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        matchType:
+          type: string
+          enum: [did, trunk, pattern]
+        matchValue:
+          type: string
+        targetType:
+          type: string
+          enum: [flow, extension]
+        targetId:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, inactive]
+        draftVersionId:
+          type: string
+        activeVersionId:
+          type: string
+    CreateInboundRouteRequest:
+      type: object
+      required: [name, matchType, matchValue, targetType, targetId]
+      properties:
+        name:
+          type: string
+        matchType:
+          type: string
+        matchValue:
+          type: string
+        targetType:
+          type: string
+        targetId:
+          type: string
+    UpdateInboundRouteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        matchType:
+          type: string
+        matchValue:
+          type: string
+        targetType:
+          type: string
+        targetId:
+          type: string
+        status:
+          type: string
+    InboundRouteCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/InboundRoute'
+    OutboundRoute:
+      type: object
+      required: [id, name, destinationPattern, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        matchStrategy:
+          type: string
+        destinationPattern:
+          type: string
+        trunkSelectionStrategy:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, inactive]
+        draftVersionId:
+          type: string
+        activeVersionId:
+          type: string
+    CreateOutboundRouteRequest:
+      type: object
+      required: [name, destinationPattern]
+      properties:
+        name:
+          type: string
+        matchStrategy:
+          type: string
+        destinationPattern:
+          type: string
+        trunkSelectionStrategy:
+          type: string
+    UpdateOutboundRouteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        matchStrategy:
+          type: string
+        destinationPattern:
+          type: string
+        trunkSelectionStrategy:
+          type: string
+        status:
+          type: string
+    OutboundRouteCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/OutboundRoute'
+    PromptAsset:
+      type: object
+      required: [id, name, mediaType, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        mediaType:
+          type: string
+        language:
+          type: string
+        storageUri:
+          type: string
+        checksum:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+    CreatePromptRequest:
+      type: object
+      required: [name, mediaType]
+      properties:
+        name:
+          type: string
+        mediaType:
+          type: string
+        language:
+          type: string
+    UpdatePromptRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        language:
+          type: string
+        status:
+          type: string
+    PromptCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PromptAsset'
+    FlowNode:
+      type: object
+      required: [id, type]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        promptId:
+          type: string
+        targetId:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+    FlowEdge:
+      type: object
+      required: [from, to]
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        condition:
+          type: string
+    FlowDefinition:
+      type: object
+      required: [startNodeId, nodes, edges]
+      properties:
+        startNodeId:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlowNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlowEdge'
+    Flow:
+      type: object
+      required: [id, name, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, inactive]
+        draftVersionId:
+          type: string
+          nullable: true
+        activeVersionId:
+          type: string
+          nullable: true
+    CreateFlowRequest:
+      type: object
+      required: [name, draftDefinition]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        draftDefinition:
+          $ref: '#/components/schemas/FlowDefinition'
+    UpdateFlowRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        draftDefinition:
+          $ref: '#/components/schemas/FlowDefinition'
+    FlowCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Flow'
+    FlowVersion:
+      type: object
+      required: [id, flowId, versionNumber, state, definition, createdAt]
+      properties:
+        id:
+          type: string
+        flowId:
+          type: string
+        versionNumber:
+          type: integer
+        state:
+          type: string
+          enum: [draft, validated, simulated, published, superseded, rolled_back]
+        definition:
+          $ref: '#/components/schemas/FlowDefinition'
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        validatedAt:
+          type: string
+          format: date-time
+        simulatedAt:
+          type: string
+          format: date-time
+        publishedAt:
+          type: string
+          format: date-time
+    FlowVersionCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/FlowVersion'
+    ValidationResult:
+      type: object
+      required: [id, objectType, objectId, status, errors, warnings]
+      properties:
+        id:
+          type: string
+        objectType:
+          type: string
+        objectId:
+          type: string
+        versionId:
+          type: string
+        validatorVersion:
+          type: string
+        status:
+          type: string
+          enum: [passed, failed, warning_only]
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        warnings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+    ValidationResultCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ValidationResult'
+    SimulationScenario:
+      type: object
+      additionalProperties: true
+    SimulateFlowRequest:
+      type: object
+      properties:
+        scenario:
+          $ref: '#/components/schemas/SimulationScenario'
+    SimulationResult:
+      type: object
+      required: [id, objectType, objectId, status]
+      properties:
+        id:
+          type: string
+        objectType:
+          type: string
+        objectId:
+          type: string
+        versionId:
+          type: string
+        scenario:
+          $ref: '#/components/schemas/SimulationScenario'
+        status:
+          type: string
+          enum: [passed, failed, inconclusive]
+        resultPayload:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+    SimulationResultCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/SimulationResult'
+    PublishRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    RollbackRequest:
+      type: object
+      required: [targetVersionId]
+      properties:
+        targetVersionId:
+          type: string
+        reason:
+          type: string
+    PublishRecord:
+      type: object
+      required: [id, objectType, objectId, versionId, actionType, result]
+      properties:
+        id:
+          type: string
+        objectType:
+          type: string
+        objectId:
+          type: string
+        versionId:
+          type: string
+        actionType:
+          type: string
+          enum: [publish, rollback]
+        triggeredByType:
+          type: string
+        triggeredById:
+          type: string
+        approvalRequestId:
+          type: string
+        result:
+          type: string
+          enum: [success, failed, pending_approval]
+        createdAt:
+          type: string
+          format: date-time
+    PublishRecordCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PublishRecord'
+    CreateApprovalRequest:
+      type: object
+      required: [objectType, objectId, versionId]
+      properties:
+        objectType:
+          type: string
+        objectId:
+          type: string
+        versionId:
+          type: string
+        reason:
+          type: string
+    ApprovalDecisionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    ApprovalRequest:
+      type: object
+      required: [id, objectType, objectId, versionId, status, createdAt]
+      properties:
+        id:
+          type: string
+        objectType:
+          type: string
+        objectId:
+          type: string
+        versionId:
+          type: string
+        requestedBy:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, expired]
+        decisionBy:
+          type: string
+        decisionAt:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ApprovalRequestCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApprovalRequest'
+    AuditEvent:
+      type: object
+      required: [id, actorType, action, objectType, objectId, createdAt]
+      properties:
+        id:
+          type: string
+        actorType:
+          type: string
+          enum: [user, workflow, ai_agent, system]
+        actorId:
+          type: string
+        action:
+          type: string
+        objectType:
+          type: string
+        objectId:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+    AuditEventCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuditEvent'
+    CallEvent:
+      type: object
+      required: [id, callId, eventType, eventTime]
+      properties:
+        id:
+          type: string
+        callId:
+          type: string
+        eventType:
+          type: string
+        eventTime:
+          type: string
+          format: date-time
+        source:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        ingestedAt:
+          type: string
+          format: date-time
+    CallEventCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/CallEvent'
+    CallDetailRecord:
+      type: object
+      required: [id, callId, direction, startTime]
+      properties:
+        id:
+          type: string
+        callId:
+          type: string
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        fromNumber:
+          type: string
+        toNumber:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        durationSeconds:
+          type: integer
+        terminationReason:
+          type: string
+        finalDisposition:
+          type: string
+        ingestedAt:
+          type: string
+          format: date-time
+    CDRCollection:
+      allOf:
+        - $ref: '#/components/schemas/Pagination'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/CallDetailRecord'

@@ -6,6 +6,10 @@ This document defines the initial REST API contract for `manageCallAI`.
 
 It focuses on business-level resources and lifecycle operations rather than low-level FreeSWITCH primitives.
 
+Machine-readable contract:
+
+- [api/openapi.yaml](api/openapi.yaml)
+
 ## 2. API Design Principles
 
 - Expose business objects, not raw switch internals
