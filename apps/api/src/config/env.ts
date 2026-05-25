@@ -19,6 +19,5 @@ export const config = {
   port: parseInt(process.env['API_PORT'] ?? '3000', 10),
   databaseUrl: required('DATABASE_URL'),
   jwtSecret: required('JWT_SECRET'),
-  freeswitchDirectoryDefaultPassword:
-    process.env['FREESWITCH_DIRECTORY_DEFAULT_PASSWORD'] ?? 'ChangeMe123!',
+  runtimeApiToken: required('RUNTIME_API_TOKEN'),
 } as const;

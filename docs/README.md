@@ -28,6 +28,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [integration-test-plan.md](integration-test-plan.md)
   First end-to-end architecture proof plan from extension creation to event visibility.
 
+- [first-local-demo.md](first-local-demo.md)
+  Short local walkthrough for bringing up PostgreSQL and the API, registering a tenant, creating an extension, and calling the FreeSWITCH directory endpoint.
+
 - [design/database-schema.md](design/database-schema.md)
   PostgreSQL schema direction covering relational mapping, versioning strategy, integrity rules, and the initial SQL DDL reference.
 

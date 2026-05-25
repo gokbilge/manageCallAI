@@ -44,6 +44,7 @@ Used for:
 Expected backend role:
 
 - serve XML directory responses from backend state
+- resolve tenant context through `tenant.directory_domain` plus per-extension SIP credentials
 
 ### ESL / `mod_event_socket`
 
@@ -77,11 +78,12 @@ Do not place business logic in Lua.
 - `DATABASE_URL`
 - `API_PORT`
 - `JWT_SECRET`
-- `FREESWITCH_DIRECTORY_DEFAULT_PASSWORD`
+- `RUNTIME_API_TOKEN`
 
 ### FreeSWITCH Adapter
 
 - `MANAGECALLAI_TENANT_ID`
+- `RUNTIME_API_TOKEN`
 - `FREESWITCH_ESL_HOST`
 - `FREESWITCH_ESL_PORT`
 - `FREESWITCH_ESL_PASSWORD`
@@ -92,6 +94,7 @@ Do not place business logic in Lua.
 
 - `xml_curl` configured to hit the backend
 - `event_socket` configured for the adapter
+- `xml_curl` requests must include the runtime token
 
 ## Interaction Flow
 
@@ -107,6 +110,7 @@ Do not place business logic in Lua.
 - The adapter is integration infrastructure, not a second business backend.
 - Backend and adapter contracts should stay explicit and narrow.
 - `MANAGECALLAI_TENANT_ID` must be a real tenant UUID for MVP event forwarding.
+- `RUNTIME_API_TOKEN` must be shared by FreeSWITCH `xml_curl`, the adapter, and the API for runtime-only endpoints.
 - n8n-facing extension creation should propagate a user JWT to the API rather than bypass auth.
 - MCP read tools may need a JWT for protected resources such as extensions.
 

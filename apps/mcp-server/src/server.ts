@@ -45,6 +45,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: 'List normalized call events for a tenant.',
       inputSchema: {
         type: 'object',
+        required: ['access_token'],
         properties: {
           tenant_id: { type: 'string' },
           access_token: { type: 'string' },
@@ -87,6 +88,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     case 'list_call_events': {
       const tenantId = args['tenant_id'];
       const accessToken = args['access_token'];
+      if (!accessToken) {
+        throw new Error('access_token is required');
+      }
       const query = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : '';
       const data = await fetchJson<ApiCollection<unknown>>(`/api/v1/call-events${query}`, accessToken);
       return { content: [{ type: 'text', text: JSON.stringify(data.data, null, 2) }] };

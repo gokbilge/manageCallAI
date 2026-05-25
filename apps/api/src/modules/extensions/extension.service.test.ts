@@ -19,6 +19,7 @@ const sampleExt: Extension = {
   extension_number: '100',
   display_name: 'Reception',
   status: 'active',
+  sip_username: '100',
   default_destination_type: null,
   default_destination_id: null,
   created_at: new Date(),
@@ -62,6 +63,7 @@ describe('ExtensionService', () => {
       tenant_id: sampleExt.tenant_id,
       extension_number: sampleExt.extension_number,
       display_name: sampleExt.display_name,
+      sip_password: 'Secret123!',
     });
     expect(result).toEqual(sampleExt);
   });

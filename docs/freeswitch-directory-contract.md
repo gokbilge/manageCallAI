@@ -10,11 +10,11 @@ The first goal is extension directory lookup for SIP registration and basic iden
 
 MVP scope is limited to extension directory lookup.
 
-This contract does not cover full dialplan generation, routing logic, or advanced multi-tenant directory behavior.
+This contract does not cover full dialplan generation or routing logic.
 
 ## Request Shape
 
-FreeSWITCH will invoke the backend through `mod_xml_curl` using a directory lookup request.
+FreeSWITCH invokes the backend through `mod_xml_curl` using a directory lookup request.
 
 Expected fields the backend should use:
 
@@ -22,26 +22,30 @@ Expected fields the backend should use:
 - `purpose`
 - `user`
 - `domain`
+- `runtime_token` or equivalent runtime auth token
 
-The backend should treat `user` as the primary extension lookup key for MVP.
+The backend should treat:
+
+- `domain` as the tenant boundary
+- `user` as the per-tenant extension lookup key
 
 ## MVP Tenant Assumption
 
-MVP is effectively single-tenant.
+MVP resolves tenants through `tenant.directory_domain`.
 
 That means:
 
-- tenant resolution may be implicit
-- `domain` can be treated as a routing hint rather than a hard multi-tenant boundary
-- later multi-tenant work should formalize tenant-to-domain mapping
+- `domain` is a required lookup input
+- directory lookup is tenant-scoped
+- the returned credential is the extension-specific SIP password, not a global shared password
 
 ## Happy-Path Backend Behavior
 
 When an active extension is found:
 
-1. Load extension data from PostgreSQL
-2. Construct a valid FreeSWITCH directory XML response
-3. Return the user record with enough variables and parameters for SIP registration
+1. Load tenant and extension data from PostgreSQL.
+2. Resolve the tenant through `tenant.directory_domain`.
+3. Return valid FreeSWITCH directory XML with the extension-specific SIP password.
 
 ## Not-Found Behavior
 
@@ -59,7 +63,8 @@ Example request body or query shape from FreeSWITCH:
 section=directory
 purpose=sip_auth
 user=1001
-domain=pbx.local
+domain=acme-demo.managecallai.local
+runtime_token=change-me-runtime-token
 ```
 
 ## Example Success Response
@@ -68,13 +73,13 @@ domain=pbx.local
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="freeswitch/xml">
   <section name="directory">
-    <domain name="pbx.local">
+    <domain name="acme-demo.managecallai.local">
       <groups>
         <group name="default">
           <users>
             <user id="1001">
               <params>
-                <param name="password" value="REDACTED_OR_RUNTIME_SECRET" />
+                <param name="password" value="EXTENSION_SPECIFIC_SECRET" />
               </params>
               <variables>
                 <variable name="user_context" value="default" />
@@ -97,25 +102,26 @@ domain=pbx.local
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="freeswitch/xml">
   <section name="directory">
-    <domain name="pbx.local">
+    <domain name="acme-demo.managecallai.local">
       <groups />
     </domain>
   </section>
 </document>
 ```
 
-## Required Extension Fields
+## Required Fields
 
 The backend should rely on:
 
 - `extension_number`
 - `display_name`
 - `status`
-- `id`
+- `sip_username`
+- `sip_password`
+- `tenant.directory_domain`
 
 Future versions may incorporate:
 
-- tenant-domain mapping
 - authentication secret indirection
 - per-extension registration policy
 
@@ -123,4 +129,5 @@ Future versions may incorporate:
 
 - Do not place business logic in the XML response layer.
 - Directory lookup should remain a thin projection of backend state.
-- Secret material used for auth should follow the repo’s secret-handling rules and not live long-term in general JSONB fields.
+- Runtime callers must authenticate with the shared runtime token.
+- Secret material used for auth should follow the repo's secret-handling rules and not live long-term in general JSONB fields.

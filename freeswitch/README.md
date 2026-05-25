@@ -15,3 +15,4 @@ Minimal stock-FreeSWITCH integration assets for `manageCallAI`.
 - Keep FreeSWITCH stock.
 - Do not place business logic in Lua.
 - Use `mod_xml_curl`, ESL / `mod_event_socket`, and thin Lua helpers only.
+- `mod_xml_curl` requests must include the shared runtime token expected by the API.

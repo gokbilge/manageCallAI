@@ -34,12 +34,17 @@ export async function webhookController(app: FastifyInstance): Promise<void> {
 
   app.post<{ Body: CallEventListBody }>(
     '/webhooks/n8n/call-events/list',
-    async (req) => {
+    async (req, reply) => {
+      const authorization = req.headers.authorization;
+      if (!authorization) {
+        return reply.code(401).send({ error: 'Authorization header is required' });
+      }
+
       const tenantId = req.body.tenant_id
         ? `?tenant_id=${encodeURIComponent(req.body.tenant_id)}`
         : '';
 
-      return apiRequest<unknown>('GET', `/api/v1/call-events${tenantId}`);
+      return apiRequest<unknown>('GET', `/api/v1/call-events${tenantId}`, undefined, authorization);
     },
   );
 }

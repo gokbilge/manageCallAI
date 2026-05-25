@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { config } from '../../config/env.js';
 import { db } from '../../db/client.js';
+import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { ExtensionRepository } from '../extensions/extension.repository.js';
 
 type DirectoryLookup = {
@@ -8,6 +8,7 @@ type DirectoryLookup = {
   purpose?: string;
   user?: string;
   domain?: string;
+  runtime_token?: string;
 };
 
 const extensionRepo = new ExtensionRepository(db);
@@ -17,16 +18,23 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     lookup: DirectoryLookup,
   ): Promise<{ body: string; statusCode: number }> => {
     const user = lookup.user?.trim();
-    const domain = (lookup.domain?.trim() || 'default').replace(/"/g, '&quot;');
+    const domain = lookup.domain?.trim();
 
     if (!user) {
       return {
         statusCode: 400,
-        body: buildNotFoundDirectory(domain),
+        body: buildNotFoundDirectory(domain ?? 'default'),
       };
     }
 
-    const extension = await extensionRepo.findActiveByExtensionNumber(user);
+    if (!domain) {
+      return {
+        statusCode: 400,
+        body: buildNotFoundDirectory('default'),
+      };
+    }
+
+    const extension = await extensionRepo.findActiveByDirectoryLookup(user, domain);
     if (!extension) {
       return {
         statusCode: 404,
@@ -40,27 +48,35 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
         extensionId: extension.id,
         extensionNumber: extension.extension_number,
         displayName: extension.display_name,
-        domain,
-        password: config.freeswitchDirectoryDefaultPassword,
+        domain: extension.directory_domain,
+        password: extension.sip_password,
       }),
     };
   };
 
-  app.get<{ Querystring: DirectoryLookup }>('/directory', async (req, reply) => {
-    const result = await handler(req.query);
-    return reply
-      .code(result.statusCode)
-      .type('text/xml; charset=utf-8')
-      .send(result.body);
-  });
+  app.get<{ Querystring: DirectoryLookup }>(
+    '/directory',
+    { preHandler: authenticateRuntime },
+    async (req, reply) => {
+      const result = await handler(req.query);
+      return reply
+        .code(result.statusCode)
+        .type('text/xml; charset=utf-8')
+        .send(result.body);
+    },
+  );
 
-  app.post<{ Body: DirectoryLookup }>('/directory', async (req, reply) => {
-    const result = await handler(req.body ?? {});
-    return reply
-      .code(result.statusCode)
-      .type('text/xml; charset=utf-8')
-      .send(result.body);
-  });
+  app.post<{ Body: DirectoryLookup }>(
+    '/directory',
+    { preHandler: authenticateRuntime },
+    async (req, reply) => {
+      const result = await handler(req.body ?? {});
+      return reply
+        .code(result.statusCode)
+        .type('text/xml; charset=utf-8')
+        .send(result.body);
+    },
+  );
 }
 
 function xmlEscape(value: string): string {

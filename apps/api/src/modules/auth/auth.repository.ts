@@ -43,8 +43,8 @@ export class AuthRepository {
       await client.query('BEGIN');
 
       const tenantResult = await client.query<{ id: string }>(
-        `INSERT INTO tenants (name, slug) VALUES ($1, $2) RETURNING id`,
-        [input.tenant_name, input.tenant_slug],
+        `INSERT INTO tenants (name, slug, directory_domain) VALUES ($1, $2, $3) RETURNING id`,
+        [input.tenant_name, input.tenant_slug, `${input.tenant_slug}.managecallai.local`],
       );
       const tenantId = tenantResult.rows[0]!.id;
 

@@ -1,12 +1,33 @@
 import { Pool } from 'pg';
-import type { Extension, CreateExtensionInput, UpdateExtensionInput } from './extension.types.js';
+import type {
+  CreateExtensionInput,
+  DirectoryExtension,
+  Extension,
+  UpdateExtensionInput,
+} from './extension.types.js';
 
 export class ExtensionRepository {
   constructor(private readonly db: Pool) {}
 
+  private readonly publicColumns = `
+    e.id,
+    e.tenant_id,
+    e.extension_number,
+    e.display_name,
+    e.status,
+    e.sip_username,
+    e.default_destination_type,
+    e.default_destination_id,
+    e.created_at,
+    e.updated_at
+  `;
+
   async findAllByTenant(tenantId: string): Promise<Extension[]> {
     const result = await this.db.query<Extension>(
-      'SELECT * FROM extensions WHERE tenant_id = $1 ORDER BY extension_number ASC',
+      `SELECT ${this.publicColumns}
+       FROM extensions e
+       WHERE e.tenant_id = $1
+       ORDER BY e.extension_number ASC`,
       [tenantId],
     );
     return result.rows;
@@ -14,19 +35,31 @@ export class ExtensionRepository {
 
   async findById(id: string, tenantId: string): Promise<Extension | null> {
     const result = await this.db.query<Extension>(
-      'SELECT * FROM extensions WHERE id = $1 AND tenant_id = $2',
+      `SELECT ${this.publicColumns}
+       FROM extensions e
+       WHERE e.id = $1 AND e.tenant_id = $2`,
       [id, tenantId],
     );
     return result.rows[0] ?? null;
   }
 
-  async findActiveByExtensionNumber(extensionNumber: string): Promise<Extension | null> {
-    const result = await this.db.query<Extension>(
-      `SELECT * FROM extensions
-       WHERE extension_number = $1 AND status = 'active'
-       ORDER BY created_at DESC
+  async findActiveByDirectoryLookup(
+    extensionNumber: string,
+    domain: string,
+  ): Promise<DirectoryExtension | null> {
+    const result = await this.db.query<DirectoryExtension>(
+      `SELECT
+         ${this.publicColumns},
+         e.sip_password,
+         t.directory_domain
+       FROM extensions e
+       JOIN tenants t ON t.id = e.tenant_id
+       WHERE e.extension_number = $1
+         AND e.status = 'active'
+         AND LOWER(t.directory_domain) = LOWER($2)
+       ORDER BY e.created_at DESC
        LIMIT 1`,
-      [extensionNumber],
+      [extensionNumber, domain],
     );
     return result.rows[0] ?? null;
   }
@@ -34,13 +67,25 @@ export class ExtensionRepository {
   async create(input: CreateExtensionInput): Promise<Extension> {
     const result = await this.db.query<Extension>(
       `INSERT INTO extensions
-         (tenant_id, extension_number, display_name, default_destination_type, default_destination_id)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
+         (tenant_id, extension_number, display_name, sip_username, sip_password, default_destination_type, default_destination_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING
+         id,
+         tenant_id,
+         extension_number,
+         display_name,
+         status,
+         sip_username,
+         default_destination_type,
+         default_destination_id,
+         created_at,
+         updated_at`,
       [
         input.tenant_id,
         input.extension_number,
         input.display_name,
+        input.sip_username ?? input.extension_number,
+        input.sip_password,
         input.default_destination_type ?? null,
         input.default_destination_id ?? null,
       ],
@@ -57,6 +102,8 @@ export class ExtensionRepository {
       'extension_number',
       'display_name',
       'status',
+      'sip_username',
+      'sip_password',
       'default_destination_type',
       'default_destination_id',
     ] as const;
@@ -74,7 +121,20 @@ export class ExtensionRepository {
     values.push(id, tenantId);
 
     const result = await this.db.query<Extension>(
-      `UPDATE extensions SET ${fields.join(', ')} WHERE id = $${idx} AND tenant_id = $${idx + 1} RETURNING *`,
+      `UPDATE extensions
+       SET ${fields.join(', ')}
+       WHERE id = $${idx} AND tenant_id = $${idx + 1}
+       RETURNING
+         id,
+         tenant_id,
+         extension_number,
+         display_name,
+         status,
+         sip_username,
+         default_destination_type,
+         default_destination_id,
+         created_at,
+         updated_at`,
       values,
     );
     return result.rows[0] ?? null;
@@ -84,7 +144,17 @@ export class ExtensionRepository {
     const result = await this.db.query<Extension>(
       `UPDATE extensions SET status = 'inactive', updated_at = NOW()
        WHERE id = $1 AND tenant_id = $2
-       RETURNING *`,
+       RETURNING
+         id,
+         tenant_id,
+         extension_number,
+         display_name,
+         status,
+         sip_username,
+         default_destination_type,
+         default_destination_id,
+         created_at,
+         updated_at`,
       [id, tenantId],
     );
     return result.rows[0] ?? null;

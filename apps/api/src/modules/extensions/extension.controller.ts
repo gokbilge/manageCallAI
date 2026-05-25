@@ -1,12 +1,12 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import { authenticate } from '../auth/authenticate.js';
+import type { AuthClaims } from '../auth/auth-claims.js';
 import { ExtensionRepository } from './extension.repository.js';
 import { ExtensionNotFoundError, ExtensionService } from './extension.service.js';
 import type { CreateExtensionBody, UpdateExtensionInput } from './extension.types.js';
 
 const DESTINATION_TYPES = ['flow', 'extension', 'user', 'queue'] as const;
-type AuthClaims = { tenant_id: string };
 
 const service = new ExtensionService(new ExtensionRepository(db));
 
@@ -36,11 +36,13 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
       schema: {
         body: {
           type: 'object',
-          required: ['extension_number', 'display_name'],
+          required: ['extension_number', 'display_name', 'sip_password'],
           additionalProperties: false,
           properties: {
             extension_number: { type: 'string', minLength: 1, maxLength: 20 },
             display_name: { type: 'string', minLength: 1, maxLength: 255 },
+            sip_username: { type: 'string', minLength: 1, maxLength: 64 },
+            sip_password: { type: 'string', minLength: 8, maxLength: 128 },
             default_destination_type: { type: 'string', enum: [...DESTINATION_TYPES] },
             default_destination_id: { type: 'string' },
           },
@@ -94,6 +96,8 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
             extension_number: { type: 'string', minLength: 1, maxLength: 20 },
             display_name: { type: 'string', minLength: 1, maxLength: 255 },
             status: { type: 'string', enum: ['active', 'inactive'] },
+            sip_username: { type: 'string', minLength: 1, maxLength: 64 },
+            sip_password: { type: 'string', minLength: 8, maxLength: 128 },
             default_destination_type: {
               anyOf: [{ type: 'string', enum: [...DESTINATION_TYPES] }, { type: 'null' }],
             },

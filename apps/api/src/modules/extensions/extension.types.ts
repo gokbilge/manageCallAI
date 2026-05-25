@@ -7,6 +7,7 @@ export interface Extension {
   extension_number: string;
   display_name: string;
   status: ExtensionStatus;
+  sip_username: string;
   default_destination_type: DestinationType | null;
   default_destination_id: string | null;
   created_at: Date;
@@ -17,6 +18,8 @@ export interface Extension {
 export interface CreateExtensionBody {
   extension_number: string;
   display_name: string;
+  sip_username?: string;
+  sip_password: string;
   default_destination_type?: DestinationType;
   default_destination_id?: string;
 }
@@ -28,6 +31,13 @@ export interface UpdateExtensionInput {
   extension_number?: string;
   display_name?: string;
   status?: ExtensionStatus;
+  sip_username?: string;
+  sip_password?: string;
   default_destination_type?: DestinationType | null;
   default_destination_id?: string | null;
+}
+
+export interface DirectoryExtension extends Extension {
+  sip_password: string;
+  directory_domain: string;
 }

@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: managecallai
+          POSTGRES_USER: managecallai
+          POSTGRES_PASSWORD: managecallai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U managecallai -d managecallai"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://managecallai:managecallai@localhost:5432/managecallai
+      JWT_SECRET: ci-jwt-secret
+      RUNTIME_API_TOKEN: ci-runtime-token
+      MANAGECALLAI_TENANT_ID: 00000000-0000-0000-0000-000000000001
+      API_BASE_URL: http://localhost:3000
+      WORKER_PORT: 3400
+      FREESWITCH_ESL_HOST: 127.0.0.1
+      FREESWITCH_ESL_PORT: 8021
+      FREESWITCH_ESL_PASSWORD: ClueCon
+      LOG_LEVEL: info
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.work
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..20}; do
+            pg_isready -h localhost -p 5432 -U managecallai -d managecallai && exit 0
+            sleep 2
+          done
+          exit 1
+
+      - name: Migration syntax check
+        run: pnpm db:check
+
+      - name: TypeScript build
+        run: pnpm build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Go build
+        run: cd apps/freeswitch-agent && go build ./...

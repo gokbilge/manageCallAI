@@ -16,14 +16,16 @@ import (
 )
 
 type APIForwarder struct {
-	baseURL string
-	client  *http.Client
-	logger  *slog.Logger
+	baseURL      string
+	runtimeToken string
+	client       *http.Client
+	logger       *slog.Logger
 }
 
 func NewAPIForwarder(cfg config.Config, logger *slog.Logger) *APIForwarder {
 	return &APIForwarder{
-		baseURL: strings.TrimRight(cfg.APIBaseURL, "/"),
+		baseURL:      strings.TrimRight(cfg.APIBaseURL, "/"),
+		runtimeToken: strings.TrimSpace(cfg.RuntimeToken),
 		client: &http.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -48,6 +50,9 @@ func (f *APIForwarder) ForwardEvent(ctx context.Context, event events.Normalized
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	if f.runtimeToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", f.runtimeToken))
+	}
 
 	resp, err := f.client.Do(req)
 	if err != nil {

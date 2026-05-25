@@ -15,6 +15,7 @@ Go adapter service for `manageCallAI` FreeSWITCH runtime integration.
 - `FREESWITCH_ESL_PORT`
 - `FREESWITCH_ESL_PASSWORD`
 - `MANAGECALLAI_TENANT_ID`
+- `RUNTIME_API_TOKEN`
 - `API_BASE_URL`
 - `LOG_LEVEL`
 
@@ -28,3 +29,4 @@ go run .
 
 - The agent authenticates to ESL, subscribes to MVP events, normalizes them, and forwards them to the API.
 - `MANAGECALLAI_TENANT_ID` must be set to a real tenant UUID so forwarded events satisfy the database foreign key.
+- `RUNTIME_API_TOKEN` must match the API runtime token so `/api/v1/call-events/internal/ingest` accepts forwarded events.

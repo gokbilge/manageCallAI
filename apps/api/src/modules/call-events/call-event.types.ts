@@ -10,7 +10,7 @@ export interface CallEvent {
 }
 
 export interface IngestCallEventInput {
-  tenant_id?: string;
+  tenant_id: string;
   call_id: string;
   event_type: string;
   event_time?: string;

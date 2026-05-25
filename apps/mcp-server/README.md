@@ -8,8 +8,8 @@ Read-only MCP server for `manageCallAI`.
 - `get_extension`
 - `list_call_events`
 
-`list_extensions` and `get_extension` require an `access_token` argument because the
-control-plane API protects extension endpoints with JWT auth.
+`list_extensions`, `get_extension`, and `list_call_events` require an `access_token`
+argument because the control-plane API protects those endpoints with JWT auth.
 
 ## Environment
 

@@ -6,22 +6,24 @@ import (
 )
 
 type Config struct {
-	TenantID    string
-	ESLHost     string
-	ESLPort     int
-	ESLPassword string
-	APIBaseURL  string
-	LogLevel    string
+	TenantID     string
+	RuntimeToken string
+	ESLHost      string
+	ESLPort      int
+	ESLPassword  string
+	APIBaseURL   string
+	LogLevel     string
 }
 
 func Load() Config {
 	return Config{
-		TenantID:    getEnv("MANAGECALLAI_TENANT_ID", ""),
-		ESLHost:     getEnv("FREESWITCH_ESL_HOST", "127.0.0.1"),
-		ESLPort:     getEnvInt("FREESWITCH_ESL_PORT", 8021),
-		ESLPassword: getEnv("FREESWITCH_ESL_PASSWORD", "ClueCon"),
-		APIBaseURL:  getEnv("API_BASE_URL", "http://localhost:3000"),
-		LogLevel:    getEnv("LOG_LEVEL", "info"),
+		TenantID:     getEnv("MANAGECALLAI_TENANT_ID", ""),
+		RuntimeToken: getEnv("RUNTIME_API_TOKEN", ""),
+		ESLHost:      getEnv("FREESWITCH_ESL_HOST", "127.0.0.1"),
+		ESLPort:      getEnvInt("FREESWITCH_ESL_PORT", 8021),
+		ESLPassword:  getEnv("FREESWITCH_ESL_PASSWORD", "ClueCon"),
+		APIBaseURL:   getEnv("API_BASE_URL", "http://localhost:3000"),
+		LogLevel:     getEnv("LOG_LEVEL", "info"),
 	}
 }
 
