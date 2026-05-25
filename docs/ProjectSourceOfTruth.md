@@ -417,6 +417,7 @@ Suggested future supporting docs:
 - `docs/SRS.md`
 - `docs/DomainModel.md`
 - `docs/API.md`
+- `docs/DatabaseSchema.md`
 - `docs/SDD.md`
 - `docs/Architecture.md`
 - `docs/api/`

@@ -16,6 +16,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [API.md](API.md)
   Initial REST API contract covering resources, lifecycle operations, payload shapes, and error handling.
 
+- [DatabaseSchema.md](DatabaseSchema.md)
+  PostgreSQL schema direction covering relational mapping, versioning strategy, integrity rules, and the initial SQL DDL reference.
+
 - [SDD.md](SDD.md)
   Software Design Description covering modules, services, domain model responsibilities, workflows, interfaces, and design decisions.
 

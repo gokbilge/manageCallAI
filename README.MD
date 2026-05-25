@@ -29,6 +29,7 @@ The main project design and architecture reference lives here:
 - [docs/SRS.md](docs/SRS.md)
 - [docs/DomainModel.md](docs/DomainModel.md)
 - [docs/API.md](docs/API.md)
+- [docs/DatabaseSchema.md](docs/DatabaseSchema.md)
 - [docs/SDD.md](docs/SDD.md)
 - [docs/Architecture.md](docs/Architecture.md)
 
