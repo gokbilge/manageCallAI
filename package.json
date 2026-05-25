@@ -3,8 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.0.0",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.1"
+  },
   "scripts": {
     "build": "pnpm -r build",
+    "db:migrate": "node ./db/migrate.mjs",
+    "db:status": "node ./db/migrate.mjs --status",
+    "db:up": "docker compose up -d postgres",
     "dev": "pnpm -r --parallel dev",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test"

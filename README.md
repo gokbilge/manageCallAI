@@ -103,6 +103,12 @@ My recommendation:
 9. Publish active version
 10. n8n webhook examples
 
+Step 1 is now defined as:
+
+- start PostgreSQL with `pnpm db:up`
+- apply migrations with `pnpm db:migrate`
+- verify status with `pnpm db:status`
+
 For MVP, use Lua only for:
 
 - `play_collect`
