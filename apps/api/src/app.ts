@@ -1,0 +1,31 @@
+import formbody from '@fastify/formbody';
+import jwt from '@fastify/jwt';
+import type { FastifyJWTOptions } from '@fastify/jwt';
+import Fastify, { type FastifyPluginCallback } from 'fastify';
+import { config } from './config/env.js';
+import { healthController } from './health/health.controller.js';
+import { authController } from './modules/auth/auth.controller.js';
+import { callEventController } from './modules/call-events/call-event.controller.js';
+import { extensionController } from './modules/extensions/extension.controller.js';
+import { freeswitchController } from './modules/freeswitch/freeswitch.controller.js';
+
+export function buildApp() {
+  const app = Fastify({ logger: true });
+  const jwtPlugin = jwt as unknown as FastifyPluginCallback<FastifyJWTOptions>;
+
+  app.register(formbody);
+  // Type assertion required: @fastify/jwt wraps itself in fastify-plugin whose
+  // inferred type doesn't flow correctly under NodeNext resolution.
+  app.register(jwtPlugin, {
+    secret: config.jwtSecret,
+    sign: { expiresIn: '24h' },
+  });
+
+  app.register(healthController, { prefix: '/health' });
+  app.register(authController, { prefix: '/api/v1/auth' });
+  app.register(extensionController, { prefix: '/api/v1/extensions' });
+  app.register(callEventController, { prefix: '/api/v1/call-events' });
+  app.register(freeswitchController, { prefix: '/api/v1/freeswitch' });
+
+  return app;
+}

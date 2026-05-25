@@ -1,3 +1,8 @@
 node_modules/
 .env
 .pnpm-store/
+dist/
+
+# Local AI context files — not for version control
+CLAUDE.md
+AGENTS.md

@@ -1,0 +1,7 @@
+<include>
+  <extension name="managecall_entry">
+    <condition field="destination_number" expression="^9191$">
+      <action application="lua" data="managecall_entry.lua play_prompt" />
+    </condition>
+  </extension>
+</include>
