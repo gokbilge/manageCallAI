@@ -16,6 +16,18 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [api/rest-api.md](api/rest-api.md)
   Initial REST API contract covering resources, lifecycle operations, payload shapes, and error handling.
 
+- [freeswitch-directory-contract.md](freeswitch-directory-contract.md)
+  MVP `mod_xml_curl` directory lookup contract between stock FreeSWITCH and the backend.
+
+- [freeswitch-event-mapping.md](freeswitch-event-mapping.md)
+  MVP ESL event-ingestion and normalization rules for registration and call lifecycle events.
+
+- [freeswitch-runtime-integration.md](freeswitch-runtime-integration.md)
+  Runtime integration boundaries and expected roles for stock FreeSWITCH, the adapter service, and Lua helpers.
+
+- [integration-test-plan.md](integration-test-plan.md)
+  First end-to-end architecture proof plan from extension creation to event visibility.
+
 - [design/database-schema.md](design/database-schema.md)
   PostgreSQL schema direction covering relational mapping, versioning strategy, integrity rules, and the initial SQL DDL reference.
 
