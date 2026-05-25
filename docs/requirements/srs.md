@@ -225,6 +225,14 @@ This creates steep onboarding cost, unsafe automation surfaces, weak change mana
 - Supported extension interfaces will include `mod_xml_curl`, `ESL` / `mod_event_socket`, and Lua helpers.
 - Lua will be limited to thin action execution rather than business logic.
 
+Responsibility split:
+
+- Business logic: manageCallAI backend
+- AI / MCP / n8n logic: manageCallAI backend
+- Call execution: FreeSWITCH
+- Optional call-session helper: Lua
+- Runtime event/control agent: Go or Node
+
 ## 8. MVP Acceptance Criteria
 
 - AC-1: An administrator can define extensions, a trunk, numbers, and basic routes.

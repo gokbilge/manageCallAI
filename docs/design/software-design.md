@@ -14,6 +14,14 @@ It translates the product and architectural intent into implementable software s
 - Make risky operations explicit, auditable, and reversible
 - Keep integration adapters replaceable without rewriting core business logic
 
+## 2.1 Responsibility Split
+
+- Business logic: manageCallAI backend
+- AI / MCP / n8n logic: manageCallAI backend
+- Call execution: FreeSWITCH
+- Optional call-session helper: Lua
+- Runtime event/control agent: Go or Node
+
 ## 3. Logical Subsystems
 
 ### 3.1 Admin UI

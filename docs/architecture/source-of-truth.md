@@ -115,6 +115,14 @@ The platform should use stock FreeSWITCH rather than a project-specific fork.
 
 Project-specific logic should live in external services and minimal integration helpers, not inside a custom FreeSWITCH distribution.
 
+### 6.9 Responsibility Split
+
+- Business logic belongs in the manageCallAI backend.
+- AI, MCP, and n8n orchestration logic belongs in the manageCallAI backend.
+- Call execution belongs in FreeSWITCH.
+- Lua is an optional call-session helper, not a business-logic layer.
+- Runtime event and control integration belongs in an external Go or Node agent.
+
 ## 7. Canonical System Model
 
 At a high level:

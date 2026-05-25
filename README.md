@@ -82,6 +82,14 @@ My recommendation:
 6. Build an ESL event/control layer.
 7. Provide a Dockerized reference FreeSWITCH runtime.
 
+## Project Philosophy
+
+- Business logic: manageCallAI backend
+- AI / MCP / n8n logic: manageCallAI backend
+- Call execution: FreeSWITCH
+- Optional call-session helper: Lua
+- Runtime event/control agent: Go or Node
+
 For MVP, use Lua only for:
 
 - `play_collect`

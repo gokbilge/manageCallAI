@@ -39,6 +39,14 @@ External systems such as FreeSWITCH, browsers, AI agents, and workflow engines i
 
 manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSWITCH through supported extension interfaces and keeps project-specific logic outside the switch runtime.
 
+## 4.1 Responsibility Split
+
+- Business logic: manageCallAI backend
+- AI / MCP / n8n logic: manageCallAI backend
+- Call execution: FreeSWITCH
+- Optional call-session helper: Lua
+- Runtime event/control agent: Go or Node
+
 ## 5. Component View
 
 ### 5.1 Admin UI
