@@ -416,6 +416,7 @@ Suggested future supporting docs:
 - `docs/README.MD`
 - `docs/SRS.md`
 - `docs/DomainModel.md`
+- `docs/API.md`
 - `docs/SDD.md`
 - `docs/Architecture.md`
 - `docs/api/`

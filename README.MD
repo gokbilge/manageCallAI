@@ -28,6 +28,7 @@ The main project design and architecture reference lives here:
 - [docs/README.MD](docs/README.MD)
 - [docs/SRS.md](docs/SRS.md)
 - [docs/DomainModel.md](docs/DomainModel.md)
+- [docs/API.md](docs/API.md)
 - [docs/SDD.md](docs/SDD.md)
 - [docs/Architecture.md](docs/Architecture.md)
 

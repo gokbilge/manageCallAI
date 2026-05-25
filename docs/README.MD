@@ -13,6 +13,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [DomainModel.md](DomainModel.md)
   Detailed business domain model covering entities, relationships, lifecycle states, and invariants.
 
+- [API.md](API.md)
+  Initial REST API contract covering resources, lifecycle operations, payload shapes, and error handling.
+
 - [SDD.md](SDD.md)
   Software Design Description covering modules, services, domain model responsibilities, workflows, interfaces, and design decisions.
 
