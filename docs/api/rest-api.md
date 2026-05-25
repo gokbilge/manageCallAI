@@ -167,12 +167,19 @@ Example request:
 
 ```json
 {
-  "extensionNumber": "1001",
-  "displayName": "Sales Front Desk",
-  "defaultDestinationType": "flow",
-  "defaultDestinationId": "flow_main"
+  "extension_number": "1001",
+  "display_name": "Sales Front Desk",
+  "sip_password": "PhonePass123!",
+  "sip_username": "1001",
+  "default_destination_type": "flow",
+  "default_destination_id": "flow_main"
 }
 ```
+
+Required fields: `extension_number`, `display_name`, `sip_password`.
+`sip_username` defaults to `extension_number` when omitted.
+
+> **Note:** SIP passwords are stored as plaintext in the database for MVP. Encryption-at-rest is planned before production use.
 
 #### Get Extension
 

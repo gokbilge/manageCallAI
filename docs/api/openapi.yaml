@@ -1206,7 +1206,7 @@ components:
       additionalProperties: true
     Extension:
       type: object
-      required: [id, extensionNumber, displayName, status]
+      required: [id, extensionNumber, displayName, status, sipUsername]
       properties:
         id:
           type: string
@@ -1217,6 +1217,9 @@ components:
         status:
           type: string
           enum: [active, inactive]
+        sipUsername:
+          type: string
+          description: SIP username used for FreeSWITCH registration (defaults to extensionNumber)
         defaultDestinationType:
           type: string
           enum: [flow, extension, user, queue]
@@ -1224,12 +1227,19 @@ components:
           type: string
     CreateExtensionRequest:
       type: object
-      required: [extensionNumber, displayName]
+      required: [extensionNumber, displayName, sipPassword]
       properties:
         extensionNumber:
           type: string
         displayName:
           type: string
+        sipUsername:
+          type: string
+          description: Defaults to extensionNumber when omitted
+        sipPassword:
+          type: string
+          description: SIP registration password (stored in plaintext; encryption-at-rest planned)
+          minLength: 8
         defaultDestinationType:
           type: string
         defaultDestinationId:
@@ -1237,10 +1247,18 @@ components:
     UpdateExtensionRequest:
       type: object
       properties:
+        extensionNumber:
+          type: string
         displayName:
           type: string
         status:
           type: string
+          enum: [active, inactive]
+        sipUsername:
+          type: string
+        sipPassword:
+          type: string
+          minLength: 8
         defaultDestinationType:
           type: string
         defaultDestinationId:

@@ -11,7 +11,7 @@ export async function authenticateRuntime(
   const token = extractRuntimeToken(req);
 
   if (token !== config.runtimeApiToken) {
-    reply.code(401).send({ error: 'Unauthorized' });
+    return reply.code(401).send({ error: 'Unauthorized' });
   }
 }
 
