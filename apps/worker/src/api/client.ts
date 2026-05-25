@@ -4,12 +4,19 @@ export async function apiRequest<T>(
   method: string,
   path: string,
   body?: unknown,
+  authorization?: string,
 ): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (authorization) {
+    headers.Authorization = authorization;
+  }
+
   const response = await fetch(`${config.apiBaseUrl}${path}`, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
 

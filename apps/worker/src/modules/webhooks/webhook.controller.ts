@@ -17,7 +17,17 @@ export async function webhookController(app: FastifyInstance): Promise<void> {
   app.post<{ Body: ExtensionCreateBody }>(
     '/webhooks/n8n/extensions/create',
     async (req, reply) => {
-      const result = await apiRequest<unknown>('POST', '/api/v1/extensions', req.body);
+      const authorization = req.headers.authorization;
+      if (!authorization) {
+        return reply.code(401).send({ error: 'Authorization header is required' });
+      }
+
+      const result = await apiRequest<unknown>(
+        'POST',
+        '/api/v1/extensions',
+        req.body,
+        authorization,
+      );
       return reply.code(201).send(result);
     },
   );

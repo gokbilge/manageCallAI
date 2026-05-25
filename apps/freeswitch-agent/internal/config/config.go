@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
+	TenantID    string
 	ESLHost     string
 	ESLPort     int
 	ESLPassword string
@@ -15,6 +16,7 @@ type Config struct {
 
 func Load() Config {
 	return Config{
+		TenantID:    getEnv("MANAGECALLAI_TENANT_ID", ""),
 		ESLHost:     getEnv("FREESWITCH_ESL_HOST", "127.0.0.1"),
 		ESLPort:     getEnvInt("FREESWITCH_ESL_PORT", 8021),
 		ESLPassword: getEnv("FREESWITCH_ESL_PASSWORD", "ClueCon"),

@@ -21,9 +21,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: 'List extensions for a tenant.',
       inputSchema: {
         type: 'object',
-        required: ['tenant_id'],
+        required: ['tenant_id', 'access_token'],
         properties: {
           tenant_id: { type: 'string' },
+          access_token: { type: 'string' },
         },
       },
     },
@@ -32,9 +33,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: 'Fetch a single extension by id.',
       inputSchema: {
         type: 'object',
-        required: ['id'],
+        required: ['id', 'access_token'],
         properties: {
           id: { type: 'string' },
+          access_token: { type: 'string' },
         },
       },
     },
@@ -45,6 +47,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         type: 'object',
         properties: {
           tenant_id: { type: 'string' },
+          access_token: { type: 'string' },
         },
       },
     },
@@ -57,30 +60,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
     case 'list_extensions': {
       const tenantId = args['tenant_id'];
-      if (!tenantId) {
-        throw new Error('tenant_id is required');
+      const accessToken = args['access_token'];
+      if (!tenantId || !accessToken) {
+        throw new Error('tenant_id and access_token are required');
       }
 
       const data = await fetchJson<ApiCollection<unknown>>(
         `/api/v1/extensions?tenant_id=${encodeURIComponent(tenantId)}`,
+        accessToken,
       );
       return { content: [{ type: 'text', text: JSON.stringify(data.data, null, 2) }] };
     }
     case 'get_extension': {
       const id = args['id'];
-      if (!id) {
-        throw new Error('id is required');
+      const accessToken = args['access_token'];
+      if (!id || !accessToken) {
+        throw new Error('id and access_token are required');
       }
 
       const data = await fetchJson<ApiSingle<unknown>>(
         `/api/v1/extensions/${encodeURIComponent(id)}`,
+        accessToken,
       );
       return { content: [{ type: 'text', text: JSON.stringify(data.data, null, 2) }] };
     }
     case 'list_call_events': {
       const tenantId = args['tenant_id'];
+      const accessToken = args['access_token'];
       const query = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : '';
-      const data = await fetchJson<ApiCollection<unknown>>(`/api/v1/call-events${query}`);
+      const data = await fetchJson<ApiCollection<unknown>>(`/api/v1/call-events${query}`, accessToken);
       return { content: [{ type: 'text', text: JSON.stringify(data.data, null, 2) }] };
     }
     default:

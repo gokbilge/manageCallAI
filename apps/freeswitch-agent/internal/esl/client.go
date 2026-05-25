@@ -87,7 +87,7 @@ func (c *Client) runSession(ctx context.Context, address string) error {
 		}
 
 		payload := parsePlainEvent(msg.Body)
-		normalized, ok := events.NormalizeMVP(payload)
+		normalized, ok := events.NormalizeMVP(payload, c.config.TenantID)
 		if !ok {
 			c.logger.Debug("ignoring esl event",
 				slog.String("content_type", msg.Headers["Content-Type"]),

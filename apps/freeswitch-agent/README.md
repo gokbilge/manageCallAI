@@ -1,6 +1,6 @@
 # freeswitch-agent
 
-Go adapter-service skeleton for `manageCallAI` FreeSWITCH runtime integration.
+Go adapter service for `manageCallAI` FreeSWITCH runtime integration.
 
 ## Scope
 
@@ -14,6 +14,7 @@ Go adapter-service skeleton for `manageCallAI` FreeSWITCH runtime integration.
 - `FREESWITCH_ESL_HOST`
 - `FREESWITCH_ESL_PORT`
 - `FREESWITCH_ESL_PASSWORD`
+- `MANAGECALLAI_TENANT_ID`
 - `API_BASE_URL`
 - `LOG_LEVEL`
 
@@ -25,5 +26,5 @@ go run .
 
 ## Notes
 
-- Current ESL connectivity is a placeholder skeleton only.
-- Connection, subscription, retry, and event-forwarding behavior still need full implementation.
+- The agent authenticates to ESL, subscribes to MVP events, normalizes them, and forwards them to the API.
+- `MANAGECALLAI_TENANT_ID` must be set to a real tenant UUID so forwarded events satisfy the database foreign key.

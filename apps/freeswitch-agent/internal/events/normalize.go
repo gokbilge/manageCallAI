@@ -16,7 +16,7 @@ type NormalizedEvent struct {
 	Payload   map[string]interface{} `json:"payload"`
 }
 
-func NormalizeMVP(headers map[string]string) (NormalizedEvent, bool) {
+func NormalizeMVP(headers map[string]string, tenantID string) (NormalizedEvent, bool) {
 	eventName := firstNonEmpty(
 		headers["Event-Name"],
 		headers["Event-Subclass"],
@@ -24,19 +24,19 @@ func NormalizeMVP(headers map[string]string) (NormalizedEvent, bool) {
 
 	switch eventName {
 	case "CHANNEL_CREATE":
-		return fromHeaders("channel_create", headers), true
+		return fromHeaders("channel_create", headers, tenantID), true
 	case "CHANNEL_ANSWER":
-		return fromHeaders("channel_answer", headers), true
+		return fromHeaders("channel_answer", headers, tenantID), true
 	case "CHANNEL_HANGUP":
-		return fromHeaders("channel_hangup", headers), true
+		return fromHeaders("channel_hangup", headers, tenantID), true
 	case "sofia::register", "sofia::unregister":
-		return fromHeaders("registration_seen", headers), true
+		return fromHeaders("registration_seen", headers, tenantID), true
 	default:
 		return NormalizedEvent{}, false
 	}
 }
 
-func fromHeaders(eventType string, headers map[string]string) NormalizedEvent {
+func fromHeaders(eventType string, headers map[string]string, tenantID string) NormalizedEvent {
 	callID := firstNonEmpty(
 		headers["Unique-ID"],
 		headers["Channel-Call-UUID"],
@@ -49,7 +49,7 @@ func fromHeaders(eventType string, headers map[string]string) NormalizedEvent {
 	}
 
 	return NormalizedEvent{
-		TenantID:  "00000000-0000-0000-0000-000000000001",
+		TenantID:  tenantID,
 		CallID:    callID,
 		EventType: eventType,
 		EventTime: eventTime(headers),

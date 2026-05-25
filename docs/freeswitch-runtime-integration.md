@@ -76,9 +76,12 @@ Do not place business logic in Lua.
 
 - `DATABASE_URL`
 - `API_PORT`
+- `JWT_SECRET`
+- `FREESWITCH_DIRECTORY_DEFAULT_PASSWORD`
 
 ### FreeSWITCH Adapter
 
+- `MANAGECALLAI_TENANT_ID`
 - `FREESWITCH_ESL_HOST`
 - `FREESWITCH_ESL_PORT`
 - `FREESWITCH_ESL_PASSWORD`
@@ -103,3 +106,15 @@ Do not place business logic in Lua.
 
 - The adapter is integration infrastructure, not a second business backend.
 - Backend and adapter contracts should stay explicit and narrow.
+- `MANAGECALLAI_TENANT_ID` must be a real tenant UUID for MVP event forwarding.
+- n8n-facing extension creation should propagate a user JWT to the API rather than bypass auth.
+- MCP read tools may need a JWT for protected resources such as extensions.
+
+## Startup Order
+
+1. start PostgreSQL and run migrations
+2. start the API
+3. start the worker if n8n webhooks are needed
+4. configure FreeSWITCH `mod_xml_curl` and `event_socket`
+5. start the FreeSWITCH adapter
+6. start the MCP server when read-only AI tooling is needed
