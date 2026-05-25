@@ -412,6 +412,10 @@ Suggested future supporting docs:
 - `CONTRIBUTING.md`
 - `SECURITY.md`
 - `LICENSE`
+- `docs/README.MD`
+- `docs/SRS.md`
+- `docs/SDD.md`
+- `docs/Architecture.md`
 - `docs/api/`
 - `docs/examples/`
 

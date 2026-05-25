@@ -25,6 +25,10 @@ The goal is simple:
 The main project design and architecture reference lives here:
 
 - [docs/ProjectSourceOfTruth.md](docs/ProjectSourceOfTruth.md)
+- [docs/README.MD](docs/README.MD)
+- [docs/SRS.md](docs/SRS.md)
+- [docs/SDD.md](docs/SDD.md)
+- [docs/Architecture.md](docs/Architecture.md)
 
 If other documents drift, the source-of-truth document is the canonical reference until updated.
 
