@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    image: node:22
+    working_dir: /workspace
+    command: ["sh", "-c", "corepack enable && pnpm install && pnpm --filter @managecallai/api dev"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      API_PORT: ${API_PORT}
+    volumes:
+      - ./:/workspace
+    ports:
+      - "${API_PORT}:3000"
+    depends_on:
+      - postgres
+
+  freeswitch:
+    image: signalwire/freeswitch:latest
+    ports:
+      - "5060:5060/udp"
+      - "5080:5080/tcp"
+      - "8021:8021/tcp"
+    volumes:
+      - ./freeswitch/conf:/etc/freeswitch
+      - ./freeswitch/lua:/usr/share/freeswitch/scripts
+
+volumes:
+  postgres_data:

@@ -1,0 +1,12 @@
+{
+  "name": "@managecallai/mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo build mcp-server",
+    "dev": "echo dev mcp-server",
+    "lint": "echo lint mcp-server",
+    "test": "echo test mcp-server"
+  }
+}

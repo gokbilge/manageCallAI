@@ -1,0 +1,12 @@
+{
+  "name": "@managecallai/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo build web",
+    "dev": "echo dev web",
+    "lint": "echo lint web",
+    "test": "echo test web"
+  }
+}

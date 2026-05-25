@@ -1,0 +1,12 @@
+{
+  "name": "@managecallai/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo build api",
+    "dev": "echo dev api",
+    "lint": "echo lint api",
+    "test": "echo test api"
+  }
+}

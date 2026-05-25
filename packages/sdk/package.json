@@ -1,0 +1,12 @@
+{
+  "name": "@managecallai/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo build sdk",
+    "dev": "echo dev sdk",
+    "lint": "echo lint sdk",
+    "test": "echo test sdk"
+  }
+}

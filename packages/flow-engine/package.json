@@ -1,0 +1,12 @@
+{
+  "name": "@managecallai/flow-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo build flow-engine",
+    "dev": "echo dev flow-engine",
+    "lint": "echo lint flow-engine",
+    "test": "echo test flow-engine"
+  }
+}

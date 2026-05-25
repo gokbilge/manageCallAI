@@ -14,6 +14,8 @@ ADRs capture decisions that are important enough to preserve beyond informal dis
 
 ### Current Technology Decisions
 
+- [ADR-0001: Stock FreeSWITCH](0001-stock-freeswitch.md)
+- [ADR-0002: Runtime Adapter in Go](0002-runtime-adapter-go.md)
 - [ADR-001: Use Stock FreeSWITCH, No Fork](adr-001-use-stock-freeswitch-no-fork.md)
 - [ADR-002: Use Node.js + TypeScript for the Control Plane](adr-002-use-nodejs-typescript-control-plane.md)
 - [ADR-003: Use Go for the FreeSWITCH Adapter Service](adr-003-use-go-for-freeswitch-adapter-service.md)
