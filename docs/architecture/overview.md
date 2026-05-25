@@ -27,8 +27,11 @@ Humans / AI Agents / Workflows
    PostgreSQL Desired State + Audit
               |
               v
-    FreeSWITCH Adapter / Renderer
-   mod_xml_curl + ESL + Lua helpers
+    Go FreeSWITCH Runtime Agent
+   mod_xml_curl + ESL coordination
+              |
+              v
+     Lua Call Helpers / Scripts
               |
               v
          FreeSWITCH Runtime
@@ -47,24 +50,27 @@ External systems such as FreeSWITCH, browsers, AI agents, and workflow engines i
 
 ### 5.1 Admin UI
 
-- React-based operator console
+- React + TypeScript operator console
 - Consumes backend APIs
 - Presents domain-level telecom objects and lifecycle operations
 
 ### 5.2 API Layer
 
+- Node.js + TypeScript service
 - REST endpoints for application and integration clients
 - Authentication and authorization enforcement
 - Domain orchestration entry point
 
 ### 5.3 MCP Layer
 
+- TypeScript MCP server
 - Dedicated AI-facing surface
 - Narrower than the REST API
 - Safe read, draft, validate, simulate, and publish-request operations
 
 ### 5.4 Workflow Layer
 
+- n8n and webhook integration surface
 - Webhook and integration endpoint surface
 - Event emission for downstream automation
 - Automation intake for approved draft and validation actions
@@ -83,13 +89,16 @@ External systems such as FreeSWITCH, browsers, AI agents, and workflow engines i
 
 ### 5.7 FreeSWITCH Adapter Layer
 
+- Go runtime agent coordinating FreeSWITCH integration
 - Renders active state into FreeSWITCH-consumable formats
 - Handles event and CDR ingestion
+- Delegates in-switch call helper logic to Lua where needed
 - Shields the domain core from switch-specific runtime details
 
 ### 5.8 FreeSWITCH Runtime
 
 - Executes SIP and media handling
+- Executes Lua call helper scripts inside the FreeSWITCH boundary
 - Consumes generated configuration state
 - Produces events and call execution outcomes
 
@@ -115,9 +124,11 @@ External systems such as FreeSWITCH, browsers, AI agents, and workflow engines i
 ### 7.1 Minimum MVP Deployment
 
 - Web UI
-- Control plane backend
-- MCP server
+- Node.js / TypeScript control plane backend
+- TypeScript MCP server
 - PostgreSQL
+- n8n / webhook integration surface
+- Go FreeSWITCH runtime agent
 - FreeSWITCH
 
 These may run as separate services or a small number of deployable units depending on implementation maturity.
@@ -170,12 +181,14 @@ Each boundary requires authentication, authorization, input validation, and oper
 
 ## 13. Technology Direction
 
-- Frontend: React
-- Backend: Node.js with TypeScript
+- Frontend: React + TypeScript
+- Main API / Control Plane: Node.js + TypeScript
 - Database: PostgreSQL
+- Workflow: n8n + Webhooks
+- AI: MCP server in TypeScript
+- FreeSWITCH Runtime Agent: Go
+- FreeSWITCH Call Helper: Lua
 - Telecom runtime: FreeSWITCH
-- Workflow target: n8n
-- AI integration surface: MCP
 
 ## 14. Architecture Decisions To Track
 

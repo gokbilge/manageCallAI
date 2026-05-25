@@ -214,9 +214,12 @@ This creates steep onboarding cost, unsafe automation surfaces, weak change mana
 
 - A working FreeSWITCH deployment is available for runtime integration and testing.
 - PostgreSQL is available as the canonical persistence layer.
-- Browser-based administrators will use a React-based UI.
-- The backend control plane will use Node.js and TypeScript.
-- n8n is the initial workflow integration target.
+- Browser-based administrators will use a React + TypeScript UI.
+- The main control plane API will use Node.js + TypeScript.
+- The MCP server will use TypeScript.
+- n8n and webhooks will be the initial workflow integration model.
+- A Go runtime agent will handle FreeSWITCH-side coordination outside the switch boundary.
+- Lua will be used for in-switch call helper logic where needed.
 
 ## 8. MVP Acceptance Criteria
 

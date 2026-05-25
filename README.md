@@ -12,9 +12,10 @@ Instead of exposing SIP, RTP, FreeSWITCH XML, ESL commands, dialplans, and low-l
 - A visual IVR / call-flow builder
 - A Node.js / TypeScript control plane
 - A REST API
-- An MCP server for AI agents
+- A TypeScript MCP server for AI agents
 - n8n-compatible workflow automation
-- FreeSWITCH runtime integration
+- A Go FreeSWITCH runtime agent
+- Lua call helpers inside the FreeSWITCH boundary
 
 The goal is simple:
 
@@ -51,3 +52,13 @@ manageCallAI replaces low-level telecom administration with safe business-level 
 The project is in early design and development.
 
 The initial target is a safe IVR and routing control plane where an AI agent or workflow can create, validate, simulate, and publish a working IVR on FreeSWITCH without direct knowledge of FreeSWITCH internals.
+
+## Technology Stack
+
+- Frontend: React + TypeScript
+- Main API / Control Plane: Node.js + TypeScript
+- Database: PostgreSQL
+- Workflow: n8n + Webhooks
+- AI: MCP server in TypeScript
+- FreeSWITCH Runtime Agent: Go
+- FreeSWITCH Call Helper: Lua

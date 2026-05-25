@@ -18,6 +18,10 @@ It translates the product and architectural intent into implementable software s
 
 ### 3.1 Admin UI
 
+Implementation direction:
+
+- React + TypeScript
+
 Responsibilities:
 
 - Present operator workflows for extension, route, prompt, and IVR management
@@ -26,6 +30,10 @@ Responsibilities:
 - Surface audit and call-event visibility
 
 ### 3.2 Control Plane API
+
+Implementation direction:
+
+- Node.js + TypeScript
 
 Responsibilities:
 
@@ -55,6 +63,11 @@ Responsibilities:
 
 ### 3.5 FreeSWITCH Adapter Layer
 
+Implementation direction:
+
+- Go runtime agent
+- Lua helper scripts inside FreeSWITCH where needed
+
 Responsibilities:
 
 - Translate active published state into FreeSWITCH-compatible runtime artifacts
@@ -63,6 +76,10 @@ Responsibilities:
 
 ### 3.6 MCP Server
 
+Implementation direction:
+
+- TypeScript
+
 Responsibilities:
 
 - Expose safe tools for AI agents
@@ -70,6 +87,10 @@ Responsibilities:
 - Marshal MCP requests into domain service operations
 
 ### 3.7 Workflow Integration Layer
+
+Implementation direction:
+
+- n8n + Webhooks
 
 Responsibilities:
 

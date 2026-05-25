@@ -118,8 +118,11 @@ Humans / AI Agents / Workflows
    PostgreSQL Desired State + Audit
               |
               v
-    FreeSWITCH Adapter / Renderer
-   mod_xml_curl + ESL + Lua helpers
+    Go Runtime Agent / Renderer
+   mod_xml_curl + ESL coordination
+              |
+              v
+      Lua Call Helpers / Scripts
               |
               v
          FreeSWITCH Runtime
@@ -131,6 +134,10 @@ Humans / AI Agents / Workflows
 ### 8.1 React Admin UI
 
 The web UI is the operator-facing management console.
+
+Implementation direction:
+
+- React + TypeScript
 
 Responsibilities:
 
@@ -145,6 +152,10 @@ Responsibilities:
 ### 8.2 Control Plane API
 
 The control plane API is the central application layer and system boundary.
+
+Implementation direction:
+
+- Node.js + TypeScript
 
 Responsibilities:
 
@@ -163,6 +174,10 @@ The API should be treated as the authoritative backend contract for first-party 
 
 The MCP server exposes safe tools for AI agents.
 
+Implementation direction:
+
+- TypeScript
+
 Responsibilities:
 
 - Read-only visibility into telecom objects
@@ -180,6 +195,10 @@ Constraints:
 ### 8.4 Workflow Integration Layer
 
 The workflow layer initially targets n8n compatibility through webhooks and API endpoints.
+
+Implementation direction:
+
+- n8n + Webhooks
 
 Responsibilities:
 
@@ -204,11 +223,16 @@ Responsibilities:
 
 This layer translates desired state into runtime behavior that FreeSWITCH can consume.
 
+Implementation direction:
+
+- Go runtime agent outside FreeSWITCH
+- Lua call helper scripts inside the FreeSWITCH boundary
+
 Likely mechanisms:
 
 - `mod_xml_curl` for dynamic dialplan and directory generation
 - ESL consumers for event ingestion and runtime actions
-- Lua or other helper scripts when needed inside the FreeSWITCH boundary
+- Lua helper scripts when needed inside the FreeSWITCH boundary
 
 Responsibilities:
 
@@ -224,6 +248,7 @@ FreeSWITCH remains responsible for:
 - RTP/media handling
 - Real-time call execution
 - Runtime telecom primitives
+- Executing Lua call helper logic inside the switch boundary
 
 ## 9. Domain Model
 
@@ -423,7 +448,17 @@ Suggested future supporting docs:
 - `docs/api/`
 - `docs/examples/`
 
-## 18. Roadmap
+## 18. Technology Direction
+
+- Frontend: React + TypeScript
+- Main API / Control Plane: Node.js + TypeScript
+- Database: PostgreSQL
+- Workflow: n8n + Webhooks
+- AI: MCP server in TypeScript
+- FreeSWITCH Runtime Agent: Go
+- FreeSWITCH Call Helper: Lua
+
+## 19. Roadmap
 
 ### Milestone 1: FreeSWITCH Control Plane
 
@@ -466,7 +501,7 @@ Suggested future supporting docs:
 - HA-ready FreeSWITCH support
 - Monitoring and alerting
 
-## 19. Open Questions
+## 20. Open Questions
 
 These are not resolved by the current design and should be tracked explicitly as decisions:
 
@@ -478,7 +513,7 @@ These are not resolved by the current design and should be tracked explicitly as
 - Approval workflow model for human-in-the-loop publishing
 - Event ingestion and retention policy
 
-## 20. Change Control
+## 21. Change Control
 
 This document should change when the architecture changes, not after.
 
