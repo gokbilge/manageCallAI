@@ -12,6 +12,12 @@ Its job is to let humans, workflows, and AI agents manage PBX and IVR behavior t
 
 manageCallAI does not replace FreeSWITCH. It sits above FreeSWITCH as the management, orchestration, API, workflow, and safety layer.
 
+manageCallAI does not fork or replace FreeSWITCH.
+
+It runs on top of stock FreeSWITCH through supported extension interfaces: `mod_xml_curl`, `ESL` / `mod_event_socket`, and Lua helpers.
+
+This is much better for adoption because users can bring their existing FreeSWITCH installation.
+
 ## 2. Product Thesis
 
 Traditional PBX systems expose too much infrastructure detail to the operator.
@@ -103,30 +109,27 @@ UI, REST API, MCP tools, and workflow integrations should all operate on the sam
 
 FreeSWITCH remains the runtime media and signaling engine. manageCallAI owns orchestration, policy, visibility, and safe abstraction.
 
+### 6.8 Stock FreeSWITCH First
+
+The platform should use stock FreeSWITCH rather than a project-specific fork.
+
+Project-specific logic should live in external services and minimal integration helpers, not inside a custom FreeSWITCH distribution.
+
 ## 7. Canonical System Model
 
 At a high level:
 
 ```text
-Humans / AI Agents / Workflows
-              |
-              v
-      manageCallAI Control Plane
-   UI + REST API + MCP + Webhooks
-              |
-              v
-   PostgreSQL Desired State + Audit
-              |
-              v
-    Go Runtime Agent / Renderer
-   mod_xml_curl + ESL coordination
-              |
-              v
-      Lua Call Helpers / Scripts
-              |
-              v
-         FreeSWITCH Runtime
-          SIP / RTP / Calls
+manageCallAI API
+      |
+      v
+FreeSWITCH Adapter Service
+      |
+      v
+mod_xml_curl + ESL + Lua helpers
+      |
+      v
+Stock FreeSWITCH
 ```
 
 ## 8. Major Components
@@ -225,7 +228,7 @@ This layer translates desired state into runtime behavior that FreeSWITCH can co
 
 Implementation direction:
 
-- Go runtime agent outside FreeSWITCH
+- Go adapter service outside FreeSWITCH
 - Lua call helper scripts inside the FreeSWITCH boundary
 
 Likely mechanisms:
@@ -239,6 +242,18 @@ Responsibilities:
 - Render active state into FreeSWITCH-compatible responses
 - Enforce stable translation from business objects to telecom artifacts
 - Ingest events back into the control plane
+- Keep project-specific logic outside stock FreeSWITCH
+
+For MVP, Lua should be limited to:
+
+- `play_collect`
+- `play_prompt`
+- `transfer`
+- `hangup`
+- `set_variable`
+- call API for next step
+
+Do not put business logic in Lua.
 
 ### 8.7 FreeSWITCH Runtime
 
@@ -249,6 +264,19 @@ FreeSWITCH remains responsible for:
 - Real-time call execution
 - Runtime telecom primitives
 - Executing Lua call helper logic inside the switch boundary
+
+Example Lua action payload:
+
+```json
+{
+  "action": "play_collect",
+  "prompt": "main_menu_tr.wav",
+  "maxDigits": 1,
+  "timeoutMs": 5000
+}
+```
+
+Lua executes the requested action and reports the result back.
 
 ## 9. Domain Model
 

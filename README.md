@@ -14,8 +14,8 @@ Instead of exposing SIP, RTP, FreeSWITCH XML, ESL commands, dialplans, and low-l
 - A REST API
 - A TypeScript MCP server for AI agents
 - n8n-compatible workflow automation
-- A Go FreeSWITCH runtime agent
-- Lua call helpers inside the FreeSWITCH boundary
+- A Go FreeSWITCH adapter service
+- Minimal Lua helpers inside stock FreeSWITCH
 
 The goal is simple:
 
@@ -60,5 +60,35 @@ The initial target is a safe IVR and routing control plane where an AI agent or 
 - Database: PostgreSQL
 - Workflow: n8n + Webhooks
 - AI: MCP server in TypeScript
-- FreeSWITCH Runtime Agent: Go
+- FreeSWITCH Adapter Service: Go
 - FreeSWITCH Call Helper: Lua
+
+## FreeSWITCH Strategy
+
+manageCallAI does not fork or replace FreeSWITCH.
+
+It runs on top of stock FreeSWITCH through supported extension interfaces:
+`mod_xml_curl`, `ESL` / `mod_event_socket`, and Lua helpers.
+
+This is much better for adoption because users can bring their existing FreeSWITCH installation.
+
+My recommendation:
+
+1. Use stock FreeSWITCH.
+2. Do not fork.
+3. Build a FreeSWITCH adapter service.
+4. Build Lua helper scripts as thin executors only.
+5. Build an `xml_curl` config provider.
+6. Build an ESL event/control layer.
+7. Provide a Dockerized reference FreeSWITCH runtime.
+
+For MVP, use Lua only for:
+
+- `play_collect`
+- `play_prompt`
+- `transfer`
+- `hangup`
+- `set_variable`
+- call API for next step
+
+Do not put business logic in Lua.

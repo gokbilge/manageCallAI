@@ -65,7 +65,7 @@ Responsibilities:
 
 Implementation direction:
 
-- Go runtime agent
+- Go adapter service
 - Lua helper scripts inside FreeSWITCH where needed
 
 Responsibilities:
@@ -73,6 +73,18 @@ Responsibilities:
 - Translate active published state into FreeSWITCH-compatible runtime artifacts
 - Ingest switch events and CDRs
 - Keep adapter-specific logic isolated from the core domain model
+- Keep project-specific logic outside stock FreeSWITCH
+
+For MVP, Lua should act only as a thin command executor for:
+
+- `play_collect`
+- `play_prompt`
+- `transfer`
+- `hangup`
+- `set_variable`
+- call API for next step
+
+It should not contain business logic.
 
 ### 3.6 MCP Server
 

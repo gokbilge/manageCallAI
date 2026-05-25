@@ -206,6 +206,7 @@ This creates steep onboarding cost, unsafe automation surfaces, weak change mana
 ## 6. Constraints
 
 - C-1: FreeSWITCH remains the telecom runtime and must not be replaced by the control plane.
+- C-1A: The platform shall use stock FreeSWITCH rather than a project-specific fork.
 - C-2: Desired state must live in PostgreSQL or an equivalent canonical application data store.
 - C-3: Low-level switch internals must not become the dominant public interface model.
 - C-4: MCP must remain narrower and safer than the REST API.
@@ -218,8 +219,11 @@ This creates steep onboarding cost, unsafe automation surfaces, weak change mana
 - The main control plane API will use Node.js + TypeScript.
 - The MCP server will use TypeScript.
 - n8n and webhooks will be the initial workflow integration model.
-- A Go runtime agent will handle FreeSWITCH-side coordination outside the switch boundary.
+- A Go adapter service will handle FreeSWITCH-side coordination outside the switch boundary.
 - Lua will be used for in-switch call helper logic where needed.
+- FreeSWITCH will remain stock aside from minimal integration configuration and helper entrypoints.
+- Supported extension interfaces will include `mod_xml_curl`, `ESL` / `mod_event_socket`, and Lua helpers.
+- Lua will be limited to thin action execution rather than business logic.
 
 ## 8. MVP Acceptance Criteria
 

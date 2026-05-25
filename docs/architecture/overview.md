@@ -17,25 +17,16 @@ It defines the runtime topology, major components, data boundaries, integration 
 ## 3. High-Level Architecture
 
 ```text
-Humans / AI Agents / Workflows
-              |
-              v
-      manageCallAI Control Plane
-   UI + REST API + MCP + Webhooks
-              |
-              v
-   PostgreSQL Desired State + Audit
-              |
-              v
-    Go FreeSWITCH Runtime Agent
-   mod_xml_curl + ESL coordination
-              |
-              v
-     Lua Call Helpers / Scripts
-              |
-              v
-         FreeSWITCH Runtime
-          SIP / RTP / Calls
+manageCallAI API
+      |
+      v
+FreeSWITCH Adapter Service
+      |
+      v
+mod_xml_curl + ESL + Lua helpers
+      |
+      v
+Stock FreeSWITCH
 ```
 
 ## 4. Architectural Style
@@ -45,6 +36,8 @@ The system follows a layered control-plane architecture with explicit integratio
 Core business logic owns intent, lifecycle, validation, and publication.
 
 External systems such as FreeSWITCH, browsers, AI agents, and workflow engines interact with the control plane through constrained interfaces.
+
+manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSWITCH through supported extension interfaces and keeps project-specific logic outside the switch runtime.
 
 ## 5. Component View
 
@@ -89,11 +82,23 @@ External systems such as FreeSWITCH, browsers, AI agents, and workflow engines i
 
 ### 5.7 FreeSWITCH Adapter Layer
 
-- Go runtime agent coordinating FreeSWITCH integration
+- Go adapter service coordinating FreeSWITCH integration
 - Renders active state into FreeSWITCH-consumable formats
 - Handles event and CDR ingestion
 - Delegates in-switch call helper logic to Lua where needed
 - Shields the domain core from switch-specific runtime details
+- Keeps project-specific logic outside stock FreeSWITCH
+
+For MVP, Lua should be limited to:
+
+- `play_collect`
+- `play_prompt`
+- `transfer`
+- `hangup`
+- `set_variable`
+- call API for next step
+
+Lua should not contain business logic.
 
 ### 5.8 FreeSWITCH Runtime
 
@@ -101,6 +106,20 @@ External systems such as FreeSWITCH, browsers, AI agents, and workflow engines i
 - Executes Lua call helper scripts inside the FreeSWITCH boundary
 - Consumes generated configuration state
 - Produces events and call execution outcomes
+- Remains otherwise stock FreeSWITCH
+
+Example Lua action payload:
+
+```json
+{
+  "action": "play_collect",
+  "prompt": "main_menu_tr.wav",
+  "maxDigits": 1,
+  "timeoutMs": 5000
+}
+```
+
+Lua executes the requested action and reports the result back to the adapter or API layer.
 
 ## 6. Data Flow View
 
@@ -110,7 +129,7 @@ External systems such as FreeSWITCH, browsers, AI agents, and workflow engines i
 2. The control plane validates and stores desired state in PostgreSQL.
 3. Validation and simulation may execute before publication.
 4. Publish activates a version.
-5. The adapter layer exposes the active version to FreeSWITCH.
+5. The adapter layer exposes the active version to stock FreeSWITCH through `mod_xml_curl`, `ESL` / `mod_event_socket`, and minimal Lua helpers.
 
 ### 6.2 Runtime Observation Flow
 
