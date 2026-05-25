@@ -402,24 +402,24 @@ That means:
 
 To keep GitHub documentation clean, the repository should follow this rule:
 
-- `README.MD` explains the project and links to canonical docs
-- `docs/ProjectSourceOfTruth.md` is the main architecture and design reference
+- `README.md` explains the project and links to canonical docs
+- `docs/architecture/source-of-truth.md` is the main architecture and design reference
 - Future ADRs should capture explicit deviations or decisions not already frozen here
 
 Suggested future supporting docs:
 
 - `docs/adr/`
-- `docs/adr/README.MD`
+- `docs/adr/README.md`
 - `CONTRIBUTING.md`
 - `SECURITY.md`
 - `LICENSE`
-- `docs/README.MD`
-- `docs/SRS.md`
-- `docs/DomainModel.md`
-- `docs/API.md`
-- `docs/DatabaseSchema.md`
-- `docs/SDD.md`
-- `docs/Architecture.md`
+- `docs/README.md`
+- `docs/requirements/srs.md`
+- `docs/design/domain-model.md`
+- `docs/api/rest-api.md`
+- `docs/design/database-schema.md`
+- `docs/design/software-design.md`
+- `docs/architecture/overview.md`
 - `docs/api/`
 - `docs/examples/`
 

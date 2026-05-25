@@ -2,7 +2,7 @@
 
 This directory contains Architecture Decision Records for `manageCallAI`.
 
-ADRs capture decisions that are important enough to preserve beyond informal discussion. They complement, but do not replace, the canonical design direction in `docs/ProjectSourceOfTruth.md`.
+ADRs capture decisions that are important enough to preserve beyond informal discussion. They complement, but do not replace, the canonical design direction in `docs/architecture/source-of-truth.md`.
 
 ## ADR Rules
 

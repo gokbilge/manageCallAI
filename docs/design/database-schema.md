@@ -149,11 +149,11 @@ The initial migration should create:
 
 - `db/migrations/0001_initial_schema.sql` is the canonical schema baseline
 - Future database changes should be added as new ordered migration files
-- `db/README.MD` documents the migration directory conventions
+- `db/README.md` documents the migration directory conventions
 
 ## 11. Related Files
 
-- [api/openapi.yaml](api/openapi.yaml)
-- [DomainModel.md](DomainModel.md)
-- [../db/README.MD](../db/README.MD)
-- [../db/migrations/0001_initial_schema.sql](../db/migrations/0001_initial_schema.sql)
+- [../api/openapi.yaml](../api/openapi.yaml)
+- [domain-model.md](domain-model.md)
+- [../../db/README.md](../../db/README.md)
+- [../../db/migrations/0001_initial_schema.sql](../../db/migrations/0001_initial_schema.sql)

@@ -187,6 +187,6 @@ Each boundary requires authentication, authorization, input validation, and oper
 
 ## 15. Relationship to Other Documents
 
-- `ProjectSourceOfTruth.md` defines canonical direction and boundaries
-- `SRS.md` defines what the system must do
-- `SDD.md` defines how the software is logically decomposed
+- `source-of-truth.md` defines canonical direction and boundaries
+- `../requirements/srs.md` defines what the system must do
+- `../design/software-design.md` defines how the software is logically decomposed

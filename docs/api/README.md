@@ -6,6 +6,7 @@ Current files:
 
 - [openapi.yaml](openapi.yaml)
 - [examples.md](examples.md)
+- [rest-api.md](rest-api.md)
 
 Suggested future contents:
 

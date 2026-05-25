@@ -4,40 +4,40 @@ This directory contains the primary project documentation for `manageCallAI`.
 
 ## Core Documents
 
-- [ProjectSourceOfTruth.md](ProjectSourceOfTruth.md)
+- [architecture/source-of-truth.md](architecture/source-of-truth.md)
   Canonical product thesis, scope boundaries, and high-level design intent.
 
-- [SRS.md](SRS.md)
+- [requirements/srs.md](requirements/srs.md)
   Software Requirements Specification covering functional requirements, non-functional requirements, constraints, assumptions, and acceptance criteria.
 
-- [DomainModel.md](DomainModel.md)
+- [design/domain-model.md](design/domain-model.md)
   Detailed business domain model covering entities, relationships, lifecycle states, and invariants.
 
-- [API.md](API.md)
+- [api/rest-api.md](api/rest-api.md)
   Initial REST API contract covering resources, lifecycle operations, payload shapes, and error handling.
 
-- [DatabaseSchema.md](DatabaseSchema.md)
+- [design/database-schema.md](design/database-schema.md)
   PostgreSQL schema direction covering relational mapping, versioning strategy, integrity rules, and the initial SQL DDL reference.
 
-- [SDD.md](SDD.md)
+- [design/software-design.md](design/software-design.md)
   Software Design Description covering modules, services, domain model responsibilities, workflows, interfaces, and design decisions.
 
-- [Architecture.md](Architecture.md)
+- [architecture/overview.md](architecture/overview.md)
   System architecture reference covering runtime topology, component boundaries, integration points, data flow, and deployment model.
 
-- [adr/README.MD](adr/README.MD)
+- [adr/README.md](adr/README.md)
   Architecture Decision Record index and foundational decisions.
 
 ## Historical Documents
 
-- [Initial.MD](Initial.MD)
+- [archive/initial-brainstorming.md](archive/initial-brainstorming.md)
   Early brainstorming notes retained for historical context.
 
-- [CoreArchitecture.MD](CoreArchitecture.MD)
+- [archive/core-architecture-sketch.md](archive/core-architecture-sketch.md)
   Superseded architecture sketch retained only as a placeholder for the earlier draft.
 
 ## Documentation Rules
 
-- `ProjectSourceOfTruth.md` remains the canonical direction-setting document.
-- `SRS.md`, `SDD.md`, and `Architecture.md` must stay aligned with the source-of-truth document.
+- `architecture/source-of-truth.md` remains the canonical direction-setting document.
+- `requirements/srs.md`, `design/software-design.md`, and `architecture/overview.md` must stay aligned with the source-of-truth document.
 - If implementation or design changes materially affect requirements or architecture, update the relevant document in the same pull request.

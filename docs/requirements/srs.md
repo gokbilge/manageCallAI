@@ -230,6 +230,6 @@ This creates steep onboarding cost, unsafe automation surfaces, weak change mana
 
 ## 9. Traceability Notes
 
-- `ProjectSourceOfTruth.md` defines product intent and architectural boundaries.
-- `Architecture.md` defines runtime structure and integration topology.
-- `SDD.md` defines the internal software decomposition and major design choices.
+- `../architecture/source-of-truth.md` defines product intent and architectural boundaries.
+- `../architecture/overview.md` defines runtime structure and integration topology.
+- `../design/software-design.md` defines the internal software decomposition and major design choices.

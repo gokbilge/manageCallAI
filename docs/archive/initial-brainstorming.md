@@ -1,4 +1,4 @@
-> Superseded by `docs/ProjectSourceOfTruth.md` as the canonical project reference.
+> Superseded by `docs/architecture/source-of-truth.md` as the canonical project reference.
 >
 > Keep this file only as an early brainstorming artifact unless its useful content is merged back into the source-of-truth document.
 

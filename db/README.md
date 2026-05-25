@@ -11,7 +11,7 @@ This directory contains the PostgreSQL schema baseline and future migrations for
 
 - Add schema changes as new ordered migration files.
 - Do not edit an already-applied migration in a real environment.
-- Keep `docs/DatabaseSchema.md` aligned with the migration history.
+- Keep `docs/design/database-schema.md` aligned with the migration history.
 
 ## Current Baseline
 

@@ -8,7 +8,7 @@ It focuses on business-level resources and lifecycle operations rather than low-
 
 Machine-readable contract:
 
-- [api/openapi.yaml](api/openapi.yaml)
+- [openapi.yaml](openapi.yaml)
 
 ## 2. API Design Principles
 
@@ -791,7 +791,7 @@ Suggested usage:
 
 ## 11. Relationship to Other Documents
 
-- `SRS.md` defines required behavior
-- `DomainModel.md` defines the underlying business entities
-- `SDD.md` defines the logical software decomposition
-- `Architecture.md` defines system boundaries and integration shape
+- `../requirements/srs.md` defines required behavior
+- `../design/domain-model.md` defines the underlying business entities
+- `../design/software-design.md` defines the logical software decomposition
+- `../architecture/overview.md` defines system boundaries and integration shape

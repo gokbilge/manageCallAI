@@ -34,4 +34,4 @@ FreeSWITCH remains the runtime media and signaling engine.
 
 ## Notes
 
-This decision is foundational for the current MVP and aligned with `docs/ProjectSourceOfTruth.md`.
+This decision is foundational for the current MVP and aligned with `docs/architecture/source-of-truth.md`.
