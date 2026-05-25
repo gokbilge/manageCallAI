@@ -126,4 +126,6 @@ AGPL-3.0 if you want improvements to hosted/SaaS versions to remain open.
 Apache-2.0 if you want maximum commercial adoption.
 MPL-2.0 if you want a balanced file-level copyleft model.
 
-Final license decision is pending.
+Current provisional license: Apache-2.0.
+
+This can be revisited later, but contributions made under the current license remain governed by the license in effect when they were contributed unless contributors explicitly agree to a change.

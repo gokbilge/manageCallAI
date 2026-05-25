@@ -462,7 +462,7 @@ Suggested future supporting docs:
 
 These are not resolved by the current design and should be tracked explicitly as decisions:
 
-- Final open-source license choice
+- Whether the provisional Apache-2.0 license should remain the long-term license
 - Exact multi-tenant model after MVP
 - Whether outbound calling policy is route-based, tenant-policy-based, or both
 - Prompt storage strategy
