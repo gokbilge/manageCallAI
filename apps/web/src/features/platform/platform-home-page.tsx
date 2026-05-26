@@ -3,12 +3,12 @@ import { PageHeader } from '@/components/layout/page-header';
 import { StatCard } from '@/components/data/stat-card';
 import { DataCard } from '@/components/data/data-card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { useRuntimeHealth } from '@/lib/runtime/service-health';
+import { usePlatformRuntimeHealth } from '@/lib/platform/platform-api';
 
 export function PlatformHomePage() {
-  const healthQuery = useRuntimeHealth();
+  const healthQuery = usePlatformRuntimeHealth();
   const services = healthQuery.data ?? [];
-  const healthyCount = services.filter((service) => service.status === 'healthy').length;
+  const healthyCount = services.filter((s) => s.status === 'healthy').length;
 
   return (
     <div className="space-y-6">
@@ -19,15 +19,24 @@ export function PlatformHomePage() {
       />
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard title="Current Tenant Context" value="1 active JWT tenant" icon={Building2} tone="platform" />
-        <StatCard title="Checked Services" value={`${healthyCount}/${services.length || 2} healthy`} icon={RadioTower} tone="platform" />
+        <StatCard
+          title="Checked Services"
+          value={`${healthyCount}/${services.length || 2} healthy`}
+          icon={RadioTower}
+          tone="platform"
+        />
         <StatCard title="Audit Coverage" value="100%" icon={ShieldCheck} tone="platform" />
       </div>
       <DataCard
         title="Live Platform Signals"
-        description="These cards are driven by actual reachable runtime surfaces instead of placeholder platform APIs."
+        description="Service health is fetched from the backend platform endpoint, which probes each service server-side."
       >
         {healthQuery.isLoading ? (
-          <p className="text-sm text-[var(--color-muted-fg)]">Checking API and worker health...</p>
+          <p className="text-sm text-[var(--color-muted-fg)]">Checking API and worker health…</p>
+        ) : healthQuery.error ? (
+          <p className="text-sm text-[var(--color-danger)]">
+            Could not fetch platform health. Ensure your account has platform operator access.
+          </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {services.map((service) => (
@@ -37,8 +46,8 @@ export function PlatformHomePage() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold">{service.name}</p>
-                    <p className="mt-1 text-xs font-mono text-[var(--color-muted-fg)]">{service.baseUrl}</p>
+                    <p className="text-sm font-semibold capitalize">{service.name}</p>
+                    <p className="mt-1 text-xs font-mono text-[var(--color-muted-fg)]">{service.url}</p>
                   </div>
                   <StatusBadge status={service.status === 'healthy' ? 'active' : 'warning'} />
                 </div>

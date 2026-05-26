@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -28,6 +29,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSession(readStoredSession());
   }, []);
 
+  const signOut = useCallback(() => {
+    persistSession(null);
+    setSession(null);
+  }, []);
+
+  // Clear session on any 401 dispatched by the API client
+  useEffect(() => {
+    window.addEventListener('managecallai:unauthorized', signOut);
+    return () => window.removeEventListener('managecallai:unauthorized', signOut);
+  }, [signOut]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
@@ -37,12 +49,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
         persistSession(next);
         setSession(next);
       },
-      signOut() {
-        persistSession(null);
-        setSession(null);
-      },
+      signOut,
     }),
-    [session],
+    [session, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

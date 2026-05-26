@@ -19,14 +19,14 @@ const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
-      { index: true, element: <Navigate to="/tenant/dashboard" replace /> },
-      { path: 'platform', element: <PlatformHomePage /> },
-      { path: 'platform/tenants', element: <PlatformTenantsPage /> },
-      { path: 'platform/runtime', element: <RuntimeHealthPage /> },
+      { index: true, element: <Navigate to="/tenant/extensions" replace /> },
       {
         element: <RequireSession />,
         children: [
-          { path: 'tenant', element: <Navigate to="/tenant/dashboard" replace /> },
+          { path: 'platform', element: <PlatformHomePage /> },
+          { path: 'platform/tenants', element: <PlatformTenantsPage /> },
+          { path: 'platform/runtime', element: <RuntimeHealthPage /> },
+          { path: 'tenant', element: <Navigate to="/tenant/extensions" replace /> },
           { path: 'tenant/dashboard', element: <TenantDashboardPage /> },
           { path: 'tenant/extensions', element: <ExtensionsPage /> },
           { path: 'tenant/calls', element: <CallsPage /> },

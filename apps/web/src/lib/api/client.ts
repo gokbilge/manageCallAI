@@ -48,7 +48,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       // ignore JSON parse failures for non-JSON error bodies
     }
 
-    throw new ApiError(message, response.status);
+    const apiError = new ApiError(message, response.status);
+
+    if (response.status === 401) {
+      window.dispatchEvent(new CustomEvent('managecallai:unauthorized'));
+    }
+
+    throw apiError;
   }
 
   return (await response.json()) as T;

@@ -37,6 +37,20 @@ export function decodeJwtClaims(token: string): SessionClaims {
   };
 }
 
+function isJwtExpired(token: string): boolean {
+  try {
+    const [, payload] = token.split('.');
+    if (!payload) return true;
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+    const { exp } = JSON.parse(atob(padded)) as { exp?: number };
+    if (exp === undefined) return false;
+    return Date.now() / 1000 > exp;
+  } catch {
+    return true;
+  }
+}
+
 export function createSession(input: {
   token: string;
   tenantSlug?: string;
@@ -49,7 +63,7 @@ export function createSession(input: {
     tenantSlug: input.tenantSlug,
     tenantName: input.tenantName,
     displayName: input.displayName,
-    workspaces: ['tenant'],
+    workspaces: ['tenant', 'platform'],
   };
 }
 
@@ -62,6 +76,11 @@ export function readStoredSession(): SessionState | null {
   try {
     const parsed = JSON.parse(raw) as SessionState;
     if (!parsed.token) {
+      return null;
+    }
+
+    if (isJwtExpired(parsed.token)) {
+      window.localStorage.removeItem(STORAGE_KEY);
       return null;
     }
 

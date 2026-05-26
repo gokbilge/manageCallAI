@@ -1,4 +1,5 @@
-import { Bell, Building2, ChevronDown, LogOut, Shield } from 'lucide-react';
+import { Bell, ChevronRight, LogOut, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { WorkspaceBadge } from '@/components/ui/workspace-badge';
 import type { Workspace } from '@/lib/routes/workspace';
 import { useAuth } from '@/lib/auth/use-auth';
@@ -10,6 +11,20 @@ type TopBarProps = {
 
 export function TopBar({ workspace }: TopBarProps) {
   const { session, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  function switchWorkspace() {
+    if (workspace === 'platform') {
+      navigate('/tenant/extensions');
+    } else {
+      navigate('/platform');
+    }
+  }
+
+  const switchLabel =
+    workspace === 'platform'
+      ? `${session?.tenantName ?? session?.tenantSlug ?? 'Tenant'} workspace`
+      : 'Platform workspace';
 
   return (
     <header className="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 backdrop-blur">
@@ -25,11 +40,16 @@ export function TopBar({ workspace }: TopBarProps) {
         </div>
         <div className="flex items-center gap-3">
           <WorkspaceBadge workspace={workspace} />
-          <button className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-sm">
-            <Building2 className="size-4" aria-hidden="true" />
-            {session?.tenantName ?? session?.tenantSlug ?? 'Workspace'}
-            <ChevronDown className="size-4" aria-hidden="true" />
-          </button>
+          {session && (
+            <button
+              onClick={switchWorkspace}
+              className="flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-sm transition-colors hover:bg-[var(--color-border)]"
+              title={`Switch to ${switchLabel}`}
+            >
+              <span className="text-[var(--color-muted-fg)]">{switchLabel}</span>
+              <ChevronRight className="size-3.5 text-[var(--color-muted-fg)]" aria-hidden="true" />
+            </button>
+          )}
           <button
             aria-label="Notifications"
             className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-2"
