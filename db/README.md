@@ -16,6 +16,9 @@ This directory contains the PostgreSQL schema baseline and future migrations for
 ## Current Baseline
 
 - [migrations/0001_initial_schema.sql](migrations/0001_initial_schema.sql)
+- [migrations/0002_add_user_password.sql](migrations/0002_add_user_password.sql)
+
+`0001_initial_schema.sql` now includes the tenant directory-domain and per-extension SIP credential columns required by the runtime directory flow.
 
 ## Running Migrations
 

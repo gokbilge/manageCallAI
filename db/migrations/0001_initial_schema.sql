@@ -4,9 +4,11 @@ CREATE TABLE tenants (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name text NOT NULL,
     slug text NOT NULL UNIQUE,
+    directory_domain text NOT NULL,
     status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
     created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (directory_domain)
 );
 
 CREATE TABLE users (
@@ -63,11 +65,14 @@ CREATE TABLE extensions (
     extension_number text NOT NULL,
     display_name text NOT NULL,
     status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+    sip_username text NOT NULL,
+    sip_password text NOT NULL,
     default_destination_type text CHECK (default_destination_type IN ('flow', 'extension', 'user', 'queue')),
     default_destination_id uuid,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (tenant_id, extension_number)
+    UNIQUE (tenant_id, extension_number),
+    UNIQUE (tenant_id, sip_username)
 );
 
 CREATE TABLE sip_trunks (
