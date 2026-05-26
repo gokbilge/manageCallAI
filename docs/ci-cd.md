@@ -23,4 +23,5 @@
 
 - The API CI workflow sets explicit runtime and SIP secret environment variables so integration tests do not depend on local `.env` files.
 - The Docker workflow uses GitHub Actions cache for Buildx layers.
-- The FreeSWITCH reference Dockerfile is kept in the repo, but it is not published by the GHCR workflow yet because the current upstream `signalwire/freeswitch:latest` base image was not publicly pullable during verification.
+- The FreeSWITCH reference Dockerfile now builds stock FreeSWITCH from the public SignalWire source repository and pins `v1.10.12` by default.
+- The FreeSWITCH image is still not published by the GHCR workflow; publish it only after the full live SIP smoke test is automated.

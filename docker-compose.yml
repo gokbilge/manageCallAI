@@ -29,14 +29,15 @@ services:
       - postgres
 
   freeswitch:
-    image: signalwire/freeswitch:latest
+    build:
+      context: ./freeswitch
+      dockerfile: docker/Dockerfile
+      args:
+        FREESWITCH_VERSION: ${FREESWITCH_VERSION:-v1.10.12}
     ports:
       - "5060:5060/udp"
       - "5080:5080/tcp"
       - "8021:8021/tcp"
-    volumes:
-      - ./freeswitch/conf:/etc/freeswitch
-      - ./freeswitch/lua:/usr/share/freeswitch/scripts
 
 volumes:
   postgres_data:
