@@ -2,6 +2,7 @@ node_modules/
 .env
 .pnpm-store/
 dist/
+.runlogs/
 *.exe
 
 # Local AI context files — not for version control
