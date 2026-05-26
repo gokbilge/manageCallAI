@@ -22,4 +22,10 @@ export const config = {
   runtimeApiToken: required('RUNTIME_API_TOKEN'),
   sipSecretMasterKey: required('SIP_SECRET_MASTER_KEY'),
   sipSecretKeyId: required('SIP_SECRET_KEY_ID'),
+  platformOperatorEmails: (process.env['PLATFORM_OPERATOR_EMAILS'] ?? '')
+    .split(',')
+    .map((e) => e.trim())
+    .filter(Boolean),
+  platformApiHealthUrl: process.env['PLATFORM_API_HEALTH_URL'] ?? 'http://localhost:3000/health',
+  platformWorkerHealthUrl: process.env['PLATFORM_WORKER_HEALTH_URL'] ?? 'http://localhost:3400/health',
 } as const;

@@ -8,6 +8,7 @@ import { authController } from './modules/auth/auth.controller.js';
 import { callEventController } from './modules/call-events/call-event.controller.js';
 import { extensionController } from './modules/extensions/extension.controller.js';
 import { freeswitchController } from './modules/freeswitch/freeswitch.controller.js';
+import { platformController } from './modules/platform/platform.controller.js';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -26,6 +27,7 @@ export function buildApp() {
   app.register(extensionController, { prefix: '/api/v1/extensions' });
   app.register(callEventController, { prefix: '/api/v1/call-events' });
   app.register(freeswitchController, { prefix: '/api/v1/freeswitch' });
+  app.register(platformController, { prefix: '/api/v1/platform' });
 
   return app;
 }
