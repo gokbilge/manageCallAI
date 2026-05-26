@@ -143,3 +143,19 @@ Expected result for both:
 ```text
 true
 ```
+
+## 8. Automated Smoke Script
+
+The repo also includes a PowerShell smoke script for the current MVP path:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mvp-smoke.ps1
+```
+
+It performs:
+
+1. tenant registration
+2. extension creation
+3. FreeSWITCH directory lookup
+4. test call-event ingestion
+5. call-event listing verification

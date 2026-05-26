@@ -36,6 +36,7 @@ The main project design and architecture reference lives here:
 - [docs/architecture/overview.md](docs/architecture/overview.md)
 - [docs/first-local-demo.md](docs/first-local-demo.md)
 - [docs/development/first-vertical-slice.md](docs/development/first-vertical-slice.md)
+- [packages/sdk/README.md](packages/sdk/README.md)
 
 If other documents drift, the source-of-truth document is the canonical reference until updated.
 
@@ -110,6 +111,12 @@ Step 1 is now defined as:
 - start PostgreSQL with `pnpm db:up`
 - apply migrations with `pnpm db:migrate`
 - verify status with `pnpm db:status`
+
+The current local MVP smoke path can also be exercised with:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mvp-smoke.ps1
+```
 
 For MVP, use Lua only for:
 
