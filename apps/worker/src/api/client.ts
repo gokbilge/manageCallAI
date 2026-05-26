@@ -21,7 +21,8 @@ export async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    const body = await response.text();
+    throw new Error(`API request failed ${response.status}: ${body}`);
   }
 
   return (await response.json()) as T;

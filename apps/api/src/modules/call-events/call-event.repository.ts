@@ -6,7 +6,8 @@ export class CallEventRepository {
 
   async listByTenant(tenantId: string): Promise<CallEvent[]> {
     const result = await this.db.query<CallEvent>(
-      `SELECT * FROM call_events
+      `SELECT id, tenant_id, call_id, event_type, event_time, source, payload, ingested_at
+       FROM call_events
        WHERE tenant_id = $1
        ORDER BY event_time DESC, ingested_at DESC`,
       [tenantId],
@@ -23,7 +24,7 @@ export class CallEventRepository {
       `INSERT INTO call_events
          (tenant_id, call_id, event_type, event_time, source, payload)
        VALUES ($1, $2, $3, COALESCE($4::timestamptz, NOW()), $5, $6::jsonb)
-       RETURNING *`,
+       RETURNING id, tenant_id, call_id, event_type, event_time, source, payload, ingested_at`,
       [
         input.tenant_id,
         input.call_id,

@@ -18,12 +18,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: 'list_extensions',
-      description: 'List extensions for a tenant.',
+      description: 'List extensions for the authenticated tenant.',
       inputSchema: {
         type: 'object',
-        required: ['tenant_id', 'access_token'],
+        required: ['access_token'],
         properties: {
-          tenant_id: { type: 'string' },
           access_token: { type: 'string' },
         },
       },
@@ -60,16 +59,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   switch (request.params.name) {
     case 'list_extensions': {
-      const tenantId = args['tenant_id'];
       const accessToken = args['access_token'];
-      if (!tenantId || !accessToken) {
-        throw new Error('tenant_id and access_token are required');
+      if (!accessToken) {
+        throw new Error('access_token is required');
       }
 
-      const data = await fetchJson<ApiCollection<unknown>>(
-        `/api/v1/extensions?tenant_id=${encodeURIComponent(tenantId)}`,
-        accessToken,
-      );
+      const data = await fetchJson<ApiCollection<unknown>>('/api/v1/extensions', accessToken);
       return { content: [{ type: 'text', text: JSON.stringify(data.data, null, 2) }] };
     }
     case 'get_extension': {

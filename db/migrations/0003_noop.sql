@@ -1,0 +1,9 @@
+-- This migration is intentionally empty.
+--
+-- The columns it would have added (sip_username, sip_password_ciphertext,
+-- sip_password_key_id on extensions; directory_domain on tenants) were
+-- squashed into 0001_initial_schema.sql at commit 217c41c so that fresh
+-- installs never required a plaintext sip_password column.
+--
+-- Existing installations that ran a pre-squash 0001 are handled by
+-- 0004_encrypt_sip_passwords.sql. The gap here is intentional and safe.

@@ -2,9 +2,9 @@ import type { FastifyInstance } from 'fastify';
 import { apiRequest } from '../../api/client.js';
 
 type ExtensionCreateBody = {
-  tenant_id: string;
   extension_number: string;
   display_name: string;
+  sip_password: string;
   default_destination_type?: string;
   default_destination_id?: string;
 };

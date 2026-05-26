@@ -25,6 +25,35 @@ Go adapter service for `manageCallAI` FreeSWITCH runtime integration.
 go run .
 ```
 
+## Tenant scope
+
+Each running agent instance is bound to a single tenant via `MANAGECALLAI_TENANT_ID`.
+The agent stamps that value onto every forwarded event; there is no per-event tenant
+override.
+
+**Multi-tenant deployments must run one agent container per tenant**, each with its own
+`MANAGECALLAI_TENANT_ID` value. A shared agent instance cannot serve multiple tenants.
+
+Example docker-compose excerpt for two tenants:
+
+```yaml
+freeswitch-agent-tenant-a:
+  image: managecallai/freeswitch-agent
+  environment:
+    MANAGECALLAI_TENANT_ID: <tenant-a-uuid>
+    RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN}
+    API_BASE_URL: ${API_BASE_URL}
+    # ... FreeSWITCH ESL vars
+
+freeswitch-agent-tenant-b:
+  image: managecallai/freeswitch-agent
+  environment:
+    MANAGECALLAI_TENANT_ID: <tenant-b-uuid>
+    RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN}
+    API_BASE_URL: ${API_BASE_URL}
+    # ... FreeSWITCH ESL vars
+```
+
 ## Notes
 
 - The agent authenticates to ESL, subscribes to MVP events, normalizes them, and forwards them to the API.

@@ -44,7 +44,7 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
             sip_username: { type: 'string', minLength: 1, maxLength: 64 },
             sip_password: { type: 'string', minLength: 8, maxLength: 128 },
             default_destination_type: { type: 'string', enum: [...DESTINATION_TYPES] },
-            default_destination_id: { type: 'string' },
+            default_destination_id: { type: 'string', format: 'uuid' },
           },
         },
       },
@@ -101,7 +101,7 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
             default_destination_type: {
               anyOf: [{ type: 'string', enum: [...DESTINATION_TYPES] }, { type: 'null' }],
             },
-            default_destination_id: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            default_destination_id: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
           },
         },
       },
