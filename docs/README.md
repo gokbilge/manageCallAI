@@ -31,6 +31,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [first-local-demo.md](first-local-demo.md)
   Short local walkthrough for bringing up PostgreSQL and the API, registering a tenant, creating an extension, and calling the FreeSWITCH directory endpoint.
 
+- [development/first-vertical-slice.md](development/first-vertical-slice.md)
+  Fresh-checkout smoke test for the MVP path: tenant registration, encrypted SIP credential storage, and FreeSWITCH directory XML lookup.
+
 - [design/database-schema.md](design/database-schema.md)
   PostgreSQL schema direction covering relational mapping, versioning strategy, integrity rules, and the initial SQL DDL reference.
 

@@ -4,6 +4,10 @@
 -- base64(iv).base64(authTag).base64(ciphertext) in sip_password_ciphertext.
 -- sip_password_key_id records which environment key was used, enabling future
 -- key rotation without re-encrypting in SQL.
+--
+-- Fresh installs already get the encrypted columns from 0001_initial_schema.sql.
+-- This migration exists to upgrade older local databases that still have the
+-- plaintext sip_password column.
 
 ALTER TABLE extensions
   ADD COLUMN IF NOT EXISTS sip_password_ciphertext TEXT,

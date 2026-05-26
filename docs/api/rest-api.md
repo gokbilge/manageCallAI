@@ -54,18 +54,23 @@ For multi-tenant mode, tenant context should be resolved from authentication con
 
 ### 3.5 Common Response Metadata
 
-Suggested envelope for collection responses:
+Current MVP implementation standardizes on a simple `data` envelope:
 
 ```json
 {
-  "items": [],
-  "page": 1,
-  "pageSize": 50,
-  "total": 0
+  "data": []
 }
 ```
 
-Single-resource responses may return the resource directly unless the implementation standardizes on envelopes.
+For single-resource responses:
+
+```json
+{
+  "data": {
+    "id": "..."
+  }
+}
+```
 
 ## 4. Resource Overview
 
@@ -141,19 +146,17 @@ Example response:
 
 ```json
 {
-  "items": [
+  "data": [
     {
       "id": "ext_001",
-      "extensionNumber": "1001",
-      "displayName": "Sales Front Desk",
+      "extension_number": "1001",
+      "display_name": "Sales Front Desk",
       "status": "active",
-      "defaultDestinationType": "flow",
-      "defaultDestinationId": "flow_main"
+      "sip_username": "1001",
+      "default_destination_type": "flow",
+      "default_destination_id": "flow_main"
     }
-  ],
-  "page": 1,
-  "pageSize": 50,
-  "total": 1
+  ]
 }
 ```
 
@@ -185,10 +188,44 @@ in any API response. The FreeSWITCH directory endpoint decrypts it only when gen
 
 Future direction: replace the symmetric master key with an external secret store (Vault, AWS Secrets Manager).
 
+Example response:
+
+```json
+{
+  "data": {
+    "id": "ext_001",
+    "tenant_id": "tenant_001",
+    "extension_number": "1001",
+    "display_name": "Sales Front Desk",
+    "status": "active",
+    "sip_username": "1001",
+    "default_destination_type": "flow",
+    "default_destination_id": "flow_main"
+  }
+}
+```
+
 #### Get Extension
 
 ```http
 GET /api/v1/extensions/{extensionId}
+```
+
+Example response:
+
+```json
+{
+  "data": {
+    "id": "ext_001",
+    "tenant_id": "tenant_001",
+    "extension_number": "1001",
+    "display_name": "Sales Front Desk",
+    "status": "active",
+    "sip_username": "1001",
+    "default_destination_type": "flow",
+    "default_destination_id": "flow_main"
+  }
+}
 ```
 
 #### Update Extension
@@ -197,11 +234,15 @@ GET /api/v1/extensions/{extensionId}
 PATCH /api/v1/extensions/{extensionId}
 ```
 
+Response shape matches create/get: `{ "data": { ...extension } }`.
+
 #### Deactivate Extension
 
 ```http
 POST /api/v1/extensions/{extensionId}/deactivate
 ```
+
+Response shape matches create/get: `{ "data": { ...extension } }`.
 
 ### 6.2 Trunks
 
@@ -706,6 +747,27 @@ GET /api/v1/audit-events/{auditEventId}
 
 ```http
 GET /api/v1/call-events
+```
+
+Query parameters:
+
+- `tenant_id` (optional, but must match the tenant in the JWT)
+
+Current MVP implementation returns:
+
+```json
+{
+  "data": [
+    {
+      "id": "evt_001",
+      "call_id": "call-1",
+      "event_type": "channel_create",
+      "event_time": "2026-05-26T00:00:00.000Z",
+      "source": "freeswitch-agent",
+      "payload": {}
+    }
+  ]
+}
 ```
 
 Query parameters:

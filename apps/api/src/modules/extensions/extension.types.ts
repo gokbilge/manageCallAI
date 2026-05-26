@@ -14,7 +14,7 @@ export interface Extension {
   updated_at: Date;
 }
 
-// What the HTTP client sends on POST — tenant_id comes from the JWT, not the body.
+// What the HTTP client sends on POST - tenant_id comes from the JWT, not the body.
 export interface CreateExtensionBody {
   extension_number: string;
   display_name: string;
@@ -24,7 +24,7 @@ export interface CreateExtensionBody {
   default_destination_id?: string;
 }
 
-// Full service input — controller adds tenant_id from JWT.
+// Full service input - controller adds tenant_id from JWT.
 export type CreateExtensionInput = CreateExtensionBody & { tenant_id: string };
 
 // What the service passes to the repository after encrypting the password.
@@ -39,7 +39,7 @@ export interface CreateExtensionRepoInput {
   default_destination_id?: string;
 }
 
-// What the HTTP client sends on PATCH — sip_password is plaintext; service encrypts.
+// What the HTTP client sends on PATCH - sip_password is plaintext; service encrypts.
 export interface UpdateExtensionInput {
   extension_number?: string;
   display_name?: string;

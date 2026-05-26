@@ -35,6 +35,7 @@ The main project design and architecture reference lives here:
 - [docs/design/software-design.md](docs/design/software-design.md)
 - [docs/architecture/overview.md](docs/architecture/overview.md)
 - [docs/first-local-demo.md](docs/first-local-demo.md)
+- [docs/development/first-vertical-slice.md](docs/development/first-vertical-slice.md)
 
 If other documents drift, the source-of-truth document is the canonical reference until updated.
 

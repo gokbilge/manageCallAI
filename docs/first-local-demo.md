@@ -2,6 +2,18 @@
 
 This is the shortest path to proving the first local `manageCallAI` slice.
 
+## 0. Create a Local Environment File
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
 ## 1. Start PostgreSQL
 
 ```bash
@@ -22,8 +34,8 @@ At minimum, set:
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `RUNTIME_API_TOKEN`
-- `SIP_SECRET_MASTER_KEY` — 64 hex chars (32 bytes). Generate with `openssl rand -hex 32`.
-- `SIP_SECRET_KEY_ID` — any short label, e.g. `v1`
+- `SIP_SECRET_MASTER_KEY` - 64 hex chars (32 bytes). Generate with `openssl rand -hex 32`.
+- `SIP_SECRET_KEY_ID` - any short label, e.g. `v1`
 
 The `.env.example` contains safe dev defaults for all of these.
 
@@ -63,12 +75,21 @@ curl -X POST http://localhost:3000/api/v1/extensions \
 ```
 
 The extension SIP username defaults to the extension number unless you set `sip_username`.
-`sip_password` is accepted as plaintext and encrypted before storage — it is never returned by the API.
+`sip_password` is accepted as plaintext and encrypted before storage - it is never returned by the API.
 
 ## 5. Call the FreeSWITCH Directory Endpoint
 
+Local compatibility form:
+
 ```bash
 curl "http://localhost:3000/api/v1/freeswitch/directory?runtime_token=<RUNTIME_API_TOKEN>&user=200&domain=acme-demo.managecallai.local"
+```
+
+Preferred production-style runtime auth:
+
+```bash
+curl "http://localhost:3000/api/v1/freeswitch/directory?user=200&domain=acme-demo.managecallai.local" \
+  -H "Authorization: Bearer <RUNTIME_API_TOKEN>"
 ```
 
 Expected result:
