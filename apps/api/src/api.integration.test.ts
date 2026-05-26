@@ -6,6 +6,7 @@ import type { Pool } from 'pg';
 describe('API integration', () => {
   let app: FastifyInstance;
   let db: Pool;
+  let runtimeToken: string;
 
   beforeAll(async () => {
     process.env.RUNTIME_API_TOKEN ??= 'test-runtime-token';
@@ -13,6 +14,7 @@ describe('API integration', () => {
     process.env.SIP_SECRET_MASTER_KEY ??=
       '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
     process.env.SIP_SECRET_KEY_ID ??= 'test-v1';
+    runtimeToken = process.env.RUNTIME_API_TOKEN;
 
     const { buildApp } = await import('./app.js');
     ({ db } = await import('./db/client.js'));
@@ -200,14 +202,14 @@ describe('API integration', () => {
 
     const wrongDomain = await app.inject({
       method: 'GET',
-      url: `/api/v1/freeswitch/directory?runtime_token=test-runtime-token&user=300&domain=wrong.managecallai.local`,
+      url: `/api/v1/freeswitch/directory?runtime_token=${runtimeToken}&user=300&domain=wrong.managecallai.local`,
     });
     expect(wrongDomain.statusCode).toBe(404);
     expect(wrongDomain.body).toContain('<groups />');
 
     const success = await app.inject({
       method: 'GET',
-      url: `/api/v1/freeswitch/directory?runtime_token=test-runtime-token&user=300&domain=${domain}`,
+      url: `/api/v1/freeswitch/directory?runtime_token=${runtimeToken}&user=300&domain=${domain}`,
     });
     expect(success.statusCode).toBe(200);
     expect(success.body).toContain('DirPass123!');
@@ -265,7 +267,7 @@ describe('API integration', () => {
     const ingest = await app.inject({
       method: 'POST',
       url: '/api/v1/call-events/internal/ingest',
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: {
         tenant_id: tenantId,
         call_id: 'call-1',
