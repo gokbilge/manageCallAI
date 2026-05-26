@@ -4,7 +4,8 @@ node_modules/
 dist/
 .runlogs/
 *.exe
+*.tsbuildinfo
 
-# Local AI context files — not for version control
+# Local AI context files - not for version control
 CLAUDE.md
 AGENTS.md
