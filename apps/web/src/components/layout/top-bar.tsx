@@ -1,12 +1,16 @@
-import { Bell, Building2, ChevronDown, Shield } from 'lucide-react';
+import { Bell, Building2, ChevronDown, LogOut, Shield } from 'lucide-react';
 import { WorkspaceBadge } from '@/components/ui/workspace-badge';
 import type { Workspace } from '@/lib/routes/workspace';
+import { useAuth } from '@/lib/auth/use-auth';
+import { Button } from '@/components/ui/button';
 
 type TopBarProps = {
   workspace: Workspace;
 };
 
 export function TopBar({ workspace }: TopBarProps) {
+  const { session, signOut } = useAuth();
+
   return (
     <header className="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[112rem] items-center justify-between px-6">
@@ -23,7 +27,7 @@ export function TopBar({ workspace }: TopBarProps) {
           <WorkspaceBadge workspace={workspace} />
           <button className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-sm">
             <Building2 className="size-4" aria-hidden="true" />
-            Acme Demo
+            {session?.tenantName ?? session?.tenantSlug ?? 'Workspace'}
             <ChevronDown className="size-4" aria-hidden="true" />
           </button>
           <button
@@ -32,6 +36,12 @@ export function TopBar({ workspace }: TopBarProps) {
           >
             <Bell className="size-4" aria-hidden="true" />
           </button>
+          {session ? (
+            <Button variant="ghost" onClick={signOut}>
+              <LogOut className="size-4" aria-hidden="true" />
+              Sign out
+            </Button>
+          ) : null}
         </div>
       </div>
     </header>

@@ -2,14 +2,17 @@ import { Activity, Phone, Workflow } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatCard } from '@/components/data/stat-card';
 import { DataCard } from '@/components/data/data-card';
+import { useAuth } from '@/lib/auth/use-auth';
 
 export function TenantDashboardPage() {
+  const { session } = useAuth();
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Tenant Workspace"
         title="Tenant Dashboard"
-        description="Desired state, runtime activity, and publish lifecycle should all become visible from one calm operator surface."
+        description={`Desired state, runtime activity, and publish lifecycle should all become visible from one calm operator surface for ${session?.tenantName ?? session?.tenantSlug ?? 'this tenant'}.`}
       />
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard title="Active Extensions" value="24" icon={Phone} tone="tenant" />
