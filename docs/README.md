@@ -46,6 +46,20 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [adr/README.md](adr/README.md)
   Architecture Decision Record index and foundational decisions.
 
+## UI Documents
+
+- [ui/UI_ARCHITECTURE.md](ui/UI_ARCHITECTURE.md)
+  Frontend surface model, workspace split, routing structure, and data-loading architecture for the React app.
+
+- [ui/UX_PRINCIPLES.md](ui/UX_PRINCIPLES.md)
+  Product UX rules for safety, observability, reversibility, and enterprise clarity.
+
+- [ui/DESIGN_SYSTEM.md](ui/DESIGN_SYSTEM.md)
+  Design-token, Tailwind, component, typography, spacing, and flow-builder visual system guidance.
+
+- [ui/ICONOGRAPHY.md](ui/ICONOGRAPHY.md)
+  Icon-library selection, accessibility rules, and recommended icon map for platform and tenant surfaces.
+
 ## Historical Documents
 
 - [archive/initial-brainstorming.md](archive/initial-brainstorming.md)
