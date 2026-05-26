@@ -25,7 +25,7 @@ are medium-to-low and do not affect the core API correctness.
 
 ### AUD-2026-05-26-001: Worker webhook body missing `sip_password`
 
-- **Status:** open
+- **Status:** done
 - **Severity:** high
 - **Location:** `apps/worker/src/modules/webhooks/webhook.controller.ts:4–10`
 - **Finding:** `ExtensionCreateBody` does not include `sip_password`, which is now a required
@@ -35,11 +35,11 @@ are medium-to-low and do not affect the core API correctness.
   wrong and unused.
 - **Fix:** Add `sip_password: string` to `ExtensionCreateBody`. Remove `tenant_id` from the
   body type. Update the webhook to pass `Authorization` from the caller through to the API.
-- **Resolved:** <!-- commit sha -->
+- **Resolved:** 758dc49
 
 ### AUD-2026-05-26-002: MCP `list_extensions` sends ignored `?tenant_id=` query param
 
-- **Status:** open
+- **Status:** done
 - **Severity:** medium
 - **Location:** `apps/mcp-server/src/server.ts:69–73`
 - **Finding:** The MCP tool builds `GET /api/v1/extensions?tenant_id=<arg>`. The extension
@@ -50,11 +50,11 @@ are medium-to-low and do not affect the core API correctness.
 - **Fix:** Remove the `tenant_id` parameter from the `list_extensions` MCP tool definition.
   The caller's JWT already scopes the response. If cross-tenant listing is ever needed, it
   requires a separate privileged endpoint, not a query param bypass.
-- **Resolved:** <!-- commit sha -->
+- **Resolved:** 758dc49
 
 ### AUD-2026-05-26-003: Migration sequence gap — 0003 is absent
 
-- **Status:** open
+- **Status:** done
 - **Severity:** low
 - **Location:** `db/migrations/`
 - **Finding:** Present files are `0001`, `0002`, `0004` — no `0003`. The `0001` schema was
@@ -64,11 +64,11 @@ are medium-to-low and do not affect the core API correctness.
 - **Fix:** Either add a `0003_noop.sql` with a comment explaining the squash, or renumber
   `0004` to `0003` (safe since this is not a production deployment). The `0004` comment
   already explains the rationale but it is easy to miss.
-- **Resolved:** <!-- commit sha -->
+- **Resolved:** 758dc49
 
 ### AUD-2026-05-26-004: `call_events` uses `SELECT *` and `RETURNING *`
 
-- **Status:** open
+- **Status:** done
 - **Severity:** low
 - **Location:** `apps/api/src/modules/call-events/call-event.repository.ts:9,26`
 - **Finding:** Both `listByTenant` and `create` use wildcard column selection. This is
@@ -78,11 +78,11 @@ are medium-to-low and do not affect the core API correctness.
   the table grows.
 - **Fix:** Replace `SELECT *` and `RETURNING *` with explicit column lists matching the
   `CallEvent` interface in `call-event.types.ts`.
-- **Resolved:** <!-- commit sha -->
+- **Resolved:** 758dc49
 
 ### AUD-2026-05-26-005: `default_destination_id` accepts any string; schema expects UUID
 
-- **Status:** open
+- **Status:** done
 - **Severity:** low
 - **Location:** `apps/api/src/modules/extensions/extension.controller.ts:102–105`,
   `db/migrations/0001_initial_schema.sql:71`
@@ -92,11 +92,11 @@ are medium-to-low and do not affect the core API correctness.
 - **Fix:** Add `"format": "uuid"` to the JSON schema property for `default_destination_id`
   in both the create and update route schemas. Fastify will then return 400 with a clear
   validation message before the query runs.
-- **Resolved:** <!-- commit sha -->
+- **Resolved:** 758dc49
 
 ### AUD-2026-05-26-006: Worker `apiRequest` swallows API error bodies
 
-- **Status:** open
+- **Status:** done
 - **Severity:** low
 - **Location:** `apps/worker/src/api/client.ts:23–26`
 - **Finding:** On `!response.ok` the function throws `'API request failed: <status> <text>'`
@@ -105,11 +105,11 @@ are medium-to-low and do not affect the core API correctness.
   significantly harder.
 - **Fix:** Read and include the response body in the thrown error message:
   `const body = await response.text(); throw new Error(\`API request failed \${response.status}: \${body}\`)`
-- **Resolved:** <!-- commit sha -->
+- **Resolved:** 758dc49
 
 ### AUD-2026-05-26-007: Go agent multi-tenant limitation is undocumented
 
-- **Status:** open
+- **Status:** done
 - **Severity:** info
 - **Location:** `apps/freeswitch-agent/internal/config/config.go:21`,
   `apps/freeswitch-agent/README.md`
@@ -120,7 +120,7 @@ are medium-to-low and do not affect the core API correctness.
 - **Fix:** Add a note to `apps/freeswitch-agent/README.md` under a "Tenant scope" heading
   that makes the one-agent-per-tenant constraint explicit and describes the multi-tenant
   deployment pattern (one container per tenant with distinct `MANAGECALLAI_TENANT_ID`).
-- **Resolved:** <!-- commit sha -->
+- **Resolved:** 758dc49
 
 ---
 
