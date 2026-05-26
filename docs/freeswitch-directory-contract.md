@@ -130,4 +130,5 @@ Future versions may incorporate:
 - Do not place business logic in the XML response layer.
 - Directory lookup should remain a thin projection of backend state.
 - Runtime callers must authenticate with the shared runtime token.
+- Header-based runtime auth is preferred in production; query/body token transport exists for local MVP compatibility with `mod_xml_curl`.
 - Secret material used for auth should follow the repo's secret-handling rules and not live long-term in general JSONB fields.

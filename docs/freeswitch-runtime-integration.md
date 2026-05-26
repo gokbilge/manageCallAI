@@ -95,6 +95,7 @@ Do not place business logic in Lua.
 - `xml_curl` configured to hit the backend
 - `event_socket` configured for the adapter
 - `xml_curl` requests must include the runtime token
+- production deployments should prefer the runtime token in a header over query parameters
 
 ## Interaction Flow
 
@@ -111,6 +112,7 @@ Do not place business logic in Lua.
 - Backend and adapter contracts should stay explicit and narrow.
 - `MANAGECALLAI_TENANT_ID` must be a real tenant UUID for MVP event forwarding.
 - `RUNTIME_API_TOKEN` must be shared by FreeSWITCH `xml_curl`, the adapter, and the API for runtime-only endpoints.
+- query/body runtime tokens are acceptable for local MVP compatibility, but production deployments should avoid query-token logging exposure and prefer header transport where possible.
 - n8n-facing extension creation should propagate a user JWT to the API rather than bypass auth.
 - MCP read tools may need a JWT for protected resources such as extensions.
 

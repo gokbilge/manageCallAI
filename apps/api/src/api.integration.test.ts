@@ -153,4 +153,137 @@ describe('API integration', () => {
       },
     });
   });
+
+  it('enforces runtime token and tenant domain on FreeSWITCH directory lookup', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const registerResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        tenant_name: `Directory ${suffix}`,
+        tenant_slug: `directory-${suffix}`,
+        email: `directory-${suffix}@example.com`,
+        display_name: 'Directory Owner',
+        password: 'Secret123!',
+      },
+    });
+
+    const token = registerResponse.json<{ token: string }>().token;
+    const authHeader = { authorization: `Bearer ${token}` };
+    const domain = `directory-${suffix}.managecallai.local`;
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/extensions',
+      headers: authHeader,
+      payload: {
+        extension_number: '300',
+        display_name: 'Directory Desk',
+        sip_password: 'DirPass123!',
+      },
+    });
+
+    const noToken = await app.inject({
+      method: 'GET',
+      url: `/api/v1/freeswitch/directory?user=300&domain=${domain}`,
+    });
+    expect(noToken.statusCode).toBe(401);
+
+    const wrongToken = await app.inject({
+      method: 'GET',
+      url: `/api/v1/freeswitch/directory?runtime_token=wrong-token&user=300&domain=${domain}`,
+    });
+    expect(wrongToken.statusCode).toBe(401);
+
+    const wrongDomain = await app.inject({
+      method: 'GET',
+      url: `/api/v1/freeswitch/directory?runtime_token=test-runtime-token&user=300&domain=wrong.managecallai.local`,
+    });
+    expect(wrongDomain.statusCode).toBe(404);
+    expect(wrongDomain.body).toContain('<groups />');
+
+    const success = await app.inject({
+      method: 'GET',
+      url: `/api/v1/freeswitch/directory?runtime_token=test-runtime-token&user=300&domain=${domain}`,
+    });
+    expect(success.statusCode).toBe(200);
+    expect(success.body).toContain('DirPass123!');
+    expect(success.body).toContain('managecall_extension_id');
+  });
+
+  it('enforces auth on call events list and runtime token on internal ingest', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const registerResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        tenant_name: `Events ${suffix}`,
+        tenant_slug: `events-${suffix}`,
+        email: `events-${suffix}@example.com`,
+        display_name: 'Events Owner',
+        password: 'Secret123!',
+      },
+    });
+
+    const token = registerResponse.json<{ token: string }>().token;
+    const authHeader = { authorization: `Bearer ${token}` };
+
+    const createdExtension = await app.inject({
+      method: 'POST',
+      url: '/api/v1/extensions',
+      headers: authHeader,
+      payload: {
+        extension_number: '400',
+        display_name: 'Events Desk',
+        sip_password: 'EventPass123!',
+      },
+    });
+
+    const tenantId = createdExtension.json<{ data: { tenant_id: string } }>().data.tenant_id;
+
+    const unauthenticatedList = await app.inject({
+      method: 'GET',
+      url: '/api/v1/call-events',
+    });
+    expect(unauthenticatedList.statusCode).toBe(401);
+
+    const wrongRuntimeToken = await app.inject({
+      method: 'POST',
+      url: '/api/v1/call-events/internal/ingest',
+      headers: { authorization: 'Bearer wrong-token' },
+      payload: {
+        tenant_id: tenantId,
+        call_id: 'call-1',
+        event_type: 'channel_create',
+      },
+    });
+    expect(wrongRuntimeToken.statusCode).toBe(401);
+
+    const ingest = await app.inject({
+      method: 'POST',
+      url: '/api/v1/call-events/internal/ingest',
+      headers: { authorization: 'Bearer test-runtime-token' },
+      payload: {
+        tenant_id: tenantId,
+        call_id: 'call-1',
+        event_type: 'channel_create',
+      },
+    });
+    expect(ingest.statusCode).toBe(201);
+
+    const forbiddenTenant = await app.inject({
+      method: 'GET',
+      url: `/api/v1/call-events?tenant_id=${randomUUID()}`,
+      headers: authHeader,
+    });
+    expect(forbiddenTenant.statusCode).toBe(403);
+
+    const authorizedList = await app.inject({
+      method: 'GET',
+      url: `/api/v1/call-events?tenant_id=${tenantId}`,
+      headers: authHeader,
+    });
+    expect(authorizedList.statusCode).toBe(200);
+    expect(authorizedList.body).toContain('call-1');
+  });
 });
