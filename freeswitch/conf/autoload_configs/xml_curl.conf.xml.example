@@ -1,8 +1,8 @@
 <configuration name="xml_curl.conf" description="XML Curl">
   <bindings>
     <binding name="directory">
-      <param name="gateway-url" value="http://host.docker.internal:3000/api/v1/freeswitch/directory?runtime_token=change-me-runtime-token" />
-      <param name="method" value="post" />
+      <param name="gateway-url" value="__MANAGECALLAI_DIRECTORY_URL__?runtime_token=__RUNTIME_API_TOKEN__" />
+      <param name="method" value="get" />
     </binding>
   </bindings>
 </configuration>

@@ -10,6 +10,12 @@ type DirectoryLookup = {
   user?: string;
   domain?: string;
   runtime_token?: string;
+  key_name?: string;
+  key_value?: string;
+  sip_auth_username?: string;
+  sip_to_user?: string;
+  sip_auth_realm?: string;
+  sip_to_host?: string;
 };
 
 const extensionRepo = new ExtensionRepository(db);
@@ -18,8 +24,9 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
   const handler = async (
     lookup: DirectoryLookup,
   ): Promise<{ body: string; statusCode: number }> => {
-    const user = lookup.user?.trim();
-    const domain = lookup.domain?.trim();
+    const normalized = normalizeDirectoryLookup(lookup);
+    const user = normalized.user;
+    const domain = normalized.domain;
 
     if (!user) {
       return {
@@ -64,7 +71,7 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     '/directory',
     { preHandler: authenticateRuntime },
     async (req, reply) => {
-      const result = await handler(req.query);
+      const result = await handler(normalizeRequestLookup(req.query as DirectoryLookup, undefined));
       return reply
         .code(result.statusCode)
         .type('text/xml; charset=utf-8')
@@ -76,13 +83,64 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     '/directory',
     { preHandler: authenticateRuntime },
     async (req, reply) => {
-      const result = await handler(req.body ?? {});
+      const result = await handler(
+        normalizeRequestLookup(
+          req.query as DirectoryLookup,
+          req.body as DirectoryLookup | string | undefined,
+        ),
+      );
       return reply
         .code(result.statusCode)
         .type('text/xml; charset=utf-8')
         .send(result.body);
     },
   );
+}
+
+function normalizeRequestLookup(
+  query: DirectoryLookup | undefined,
+  body: DirectoryLookup | string | undefined,
+): DirectoryLookup {
+  const bodyLookup =
+    typeof body === 'string'
+      ? Object.fromEntries(new URLSearchParams(body).entries())
+      : (body ?? {});
+
+  return {
+    ...(bodyLookup as DirectoryLookup),
+    ...(query ?? {}),
+  };
+}
+
+function normalizeDirectoryLookup(lookup: DirectoryLookup): {
+  user?: string;
+  domain?: string;
+} {
+  const user = firstNonEmpty(
+    lookup.user,
+    lookup.sip_auth_username,
+    lookup.sip_to_user,
+    lookup.key_name === 'id' ? lookup.key_value : undefined,
+  );
+
+  const domain = firstNonEmpty(
+    lookup.domain,
+    lookup.sip_auth_realm,
+    lookup.sip_to_host,
+    lookup.key_name === 'name' ? lookup.key_value : undefined,
+  );
+
+  return { user, domain };
+}
+
+function firstNonEmpty(...values: Array<string | undefined>): string | undefined {
+  for (const value of values) {
+    if (value?.trim()) {
+      return value.trim();
+    }
+  }
+
+  return undefined;
 }
 
 function xmlEscape(value: string): string {

@@ -88,10 +88,13 @@ RUN cd /usr/src/freeswitch \
   && sed -i 's|<!-- <load module="mod_xml_curl"/> -->|<load module="mod_xml_curl"/>|' /usr/local/freeswitch/conf/autoload_configs/modules.conf.xml \
   && sed -i 's|<load module="mod_spandsp"/>|<!-- <load module="mod_spandsp"/> -->|' /usr/local/freeswitch/conf/autoload_configs/modules.conf.xml
 
-COPY conf/autoload_configs/xml_curl.conf.xml.example /usr/local/freeswitch/conf/autoload_configs/xml_curl.conf.xml
-COPY conf/autoload_configs/event_socket.conf.xml.example /usr/local/freeswitch/conf/autoload_configs/event_socket.conf.xml
+COPY conf/autoload_configs/xml_curl.conf.xml.example /usr/local/freeswitch/conf/autoload_configs/xml_curl.conf.xml.tmpl
+COPY conf/autoload_configs/event_socket.conf.xml.example /usr/local/freeswitch/conf/autoload_configs/event_socket.conf.xml.tmpl
 COPY conf/dialplan/managecall_entry.xml.example /usr/local/freeswitch/conf/dialplan/managecall_entry.xml
 COPY lua/managecall_entry.lua /usr/local/freeswitch/scripts/managecall_entry.lua
+COPY docker/entrypoint.sh /usr/local/bin/managecallai-freeswitch-entrypoint
+
+RUN chmod +x /usr/local/bin/managecallai-freeswitch-entrypoint
 
 EXPOSE 8021/tcp
 EXPOSE 5060/tcp 5060/udp 5080/tcp 5080/udp
@@ -101,4 +104,4 @@ EXPOSE 5070/tcp 5070/udp
 EXPOSE 16384-32768/udp
 EXPOSE 64535-65535/udp
 
-CMD ["/usr/local/freeswitch/bin/freeswitch", "-nonat", "-nf"]
+CMD ["/usr/local/bin/managecallai-freeswitch-entrypoint"]

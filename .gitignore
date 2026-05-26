@@ -3,8 +3,10 @@ node_modules/
 .pnpm-store/
 dist/
 .runlogs/
+.runtime/
 *.exe
 *.tsbuildinfo
+*.bak
 
 # Local AI context files - not for version control
 CLAUDE.md
