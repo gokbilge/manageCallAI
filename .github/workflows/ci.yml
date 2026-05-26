@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build-test:
@@ -34,6 +35,7 @@ jobs:
       FREESWITCH_ESL_PORT: 8021
       FREESWITCH_ESL_PASSWORD: ClueCon
       LOG_LEVEL: info
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
       - uses: actions/checkout@v5
@@ -45,9 +47,10 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.work
+          cache: false
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
