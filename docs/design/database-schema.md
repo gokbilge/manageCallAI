@@ -65,6 +65,16 @@ Support authentication-related identity mapping and authorization policy assignm
 
 Stores internal callable identities and their default destinations.
 
+Secret-handling for SIP credentials:
+
+- `sip_username` — stored in plaintext; used as the SIP registration username.
+- `sip_password_ciphertext` — AES-256-GCM ciphertext; format `base64(iv).base64(authTag).base64(ciphertext)`.
+- `sip_password_key_id` — identifies the symmetric key used; enables key rotation without re-encrypting in SQL.
+- The API accepts plaintext `sip_password` on create/update and encrypts before storage.
+- The API never returns plaintext or ciphertext to HTTP clients.
+- The FreeSWITCH directory endpoint decrypts only at XML generation time.
+- Future direction: replace the symmetric key with an external secret store (e.g. Vault, AWS Secrets Manager).
+
 ### 4.4 sip_trunks
 
 Stores trunk definitions and metadata.

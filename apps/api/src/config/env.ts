@@ -20,4 +20,6 @@ export const config = {
   databaseUrl: required('DATABASE_URL'),
   jwtSecret: required('JWT_SECRET'),
   runtimeApiToken: required('RUNTIME_API_TOKEN'),
+  sipSecretMasterKey: required('SIP_SECRET_MASTER_KEY'),
+  sipSecretKeyId: required('SIP_SECRET_KEY_ID'),
 } as const;

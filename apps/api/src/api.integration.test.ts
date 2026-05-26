@@ -10,6 +10,9 @@ describe('API integration', () => {
   beforeAll(async () => {
     process.env.RUNTIME_API_TOKEN ??= 'test-runtime-token';
     process.env.JWT_SECRET ??= 'test-jwt-secret';
+    process.env.SIP_SECRET_MASTER_KEY ??=
+      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    process.env.SIP_SECRET_KEY_ID ??= 'test-v1';
 
     const { buildApp } = await import('./app.js');
     ({ db } = await import('./db/client.js'));

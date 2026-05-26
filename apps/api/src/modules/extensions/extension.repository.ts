@@ -1,9 +1,9 @@
 import { Pool } from 'pg';
 import type {
-  CreateExtensionInput,
+  CreateExtensionRepoInput,
   DirectoryExtension,
   Extension,
-  UpdateExtensionInput,
+  UpdateExtensionRepoInput,
 } from './extension.types.js';
 
 export class ExtensionRepository {
@@ -50,7 +50,8 @@ export class ExtensionRepository {
     const result = await this.db.query<DirectoryExtension>(
       `SELECT
          ${this.publicColumns},
-         e.sip_password,
+         e.sip_password_ciphertext,
+         e.sip_password_key_id,
          t.directory_domain
        FROM extensions e
        JOIN tenants t ON t.id = e.tenant_id
@@ -64,11 +65,11 @@ export class ExtensionRepository {
     return result.rows[0] ?? null;
   }
 
-  async create(input: CreateExtensionInput): Promise<Extension> {
+  async create(input: CreateExtensionRepoInput): Promise<Extension> {
     const result = await this.db.query<Extension>(
       `INSERT INTO extensions
-         (tenant_id, extension_number, display_name, sip_username, sip_password, default_destination_type, default_destination_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+         (tenant_id, extension_number, display_name, sip_username, sip_password_ciphertext, sip_password_key_id, default_destination_type, default_destination_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING
          id,
          tenant_id,
@@ -85,7 +86,8 @@ export class ExtensionRepository {
         input.extension_number,
         input.display_name,
         input.sip_username ?? input.extension_number,
-        input.sip_password,
+        input.sip_password_ciphertext,
+        input.sip_password_key_id,
         input.default_destination_type ?? null,
         input.default_destination_id ?? null,
       ],
@@ -93,7 +95,7 @@ export class ExtensionRepository {
     return result.rows[0]!;
   }
 
-  async update(id: string, tenantId: string, input: UpdateExtensionInput): Promise<Extension | null> {
+  async update(id: string, tenantId: string, input: UpdateExtensionRepoInput): Promise<Extension | null> {
     const fields: string[] = [];
     const values: unknown[] = [];
     let idx = 1;
@@ -103,7 +105,8 @@ export class ExtensionRepository {
       'display_name',
       'status',
       'sip_username',
-      'sip_password',
+      'sip_password_ciphertext',
+      'sip_password_key_id',
       'default_destination_type',
       'default_destination_id',
     ] as const;

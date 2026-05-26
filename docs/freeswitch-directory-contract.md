@@ -117,12 +117,20 @@ The backend should rely on:
 - `display_name`
 - `status`
 - `sip_username`
-- `sip_password`
+- `sip_password_ciphertext` + `sip_password_key_id` (decrypted to plaintext only at XML generation)
 - `tenant.directory_domain`
+
+## Secret Handling
+
+SIP passwords are stored encrypted-at-rest using AES-256-GCM. The plaintext is derived only in the
+FreeSWITCH directory handler immediately before building the XML response. It is not logged or cached.
+
+The active key is identified by `sip_password_key_id`, enabling future key rotation without re-encrypting
+in SQL. See `docs/design/database-schema.md §4.3` for schema detail.
 
 Future versions may incorporate:
 
-- authentication secret indirection
+- external secret-store integration (Vault, AWS Secrets Manager)
 - per-extension registration policy
 
 ## Notes

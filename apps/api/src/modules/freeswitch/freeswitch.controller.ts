@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../../db/client.js';
+import { decryptSipPassword } from '../../crypto/sip-secret.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { ExtensionRepository } from '../extensions/extension.repository.js';
 
@@ -42,6 +43,11 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
       };
     }
 
+    const password = decryptSipPassword(
+      extension.sip_password_ciphertext,
+      extension.sip_password_key_id,
+    );
+
     return {
       statusCode: 200,
       body: buildDirectoryResponse({
@@ -49,7 +55,7 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
         extensionNumber: extension.extension_number,
         displayName: extension.display_name,
         domain: extension.directory_domain,
-        password: extension.sip_password,
+        password,
       }),
     };
   };

@@ -1,7 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ExtensionService, ExtensionNotFoundError } from './extension.service.js';
 import type { ExtensionRepository } from './extension.repository.js';
-import type { Extension } from './extension.types.js';
+import type { CreateExtensionRepoInput, Extension, UpdateExtensionRepoInput } from './extension.types.js';
+
+vi.mock('../../crypto/sip-secret.js', () => ({
+  encryptSipPassword: (pw: string) => ({ ciphertext: `enc:${pw}`, keyId: 'test-v1' }),
+}));
 
 const mockRepo = {
   findAllByTenant: vi.fn(),
@@ -27,6 +31,8 @@ const sampleExt: Extension = {
 };
 const tenantId = sampleExt.tenant_id;
 
+beforeEach(() => vi.clearAllMocks());
+
 describe('ExtensionService', () => {
   it('getById returns extension when found', async () => {
     vi.mocked(mockRepo.findById).mockResolvedValue(sampleExt);
@@ -36,6 +42,51 @@ describe('ExtensionService', () => {
   it('getById throws ExtensionNotFoundError when not found', async () => {
     vi.mocked(mockRepo.findById).mockResolvedValue(null);
     await expect(service.getById('missing-id', tenantId)).rejects.toThrow(ExtensionNotFoundError);
+  });
+
+  it('create encrypts sip_password before passing to repo', async () => {
+    vi.mocked(mockRepo.create).mockResolvedValue(sampleExt);
+    await service.create({
+      tenant_id: tenantId,
+      extension_number: '200',
+      display_name: 'Test',
+      sip_password: 'PlainPass123!',
+    });
+    const repoInput = vi.mocked(mockRepo.create).mock.calls[0]![0] as CreateExtensionRepoInput;
+    expect(repoInput).not.toHaveProperty('sip_password');
+    expect(repoInput.sip_password_ciphertext).toBe('enc:PlainPass123!');
+    expect(repoInput.sip_password_key_id).toBe('test-v1');
+  });
+
+  it('create result does not expose any password field', async () => {
+    vi.mocked(mockRepo.create).mockResolvedValue(sampleExt);
+    const result = await service.create({
+      tenant_id: tenantId,
+      extension_number: '200',
+      display_name: 'Test',
+      sip_password: 'PlainPass123!',
+    });
+    expect(result).not.toHaveProperty('sip_password');
+    expect(result).not.toHaveProperty('sip_password_ciphertext');
+    expect(result).not.toHaveProperty('sip_password_key_id');
+  });
+
+  it('update encrypts sip_password when provided', async () => {
+    vi.mocked(mockRepo.update).mockResolvedValue(sampleExt);
+    await service.update(sampleExt.id, tenantId, { sip_password: 'NewPass456!' });
+    const repoInput = vi.mocked(mockRepo.update).mock.calls[0]![2] as UpdateExtensionRepoInput;
+    expect(repoInput).not.toHaveProperty('sip_password');
+    expect(repoInput.sip_password_ciphertext).toBe('enc:NewPass456!');
+    expect(repoInput.sip_password_key_id).toBe('test-v1');
+  });
+
+  it('update without sip_password omits encrypted fields', async () => {
+    vi.mocked(mockRepo.update).mockResolvedValue(sampleExt);
+    await service.update(sampleExt.id, tenantId, { display_name: 'Updated' });
+    const repoInput = vi.mocked(mockRepo.update).mock.calls[0]![2] as UpdateExtensionRepoInput;
+    expect(repoInput).not.toHaveProperty('sip_password');
+    expect(repoInput).not.toHaveProperty('sip_password_ciphertext');
+    expect(repoInput).not.toHaveProperty('sip_password_key_id');
   });
 
   it('update throws ExtensionNotFoundError when not found', async () => {
@@ -55,16 +106,5 @@ describe('ExtensionService', () => {
     vi.mocked(mockRepo.deactivate).mockResolvedValue(deactivated);
     const result = await service.deactivate(sampleExt.id, tenantId);
     expect(result.status).toBe('inactive');
-  });
-
-  it('create delegates to repo', async () => {
-    vi.mocked(mockRepo.create).mockResolvedValue(sampleExt);
-    const result = await service.create({
-      tenant_id: sampleExt.tenant_id,
-      extension_number: sampleExt.extension_number,
-      display_name: sampleExt.display_name,
-      sip_password: 'Secret123!',
-    });
-    expect(result).toEqual(sampleExt);
   });
 });

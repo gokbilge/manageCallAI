@@ -179,7 +179,11 @@ Example request:
 Required fields: `extension_number`, `display_name`, `sip_password`.
 `sip_username` defaults to `extension_number` when omitted.
 
-> **Note:** SIP passwords are stored as plaintext in the database for MVP. Encryption-at-rest is planned before production use.
+`sip_password` is write-only: the API accepts it on create/update and encrypts it with AES-256-GCM
+before storing `sip_password_ciphertext` and `sip_password_key_id`. The plaintext is never returned
+in any API response. The FreeSWITCH directory endpoint decrypts it only when generating the XML response.
+
+Future direction: replace the symmetric master key with an external secret store (Vault, AWS Secrets Manager).
 
 #### Get Extension
 

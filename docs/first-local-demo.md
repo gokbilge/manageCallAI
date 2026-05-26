@@ -22,6 +22,10 @@ At minimum, set:
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `RUNTIME_API_TOKEN`
+- `SIP_SECRET_MASTER_KEY` — 64 hex chars (32 bytes). Generate with `openssl rand -hex 32`.
+- `SIP_SECRET_KEY_ID` — any short label, e.g. `v1`
+
+The `.env.example` contains safe dev defaults for all of these.
 
 ## 3. Register a Tenant
 
@@ -59,6 +63,7 @@ curl -X POST http://localhost:3000/api/v1/extensions \
 ```
 
 The extension SIP username defaults to the extension number unless you set `sip_username`.
+`sip_password` is accepted as plaintext and encrypted before storage — it is never returned by the API.
 
 ## 5. Call the FreeSWITCH Directory Endpoint
 
@@ -70,5 +75,5 @@ Expected result:
 
 - HTTP `200`
 - XML directory response
-- `<param name="password" value="PhonePass123!" />`
+- `<param name="password" value="PhonePass123!" />` (decrypted only at this point)
 - `managecall_extension_id` in the returned variables
