@@ -16,6 +16,7 @@ servers:
   - url: http://localhost:3000/api/v1
     description: Local development
 tags:
+  - name: Auth
   - name: Extensions
   - name: Trunks
   - name: Numbers
@@ -30,9 +31,48 @@ tags:
   - name: AuditEvents
   - name: CallEvents
   - name: CDRs
+  - name: Platform
 security:
   - bearerAuth: []
 paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register tenant and first user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: JWT issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: JWT issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
   /extensions:
     get:
       tags: [Extensions]
@@ -48,7 +88,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionListResponse'
+                $ref: '#/components/schemas/ExtensionListResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
     post:
@@ -59,14 +99,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateExtensionRequest'
+              $ref: '#/components/schemas/CreateExtensionRequestSnake'
       responses:
         '201':
           description: Extension created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionResponse'
+                $ref: '#/components/schemas/ExtensionResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
   /extensions/{extensionId}:
@@ -81,7 +121,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionResponse'
+                $ref: '#/components/schemas/ExtensionResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
     patch:
@@ -92,14 +132,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateExtensionRequest'
+              $ref: '#/components/schemas/UpdateExtensionRequestSnake'
       responses:
         '200':
           description: Extension updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionResponse'
+                $ref: '#/components/schemas/ExtensionResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
   /extensions/{extensionId}/deactivate:
@@ -114,7 +154,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionResponse'
+                $ref: '#/components/schemas/ExtensionResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
   /trunks:
@@ -941,7 +981,33 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CallEventListResponse'
+                $ref: '#/components/schemas/CallEventListResponseSnake'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /platform/tenants:
+    get:
+      tags: [Platform]
+      summary: List tenant summaries for platform operators
+      responses:
+        '200':
+          description: Tenant collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantSummaryListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /platform/runtime/health:
+    get:
+      tags: [Platform]
+      summary: Runtime health for platform operators
+      responses:
+        '200':
+          description: Runtime health summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuntimeHealthResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
   /call-events/{callEventId}:
@@ -1187,6 +1253,37 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEnvelope'
+    AuthResponse:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    RegisterRequest:
+      type: object
+      required: [tenant_name, tenant_slug, email, display_name, password]
+      properties:
+        tenant_name:
+          type: string
+        tenant_slug:
+          type: string
+        email:
+          type: string
+        display_name:
+          type: string
+        password:
+          type: string
+          minLength: 8
+    LoginRequest:
+      type: object
+      required: [tenant_slug, email, password]
+      properties:
+        tenant_slug:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
     AuthenticationProfile:
       type: object
       additionalProperties: true
@@ -1273,6 +1370,95 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Extension'
+    ExtensionSnake:
+      type: object
+      required: [id, tenant_id, extension_number, display_name, status, sip_username, created_at, updated_at]
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        extension_number:
+          type: string
+        display_name:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        sip_username:
+          type: string
+        default_destination_type:
+          type: string
+          nullable: true
+          enum: [flow, extension, user, queue, null]
+        default_destination_id:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateExtensionRequestSnake:
+      type: object
+      required: [extension_number, display_name, sip_password]
+      properties:
+        extension_number:
+          type: string
+        display_name:
+          type: string
+        sip_username:
+          type: string
+          description: Defaults to extension_number when omitted
+        sip_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        default_destination_type:
+          type: string
+          enum: [flow, extension, user, queue]
+        default_destination_id:
+          type: string
+    UpdateExtensionRequestSnake:
+      type: object
+      properties:
+        extension_number:
+          type: string
+        display_name:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        sip_username:
+          type: string
+        sip_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        default_destination_type:
+          oneOf:
+            - type: string
+              enum: [flow, extension, user, queue]
+            - type: 'null'
+        default_destination_id:
+          oneOf:
+            - type: string
+            - type: 'null'
+    ExtensionResponseSnake:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ExtensionSnake'
+    ExtensionListResponseSnake:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtensionSnake'
     Trunk:
       type: object
       required: [id, name, direction, status]
@@ -1939,6 +2125,93 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CallEvent'
+    CallEventSnake:
+      type: object
+      required: [id, tenant_id, call_id, event_type, event_time, payload, ingested_at]
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        call_id:
+          type: string
+        event_type:
+          type: string
+        event_time:
+          type: string
+          format: date-time
+        source:
+          type: string
+          nullable: true
+        payload:
+          type: object
+          additionalProperties: true
+        ingested_at:
+          type: string
+          format: date-time
+    CallEventListResponseSnake:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CallEventSnake'
+    TenantSummary:
+      type: object
+      required: [id, name, slug, directory_domain, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        directory_domain:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    TenantSummaryListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantSummary'
+    ServiceHealth:
+      type: object
+      required: [name, url, status, detail]
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        status:
+          type: string
+          enum: [healthy, degraded, unreachable]
+        detail:
+          type: string
+    RuntimeHealthSummary:
+      type: object
+      required: [services]
+      properties:
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceHealth'
+    RuntimeHealthResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/RuntimeHealthSummary'
     CallDetailRecord:
       type: object
       required: [id, callId, direction, startTime]

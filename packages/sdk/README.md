@@ -1,9 +1,19 @@
 # @managecallai/sdk
 
-Minimal typed client for the current `manageCallAI` MVP API surface.
+OpenAPI-generated typed client foundation for the current `manageCallAI` MVP API surface.
 
-This package is intentionally hand-written for now. It should be replaced or regenerated from
-`docs/api/openapi.yaml` once the API contract stabilizes further.
+This package generates TypeScript types directly from `docs/api/openapi.yaml` and wraps them with
+`openapi-fetch` for a small typed client.
+
+## Generation
+
+```bash
+pnpm --filter @managecallai/sdk run generate
+```
+
+Generated file:
+
+- `src/generated/schema.ts`
 
 ## Covered Endpoints
 

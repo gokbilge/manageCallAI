@@ -10,13 +10,18 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "generate": "pnpm exec openapi-typescript ../../docs/api/openapi.yaml -o src/generated/schema.ts",
+    "build": "pnpm run generate && tsc -p tsconfig.json",
     "dev": "tsc -w -p tsconfig.json",
-    "lint": "tsc --noEmit -p tsconfig.json",
+    "lint": "pnpm run generate && tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.13.8"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
+    "openapi-typescript": "^7.10.1",
     "typescript": "^5.7.2",
     "vitest": "^3.0.0"
   }
