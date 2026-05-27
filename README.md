@@ -82,6 +82,13 @@ The IVR architecture and foundation runbook now live here:
 - [docs/ivr/IVR_ARCHITECTURE.md](docs/ivr/IVR_ARCHITECTURE.md)
 - [docs/development/ivr-flow-foundation-proof.md](docs/development/ivr-flow-foundation-proof.md)
 
+The current IVR foundation now includes:
+
+- tenant-scoped IVR flow + version CRUD
+- structural validation
+- deterministic draft/version simulation
+- approval-aware publish / rollback attempts
+
 ## Technology Stack
 
 - Frontend: React + TypeScript

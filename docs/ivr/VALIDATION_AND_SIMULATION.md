@@ -71,15 +71,20 @@ runtime testing.
 If simulation is used as part of a publish decision, the simulation input and
 result should be persisted or at least referenced from the publish audit trail.
 
-## 6. Incremental rollout
+## 6. Current implementation status
 
-Current slice:
+Current slice now includes:
 
-- structural validation
-- version lifecycle groundwork
+- structural validation endpoint
+- simulation endpoints for current draft and specific versions
+- persisted simulation results in `simulation_results`
+- `simulated_at` stamping on successful runs
+- approval-gated publish / rollback behavior driven by tenant policy
 
-Next slice:
+Still intentionally out of scope:
 
-- formal simulation endpoint
-- stored simulation results
-- publish policy integration
+- prompt existence checks during validation
+- extension existence checks during validation
+- time-based routing simulation
+- business-hours, queue, ring-group, webhook, or AI-action node execution
+- live runtime call testing through FreeSWITCH

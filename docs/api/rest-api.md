@@ -717,10 +717,93 @@ Example response:
 }
 ```
 
-#### Publish Validated Version
+#### Simulate Current Draft
+
+```http
+POST /api/v1/ivr-flows/{flowId}/simulate
+```
+
+#### Simulate Specific Version
+
+```http
+POST /api/v1/ivr-flows/{flowId}/versions/{versionId}/simulate
+```
+
+Example request:
+
+```json
+{
+  "digits": ["1"],
+  "caller_number": "+905551112233",
+  "now": "2026-05-27T10:00:00+03:00"
+}
+```
+
+Current MVP simulation scope:
+
+- supports `start`, `play_prompt`, `play_collect`, `switch`, `transfer_extension`, and `hangup`
+- also accepts early compatibility node types `play`, `menu`, `transfer`, and `condition`
+- persists the simulation scenario and result in `simulation_results`
+- stamps `simulated_at` on the version after a successful simulation
+
+Example response:
+
+```json
+{
+  "data": {
+    "version": {
+      "id": "flowver_001",
+      "state": "simulated"
+    },
+    "scenario": {
+      "digits": ["1"]
+    },
+    "outcome": {
+      "status": "passed",
+      "path": ["start", "welcome", "route_digit", "sales"],
+      "final_action": {
+        "type": "transfer_extension",
+        "extension_number": "200"
+      },
+      "errors": []
+    }
+  }
+}
+```
+
+#### Publish Validated Or Simulated Version
 
 ```http
 POST /api/v1/ivr-flows/{flowId}/versions/{versionId}/publish
+```
+
+If tenant policy requires approval, the endpoint returns `202 Accepted` with a pending approval envelope:
+
+```json
+{
+  "data": {
+    "status": "pending_approval",
+    "approval_request_id": "apr_001",
+    "flow": {
+      "id": "flow_001",
+      "active_version_id": null
+    }
+  }
+}
+```
+
+Otherwise it publishes immediately:
+
+```json
+{
+  "data": {
+    "status": "published",
+    "flow": {
+      "id": "flow_001",
+      "active_version_id": "flowver_002"
+    }
+  }
+}
 ```
 
 #### Roll Back to Previous Published Version
@@ -728,6 +811,11 @@ POST /api/v1/ivr-flows/{flowId}/versions/{versionId}/publish
 ```http
 POST /api/v1/ivr-flows/{flowId}/rollback
 ```
+
+Rollback follows the same approval model:
+
+- `200` with `{ "data": { "status": "published", "flow": { ... } } }` when it completes immediately
+- `202` with `{ "data": { "status": "pending_approval", "approval_request_id": "...", "flow": { ... } } }` when tenant policy requires approval
 
 ### 6.8 Validations
 

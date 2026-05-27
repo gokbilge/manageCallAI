@@ -2,12 +2,12 @@ import createClient from 'openapi-fetch';
 import type { paths, components } from './generated/schema.js';
 
 export type AuthResponse = components['schemas']['AuthResponse'];
-export type Extension = components['schemas']['ExtensionSnake'];
-export type CallEvent = components['schemas']['CallEventSnake'];
+export type Extension = components['schemas']['Extension'];
+export type CallEvent = components['schemas']['CallEvent'];
 export type TenantSummary = components['schemas']['TenantSummary'];
-export type RuntimeHealthSummary = components['schemas']['RuntimeHealthSummary'];
+export type RuntimeHealthSummary = components['schemas']['RuntimeHealthResponse']['data'];
 export type ServiceHealth = components['schemas']['ServiceHealth'];
-export type CreateExtensionRequest = components['schemas']['CreateExtensionRequestSnake'];
+export type CreateExtensionRequest = components['schemas']['CreateExtensionRequest'];
 export type RegisterRequest = components['schemas']['RegisterRequest'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 

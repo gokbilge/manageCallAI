@@ -663,20 +663,83 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /ivr-flows/{flowId}/simulate:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+    post:
+      tags: [IvrFlows]
+      summary: Simulate current draft flow version
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IvrFlowSimulationRequest'
+      responses:
+        '200':
+          description: Simulation passed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrFlowSimulationResponse'
+        '422':
+          description: Simulation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrFlowSimulationResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /ivr-flows/{flowId}/versions/{versionId}/simulate:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+      - $ref: '#/components/parameters/VersionIdParam'
+    post:
+      tags: [IvrFlows]
+      summary: Simulate specific flow version
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IvrFlowSimulationRequest'
+      responses:
+        '200':
+          description: Simulation passed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrFlowSimulationResponse'
+        '422':
+          description: Simulation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrFlowSimulationResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
   /ivr-flows/{flowId}/versions/{versionId}/publish:
     parameters:
       - $ref: '#/components/parameters/FlowIdParam'
       - $ref: '#/components/parameters/VersionIdParam'
     post:
       tags: [IvrFlows]
-      summary: Publish validated flow version
+      summary: Publish validated or simulated flow version
       responses:
         '200':
           description: Flow published
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IvrFlowResponse'
+                $ref: '#/components/schemas/IvrFlowPublishResponse'
+        '202':
+          description: Publish is pending approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrFlowPublishResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -692,7 +755,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IvrFlowResponse'
+                $ref: '#/components/schemas/IvrFlowPublishResponse'
+        '202':
+          description: Rollback is pending approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrFlowPublishResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -1758,6 +1827,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        simulated_at:
+          type: string
+          format: date-time
+          nullable: true
         published_at:
           type: string
           format: date-time
@@ -1796,6 +1869,96 @@ components:
           $ref: '#/components/schemas/IvrFlowValidationResult'
 
     # ── Call Events ───────────────────────────────────────────────────────────
+
+    IvrFlowSimulationRequest:
+      type: object
+      properties:
+        digits:
+          type: array
+          items:
+            type: string
+        caller_number:
+          type: string
+        now:
+          type: string
+          format: date-time
+        force_timeout:
+          type: boolean
+        force_invalid:
+          type: boolean
+
+    IvrFlowSimulationFinalAction:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [transfer_extension, hangup]
+        extension_id:
+          type: string
+          format: uuid
+        extension_number:
+          type: string
+
+    IvrFlowSimulationOutcome:
+      type: object
+      required: [status, path, errors]
+      properties:
+        status:
+          type: string
+          enum: [passed, failed]
+        path:
+          type: array
+          items:
+            type: string
+        final_action:
+          oneOf:
+            - $ref: '#/components/schemas/IvrFlowSimulationFinalAction'
+            - type: 'null'
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    IvrFlowSimulationResult:
+      type: object
+      required: [version, scenario, outcome]
+      properties:
+        version:
+          $ref: '#/components/schemas/FlowVersion'
+        scenario:
+          $ref: '#/components/schemas/IvrFlowSimulationRequest'
+        outcome:
+          $ref: '#/components/schemas/IvrFlowSimulationOutcome'
+
+    IvrFlowSimulationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/IvrFlowSimulationResult'
+
+    IvrFlowPublishResult:
+      type: object
+      required: [status, flow]
+      properties:
+        status:
+          type: string
+          enum: [published, pending_approval]
+        flow:
+          $ref: '#/components/schemas/IvrFlow'
+        approval_request_id:
+          type: string
+          format: uuid
+          nullable: true
+
+    IvrFlowPublishResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/IvrFlowPublishResult'
 
     CallEvent:
       type: object

@@ -18,6 +18,7 @@ export type FlowVersion = {
   graph_json: Record<string, unknown>;
   created_at: string;
   validated_at: string | null;
+  simulated_at: string | null;
   published_at: string | null;
 };
 
@@ -33,6 +34,34 @@ export type IvrFlow = {
 };
 
 export type IvrFlowWithVersions = IvrFlow & { versions: FlowVersion[] };
+
+export type FlowValidationResponse = {
+  version: FlowVersion;
+  outcome: { status: string; errors: unknown[]; warnings: unknown[] };
+};
+
+export type FlowSimulationResponse = {
+  version: FlowVersion;
+  scenario: {
+    digits?: string[];
+    caller_number?: string;
+    now?: string;
+    force_timeout?: boolean;
+    force_invalid?: boolean;
+  };
+  outcome: {
+    status: string;
+    path: string[];
+    final_action: Record<string, unknown> | null;
+    errors: unknown[];
+  };
+};
+
+export type FlowPublishResponse = {
+  status: 'published' | 'pending_approval';
+  flow: IvrFlow;
+  approval_request_id?: string;
+};
 
 function noRetryOnAuthError(failureCount: number, error: unknown): boolean {
   if (error instanceof ApiError && (error.status === 401 || error.status === 403)) return false;
@@ -99,7 +128,7 @@ export function useValidateFlowVersion(flowId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (versionId: string) => {
-      const r = await apiRequest<{ data: { version: FlowVersion; outcome: { status: string; errors: unknown[] } } }>(
+      const r = await apiRequest<{ data: FlowValidationResponse }>(
         `/ivr-flows/${flowId}/versions/${versionId}/validate`,
         { method: 'POST', accessToken: session?.token },
       );
@@ -114,9 +143,37 @@ export function useValidateCurrentDraft(flowId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const r = await apiRequest<{ data: { version: FlowVersion; outcome: { status: string; errors: unknown[]; warnings: unknown[] } } }>(
+      const r = await apiRequest<{ data: FlowValidationResponse }>(
         `/ivr-flows/${flowId}/validate`,
         { method: 'POST', accessToken: session?.token },
+      );
+      return r.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['ivr-flows', flowId] });
+      void qc.invalidateQueries({ queryKey: ['ivr-flows', flowId, 'versions'] });
+    },
+  });
+}
+
+export function useSimulateCurrentDraft(flowId: string) {
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body?: {
+      digits?: string[];
+      caller_number?: string;
+      now?: string;
+      force_timeout?: boolean;
+      force_invalid?: boolean;
+    }) => {
+      const r = await apiRequest<{ data: FlowSimulationResponse }>(
+        `/ivr-flows/${flowId}/simulate`,
+        {
+          method: 'POST',
+          body: JSON.stringify(body ?? {}),
+          accessToken: session?.token,
+        },
       );
       return r.data;
     },
@@ -132,7 +189,7 @@ export function usePublishFlowVersion(flowId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (versionId: string) => {
-      const r = await apiRequest<{ data: IvrFlow }>(
+      const r = await apiRequest<{ data: FlowPublishResponse }>(
         `/ivr-flows/${flowId}/versions/${versionId}/publish`,
         { method: 'POST', accessToken: session?.token },
       );
@@ -150,7 +207,7 @@ export function useRollbackFlow(flowId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const r = await apiRequest<{ data: IvrFlow }>(
+      const r = await apiRequest<{ data: FlowPublishResponse }>(
         `/ivr-flows/${flowId}/rollback`,
         { method: 'POST', accessToken: session?.token },
       );

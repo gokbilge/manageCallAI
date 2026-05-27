@@ -44,6 +44,17 @@ describe('IVR Flows API integration', () => {
     return res.json<{ token: string }>().token;
   }
 
+  function decodeTokenClaims(token: string): { sub: string; tenant_id: string; email: string; role?: string } {
+    const [, payload] = token.split('.');
+    if (!payload) throw new Error('Invalid token');
+    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as {
+      sub: string;
+      tenant_id: string;
+      email: string;
+      role?: string;
+    };
+  }
+
   const validDefinition = {
     nodes: [
       { id: 'start', type: 'play', prompt: 'Welcome to our system' },
@@ -53,14 +64,36 @@ describe('IVR Flows API integration', () => {
     entry_node_id: 'start',
   };
 
-  const invalidDefinition = { greeting: 'hello' }; // missing nodes
+  const invalidDefinition = { greeting: 'hello' };
 
-  it('GET /ivr-flows → 401 without auth', async () => {
+  const simulationDefinition = {
+    entry_node_id: 'start',
+    nodes: [
+      { id: 'start', type: 'start', next_node_id: 'welcome' },
+      {
+        id: 'welcome',
+        type: 'play_collect',
+        next_node_id: 'route_digit',
+        timeout_node_id: 'end',
+        invalid_node_id: 'end',
+      },
+      {
+        id: 'route_digit',
+        type: 'switch',
+        cases: { '1': 'sales' },
+        default_node_id: 'end',
+      },
+      { id: 'sales', type: 'transfer_extension', extension_number: '200' },
+      { id: 'end', type: 'hangup' },
+    ],
+  };
+
+  it('GET /ivr-flows returns 401 without auth', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/ivr-flows' });
     expect(res.statusCode).toBe(401);
   });
 
-  it('POST /ivr-flows → creates flow with draft version 1', async () => {
+  it('POST /ivr-flows creates flow with draft version 1', async () => {
     const token = await register(randomUUID().slice(0, 8));
     const res = await app.inject({
       method: 'POST',
@@ -70,18 +103,18 @@ describe('IVR Flows API integration', () => {
     });
     expect(res.statusCode).toBe(201);
     const { data } = res.json<{ data: Record<string, unknown> }>();
-    expect(data['name']).toBe('Main Menu');
-    expect(data['status']).toBe('draft');
-    expect(data['draft_version_id']).toBeTruthy();
-    expect(data['active_version_id']).toBeNull();
-    const versions = data['versions'] as unknown[];
+    expect(data.name).toBe('Main Menu');
+    expect(data.status).toBe('draft');
+    expect(data.draft_version_id).toBeTruthy();
+    expect(data.active_version_id).toBeNull();
+    const versions = data.versions as Array<Record<string, unknown>>;
     expect(versions).toHaveLength(1);
-    expect((versions[0] as Record<string, unknown>)['version_number']).toBe(1);
-    expect((versions[0] as Record<string, unknown>)['state']).toBe('draft');
-    expect((versions[0] as Record<string, unknown>)['graph_json']).toBeTruthy();
+    expect(versions[0]?.version_number).toBe(1);
+    expect(versions[0]?.state).toBe('draft');
+    expect(versions[0]?.graph_json).toBeTruthy();
   });
 
-  it('GET /ivr-flows/:id/versions → lists versions for the tenant flow', async () => {
+  it('GET /ivr-flows/:id/versions lists versions for the tenant flow', async () => {
     const token = await register(randomUUID().slice(0, 8));
     const createRes = await app.inject({
       method: 'POST',
@@ -103,7 +136,7 @@ describe('IVR Flows API integration', () => {
     expect(body.data[0]?.version_number).toBe(1);
   });
 
-  it('POST /ivr-flows/:id/versions/:vid/validate → 422 for invalid definition', async () => {
+  it('POST /ivr-flows/:id/versions/:vid/validate returns 422 for invalid definition', async () => {
     const token = await register(randomUUID().slice(0, 8));
     const createRes = await app.inject({
       method: 'POST',
@@ -125,7 +158,7 @@ describe('IVR Flows API integration', () => {
     expect(body.data.outcome.errors.length).toBeGreaterThan(0);
   });
 
-  it('POST /ivr-flows/:id/validate → validates the current draft version', async () => {
+  it('POST /ivr-flows/:id/validate validates the current draft version', async () => {
     const token = await register(randomUUID().slice(0, 8));
     const createRes = await app.inject({
       method: 'POST',
@@ -146,10 +179,74 @@ describe('IVR Flows API integration', () => {
     expect(body.data.outcome.status).toBe('passed');
   });
 
-  it('full lifecycle: create → validate → publish → rollback', async () => {
+  it('POST /ivr-flows/:id/simulate simulates the current draft version', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/ivr-flows',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Simulation Flow', graph_json: simulationDefinition },
+    });
+    const flow = createRes.json<{ data: { id: string } }>().data;
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/ivr-flows/${flow.id}/simulate`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { digits: ['1'] },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      data: {
+        outcome: {
+          status: string;
+          path: string[];
+          final_action: { type: string; extension_number?: string };
+        };
+      };
+    }>();
+    expect(body.data.outcome.status).toBe('passed');
+    expect(body.data.outcome.path).toEqual(['start', 'welcome', 'route_digit', 'sales']);
+    expect(body.data.outcome.final_action.type).toBe('transfer_extension');
+    expect(body.data.outcome.final_action.extension_number).toBe('200');
+  });
+
+  it('POST /ivr-flows/:id/versions/:vid/simulate returns 422 for unsupported runtime path', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/ivr-flows',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Broken Simulation Flow',
+        graph_json: {
+          entry_node_id: 'start',
+          nodes: [
+            { id: 'start', type: 'start', next_node_id: 'mystery' },
+            { id: 'mystery', type: 'unsupported_future_node' },
+          ],
+        },
+      },
+    });
+    const flow = createRes.json<{ data: { id: string; versions: Array<{ id: string }> } }>().data;
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/ivr-flows/${flow.id}/versions/${flow.versions[0]!.id}/simulate`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: {},
+    });
+
+    expect(res.statusCode).toBe(422);
+    const body = res.json<{ data: { outcome: { status: string; errors: Array<{ message: string }> } } }>();
+    expect(body.data.outcome.status).toBe('failed');
+    expect(body.data.outcome.errors[0]?.message).toContain('Unsupported node type');
+  });
+
+  it('full lifecycle: create, validate, publish, rollback', async () => {
     const token = await register(randomUUID().slice(0, 8));
 
-    // Create
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -160,7 +257,6 @@ describe('IVR Flows API integration', () => {
     const flow = createRes.json<{ data: { id: string; versions: Array<{ id: string }> } }>().data;
     const v1Id = flow.versions[0]!.id;
 
-    // Validate v1
     const validateRes = await app.inject({
       method: 'POST',
       url: `/api/v1/ivr-flows/${flow.id}/versions/${v1Id}/validate`,
@@ -171,18 +267,16 @@ describe('IVR Flows API integration', () => {
     expect(validateBody.data.outcome.status).toBe('passed');
     expect(validateBody.data.version.state).toBe('validated');
 
-    // Publish v1
     const publishRes = await app.inject({
       method: 'POST',
       url: `/api/v1/ivr-flows/${flow.id}/versions/${v1Id}/publish`,
       headers: { authorization: `Bearer ${token}` },
     });
     expect(publishRes.statusCode).toBe(200);
-    const published = publishRes.json<{ data: { status: string; active_version_id: string } }>().data;
-    expect(published.status).toBe('active');
-    expect(published.active_version_id).toBe(v1Id);
+    const published = publishRes.json<{ data: { status: string; flow: { active_version_id: string } } }>().data;
+    expect(published.status).toBe('published');
+    expect(published.flow.active_version_id).toBe(v1Id);
 
-    // Create v2 draft
     const v2Res = await app.inject({
       method: 'POST',
       url: `/api/v1/ivr-flows/${flow.id}/versions`,
@@ -194,35 +288,33 @@ describe('IVR Flows API integration', () => {
     expect(v2.version_number).toBe(2);
     expect(v2.state).toBe('draft');
 
-    // Validate v2
     await app.inject({
       method: 'POST',
       url: `/api/v1/ivr-flows/${flow.id}/versions/${v2.id}/validate`,
       headers: { authorization: `Bearer ${token}` },
     });
 
-    // Publish v2 → v1 becomes superseded
     const publish2Res = await app.inject({
       method: 'POST',
       url: `/api/v1/ivr-flows/${flow.id}/versions/${v2.id}/publish`,
       headers: { authorization: `Bearer ${token}` },
     });
     expect(publish2Res.statusCode).toBe(200);
-    const published2 = publish2Res.json<{ data: { active_version_id: string } }>().data;
-    expect(published2.active_version_id).toBe(v2.id);
+    const published2 = publish2Res.json<{ data: { flow: { active_version_id: string } } }>().data;
+    expect(published2.flow.active_version_id).toBe(v2.id);
 
-    // Rollback → v1 becomes active again
     const rollbackRes = await app.inject({
       method: 'POST',
       url: `/api/v1/ivr-flows/${flow.id}/rollback`,
       headers: { authorization: `Bearer ${token}` },
     });
     expect(rollbackRes.statusCode).toBe(200);
-    const rolledBack = rollbackRes.json<{ data: { active_version_id: string } }>().data;
-    expect(rolledBack.active_version_id).toBe(v1Id);
+    const rolledBack = rollbackRes.json<{ data: { status: string; flow: { active_version_id: string } } }>().data;
+    expect(rolledBack.status).toBe('published');
+    expect(rolledBack.flow.active_version_id).toBe(v1Id);
   });
 
-  it('publish → 409 when version is not validated', async () => {
+  it('publish returns 409 when version is not validated', async () => {
     const token = await register(randomUUID().slice(0, 8));
     const createRes = await app.inject({
       method: 'POST',
@@ -241,7 +333,7 @@ describe('IVR Flows API integration', () => {
     expect(res.statusCode).toBe(409);
   });
 
-  it('rollback → 409 when no superseded version exists', async () => {
+  it('rollback returns 409 when no superseded version exists', async () => {
     const token = await register(randomUUID().slice(0, 8));
     const createRes = await app.inject({
       method: 'POST',
@@ -259,7 +351,52 @@ describe('IVR Flows API integration', () => {
     expect(res.statusCode).toBe(409);
   });
 
-  it('GET /ivr-flows/:id → 404 for non-existent flow', async () => {
+  it('publish returns 202 pending approval when tenant policy requires approval', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const token = await register(suffix);
+    const claims = decodeTokenClaims(token);
+
+    await db.query(
+      `INSERT INTO policies (tenant_id, name, policy_type, rules, status)
+       VALUES ($1, 'IVR publish approvals', 'ivr_publish_control', $2, 'active')`,
+      [claims.tenant_id, JSON.stringify({ require_approval: true })],
+    );
+
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/ivr-flows',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Approval Flow', definition: validDefinition },
+    });
+    const flow = createRes.json<{ data: { id: string; versions: Array<{ id: string }> } }>().data;
+    const versionId = flow.versions[0]!.id;
+
+    await app.inject({
+      method: 'POST',
+      url: `/api/v1/ivr-flows/${flow.id}/versions/${versionId}/validate`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    const publishRes = await app.inject({
+      method: 'POST',
+      url: `/api/v1/ivr-flows/${flow.id}/versions/${versionId}/publish`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(publishRes.statusCode).toBe(202);
+    const body = publishRes.json<{
+      data: {
+        status: string;
+        flow: { active_version_id: string | null };
+        approval_request_id?: string;
+      };
+    }>();
+    expect(body.data.status).toBe('pending_approval');
+    expect(body.data.flow.active_version_id).toBeNull();
+    expect(body.data.approval_request_id).toBeTruthy();
+  });
+
+  it('GET /ivr-flows/:id returns 404 for non-existent flow', async () => {
     const token = await register(randomUUID().slice(0, 8));
     const res = await app.inject({
       method: 'GET',
@@ -269,7 +406,7 @@ describe('IVR Flows API integration', () => {
     expect(res.statusCode).toBe(404);
   });
 
-  it('tenant isolation: cannot see another tenant flow', async () => {
+  it('tenant isolation prevents reading another tenant flow', async () => {
     const token1 = await register(randomUUID().slice(0, 8));
     const token2 = await register(randomUUID().slice(0, 8));
 

@@ -38,7 +38,7 @@ This directory contains the primary project documentation for `manageCallAI`.
   Full local runtime proof: stock FreeSWITCH startup, containerized ESL agent, real SIP REGISTER, and persisted `registration_seen` event.
 
 - [development/ivr-flow-foundation-proof.md](development/ivr-flow-foundation-proof.md)
-  Command-driven proof of the first IVR desired-state slice: create flow, inspect versions, and validate a draft.
+  Command-driven proof of the first IVR desired-state slice: create flow, inspect versions, validate a draft, simulate it, and attempt publish safely.
 
 - [design/database-schema.md](design/database-schema.md)
   PostgreSQL schema direction covering relational mapping, versioning strategy, integrity rules, and the initial SQL DDL reference.

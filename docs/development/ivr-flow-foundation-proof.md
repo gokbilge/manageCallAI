@@ -13,7 +13,9 @@ It covers:
 3. create an IVR flow draft
 4. list versions
 5. validate the draft
-6. inspect the result in the tenant web UI
+6. simulate the draft
+7. publish immediately or observe approval-pending behavior
+8. inspect the result in the tenant web UI
 
 ## 1. Prepare the Environment
 
@@ -179,7 +181,37 @@ Expected behavior:
 }
 ```
 
-## 7. Optional UI Proof
+## 7. Simulate the Draft
+
+```bash
+curl -X POST http://localhost:3000/api/v1/ivr-flows/<FLOW_ID>/simulate \
+  -H "Authorization: Bearer <JWT>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "digits": ["2"],
+    "caller_number": "+905551112233"
+  }'
+```
+
+Expected behavior:
+
+- `200` when the simulated path completes cleanly
+- `422` when the graph is structurally valid but cannot complete the requested runtime path
+- response includes `path`, `final_action`, and any simulation errors
+
+## 8. Publish the Version
+
+```bash
+curl -X POST http://localhost:3000/api/v1/ivr-flows/<FLOW_ID>/versions/<VERSION_ID>/publish \
+  -H "Authorization: Bearer <JWT>"
+```
+
+Expected behavior:
+
+- `200` with `{ "data": { "status": "published", "flow": { ... } } }` when no approval is required
+- `202` with `{ "data": { "status": "pending_approval", "approval_request_id": "...", "flow": { ... } } }` when tenant policy requires approval
+
+## 9. Optional UI Proof
 
 With the web app running:
 
@@ -189,12 +221,14 @@ With the web app running:
 4. open `/tenant/ivr-flows/:flowId`
 5. review versions and raw `graph_json`
 6. run `Validate Draft`
+7. run `Simulate Draft`
+8. observe publish status or pending approval state
 
 Current boundary:
 
 - no visual builder yet
 - no runtime execution yet
-- no simulation endpoint yet
-- no publish approval flow yet
+- simulation remains deterministic preview only, not live call execution
+- approval requests are created, but approval decision endpoints are still a later slice
 
 This slice proves the desired-state IVR foundation only.

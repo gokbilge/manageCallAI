@@ -1,5 +1,13 @@
 import type { Pool } from 'pg';
-import type { FlowVersion, IvrFlow, IvrFlowWithVersions, ValidationOutcome } from './ivr-flow.types.js';
+import type {
+  ApprovalRequestRecord,
+  FlowVersion,
+  IvrFlow,
+  IvrFlowWithVersions,
+  SimulationOutcome,
+  SimulationScenario,
+  ValidationOutcome,
+} from './ivr-flow.types.js';
 
 export class IvrFlowRepository {
   constructor(private readonly db: Pool) {}
@@ -22,7 +30,7 @@ export class IvrFlowRepository {
     if (!flowR.rows[0]) return null;
 
     const versionsR = await this.db.query<FlowVersion>(
-      `SELECT id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at
+      `SELECT id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at
        FROM flow_versions WHERE flow_id = $1 ORDER BY version_number DESC`,
       [id],
     );
@@ -31,7 +39,7 @@ export class IvrFlowRepository {
 
   async findVersionById(versionId: string, flowId: string, tenantId: string): Promise<FlowVersion | null> {
     const r = await this.db.query<FlowVersion>(
-      `SELECT fv.id, fv.tenant_id, fv.flow_id, fv.version_number, fv.state, fv.definition AS graph_json, fv.created_by, fv.created_at, fv.validated_at, fv.published_at
+      `SELECT fv.id, fv.tenant_id, fv.flow_id, fv.version_number, fv.state, fv.definition AS graph_json, fv.created_by, fv.created_at, fv.validated_at, fv.simulated_at, fv.published_at
        FROM flow_versions fv
        JOIN ivr_flows f ON f.id = fv.flow_id
        WHERE fv.id = $1 AND fv.flow_id = $2 AND f.tenant_id = $3`,
@@ -62,7 +70,7 @@ export class IvrFlowRepository {
       const versionR = await client.query<FlowVersion>(
         `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by)
          VALUES ($1, $2, 1, 'draft', $3, $4)
-         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at`,
+         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
         [input.tenant_id, flow.id, JSON.stringify(input.graph_json), input.created_by ?? null],
       );
       const version = versionR.rows[0]!;
@@ -118,7 +126,7 @@ export class IvrFlowRepository {
       const versionR = await client.query<FlowVersion>(
         `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by)
          VALUES ($1, $2, $3, 'draft', $4, $5)
-         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at`,
+         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
         [input.tenant_id, input.flow_id, input.version_number, JSON.stringify(input.definition), input.created_by ?? null],
       );
       const version = versionR.rows[0]!;
@@ -141,7 +149,7 @@ export class IvrFlowRepository {
       `UPDATE flow_versions SET definition = $1
        WHERE id = $2 AND flow_id = $3 AND state = 'draft'
          AND tenant_id = (SELECT tenant_id FROM ivr_flows WHERE id = $3 AND tenant_id = $4 LIMIT 1)
-       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at`,
+       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
       [JSON.stringify(definition), versionId, flowId, tenantId],
     );
     return r.rows[0] ?? null;
@@ -152,7 +160,20 @@ export class IvrFlowRepository {
       `UPDATE flow_versions SET state = 'validated', validated_at = NOW()
        WHERE id = $1 AND flow_id = $2
          AND tenant_id = (SELECT tenant_id FROM ivr_flows WHERE id = $2 AND tenant_id = $3 LIMIT 1)
-       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at`,
+       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
+      [versionId, flowId, tenantId],
+    );
+    return r.rows[0] ?? null;
+  }
+
+  async markVersionSimulated(versionId: string, flowId: string, tenantId: string): Promise<FlowVersion | null> {
+    const r = await this.db.query<FlowVersion>(
+      `UPDATE flow_versions
+       SET state = CASE WHEN state = 'draft' THEN 'simulated' ELSE state END,
+           simulated_at = NOW()
+       WHERE id = $1 AND flow_id = $2
+         AND tenant_id = (SELECT tenant_id FROM ivr_flows WHERE id = $2 AND tenant_id = $3 LIMIT 1)
+       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
       [versionId, flowId, tenantId],
     );
     return r.rows[0] ?? null;
@@ -161,7 +182,7 @@ export class IvrFlowRepository {
   async findVersionsByFlowId(flowId: string, tenantId: string): Promise<FlowVersion[]> {
     const r = await this.db.query<FlowVersion>(
       `SELECT fv.id, fv.tenant_id, fv.flow_id, fv.version_number, fv.state, fv.definition AS graph_json,
-              fv.created_by, fv.created_at, fv.validated_at, fv.published_at
+              fv.created_by, fv.created_at, fv.validated_at, fv.simulated_at, fv.published_at
        FROM flow_versions fv
        JOIN ivr_flows f ON f.id = fv.flow_id
        WHERE fv.flow_id = $1 AND f.tenant_id = $2
@@ -187,6 +208,77 @@ export class IvrFlowRepository {
         input.outcome.status,
         JSON.stringify(input.outcome.errors),
         JSON.stringify(input.outcome.warnings),
+      ],
+    );
+  }
+
+  async storeSimulationResult(input: {
+    tenant_id: string;
+    flow_id: string;
+    version_id: string;
+    scenario: SimulationScenario;
+    outcome: SimulationOutcome;
+  }): Promise<void> {
+    await this.db.query(
+      `INSERT INTO simulation_results (tenant_id, object_type, object_id, version_id, scenario, status, result_payload)
+       VALUES ($1, 'ivr_flow', $2, $3, $4, $5, $6)`,
+      [
+        input.tenant_id,
+        input.flow_id,
+        input.version_id,
+        JSON.stringify(input.scenario),
+        input.outcome.status,
+        JSON.stringify(input.outcome),
+      ],
+    );
+  }
+
+  async getActivePublishPolicy(tenantId: string): Promise<{ require_approval: boolean } | null> {
+    const r = await this.db.query<{ rules: { require_approval?: boolean } }>(
+      `SELECT rules
+       FROM policies
+       WHERE tenant_id = $1 AND policy_type = 'ivr_publish_control' AND status = 'active'
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [tenantId],
+    );
+    if (!r.rows[0]) return null;
+    return { require_approval: r.rows[0].rules?.require_approval === true };
+  }
+
+  async createApprovalRequest(input: {
+    tenant_id: string;
+    flow_id: string;
+    version_id: string;
+    requested_by: string;
+  }): Promise<ApprovalRequestRecord> {
+    const r = await this.db.query<ApprovalRequestRecord>(
+      `INSERT INTO approval_requests (tenant_id, object_type, object_id, version_id, requested_by, status)
+       VALUES ($1, 'ivr_flow', $2, $3, $4, 'pending')
+       RETURNING id, tenant_id, object_type, object_id, version_id, requested_by, status, created_at`,
+      [input.tenant_id, input.flow_id, input.version_id, input.requested_by],
+    );
+    return r.rows[0]!;
+  }
+
+  async storePendingPublishRecord(input: {
+    tenant_id: string;
+    flow_id: string;
+    version_id: string;
+    triggered_by_id: string;
+    approval_request_id: string;
+    action_type: 'publish' | 'rollback';
+  }): Promise<void> {
+    await this.db.query(
+      `INSERT INTO publish_records (tenant_id, object_type, object_id, version_id, action_type, triggered_by_type, triggered_by_id, approval_request_id, result)
+       VALUES ($1, 'ivr_flow', $2, $3, $4, 'user', $5, $6, 'pending_approval')`,
+      [
+        input.tenant_id,
+        input.flow_id,
+        input.version_id,
+        input.action_type,
+        input.triggered_by_id,
+        input.approval_request_id,
       ],
     );
   }

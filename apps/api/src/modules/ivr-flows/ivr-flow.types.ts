@@ -16,6 +16,7 @@ export interface FlowVersion {
   created_by: string | null;
   created_at: Date;
   validated_at: Date | null;
+  simulated_at: Date | null;
   published_at: Date | null;
 }
 
@@ -63,4 +64,48 @@ export interface ValidationOutcome {
 export interface FlowValidationResult {
   version: FlowVersion;
   outcome: ValidationOutcome;
+}
+
+export interface SimulationScenario {
+  digits?: string[];
+  caller_number?: string;
+  now?: string;
+  force_timeout?: boolean;
+  force_invalid?: boolean;
+}
+
+export interface SimulationFinalAction {
+  type: 'transfer_extension' | 'hangup';
+  extension_id?: string;
+  extension_number?: string;
+}
+
+export interface SimulationOutcome {
+  status: 'passed' | 'failed';
+  path: string[];
+  final_action: SimulationFinalAction | null;
+  errors: ValidationError[];
+}
+
+export interface FlowSimulationResult {
+  version: FlowVersion;
+  scenario: SimulationScenario;
+  outcome: SimulationOutcome;
+}
+
+export interface ApprovalRequestRecord {
+  id: string;
+  tenant_id: string;
+  object_type: string;
+  object_id: string;
+  version_id: string | null;
+  requested_by: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+  created_at: Date;
+}
+
+export interface PublishAttemptResult {
+  status: 'published' | 'pending_approval';
+  flow: IvrFlow;
+  approval_request_id?: string;
 }

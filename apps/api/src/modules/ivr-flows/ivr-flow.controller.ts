@@ -245,6 +245,68 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
   );
 
   app.post<{ Params: { id: string; vid: string } }>(
+    '/:id/simulate',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE),
+      schema: {
+        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        body: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            digits: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 8 } },
+            caller_number: { type: 'string', maxLength: 64 },
+            now: { type: 'string', format: 'date-time' },
+            force_timeout: { type: 'boolean' },
+            force_invalid: { type: 'boolean' },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const result = await service.simulateCurrentDraft(req.params.id, user.tenant_id, req.body ?? {});
+        const statusCode = result.outcome.status === 'passed' ? 200 : 422;
+        return reply.code(statusCode).send({ data: result });
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post<{ Params: { id: string; vid: string } }>(
+    '/:id/versions/:vid/simulate',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE),
+      schema: {
+        params: { type: 'object', required: ['id', 'vid'], properties: { id: { type: 'string' }, vid: { type: 'string' } } },
+        body: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            digits: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 8 } },
+            caller_number: { type: 'string', maxLength: 64 },
+            now: { type: 'string', format: 'date-time' },
+            force_timeout: { type: 'boolean' },
+            force_invalid: { type: 'boolean' },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const result = await service.simulate(req.params.id, req.params.vid, user.tenant_id, req.body ?? {});
+        const statusCode = result.outcome.status === 'passed' ? 200 : 422;
+        return reply.code(statusCode).send({ data: result });
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post<{ Params: { id: string; vid: string } }>(
     '/:id/versions/:vid/publish',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH),
@@ -255,8 +317,9 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
-        const flow = await service.publish(req.params.id, req.params.vid, user.tenant_id, user.sub);
-        return { data: flow };
+        const result = await service.publish(req.params.id, req.params.vid, user.tenant_id, user.sub, user.role);
+        const statusCode = result.status === 'pending_approval' ? 202 : 200;
+        return reply.code(statusCode).send({ data: result });
       } catch (err) {
         return replyError(err, reply);
       }
@@ -274,8 +337,9 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
-        const flow = await service.rollback(req.params.id, user.tenant_id, user.sub);
-        return { data: flow };
+        const result = await service.rollback(req.params.id, user.tenant_id, user.sub, user.role);
+        const statusCode = result.status === 'pending_approval' ? 202 : 200;
+        return reply.code(statusCode).send({ data: result });
       } catch (err) {
         return replyError(err, reply);
       }

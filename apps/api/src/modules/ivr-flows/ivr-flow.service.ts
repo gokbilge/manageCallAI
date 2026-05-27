@@ -2,9 +2,13 @@ import type { IvrFlowRepository } from './ivr-flow.repository.js';
 import type {
   CreateIvrFlowInput,
   FlowVersion,
+  FlowSimulationResult,
   FlowValidationResult,
   IvrFlow,
   IvrFlowWithVersions,
+  PublishAttemptResult,
+  SimulationOutcome,
+  SimulationScenario,
   UpdateIvrFlowInput,
 } from './ivr-flow.types.js';
 import { defaultIvrGraph, validateIvrGraph } from './ivr-flow.validation.js';
@@ -23,6 +27,142 @@ export class FlowVersionStateError extends Error {
 
 export class RollbackNotAvailableError extends Error {
   constructor() { super('No superseded version available for rollback'); this.name = 'RollbackNotAvailableError'; }
+}
+
+function normalizeDigits(scenario: SimulationScenario): string | undefined {
+  if (!scenario.digits || scenario.digits.length === 0) return undefined;
+  return scenario.digits.join('');
+}
+
+function toSimulationError(field: string, message: string) {
+  return { field, message };
+}
+
+function simulateGraph(graph: Record<string, unknown>, scenario: SimulationScenario): SimulationOutcome {
+  const baseValidation = validateIvrGraph(graph);
+  if (baseValidation.status === 'failed') {
+    return {
+      status: 'failed',
+      path: [],
+      final_action: null,
+      errors: baseValidation.errors,
+    };
+  }
+
+  const entryNodeId = graph.entry_node_id;
+  const nodesValue = graph.nodes;
+  if (typeof entryNodeId !== 'string' || !Array.isArray(nodesValue)) {
+    return {
+      status: 'failed',
+      path: [],
+      final_action: null,
+      errors: [toSimulationError('graph_json', 'Graph is missing a valid entry point or nodes array')],
+    };
+  }
+
+  const nodes = new Map<string, Record<string, unknown>>();
+  for (const node of nodesValue) {
+    if (typeof node === 'object' && node !== null && !Array.isArray(node) && typeof (node as Record<string, unknown>).id === 'string') {
+      nodes.set((node as Record<string, unknown>).id as string, node as Record<string, unknown>);
+    }
+  }
+
+  const path: string[] = [];
+  let currentId: string | undefined = entryNodeId;
+  const digits = normalizeDigits(scenario);
+  let steps = 0;
+
+  while (currentId && steps < 100) {
+    steps += 1;
+    path.push(currentId);
+    const node = nodes.get(currentId);
+    if (!node) {
+      return {
+        status: 'failed',
+        path,
+        final_action: null,
+        errors: [toSimulationError(`graph_json.nodes.${currentId}`, 'Referenced node could not be loaded during simulation')],
+      };
+    }
+
+    const type = String(node.type ?? '');
+    if (type === 'start') {
+      currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
+      continue;
+    }
+
+    if (type === 'play' || type === 'play_prompt') {
+      currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
+      continue;
+    }
+
+    if (type === 'menu' || type === 'play_collect') {
+      if (scenario.force_timeout) {
+        currentId = typeof node.timeout_node_id === 'string' ? node.timeout_node_id : undefined;
+        continue;
+      }
+      if (scenario.force_invalid || !digits) {
+        currentId = typeof node.invalid_node_id === 'string'
+          ? node.invalid_node_id
+          : typeof node.default_node_id === 'string'
+            ? node.default_node_id
+            : undefined;
+        continue;
+      }
+      currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
+      continue;
+    }
+
+    if (type === 'switch' || type === 'condition') {
+      const cases = node.cases;
+      const lookup = typeof cases === 'object' && cases !== null && !Array.isArray(cases)
+        ? (cases as Record<string, unknown>)
+        : {};
+      const selected = digits ? lookup[digits] : undefined;
+      currentId = typeof selected === 'string'
+        ? selected
+        : typeof node.default_node_id === 'string'
+          ? node.default_node_id
+          : undefined;
+      continue;
+    }
+
+    if (type === 'transfer_extension' || type === 'transfer') {
+      return {
+        status: 'passed',
+        path,
+        final_action: {
+          type: 'transfer_extension',
+          extension_id: typeof node.extension_id === 'string' ? node.extension_id : undefined,
+          extension_number: typeof node.extension_number === 'string' ? node.extension_number : undefined,
+        },
+        errors: [],
+      };
+    }
+
+    if (type === 'hangup') {
+      return {
+        status: 'passed',
+        path,
+        final_action: { type: 'hangup' },
+        errors: [],
+      };
+    }
+
+    return {
+      status: 'failed',
+      path,
+      final_action: null,
+      errors: [toSimulationError(`graph_json.nodes.${currentId}.type`, `Unsupported runtime node type: ${type}`)],
+    };
+  }
+
+  return {
+    status: 'failed',
+    path,
+    final_action: null,
+    errors: [toSimulationError('graph_json', 'Simulation exceeded maximum traversal steps or hit an unresolved dead end')],
+  };
 }
 
 export class IvrFlowService {
@@ -100,20 +240,91 @@ export class IvrFlowService {
     return this.validate(flowId, versionId, tenantId);
   }
 
-  async publish(flowId: string, versionId: string, tenantId: string, triggeredById: string): Promise<IvrFlow> {
+  async simulate(flowId: string, versionId: string, tenantId: string, scenario: SimulationScenario): Promise<FlowSimulationResult> {
     const version = await this.repo.findVersionById(versionId, flowId, tenantId);
     if (!version) throw new FlowVersionNotFoundError(versionId);
-    if (version.state !== 'validated') {
-      throw new FlowVersionStateError(`Version must be in 'validated' state to publish; current state: ${version.state}`);
+
+    const outcome = simulateGraph(version.graph_json, scenario);
+    await this.repo.storeSimulationResult({ tenant_id: tenantId, flow_id: flowId, version_id: versionId, scenario, outcome });
+
+    if (outcome.status === 'passed') {
+      const updated = await this.repo.markVersionSimulated(versionId, flowId, tenantId);
+      return { version: updated ?? version, scenario, outcome };
     }
-    return this.repo.publish({ tenant_id: tenantId, flow_id: flowId, version_id: versionId, triggered_by_id: triggeredById });
+
+    return { version, scenario, outcome };
   }
 
-  async rollback(flowId: string, tenantId: string, triggeredById: string): Promise<IvrFlow> {
+  async simulateCurrentDraft(flowId: string, tenantId: string, scenario: SimulationScenario): Promise<FlowSimulationResult> {
     const flow = await this.repo.findById(flowId, tenantId);
     if (!flow) throw new IvrFlowNotFoundError(flowId);
+    const versionId = flow.draft_version_id ?? flow.versions.find((version) => version.state === 'draft' || version.state === 'validated' || version.state === 'simulated')?.id;
+    if (!versionId) {
+      throw new FlowVersionStateError('No draft version available to simulate');
+    }
+    return this.simulate(flowId, versionId, tenantId, scenario);
+  }
+
+  async publish(flowId: string, versionId: string, tenantId: string, triggeredById: string, actorRole?: 'platform_admin' | 'tenant_admin'): Promise<PublishAttemptResult> {
+    const version = await this.repo.findVersionById(versionId, flowId, tenantId);
+    if (!version) throw new FlowVersionNotFoundError(versionId);
+    if (!['validated', 'simulated'].includes(version.state)) {
+      throw new FlowVersionStateError(`Version must be in 'validated' or 'simulated' state to publish; current state: ${version.state}`);
+    }
+
+    const policy = await this.repo.getActivePublishPolicy(tenantId);
+    if (policy?.require_approval && actorRole !== 'platform_admin') {
+      const approvalRequest = await this.repo.createApprovalRequest({
+        tenant_id: tenantId,
+        flow_id: flowId,
+        version_id: versionId,
+        requested_by: triggeredById,
+      });
+      await this.repo.storePendingPublishRecord({
+        tenant_id: tenantId,
+        flow_id: flowId,
+        version_id: versionId,
+        triggered_by_id: triggeredById,
+        approval_request_id: approvalRequest.id,
+        action_type: 'publish',
+      });
+      const flow = await this.getById(flowId, tenantId);
+      return { status: 'pending_approval', flow, approval_request_id: approvalRequest.id };
+    }
+
+    const flow = await this.repo.publish({ tenant_id: tenantId, flow_id: flowId, version_id: versionId, triggered_by_id: triggeredById });
+    return { status: 'published', flow };
+  }
+
+  async rollback(flowId: string, tenantId: string, triggeredById: string, actorRole?: 'platform_admin' | 'tenant_admin'): Promise<PublishAttemptResult> {
+    const flow = await this.repo.findById(flowId, tenantId);
+    if (!flow) throw new IvrFlowNotFoundError(flowId);
+    const rollbackTargetId = flow.versions.find((version) => version.state === 'superseded')?.id;
+    if (!rollbackTargetId) {
+      throw new RollbackNotAvailableError();
+    }
+
+    const policy = await this.repo.getActivePublishPolicy(tenantId);
+    if (policy?.require_approval && actorRole !== 'platform_admin') {
+      const approvalRequest = await this.repo.createApprovalRequest({
+        tenant_id: tenantId,
+        flow_id: flowId,
+        version_id: rollbackTargetId,
+        requested_by: triggeredById,
+      });
+      await this.repo.storePendingPublishRecord({
+        tenant_id: tenantId,
+        flow_id: flowId,
+        version_id: rollbackTargetId,
+        triggered_by_id: triggeredById,
+        approval_request_id: approvalRequest.id,
+        action_type: 'rollback',
+      });
+      return { status: 'pending_approval', flow, approval_request_id: approvalRequest.id };
+    }
+
     const result = await this.repo.rollback({ tenant_id: tenantId, flow_id: flowId, triggered_by_id: triggeredById });
     if (!result) throw new RollbackNotAvailableError();
-    return result.flow;
+    return { status: 'published', flow: result.flow };
   }
 }

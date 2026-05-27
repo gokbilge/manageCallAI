@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { RefreshCcw, Rocket, ShieldCheck, Workflow } from 'lucide-react';
+import { FlaskConical, RefreshCcw, Rocket, ShieldCheck, Workflow } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { DataCard } from '@/components/data/data-card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import {
   useIvrFlow,
   usePublishFlowVersion,
   useRollbackFlow,
+  useSimulateCurrentDraft,
   useValidateCurrentDraft,
 } from '@/lib/ivr-flows/ivr-flows-api';
 import { paths } from '@/lib/routes/paths';
@@ -20,6 +21,7 @@ export function IvrFlowDetailPage() {
   const flowQuery = useIvrFlow(flowId);
   const versionsQuery = useFlowVersions(flowId);
   const validateDraft = useValidateCurrentDraft(flowId);
+  const simulateDraft = useSimulateCurrentDraft(flowId);
   const publishFlowVersion = usePublishFlowVersion(flowId);
   const rollbackFlow = useRollbackFlow(flowId);
 
@@ -49,7 +51,15 @@ export function IvrFlowDetailPage() {
               {validateDraft.isPending ? 'Validating...' : 'Validate Draft'}
             </Button>
             <Button
-              disabled={!draftVersion || draftVersion.state !== 'validated' || publishFlowVersion.isPending}
+              disabled={!flowQuery.data?.draft_version_id || simulateDraft.isPending}
+              onClick={() => void simulateDraft.mutateAsync({ digits: ['1'] })}
+              variant="secondary"
+            >
+              <FlaskConical className="size-4" aria-hidden="true" />
+              {simulateDraft.isPending ? 'Simulating...' : 'Simulate Draft'}
+            </Button>
+            <Button
+              disabled={!draftVersion || !['validated', 'simulated'].includes(draftVersion.state) || publishFlowVersion.isPending}
               onClick={() => draftVersion && void publishFlowVersion.mutateAsync(draftVersion.id)}
             >
               <Rocket className="size-4" aria-hidden="true" />
@@ -107,6 +117,11 @@ export function IvrFlowDetailPage() {
                       </div>
                       <StatusBadge status={version.state === 'published' ? 'published' : version.state} />
                     </div>
+                    <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--color-muted-fg)]">
+                      <span>Validated: {version.validated_at ? 'yes' : 'no'}</span>
+                      <span>Simulated: {version.simulated_at ? 'yes' : 'no'}</span>
+                      <span>Published: {version.published_at ? 'yes' : 'no'}</span>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -160,6 +175,62 @@ export function IvrFlowDetailPage() {
             ) : (
               <p className="text-sm text-[var(--color-muted-fg)]">
                 No validation result yet. Run validation on the current draft before publish.
+              </p>
+            )}
+          </DataCard>
+
+          <DataCard title="Simulation Result" description="Simulation follows a sample input path without mutating live runtime state.">
+            {simulateDraft.data ? (
+              <div className="space-y-4 text-sm">
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={simulateDraft.data.outcome.status === 'passed' ? 'validated' : 'warning'} />
+                  <span className="font-medium">
+                    {simulateDraft.data.outcome.status === 'passed' ? 'Draft simulation passed' : 'Draft simulation failed'}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.1em] text-[var(--color-muted-fg)]">Path</p>
+                  <p className="mt-1 font-mono text-xs text-[var(--color-fg)]">
+                    {simulateDraft.data.outcome.path.length > 0 ? simulateDraft.data.outcome.path.join(' -> ') : 'No path produced'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.1em] text-[var(--color-muted-fg)]">Final Action</p>
+                  <pre className="mt-1 overflow-x-auto rounded-[var(--radius-md)] bg-[#0f172a] p-3 text-xs text-slate-100">
+                    <code>{JSON.stringify(simulateDraft.data.outcome.final_action, null, 2)}</code>
+                  </pre>
+                </div>
+                {simulateDraft.data.outcome.errors.length > 0 ? (
+                  <ul className="space-y-2 text-[var(--color-danger)]">
+                    {simulateDraft.data.outcome.errors.map((error, index) => (
+                      <li key={`sim-${index}`} className="rounded-[var(--radius-md)] bg-[var(--color-danger)]/10 px-3 py-2">
+                        {JSON.stringify(error)}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[var(--color-muted-fg)]">No simulation errors detected.</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--color-muted-fg)]">
+                No simulation result yet. Run a draft simulation before publish when changing customer-facing call behavior.
+              </p>
+            )}
+          </DataCard>
+
+          <DataCard title="Publish State" description="Publish and rollback may be gated by approval policy depending on tenant rules.">
+            {publishFlowVersion.data?.status === 'pending_approval' ? (
+              <p className="text-sm text-[var(--color-warning)]">
+                Publish request queued for approval: {publishFlowVersion.data.approval_request_id}
+              </p>
+            ) : rollbackFlow.data?.status === 'pending_approval' ? (
+              <p className="text-sm text-[var(--color-warning)]">
+                Rollback request queued for approval: {rollbackFlow.data.approval_request_id}
+              </p>
+            ) : (
+              <p className="text-sm text-[var(--color-muted-fg)]">
+                No pending approval request. Direct publish remains available when policy permits it.
               </p>
             )}
           </DataCard>

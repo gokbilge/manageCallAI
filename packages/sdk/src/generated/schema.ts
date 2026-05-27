@@ -93,28 +93,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List extensions */
+        /** List extensions for the authenticated tenant */
         get: {
             parameters: {
-                query?: {
-                    status?: components["parameters"]["StatusParam"];
-                    search?: components["parameters"]["SearchParam"];
-                    page?: components["parameters"]["PageParam"];
-                    pageSize?: components["parameters"]["PageSizeParam"];
-                };
+                query?: never;
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Extension collection */
+                /** @description Extension list */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ExtensionListResponseSnake"];
+                        "application/json": components["schemas"]["ExtensionListResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -131,7 +126,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateExtensionRequestSnake"];
+                    "application/json": components["schemas"]["CreateExtensionRequest"];
                 };
             };
             responses: {
@@ -141,7 +136,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ExtensionResponseSnake"];
+                        "application/json": components["schemas"]["ExtensionResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -180,7 +175,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ExtensionResponseSnake"];
+                        "application/json": components["schemas"]["ExtensionResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -203,7 +198,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateExtensionRequestSnake"];
+                    "application/json": components["schemas"]["UpdateExtensionRequest"];
                 };
             };
             responses: {
@@ -213,7 +208,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ExtensionResponseSnake"];
+                        "application/json": components["schemas"]["ExtensionResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -250,7 +245,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ExtensionResponseSnake"];
+                        "application/json": components["schemas"]["ExtensionResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -262,14 +257,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/trunks": {
+    "/sip-trunks": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List trunks */
+        /** List SIP trunks */
         get: {
             parameters: {
                 query?: never;
@@ -279,20 +274,20 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Trunk collection */
+                /** @description SIP trunk list */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TrunkCollection"];
+                        "application/json": components["schemas"]["SipTrunkListResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
             };
         };
         put?: never;
-        /** Create trunk */
+        /** Create SIP trunk */
         post: {
             parameters: {
                 query?: never;
@@ -302,17 +297,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateTrunkRequest"];
+                    "application/json": components["schemas"]["CreateSipTrunkRequest"];
                 };
             };
             responses: {
-                /** @description Trunk created */
+                /** @description SIP trunk created */
                 201: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Trunk"];
+                        "application/json": components["schemas"]["SipTrunkResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -324,7 +319,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/trunks/{trunkId}": {
+    "/sip-trunks/{trunkId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -333,7 +328,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Get trunk */
+        /** Get SIP trunk */
         get: {
             parameters: {
                 query?: never;
@@ -345,13 +340,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Trunk */
+                /** @description SIP trunk */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Trunk"];
+                        "application/json": components["schemas"]["SipTrunkResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -362,7 +357,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update trunk */
+        /** Update SIP trunk */
         patch: {
             parameters: {
                 query?: never;
@@ -374,17 +369,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateTrunkRequest"];
+                    "application/json": components["schemas"]["UpdateSipTrunkRequest"];
                 };
             };
             responses: {
-                /** @description Trunk updated */
+                /** @description SIP trunk updated */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Trunk"];
+                        "application/json": components["schemas"]["SipTrunkResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -392,14 +387,55 @@ export interface paths {
         };
         trace?: never;
     };
-    "/numbers": {
+    "/sip-trunks/{trunkId}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trunkId: components["parameters"]["TrunkIdParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deactivate SIP trunk */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    trunkId: components["parameters"]["TrunkIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description SIP trunk deactivated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SipTrunkResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/phone-numbers": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List numbers */
+        /** List phone numbers */
         get: {
             parameters: {
                 query?: never;
@@ -409,20 +445,20 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Number collection */
+                /** @description Phone number list */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PhoneNumberCollection"];
+                        "application/json": components["schemas"]["PhoneNumberListResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
             };
         };
         put?: never;
-        /** Create number */
+        /** Create phone number */
         post: {
             parameters: {
                 query?: never;
@@ -436,13 +472,13 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Number created */
+                /** @description Phone number created */
                 201: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PhoneNumber"];
+                        "application/json": components["schemas"]["PhoneNumberResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -454,7 +490,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/numbers/{numberId}": {
+    "/phone-numbers/{numberId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -463,7 +499,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Get number */
+        /** Get phone number */
         get: {
             parameters: {
                 query?: never;
@@ -475,13 +511,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Number */
+                /** @description Phone number */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PhoneNumber"];
+                        "application/json": components["schemas"]["PhoneNumberResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -492,7 +528,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update number */
+        /** Update phone number */
         patch: {
             parameters: {
                 query?: never;
@@ -508,18 +544,59 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Number updated */
+                /** @description Phone number updated */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PhoneNumber"];
+                        "application/json": components["schemas"]["PhoneNumberResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
             };
         };
+        trace?: never;
+    };
+    "/phone-numbers/{numberId}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                numberId: components["parameters"]["NumberIdParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deactivate phone number */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    numberId: components["parameters"]["NumberIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Phone number deactivated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PhoneNumberResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/inbound-routes": {
@@ -539,13 +616,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Inbound route collection */
+                /** @description Inbound route list */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["InboundRouteCollection"];
+                        "application/json": components["schemas"]["InboundRouteListResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -572,7 +649,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["InboundRoute"];
+                        "application/json": components["schemas"]["InboundRouteResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -593,7 +670,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Get inbound route */
+        /** Get inbound route with versions */
         get: {
             parameters: {
                 query?: never;
@@ -611,7 +688,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["InboundRoute"];
+                        "application/json": components["schemas"]["InboundRouteResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -622,7 +699,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update inbound route draft */
+        /** Update inbound route metadata */
         patch: {
             parameters: {
                 query?: never;
@@ -644,7 +721,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["InboundRoute"];
+                        "application/json": components["schemas"]["InboundRouteResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -652,7 +729,7 @@ export interface paths {
         };
         trace?: never;
     };
-    "/inbound-routes/{routeId}/validate": {
+    "/inbound-routes/{routeId}/versions": {
         parameters: {
             query?: never;
             header?: never;
@@ -663,7 +740,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Validate inbound route */
+        /** Create draft version */
         post: {
             parameters: {
                 query?: never;
@@ -673,15 +750,21 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": {
+                        definition: Record<string, never>;
+                    };
+                };
+            };
             responses: {
-                /** @description Validation result */
-                200: {
+                /** @description Draft version created */
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ValidationResult"];
+                        "application/json": components["schemas"]["RouteVersionResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -693,40 +776,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/inbound-routes/{routeId}/publish": {
+    "/inbound-routes/{routeId}/versions/{versionId}/validate": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 routeId: components["parameters"]["RouteIdParam"];
+                versionId: components["parameters"]["VersionIdParam"];
             };
             cookie?: never;
         };
         get?: never;
         put?: never;
-        /** Publish inbound route */
+        /** Validate inbound route version */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
                     routeId: components["parameters"]["RouteIdParam"];
+                    versionId: components["parameters"]["VersionIdParam"];
                 };
                 cookie?: never;
             };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["PublishRequest"];
-                };
-            };
+            requestBody?: never;
             responses: {
-                /** @description Publish record */
+                /** @description Validation passed */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PublishRecord"];
+                        "application/json": components["schemas"]["ValidationResultResponse"];
+                    };
+                };
+                /** @description Validation failed */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ValidationResultResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inbound-routes/{routeId}/versions/{versionId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routeId: components["parameters"]["RouteIdParam"];
+                versionId: components["parameters"]["VersionIdParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish validated version */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    routeId: components["parameters"]["RouteIdParam"];
+                    versionId: components["parameters"]["VersionIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Route published */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InboundRouteResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -749,7 +882,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Roll back inbound route */
+        /** Roll back to previous published version */
         post: {
             parameters: {
                 query?: never;
@@ -759,19 +892,15 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RollbackRequest"];
-                };
-            };
+            requestBody?: never;
             responses: {
-                /** @description Rollback record */
+                /** @description Route rolled back */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PublishRecord"];
+                        "application/json": components["schemas"]["InboundRouteResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -783,14 +912,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/outbound-routes": {
+    "/ivr-flows": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List outbound routes */
+        /** List IVR flows */
         get: {
             parameters: {
                 query?: never;
@@ -800,20 +929,20 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Outbound route collection */
+                /** @description IVR flow list */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OutboundRouteCollection"];
+                        "application/json": components["schemas"]["IvrFlowListResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
             };
         };
         put?: never;
-        /** Create outbound route */
+        /** Create IVR flow */
         post: {
             parameters: {
                 query?: never;
@@ -823,17 +952,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateOutboundRouteRequest"];
+                    "application/json": components["schemas"]["CreateIvrFlowRequest"];
                 };
             };
             responses: {
-                /** @description Outbound route created */
+                /** @description IVR flow created */
                 201: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OutboundRoute"];
+                        "application/json": components["schemas"]["IvrFlowDetailResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -845,34 +974,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/outbound-routes/{routeId}": {
+    "/ivr-flows/{flowId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                routeId: components["parameters"]["RouteIdParam"];
+                flowId: components["parameters"]["FlowIdParam"];
             };
             cookie?: never;
         };
-        /** Get outbound route */
+        /** Get IVR flow with versions */
         get: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    routeId: components["parameters"]["RouteIdParam"];
+                    flowId: components["parameters"]["FlowIdParam"];
                 };
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Outbound route */
+                /** @description IVR flow */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OutboundRoute"];
+                        "application/json": components["schemas"]["IvrFlowDetailResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -883,29 +1012,29 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update outbound route draft */
+        /** Update IVR flow metadata */
         patch: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    routeId: components["parameters"]["RouteIdParam"];
+                    flowId: components["parameters"]["FlowIdParam"];
                 };
                 cookie?: never;
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateOutboundRouteRequest"];
+                    "application/json": components["schemas"]["UpdateIvrFlowRequest"];
                 };
             };
             responses: {
-                /** @description Outbound route updated */
+                /** @description IVR flow updated */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OutboundRoute"];
+                        "application/json": components["schemas"]["IvrFlowResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -913,143 +1042,63 @@ export interface paths {
         };
         trace?: never;
     };
-    "/outbound-routes/{routeId}/validate": {
+    "/ivr-flows/{flowId}/versions": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                routeId: components["parameters"]["RouteIdParam"];
+                flowId: components["parameters"]["FlowIdParam"];
             };
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /** Validate outbound route */
-        post: {
+        /** List IVR flow versions */
+        get: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    routeId: components["parameters"]["RouteIdParam"];
+                    flowId: components["parameters"]["FlowIdParam"];
                 };
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Validation result */
+                /** @description Flow version list */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ValidationResult"];
+                        "application/json": components["schemas"]["FlowVersionListResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
             };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/outbound-routes/{routeId}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                routeId: components["parameters"]["RouteIdParam"];
-            };
-            cookie?: never;
-        };
-        get?: never;
         put?: never;
-        /** Publish outbound route */
+        /** Create draft version */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    routeId: components["parameters"]["RouteIdParam"];
+                    flowId: components["parameters"]["FlowIdParam"];
                 };
                 cookie?: never;
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["PublishRequest"];
+                    "application/json": components["schemas"]["FlowVersionDraftRequest"];
                 };
             };
             responses: {
-                /** @description Publish record */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PublishRecord"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/prompts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List prompts */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Prompt collection */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PromptCollection"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        /** Create prompt metadata */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreatePromptRequest"];
-                };
-            };
-            responses: {
-                /** @description Prompt created */
+                /** @description Draft version created */
                 201: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PromptAsset"];
+                        "application/json": components["schemas"]["FlowVersionResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -1061,251 +1110,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/prompts/{promptId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                promptId: components["parameters"]["PromptIdParam"];
-            };
-            cookie?: never;
-        };
-        /** Get prompt */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    promptId: components["parameters"]["PromptIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Prompt */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PromptAsset"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update prompt */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    promptId: components["parameters"]["PromptIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdatePromptRequest"];
-                };
-            };
-            responses: {
-                /** @description Prompt updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PromptAsset"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        trace?: never;
-    };
-    "/flows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List flows */
-        get: {
-            parameters: {
-                query?: {
-                    status?: components["parameters"]["StatusParam"];
-                    search?: components["parameters"]["SearchParam"];
-                    page?: components["parameters"]["PageParam"];
-                    pageSize?: components["parameters"]["PageSizeParam"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Flow collection */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["FlowCollection"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        /** Create flow */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateFlowRequest"];
-                };
-            };
-            responses: {
-                /** @description Flow created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Flow"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/flows/{flowId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                flowId: components["parameters"]["FlowIdParam"];
-            };
-            cookie?: never;
-        };
-        /** Get flow */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    flowId: components["parameters"]["FlowIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Flow */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Flow"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update flow draft */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    flowId: components["parameters"]["FlowIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateFlowRequest"];
-                };
-            };
-            responses: {
-                /** @description Flow updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Flow"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        trace?: never;
-    };
-    "/flows/{flowId}/versions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                flowId: components["parameters"]["FlowIdParam"];
-            };
-            cookie?: never;
-        };
-        /** List flow versions */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    flowId: components["parameters"]["FlowIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Flow version collection */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["FlowVersionCollection"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/flows/{flowId}/versions/{versionId}": {
+    "/ivr-flows/{flowId}/versions/{versionId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1315,7 +1120,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Get flow version */
+        /** Get IVR flow version */
         get: {
             parameters: {
                 query?: never;
@@ -1334,7 +1139,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["FlowVersion"];
+                        "application/json": components["schemas"]["FlowVersionResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -1345,529 +1150,78 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/flows/{flowId}/validate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                flowId: components["parameters"]["FlowIdParam"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Validate flow */
-        post: {
+        /** Update draft version definition */
+        patch: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
                     flowId: components["parameters"]["FlowIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Validation result */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ValidationResult"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/flows/{flowId}/simulate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                flowId: components["parameters"]["FlowIdParam"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Simulate flow */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    flowId: components["parameters"]["FlowIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["SimulateFlowRequest"];
-                };
-            };
-            responses: {
-                /** @description Simulation result */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SimulationResult"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/flows/{flowId}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                flowId: components["parameters"]["FlowIdParam"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Publish flow */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    flowId: components["parameters"]["FlowIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["PublishRequest"];
-                };
-            };
-            responses: {
-                /** @description Publish record */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PublishRecord"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/flows/{flowId}/rollback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                flowId: components["parameters"]["FlowIdParam"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Roll back flow */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    flowId: components["parameters"]["FlowIdParam"];
+                    versionId: components["parameters"]["VersionIdParam"];
                 };
                 cookie?: never;
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["RollbackRequest"];
+                    "application/json": components["schemas"]["FlowVersionDraftRequest"];
                 };
             };
             responses: {
-                /** @description Rollback record */
+                /** @description Version definition updated */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PublishRecord"];
+                        "application/json": components["schemas"]["FlowVersionResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
             };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
-    "/validations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List validation results */
-        get: {
-            parameters: {
-                query?: {
-                    objectType?: components["parameters"]["ObjectTypeParam"];
-                    objectId?: components["parameters"]["ObjectIdParam"];
-                    versionId?: components["parameters"]["VersionQueryParam"];
-                    status?: components["parameters"]["StatusParam"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Validation result collection */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ValidationResultCollection"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/validations/{validationId}": {
+    "/ivr-flows/{flowId}/versions/{versionId}/validate": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                validationId: components["parameters"]["ValidationIdParam"];
-            };
-            cookie?: never;
-        };
-        /** Get validation result */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    validationId: components["parameters"]["ValidationIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Validation result */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ValidationResult"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/simulations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List simulation results */
-        get: {
-            parameters: {
-                query?: {
-                    objectType?: components["parameters"]["ObjectTypeParam"];
-                    objectId?: components["parameters"]["ObjectIdParam"];
-                    versionId?: components["parameters"]["VersionQueryParam"];
-                    status?: components["parameters"]["StatusParam"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Simulation result collection */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SimulationResultCollection"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/simulations/{simulationId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                simulationId: components["parameters"]["SimulationIdParam"];
-            };
-            cookie?: never;
-        };
-        /** Get simulation result */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    simulationId: components["parameters"]["SimulationIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Simulation result */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SimulationResult"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/publishes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List publish records */
-        get: {
-            parameters: {
-                query?: {
-                    objectType?: components["parameters"]["ObjectTypeParam"];
-                    objectId?: components["parameters"]["ObjectIdParam"];
-                    actionType?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Publish record collection */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PublishRecordCollection"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/publishes/{publishId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                publishId: components["parameters"]["PublishIdParam"];
-            };
-            cookie?: never;
-        };
-        /** Get publish record */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    publishId: components["parameters"]["PublishIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Publish record */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PublishRecord"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/approvals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List approval requests */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Approval request collection */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ApprovalRequestCollection"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        /** Create approval request */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateApprovalRequest"];
-                };
-            };
-            responses: {
-                /** @description Approval request created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ApprovalRequest"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/approvals/{approvalId}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                approvalId: components["parameters"]["ApprovalIdParam"];
+                flowId: components["parameters"]["FlowIdParam"];
+                versionId: components["parameters"]["VersionIdParam"];
             };
             cookie?: never;
         };
         get?: never;
         put?: never;
-        /** Approve request */
+        /** Validate flow version */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    approvalId: components["parameters"]["ApprovalIdParam"];
+                    flowId: components["parameters"]["FlowIdParam"];
+                    versionId: components["parameters"]["VersionIdParam"];
                 };
                 cookie?: never;
             };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ApprovalDecisionRequest"];
-                };
-            };
+            requestBody?: never;
             responses: {
-                /** @description Approval request approved */
+                /** @description Validation passed */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ApprovalRequest"];
+                        "application/json": components["schemas"]["IvrFlowValidationResponse"];
+                    };
+                };
+                /** @description Validation failed */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrFlowValidationResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -1879,40 +1233,99 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/approvals/{approvalId}/reject": {
+    "/ivr-flows/{flowId}/validate": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                approvalId: components["parameters"]["ApprovalIdParam"];
+                flowId: components["parameters"]["FlowIdParam"];
             };
             cookie?: never;
         };
         get?: never;
         put?: never;
-        /** Reject request */
+        /** Validate current draft flow version */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    approvalId: components["parameters"]["ApprovalIdParam"];
+                    flowId: components["parameters"]["FlowIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Validation passed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrFlowValidationResponse"];
+                    };
+                };
+                /** @description Validation failed */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrFlowValidationResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ivr-flows/{flowId}/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flowId: components["parameters"]["FlowIdParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Simulate current draft flow version */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    flowId: components["parameters"]["FlowIdParam"];
                 };
                 cookie?: never;
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["ApprovalDecisionRequest"];
+                    "application/json": components["schemas"]["IvrFlowSimulationRequest"];
                 };
             };
             responses: {
-                /** @description Approval request rejected */
+                /** @description Simulation passed */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ApprovalRequest"];
+                        "application/json": components["schemas"]["IvrFlowSimulationResponse"];
+                    };
+                };
+                /** @description Simulation failed */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrFlowSimulationResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -1924,84 +1337,158 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/audit-events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List audit events */
-        get: {
-            parameters: {
-                query?: {
-                    actorType?: string;
-                    actorId?: string;
-                    objectType?: components["parameters"]["ObjectTypeParam"];
-                    objectId?: components["parameters"]["ObjectIdParam"];
-                    action?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Audit event collection */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AuditEventCollection"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/audit-events/{auditEventId}": {
+    "/ivr-flows/{flowId}/versions/{versionId}/simulate": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                auditEventId: components["parameters"]["AuditEventIdParam"];
+                flowId: components["parameters"]["FlowIdParam"];
+                versionId: components["parameters"]["VersionIdParam"];
             };
             cookie?: never;
         };
-        /** Get audit event */
-        get: {
+        get?: never;
+        put?: never;
+        /** Simulate specific flow version */
+        post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    auditEventId: components["parameters"]["AuditEventIdParam"];
+                    flowId: components["parameters"]["FlowIdParam"];
+                    versionId: components["parameters"]["VersionIdParam"];
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["IvrFlowSimulationRequest"];
+                };
+            };
             responses: {
-                /** @description Audit event */
+                /** @description Simulation passed */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["AuditEvent"];
+                        "application/json": components["schemas"]["IvrFlowSimulationResponse"];
+                    };
+                };
+                /** @description Simulation failed */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrFlowSimulationResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ivr-flows/{flowId}/versions/{versionId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flowId: components["parameters"]["FlowIdParam"];
+                versionId: components["parameters"]["VersionIdParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
-        post?: never;
+        /** Publish validated or simulated flow version */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    flowId: components["parameters"]["FlowIdParam"];
+                    versionId: components["parameters"]["VersionIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Flow published */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrFlowPublishResponse"];
+                    };
+                };
+                /** @description Publish is pending approval */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrFlowPublishResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ivr-flows/{flowId}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flowId: components["parameters"]["FlowIdParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Roll back to previous published version */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    flowId: components["parameters"]["FlowIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Flow rolled back */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrFlowPublishResponse"];
+                    };
+                };
+                /** @description Rollback is pending approval */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrFlowPublishResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2015,11 +1502,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List call events */
+        /** List call events for the authenticated tenant */
         get: {
             parameters: {
                 query?: {
-                    /** @description Optional tenant override; must match the tenant in the JWT. */
+                    /** @description Must match the tenant_id in the JWT. Ignored if different. */
                     tenant_id?: string;
                 };
                 header?: never;
@@ -2028,13 +1515,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Call event collection */
+                /** @description Call event list */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["CallEventListResponseSnake"];
+                        "application/json": components["schemas"]["CallEventListResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -2048,6 +1535,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/call-events/internal/ingest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ingest a call event from the runtime agent
+         * @description **Runtime-internal endpoint.** Called by the Go FreeSWITCH ESL agent.
+         *     Requires runtime token auth, not a user JWT.
+         *     Header: `Authorization: Bearer <RUNTIME_API_TOKEN>`
+         *     or: `x-managecallai-runtime-token: <RUNTIME_API_TOKEN>`
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["IngestCallEventRequest"];
+                };
+            };
+            responses: {
+                /** @description Event ingested */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CallEventResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/tenants": {
         parameters: {
             query?: never;
@@ -2055,7 +1589,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List tenant summaries for platform operators */
+        /** List all tenants (platform_admin only) */
         get: {
             parameters: {
                 query?: never;
@@ -2065,13 +1599,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Tenant collection */
+                /** @description Tenant list */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TenantSummaryListResponse"];
+                        "application/json": components["schemas"]["TenantListResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -2092,7 +1626,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Runtime health for platform operators */
+        /** Runtime health summary (platform_admin only) */
         get: {
             parameters: {
                 query?: never;
@@ -2102,7 +1636,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Runtime health summary */
+                /** @description Runtime health */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -2122,63 +1656,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/call-events/{callEventId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                callEventId: components["parameters"]["CallEventIdParam"];
-            };
-            cookie?: never;
-        };
-        /** Get call event */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    callEventId: components["parameters"]["CallEventIdParam"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Call event */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CallEvent"];
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/cdrs": {
+    "/freeswitch/directory": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List call detail records */
+        /**
+         * FreeSWITCH XML directory lookup
+         * @description **Runtime-internal endpoint.** Called by FreeSWITCH `mod_xml_curl` for
+         *     SIP registration and authentication. Returns FreeSWITCH XML.
+         *     Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
+         *     or query param `runtime_token=<token>` (local/dev compatibility only).
+         */
         get: {
             parameters: {
                 query?: {
-                    callId?: string;
-                    fromNumber?: string;
-                    toNumber?: string;
-                    startFrom?: string;
-                    startTo?: string;
+                    /** @description SIP username (extension number) */
+                    user?: string;
+                    /** @description SIP domain */
+                    domain?: string;
+                    /** @description Dev-only token fallback. Prefer Authorization header. */
+                    runtime_token?: string;
                 };
                 header?: never;
                 path?: never;
@@ -2186,13 +1686,110 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description CDR collection */
+                /** @description FreeSWITCH XML directory response */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["CDRCollection"];
+                        "text/xml": string;
+                    };
+                };
+                /** @description User not found — FreeSWITCH XML with empty groups */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/xml": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * FreeSWITCH XML directory lookup (POST form)
+         * @description Same as GET /freeswitch/directory but accepts form-encoded body
+         *     as sent by some FreeSWITCH `mod_xml_curl` configurations.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/x-www-form-urlencoded": {
+                        user?: string;
+                        domain?: string;
+                        runtime_token?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description FreeSWITCH XML directory response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/xml": string;
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/freeswitch/route-lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve an inbound DID to a route target
+         * @description **Runtime-internal endpoint.** Called by the FreeSWITCH Lua inbound
+         *     script (`inbound_route.lua`) on every inbound call.
+         *     Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
+         *     or header `x-managecallai-runtime-token: <token>`.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description E.164 DID to resolve (URL-encoded, e.g. %2B15551234567) */
+                    did: string;
+                    /** @description Trunk name for trunk-match routing (optional) */
+                    trunk?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Route resolved or not matched */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RouteLookupResponse"];
+                    };
+                };
+                /** @description Missing did parameter */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -2206,41 +1803,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/cdrs/{cdrId}": {
+    "/freeswitch/dialplan": {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                cdrId: components["parameters"]["CDRIdParam"];
-            };
+            path?: never;
             cookie?: never;
         };
-        /** Get call detail record */
+        /**
+         * FreeSWITCH XML dialplan projection for inbound DID routing
+         * @description **Runtime-internal endpoint.** Called by FreeSWITCH `mod_xml_curl` for
+         *     inbound DID routing. Returns FreeSWITCH XML dialplan for active inbound
+         *     routes that currently resolve to an `extension` target.
+         *     Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
+         *     or `x-managecallai-runtime-token: <token>`.
+         */
         get: {
             parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    cdrId: components["parameters"]["CDRIdParam"];
+                query?: {
+                    /** @description Inbound DID in E.164 form */
+                    "Caller-Destination-Number"?: string;
+                    /** @description Alternate FreeSWITCH destination field */
+                    destination_number?: string;
+                    /** @description Tenant directory domain */
+                    domain?: string;
+                    /** @description Alternate tenant domain field */
+                    domain_name?: string;
+                    /** @description Dev-only token fallback. Prefer Authorization header. */
+                    runtime_token?: string;
                 };
+                header?: never;
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description CDR */
+                /** @description FreeSWITCH XML dialplan response */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["CallDetailRecord"];
+                        "text/xml": string;
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * FreeSWITCH XML dialplan projection (POST form)
+         * @description Same as GET /freeswitch/dialplan but accepts form-encoded body as sent
+         *     by `mod_xml_curl`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/x-www-form-urlencoded": {
+                        "Caller-Destination-Number"?: string;
+                        destination_number?: string;
+                        domain?: string;
+                        domain_name?: string;
+                        runtime_token?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description FreeSWITCH XML dialplan response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/xml": string;
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2251,30 +1896,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        Pagination: {
-            page: number;
-            pageSize: number;
-            total: number;
-        };
-        ErrorDetail: {
-            field?: string;
-            reason: string;
-        };
-        ErrorEnvelope: {
-            code: string;
-            message: string;
-            details?: components["schemas"]["ErrorDetail"][];
-            requestId?: string;
-        };
         ErrorResponse: {
-            error: components["schemas"]["ErrorEnvelope"];
-        };
-        AuthResponse: {
-            token: string;
+            error: string;
         };
         RegisterRequest: {
             tenant_name: string;
             tenant_slug: string;
+            /** Format: email */
             email: string;
             display_name: string;
             password: string;
@@ -2284,53 +1912,14 @@ export interface components {
             email: string;
             password: string;
         };
-        AuthenticationProfile: {
-            [key: string]: unknown;
-        };
-        NetworkProfile: {
-            [key: string]: unknown;
+        AuthResponse: {
+            /** @description Signed JWT. Claims include sub, tenant_id, email, role ('tenant_admin' | 'platform_admin'). */
+            token: string;
         };
         Extension: {
+            /** Format: uuid */
             id: string;
-            extensionNumber: string;
-            displayName: string;
-            /** @enum {string} */
-            status: "active" | "inactive";
-            /** @description SIP username used for FreeSWITCH registration (defaults to extensionNumber) */
-            sipUsername: string;
-            /** @enum {string} */
-            defaultDestinationType?: "flow" | "extension" | "user" | "queue";
-            defaultDestinationId?: string;
-        };
-        CreateExtensionRequest: {
-            extensionNumber: string;
-            displayName: string;
-            /** @description Defaults to extensionNumber when omitted */
-            sipUsername?: string;
-            /** @description Plaintext SIP registration password. Encrypted with AES-256-GCM before storage. Never returned in API responses. */
-            sipPassword: string;
-            defaultDestinationType?: string;
-            defaultDestinationId?: string;
-        };
-        UpdateExtensionRequest: {
-            extensionNumber?: string;
-            displayName?: string;
-            /** @enum {string} */
-            status?: "active" | "inactive";
-            sipUsername?: string;
-            /** @description Plaintext SIP registration password. Encrypted with AES-256-GCM before storage. Never returned in API responses. */
-            sipPassword?: string;
-            defaultDestinationType?: string;
-            defaultDestinationId?: string;
-        };
-        ExtensionResponse: {
-            data: components["schemas"]["Extension"];
-        };
-        ExtensionListResponse: {
-            data: components["schemas"]["Extension"][];
-        };
-        ExtensionSnake: {
-            id: string;
+            /** Format: uuid */
             tenant_id: string;
             extension_number: string;
             display_name: string;
@@ -2339,23 +1928,32 @@ export interface components {
             sip_username: string;
             /** @enum {string|null} */
             default_destination_type?: "flow" | "extension" | "user" | "queue" | null;
+            /** Format: uuid */
             default_destination_id?: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
         };
-        CreateExtensionRequestSnake: {
+        ExtensionResponse: {
+            data: components["schemas"]["Extension"];
+        };
+        ExtensionListResponse: {
+            data: components["schemas"]["Extension"][];
+        };
+        CreateExtensionRequest: {
             extension_number: string;
             display_name: string;
             /** @description Defaults to extension_number when omitted */
             sip_username?: string;
+            /** @description Plaintext SIP password. Encrypted with AES-256-GCM before storage. Never returned in any API response. */
             sip_password: string;
             /** @enum {string} */
             default_destination_type?: "flow" | "extension" | "user" | "queue";
+            /** Format: uuid */
             default_destination_id?: string;
         };
-        UpdateExtensionRequestSnake: {
+        UpdateExtensionRequest: {
             extension_number?: string;
             display_name?: string;
             /** @enum {string} */
@@ -2365,345 +1963,322 @@ export interface components {
             default_destination_type?: ("flow" | "extension" | "user" | "queue") | null;
             default_destination_id?: string | null;
         };
-        ExtensionResponseSnake: {
-            data: components["schemas"]["ExtensionSnake"];
-        };
-        ExtensionListResponseSnake: {
-            data: components["schemas"]["ExtensionSnake"][];
-        };
-        Trunk: {
+        SipTrunk: {
+            /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            tenant_id: string;
             name: string;
-            /** @enum {string} */
-            direction: "inbound" | "outbound" | "bidirectional";
             /** @enum {string} */
             status: "active" | "inactive";
-            providerName?: string;
-            authenticationProfile?: components["schemas"]["AuthenticationProfile"];
-            networkProfile?: components["schemas"]["NetworkProfile"];
+            /** @enum {string} */
+            direction: "inbound" | "outbound" | "bidirectional";
+            realm: string;
+            proxy: string;
+            port: number;
+            /** @enum {string} */
+            transport: "udp" | "tcp" | "tls";
+            username?: string | null;
+            auth_username: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
-        CreateTrunkRequest: {
+        SipTrunkResponse: {
+            data: components["schemas"]["SipTrunk"];
+        };
+        SipTrunkListResponse: {
+            data: components["schemas"]["SipTrunk"][];
+        };
+        CreateSipTrunkRequest: {
             name: string;
             /** @enum {string} */
             direction: "inbound" | "outbound" | "bidirectional";
-            providerName?: string;
-            authenticationProfile?: components["schemas"]["AuthenticationProfile"];
-            networkProfile?: components["schemas"]["NetworkProfile"];
+            realm: string;
+            proxy: string;
+            port?: number;
+            /** @enum {string} */
+            transport?: "udp" | "tcp" | "tls";
+            username?: string;
+            auth_username: string;
+            /** @description Plaintext SIP trunk auth password. Encrypted with AES-256-GCM before storage. Never returned in API responses. */
+            auth_password: string;
         };
-        UpdateTrunkRequest: {
+        UpdateSipTrunkRequest: {
             name?: string;
-            status?: string;
-            providerName?: string;
-            authenticationProfile?: components["schemas"]["AuthenticationProfile"];
-            networkProfile?: components["schemas"]["NetworkProfile"];
-        };
-        TrunkCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["Trunk"][];
+            /** @enum {string} */
+            status?: "active" | "inactive";
+            /** @enum {string} */
+            direction?: "inbound" | "outbound" | "bidirectional";
+            realm?: string;
+            proxy?: string;
+            port?: number;
+            /** @enum {string} */
+            transport?: "udp" | "tcp" | "tls";
+            username?: string | null;
+            auth_username?: string;
+            auth_password?: string;
         };
         PhoneNumber: {
+            /** Format: uuid */
             id: string;
-            e164Number: string;
-            displayLabel?: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** @description E.164-formatted number, e.g. +15551234567 */
+            e164_number: string;
+            display_label?: string | null;
             /** @enum {string} */
             status: "active" | "inactive";
-            trunkId?: string;
-            /** @enum {string} */
-            assignedTargetType?: "inbound_route" | "flow" | "extension";
-            assignedTargetId?: string;
+            /** Format: uuid */
+            trunk_id?: string | null;
+            /** @enum {string|null} */
+            assigned_target_type?: "inbound_route" | "flow" | "extension" | null;
+            /** Format: uuid */
+            assigned_target_id?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PhoneNumberResponse: {
+            data: components["schemas"]["PhoneNumber"];
+        };
+        PhoneNumberListResponse: {
+            data: components["schemas"]["PhoneNumber"][];
         };
         CreatePhoneNumberRequest: {
-            e164Number: string;
-            displayLabel?: string;
-            trunkId?: string;
-            assignedTargetType?: string;
-            assignedTargetId?: string;
+            e164_number: string;
+            display_label?: string;
+            /** Format: uuid */
+            trunk_id?: string;
         };
         UpdatePhoneNumberRequest: {
-            displayLabel?: string;
-            status?: string;
-            trunkId?: string;
-            assignedTargetType?: string;
-            assignedTargetId?: string;
-        };
-        PhoneNumberCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["PhoneNumber"][];
+            display_label?: string | null;
+            trunk_id?: string | null;
+            assigned_target_type?: ("inbound_route" | "flow" | "extension") | null;
+            assigned_target_id?: string | null;
+            /** @enum {string} */
+            status?: "active" | "inactive";
         };
         InboundRoute: {
+            /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            tenant_id: string;
             name: string;
             /** @enum {string} */
-            matchType: "did" | "trunk" | "pattern";
-            matchValue: string;
+            match_type: "did" | "trunk" | "pattern";
+            match_value: string;
+            /** Format: uuid */
+            phone_number_id?: string | null;
             /** @enum {string} */
-            targetType: "flow" | "extension";
-            targetId?: string;
+            target_type: "flow" | "extension";
+            /** Format: uuid */
+            target_id?: string | null;
             /** @enum {string} */
             status: "draft" | "active" | "inactive";
-            draftVersionId?: string;
-            activeVersionId?: string;
+            /** Format: uuid */
+            draft_version_id?: string | null;
+            /** Format: uuid */
+            active_version_id?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        InboundRouteResponse: {
+            data: components["schemas"]["InboundRoute"];
+        };
+        InboundRouteListResponse: {
+            data: components["schemas"]["InboundRoute"][];
         };
         CreateInboundRouteRequest: {
             name: string;
-            matchType: string;
-            matchValue: string;
-            targetType: string;
-            targetId: string;
+            /** @enum {string} */
+            match_type: "did" | "trunk" | "pattern";
+            match_value: string;
+            /**
+             * Format: uuid
+             * @description Optional. When supplied, match_type must be 'did' and match_value is normalized from the linked phone number's e164_number.
+             */
+            phone_number_id?: string;
+            /** @enum {string} */
+            target_type: "flow" | "extension";
+            /** Format: uuid */
+            target_id?: string;
         };
         UpdateInboundRouteRequest: {
             name?: string;
-            matchType?: string;
-            matchValue?: string;
-            targetType?: string;
-            targetId?: string;
-            status?: string;
-        };
-        InboundRouteCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["InboundRoute"][];
-        };
-        OutboundRoute: {
-            id: string;
-            name: string;
-            matchStrategy?: string;
-            destinationPattern: string;
-            trunkSelectionStrategy?: string;
             /** @enum {string} */
-            status: "draft" | "active" | "inactive";
-            draftVersionId?: string;
-            activeVersionId?: string;
-        };
-        CreateOutboundRouteRequest: {
-            name: string;
-            matchStrategy?: string;
-            destinationPattern: string;
-            trunkSelectionStrategy?: string;
-        };
-        UpdateOutboundRouteRequest: {
-            name?: string;
-            matchStrategy?: string;
-            destinationPattern?: string;
-            trunkSelectionStrategy?: string;
-            status?: string;
-        };
-        OutboundRouteCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["OutboundRoute"][];
-        };
-        PromptAsset: {
-            id: string;
-            name: string;
-            mediaType: string;
-            language?: string;
-            storageUri?: string;
-            checksum?: string;
+            match_type?: "did" | "trunk" | "pattern";
+            match_value?: string;
+            phone_number_id?: string | null;
             /** @enum {string} */
-            status: "active" | "inactive";
+            target_type?: "flow" | "extension";
+            target_id?: string | null;
         };
-        CreatePromptRequest: {
-            name: string;
-            mediaType: string;
-            language?: string;
-        };
-        UpdatePromptRequest: {
-            name?: string;
-            language?: string;
-            status?: string;
-        };
-        PromptCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["PromptAsset"][];
-        };
-        FlowNode: {
+        RouteVersion: {
+            /** Format: uuid */
             id: string;
-            type: string;
-            promptId?: string;
-            targetId?: string;
-            config?: {
-                [key: string]: unknown;
-            };
-        };
-        FlowEdge: {
-            from: string;
-            to: string;
-            condition?: string;
-        };
-        FlowDefinition: {
-            startNodeId: string;
-            nodes: components["schemas"]["FlowNode"][];
-            edges: components["schemas"]["FlowEdge"][];
-        };
-        Flow: {
-            id: string;
-            name: string;
-            description?: string;
+            /** Format: uuid */
+            route_id: string;
+            version_number: number;
             /** @enum {string} */
-            status: "draft" | "active" | "inactive";
-            draftVersionId?: string | null;
-            activeVersionId?: string | null;
-        };
-        CreateFlowRequest: {
-            name: string;
-            description?: string;
-            draftDefinition: components["schemas"]["FlowDefinition"];
-        };
-        UpdateFlowRequest: {
-            name?: string;
-            description?: string;
-            draftDefinition?: components["schemas"]["FlowDefinition"];
-        };
-        FlowCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["Flow"][];
-        };
-        FlowVersion: {
-            id: string;
-            flowId: string;
-            versionNumber: number;
-            /** @enum {string} */
-            state: "draft" | "validated" | "simulated" | "published" | "superseded" | "rolled_back";
-            definition: components["schemas"]["FlowDefinition"];
-            createdBy?: string;
+            state: "draft" | "validated" | "published" | "superseded" | "rolled_back";
+            definition?: Record<string, never>;
+            /** Format: uuid */
+            created_by?: string | null;
             /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            validatedAt?: string;
-            /** Format: date-time */
-            simulatedAt?: string;
-            /** Format: date-time */
-            publishedAt?: string;
+            created_at: string;
         };
-        FlowVersionCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["FlowVersion"][];
+        RouteVersionResponse: {
+            data: components["schemas"]["RouteVersion"];
         };
         ValidationResult: {
-            id: string;
-            objectType: string;
-            objectId: string;
-            versionId?: string;
-            validatorVersion?: string;
+            outcome: components["schemas"]["ValidationOutcome"];
+        };
+        ValidationOutcome: {
             /** @enum {string} */
-            status: "passed" | "failed" | "warning_only";
+            status: "passed" | "failed";
+            errors?: {
+                [key: string]: unknown;
+            }[];
+            warnings?: {
+                [key: string]: unknown;
+            }[];
+        };
+        ValidationResultResponse: {
+            data: components["schemas"]["ValidationResult"];
+        };
+        IvrFlow: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            description?: string | null;
+            /** @enum {string} */
+            status: "draft" | "active" | "inactive";
+            /** Format: uuid */
+            draft_version_id?: string | null;
+            /** Format: uuid */
+            active_version_id?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        IvrFlowResponse: {
+            data: components["schemas"]["IvrFlow"];
+        };
+        IvrFlowWithVersions: components["schemas"]["IvrFlow"] & {
+            versions: components["schemas"]["FlowVersion"][];
+        };
+        IvrFlowDetailResponse: {
+            data: components["schemas"]["IvrFlowWithVersions"];
+        };
+        IvrFlowListResponse: {
+            data: components["schemas"]["IvrFlow"][];
+        };
+        CreateIvrFlowRequest: {
+            name: string;
+            description?: string;
+            /** @description Draft graph schema for the first version. */
+            graph_json?: Record<string, never>;
+            /** @description Compatibility alias for graph_json. */
+            definition?: Record<string, never>;
+        };
+        UpdateIvrFlowRequest: {
+            name?: string;
+            description?: string | null;
+            /** @enum {string} */
+            status?: "draft" | "active" | "inactive";
+        };
+        FlowVersionDraftRequest: {
+            graph_json?: Record<string, never>;
+            /** @description Compatibility alias for graph_json. */
+            definition?: Record<string, never>;
+        };
+        FlowVersion: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            flow_id: string;
+            version_number: number;
+            /** @enum {string} */
+            state: "draft" | "validated" | "simulated" | "published" | "superseded" | "rolled_back";
+            graph_json?: Record<string, never>;
+            /** Format: uuid */
+            created_by?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            validated_at?: string | null;
+            /** Format: date-time */
+            simulated_at?: string | null;
+            /** Format: date-time */
+            published_at?: string | null;
+        };
+        FlowVersionResponse: {
+            data: components["schemas"]["FlowVersion"];
+        };
+        FlowVersionListResponse: {
+            data: components["schemas"]["FlowVersion"][];
+        };
+        IvrFlowValidationResult: {
+            version: components["schemas"]["FlowVersion"];
+            outcome: components["schemas"]["ValidationOutcome"];
+        };
+        IvrFlowValidationResponse: {
+            data: components["schemas"]["IvrFlowValidationResult"];
+        };
+        IvrFlowSimulationRequest: {
+            digits?: string[];
+            caller_number?: string;
+            /** Format: date-time */
+            now?: string;
+            force_timeout?: boolean;
+            force_invalid?: boolean;
+        };
+        IvrFlowSimulationFinalAction: {
+            /** @enum {string} */
+            type: "transfer_extension" | "hangup";
+            /** Format: uuid */
+            extension_id?: string;
+            extension_number?: string;
+        };
+        IvrFlowSimulationOutcome: {
+            /** @enum {string} */
+            status: "passed" | "failed";
+            path: string[];
+            final_action?: components["schemas"]["IvrFlowSimulationFinalAction"] | null;
             errors: {
                 [key: string]: unknown;
             }[];
-            warnings: {
-                [key: string]: unknown;
-            }[];
-            /** Format: date-time */
-            createdAt?: string;
         };
-        ValidationResultCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["ValidationResult"][];
+        IvrFlowSimulationResult: {
+            version: components["schemas"]["FlowVersion"];
+            scenario: components["schemas"]["IvrFlowSimulationRequest"];
+            outcome: components["schemas"]["IvrFlowSimulationOutcome"];
         };
-        SimulationScenario: {
-            [key: string]: unknown;
+        IvrFlowSimulationResponse: {
+            data: components["schemas"]["IvrFlowSimulationResult"];
         };
-        SimulateFlowRequest: {
-            scenario?: components["schemas"]["SimulationScenario"];
-        };
-        SimulationResult: {
-            id: string;
-            objectType: string;
-            objectId: string;
-            versionId?: string;
-            scenario?: components["schemas"]["SimulationScenario"];
+        IvrFlowPublishResult: {
             /** @enum {string} */
-            status: "passed" | "failed" | "inconclusive";
-            resultPayload?: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            createdAt?: string;
+            status: "published" | "pending_approval";
+            flow: components["schemas"]["IvrFlow"];
+            /** Format: uuid */
+            approval_request_id?: string | null;
         };
-        SimulationResultCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["SimulationResult"][];
-        };
-        PublishRequest: {
-            reason?: string;
-        };
-        RollbackRequest: {
-            targetVersionId: string;
-            reason?: string;
-        };
-        PublishRecord: {
-            id: string;
-            objectType: string;
-            objectId: string;
-            versionId: string;
-            /** @enum {string} */
-            actionType: "publish" | "rollback";
-            triggeredByType?: string;
-            triggeredById?: string;
-            approvalRequestId?: string;
-            /** @enum {string} */
-            result: "success" | "failed" | "pending_approval";
-            /** Format: date-time */
-            createdAt?: string;
-        };
-        PublishRecordCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["PublishRecord"][];
-        };
-        CreateApprovalRequest: {
-            objectType: string;
-            objectId: string;
-            versionId: string;
-            reason?: string;
-        };
-        ApprovalDecisionRequest: {
-            reason?: string;
-        };
-        ApprovalRequest: {
-            id: string;
-            objectType: string;
-            objectId: string;
-            versionId: string;
-            requestedBy?: string;
-            /** @enum {string} */
-            status: "pending" | "approved" | "rejected" | "expired";
-            decisionBy?: string;
-            /** Format: date-time */
-            decisionAt?: string;
-            reason?: string;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        ApprovalRequestCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["ApprovalRequest"][];
-        };
-        AuditEvent: {
-            id: string;
-            /** @enum {string} */
-            actorType: "user" | "workflow" | "ai_agent" | "system";
-            actorId?: string;
-            action: string;
-            objectType: string;
-            objectId: string;
-            metadata?: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            createdAt: string;
-        };
-        AuditEventCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["AuditEvent"][];
+        IvrFlowPublishResponse: {
+            data: components["schemas"]["IvrFlowPublishResult"];
         };
         CallEvent: {
+            /** Format: uuid */
             id: string;
-            callId: string;
-            eventType: string;
-            /** Format: date-time */
-            eventTime: string;
-            source?: string;
-            payload?: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            ingestedAt?: string;
-        };
-        CallEventCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["CallEvent"][];
-        };
-        CallEventListResponse: {
-            data: components["schemas"]["CallEvent"][];
-        };
-        CallEventSnake: {
-            id: string;
+            /** Format: uuid */
             tenant_id: string;
             call_id: string;
             event_type: string;
@@ -2716,10 +2291,26 @@ export interface components {
             /** Format: date-time */
             ingested_at: string;
         };
-        CallEventListResponseSnake: {
-            data: components["schemas"]["CallEventSnake"][];
+        CallEventResponse: {
+            data: components["schemas"]["CallEvent"];
+        };
+        CallEventListResponse: {
+            data: components["schemas"]["CallEvent"][];
+        };
+        IngestCallEventRequest: {
+            /** Format: uuid */
+            tenant_id: string;
+            call_id: string;
+            event_type: string;
+            /** Format: date-time */
+            event_time?: string;
+            source?: string;
+            payload?: {
+                [key: string]: unknown;
+            };
         };
         TenantSummary: {
+            /** Format: uuid */
             id: string;
             name: string;
             slug: string;
@@ -2730,41 +2321,47 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        TenantSummaryListResponse: {
+        TenantListResponse: {
             data: components["schemas"]["TenantSummary"][];
         };
         ServiceHealth: {
             name: string;
-            url: string;
+            url?: string | null;
             /** @enum {string} */
             status: "healthy" | "degraded" | "unreachable";
-            detail: string;
-        };
-        RuntimeHealthSummary: {
-            services: components["schemas"]["ServiceHealth"][];
+            detail?: string | null;
         };
         RuntimeHealthResponse: {
-            data: components["schemas"]["RuntimeHealthSummary"];
+            data: {
+                services: components["schemas"]["ServiceHealth"][];
+            };
         };
-        CallDetailRecord: {
-            id: string;
-            callId: string;
-            /** @enum {string} */
-            direction: "inbound" | "outbound";
-            fromNumber?: string;
-            toNumber?: string;
-            /** Format: date-time */
-            startTime: string;
-            /** Format: date-time */
-            endTime?: string;
-            durationSeconds?: number;
-            terminationReason?: string;
-            finalDisposition?: string;
-            /** Format: date-time */
-            ingestedAt?: string;
-        };
-        CDRCollection: components["schemas"]["Pagination"] & {
-            items: components["schemas"]["CallDetailRecord"][];
+        RouteLookupResponse: {
+            matched: boolean;
+            /**
+             * Format: uuid
+             * @description Present when matched is true
+             */
+            route_id?: string;
+            /**
+             * Format: uuid
+             * @description Present when matched is true
+             */
+            tenant_id?: string;
+            /**
+             * @description Present when matched is true
+             * @enum {string}
+             */
+            target_type?: "extension" | "flow";
+            /**
+             * Format: uuid
+             * @description Present when matched is true
+             */
+            target_id?: string | null;
+            /** @description Resolved target details. For extension: { extension_number, directory_domain }. For flow: { flow_id }. null when target not resolved. */
+            target?: {
+                [key: string]: unknown;
+            } | null;
         };
     };
     responses: {
@@ -2779,27 +2376,12 @@ export interface components {
         };
     };
     parameters: {
-        StatusParam: string;
-        SearchParam: string;
-        PageParam: number;
-        PageSizeParam: number;
-        ObjectTypeParam: string;
-        ObjectIdParam: string;
-        VersionQueryParam: string;
         ExtensionIdParam: string;
         TrunkIdParam: string;
         NumberIdParam: string;
         RouteIdParam: string;
-        PromptIdParam: string;
         FlowIdParam: string;
         VersionIdParam: string;
-        ValidationIdParam: string;
-        SimulationIdParam: string;
-        PublishIdParam: string;
-        ApprovalIdParam: string;
-        AuditEventIdParam: string;
-        CallEventIdParam: string;
-        CDRIdParam: string;
     };
     requestBodies: never;
     headers: never;
