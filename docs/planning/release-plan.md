@@ -34,6 +34,26 @@ Reference:
 
 - [slices/SLICE-00-current-baseline.md](slices/SLICE-00-current-baseline.md)
 
+## 2.1 Current Slice Status
+
+| Slice | Status |
+|-------|--------|
+| `SLICE-00` | completed |
+| `SLICE-01` | completed |
+| `SLICE-02` | completed |
+| `SLICE-03` | completed |
+| `SLICE-04` | completed |
+| `SLICE-05` | implemented, live proof should be rerun if runtime packaging changes |
+| `SLICE-06` | completed |
+| `SLICE-07` | implemented, pending explicit live close-out proof |
+| `SLICE-08` | completed |
+| `SLICE-09` | next |
+| `SLICE-10` | pending |
+| `SLICE-11` | pending |
+| `SLICE-12` | pending |
+| `SLICE-13` | post-release |
+| `SLICE-14` | pending |
+
 ## 3. Release Thesis
 
 The first release should prove:

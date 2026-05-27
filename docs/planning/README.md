@@ -15,6 +15,9 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [release-plan.md](release-plan.md)
   Release roadmap, execution order, dependency graph, and parallel work tracks.
 
+- [verification/slice-07-live-proof.md](verification/slice-07-live-proof.md)
+  Live close-out checklist for the inbound IVR and call-group runtime proof.
+
 - [slices/SLICE-00-current-baseline.md](slices/SLICE-00-current-baseline.md)
   What is already proven and should not be re-opened casually.
 

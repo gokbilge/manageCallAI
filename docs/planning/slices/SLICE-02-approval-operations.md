@@ -4,6 +4,10 @@
 
 Finish the approval lifecycle after `pending_approval` publish / rollback results.
 
+## Status
+
+Completed.
+
 ## Scope
 
 - approval list endpoints

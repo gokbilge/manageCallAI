@@ -4,6 +4,18 @@
 
 Move inbound DID routing beyond direct extension bridging to published IVR and call-group targets.
 
+## Status
+
+Implemented in code and docs.
+
+Remaining close-out step:
+
+- rerun the live integration proof on a Docker/FreeSWITCH-capable machine for both:
+  - DID -> published IVR
+  - DID -> call group
+
+See [../verification/slice-07-live-proof.md](../verification/slice-07-live-proof.md).
+
 ## Scope
 
 - dialplan projection for IVR entry

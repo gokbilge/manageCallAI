@@ -4,6 +4,10 @@
 
 Complete the tenant operator surfaces for the objects that already exist in the backend.
 
+## Status
+
+Completed.
+
 ## Scope
 
 - phone numbers UI

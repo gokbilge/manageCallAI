@@ -4,6 +4,10 @@
 
 Implement the backend execution loop that resolves a pinned published flow into constrained runtime actions.
 
+## Status
+
+Completed.
+
 ## Scope
 
 - create flow session

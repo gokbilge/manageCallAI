@@ -4,6 +4,12 @@
 
 Connect the runtime resolver to stock FreeSWITCH through the thin Lua boundary.
 
+## Status
+
+Implemented and documented.
+
+Live proof depends on a Docker/FreeSWITCH-capable environment and should be rerun whenever the runtime container path changes materially.
+
 ## Scope
 
 - Lua entry script starts session

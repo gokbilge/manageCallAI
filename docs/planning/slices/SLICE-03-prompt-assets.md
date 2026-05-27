@@ -4,6 +4,10 @@
 
 Add prompt assets as first-class desired-state objects that can be referenced safely by IVR flows.
 
+## Status
+
+Completed.
+
 ## Scope
 
 - prompt metadata CRUD

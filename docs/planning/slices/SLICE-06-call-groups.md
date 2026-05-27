@@ -4,6 +4,10 @@
 
 Add call groups / ring groups as desired-state targets above simple extension transfer.
 
+## Status
+
+Completed.
+
 ## Scope
 
 - call-group CRUD
