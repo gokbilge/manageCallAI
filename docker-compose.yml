@@ -59,5 +59,24 @@ services:
       api:
         condition: service_healthy
 
+  freeswitch-agent:
+    build:
+      context: .
+      dockerfile: apps/freeswitch-agent/Dockerfile
+    image: managecallai-freeswitch-agent:local
+    environment:
+      FREESWITCH_ESL_HOST: freeswitch
+      FREESWITCH_ESL_PORT: 8021
+      FREESWITCH_ESL_PASSWORD: ${FREESWITCH_ESL_PASSWORD:-ClueCon}
+      API_BASE_URL: http://api:3000
+      RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN:-change-me-runtime-token}
+      MANAGECALLAI_TENANT_ID: ${MANAGECALLAI_TENANT_ID:-}
+      LOG_LEVEL: ${FREESWITCH_AGENT_LOG_LEVEL:-info}
+    depends_on:
+      api:
+        condition: service_healthy
+      freeswitch:
+        condition: service_started
+
 volumes:
   postgres_data:

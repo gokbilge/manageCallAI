@@ -23,6 +23,9 @@ func main() {
 		slog.String("esl_host", cfg.ESLHost),
 		slog.Int("esl_port", cfg.ESLPort),
 		slog.String("api_base_url", cfg.APIBaseURL),
+		slog.String("tenant_id", cfg.TenantID),
+		slog.Bool("runtime_token_configured", cfg.RuntimeToken != ""),
+		slog.String("log_level", cfg.LogLevel),
 	)
 
 	client := esl.NewClient(cfg, logger)
