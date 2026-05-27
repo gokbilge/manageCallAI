@@ -116,6 +116,15 @@ with number inventory.
 
 Stores metadata for IVR prompt media.
 
+Practical runtime fields:
+
+- `name` - tenant-scoped stable human label
+- `media_type` - expected media MIME type such as `audio/wav`
+- `language` - optional locale hint
+- `storage_uri` - runtime-resolvable media path or URI used by the IVR resolver
+- `checksum` - optional integrity marker for deployment/media sync
+- `status` - active/inactive lifecycle gate
+
 ### 4.7 ivr_flows and flow_versions
 
 `ivr_flows` stores the durable business object identity and current pointers.
@@ -146,6 +155,22 @@ Stores actor-attributed, immutable operational audit history.
 ### 4.12 call_detail_records, call_events, runtime_ingestion_records
 
 Store normalized runtime and ingestion visibility from FreeSWITCH integration paths.
+
+### 4.13 ivr_flow_sessions
+
+Stores per-call runtime execution state for the backend IVR resolver.
+
+Core intent:
+
+- pin the published `flow_version_id` used for the call
+- correlate `call_id`, `tenant_id`, and `flow_id`
+- track the current actionable node awaiting a runtime result
+- persist `last_digits` and runtime variables between steps
+- keep the last emitted constrained action for debugging and recovery
+
+This table is operational state, not desired state. It should be treated as
+ephemeral runtime coordination data, while `ivr_flows` and `flow_versions`
+remain the source of truth for behavior design.
 
 ## 5. Versioning Strategy
 

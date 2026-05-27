@@ -1,9 +1,11 @@
 import type { Pool } from 'pg';
 import type {
   ApprovalRequestRecord,
+  ExtensionTransferReference,
   FlowVersion,
   IvrFlow,
   IvrFlowWithVersions,
+  PromptAssetReference,
   SimulationOutcome,
   SimulationScenario,
   ValidationOutcome,
@@ -419,5 +421,28 @@ export class IvrFlowRepository {
       [tenantId, ids],
     );
     return new Set(r.rows.map((row) => row.id));
+  }
+
+  async findActivePromptRefs(tenantId: string, ids: string[]): Promise<Map<string, PromptAssetReference>> {
+    if (ids.length === 0) return new Map();
+    const r = await this.db.query<PromptAssetReference>(
+      `SELECT id, name, storage_uri
+       FROM prompt_assets
+       WHERE tenant_id = $1 AND id = ANY($2) AND status = 'active'`,
+      [tenantId, ids],
+    );
+    return new Map(r.rows.map((row) => [row.id, row]));
+  }
+
+  async findActiveExtensionTargets(tenantId: string, ids: string[]): Promise<Map<string, ExtensionTransferReference>> {
+    if (ids.length === 0) return new Map();
+    const r = await this.db.query<ExtensionTransferReference>(
+      `SELECT e.id, e.extension_number, e.display_name, t.directory_domain
+       FROM extensions e
+       JOIN tenants t ON t.id = e.tenant_id
+       WHERE e.tenant_id = $1 AND e.id = ANY($2) AND e.status = 'active'`,
+      [tenantId, ids],
+    );
+    return new Map(r.rows.map((row) => [row.id, row]));
   }
 }

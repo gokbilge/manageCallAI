@@ -40,6 +40,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [development/ivr-flow-foundation-proof.md](development/ivr-flow-foundation-proof.md)
   Command-driven proof of the first IVR desired-state slice: create flow, inspect versions, validate a draft, simulate it, and attempt publish safely.
 
+- [development/ivr-runtime-resolver-proof.md](development/ivr-runtime-resolver-proof.md)
+  Command-driven proof of the first backend IVR runtime resolver loop: create prompt + flow, publish it, start a runtime session, and advance constrained actions.
+
 - [design/database-schema.md](design/database-schema.md)
   PostgreSQL schema direction covering relational mapping, versioning strategy, integrity rules, and the initial SQL DDL reference.
 

@@ -548,9 +548,28 @@ Example request:
 
 ```json
 {
-  "name": "Main Greeting",
-  "mediaType": "audio/wav",
-  "language": "en-US"
+  "name": "main_greeting_tr",
+  "media_type": "audio/wav",
+  "language": "tr-TR",
+  "storage_uri": "/sounds/tenants/acme/main_greeting_tr.wav",
+  "checksum": "sha256:abc123"
+}
+```
+
+Example response:
+
+```json
+{
+  "data": {
+    "id": "prompt_001",
+    "tenant_id": "tenant_001",
+    "name": "main_greeting_tr",
+    "media_type": "audio/wav",
+    "language": "tr-TR",
+    "storage_uri": "/sounds/tenants/acme/main_greeting_tr.wav",
+    "checksum": "sha256:abc123",
+    "status": "active"
+  }
 }
 ```
 
@@ -699,6 +718,13 @@ Current MVP validation scope is structural only:
 - node IDs must be unique
 - referenced node IDs must exist
 
+The implementation now also performs tenant-scoped semantic checks for current
+MVP runtime nodes:
+
+- `play_prompt` and `play_collect` must reference an active prompt asset
+- prompt assets used by runtime nodes must have `storage_uri`
+- `transfer_extension` must reference an active extension in the same tenant
+
 Example response:
 
 ```json
@@ -840,6 +866,83 @@ Rollback follows the same approval model:
 
 - `200` with `{ "data": { "status": "published", "flow": { ... } } }` when it completes immediately
 - `202` with `{ "data": { "status": "pending_approval", "approval_request_id": "...", "flow": { ... } } }` when tenant policy requires approval
+
+### 6.7.1 Runtime Resolver
+
+#### Start IVR Runtime Session
+
+```http
+POST /api/v1/runtime/ivr/sessions
+```
+
+Runtime-internal only. Requires:
+
+```text
+Authorization: Bearer <RUNTIME_API_TOKEN>
+```
+
+Example request:
+
+```json
+{
+  "call_id": "call-123",
+  "flow_id": "11111111-1111-1111-1111-111111111111",
+  "caller_number": "+905551112233",
+  "destination_number": "+902122223344",
+  "variables": {
+    "customer_tier": "vip"
+  }
+}
+```
+
+Example response:
+
+```json
+{
+  "data": {
+    "session": {
+      "id": "sess_001",
+      "flow_version_id": "flowver_002",
+      "current_node_id": "welcome",
+      "status": "running"
+    },
+    "action": {
+      "action": "play_prompt",
+      "node_id": "welcome",
+      "prompt_id": "prompt_001",
+      "prompt_uri": "/sounds/tenants/acme/welcome_tr.wav"
+    }
+  }
+}
+```
+
+#### Advance IVR Runtime Session
+
+```http
+POST /api/v1/runtime/ivr/sessions/{sessionId}/advance
+```
+
+Example request for `play_collect` completion:
+
+```json
+{
+  "node_id": "menu",
+  "outcome": "digits",
+  "digits": "2"
+}
+```
+
+Supported outcomes:
+
+- `completed`
+- `digits`
+- `timeout`
+- `invalid`
+
+The backend resolves `start` and `switch` internally and returns the next
+constrained runtime action (`play_prompt`, `play_collect`, `transfer`, or
+`hangup`). When a transfer or hangup action is reported complete, the session
+transitions to `completed`.
 
 ### 6.8 Validations
 

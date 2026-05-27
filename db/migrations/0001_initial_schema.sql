@@ -253,6 +253,25 @@ CREATE TABLE simulation_results (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE ivr_flow_sessions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    flow_id uuid NOT NULL REFERENCES ivr_flows(id) ON DELETE CASCADE,
+    flow_version_id uuid NOT NULL REFERENCES flow_versions(id) ON DELETE RESTRICT,
+    call_id text NOT NULL,
+    status text NOT NULL CHECK (status IN ('running', 'completed', 'failed')),
+    current_node_id text,
+    caller_number text,
+    destination_number text,
+    last_digits text,
+    variables_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+    last_action_json jsonb,
+    completed_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (tenant_id, call_id)
+);
+
 CREATE TABLE approval_requests (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -346,6 +365,8 @@ CREATE INDEX idx_outbound_routes_tenant_id ON outbound_routes (tenant_id);
 CREATE INDEX idx_route_versions_route_lookup ON route_versions (route_type, route_id);
 CREATE INDEX idx_validation_results_lookup ON validation_results (tenant_id, object_type, object_id, created_at DESC);
 CREATE INDEX idx_simulation_results_lookup ON simulation_results (tenant_id, object_type, object_id, created_at DESC);
+CREATE INDEX idx_ivr_flow_sessions_call_id ON ivr_flow_sessions (tenant_id, call_id);
+CREATE INDEX idx_ivr_flow_sessions_status ON ivr_flow_sessions (tenant_id, status, created_at DESC);
 CREATE INDEX idx_approval_requests_lookup ON approval_requests (tenant_id, object_type, object_id, status);
 CREATE INDEX idx_publish_records_lookup ON publish_records (tenant_id, object_type, object_id, created_at DESC);
 CREATE INDEX idx_audit_events_lookup ON audit_events (tenant_id, object_type, object_id, created_at DESC);

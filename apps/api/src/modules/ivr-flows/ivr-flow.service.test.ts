@@ -16,6 +16,7 @@ const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const FLOW_ID   = '00000000-0000-0000-0000-000000000010';
 const USER_ID   = '00000000-0000-0000-0000-000000000099';
 const EXT_ID    = '00000000-0000-0000-0000-000000000050';
+const PROMPT_ID = '00000000-0000-0000-0000-000000000060';
 
 const now = new Date();
 
@@ -91,6 +92,7 @@ const mockRepo = {
   rollback: vi.fn(),
   nextVersionNumber: vi.fn(),
   findActiveExtensionIds: vi.fn(),
+  findActivePromptRefs: vi.fn(),
 } as unknown as IvrFlowRepository;
 
 const service = new IvrFlowService(mockRepo);
@@ -111,6 +113,7 @@ describe('IvrFlowService.validate', () => {
     vi.mocked(mockRepo.storeValidationResult).mockResolvedValue(undefined);
     vi.mocked(mockRepo.markVersionValidated).mockResolvedValue({ ...version, state: 'validated' });
     vi.mocked(mockRepo.findActiveExtensionIds).mockResolvedValue(new Set());
+    vi.mocked(mockRepo.findActivePromptRefs).mockResolvedValue(new Map());
 
     const result = await service.validate(FLOW_ID, 'v1', TENANT_ID);
     expect(result.outcome.status).toBe('passed');
@@ -129,6 +132,7 @@ describe('IvrFlowService.validate', () => {
     vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
     vi.mocked(mockRepo.storeValidationResult).mockResolvedValue(undefined);
     vi.mocked(mockRepo.findActiveExtensionIds).mockResolvedValue(new Set()); // extension not active
+    vi.mocked(mockRepo.findActivePromptRefs).mockResolvedValue(new Map());
 
     const result = await service.validate(FLOW_ID, 'v1', TENANT_ID);
     expect(result.outcome.status).toBe('failed');
@@ -148,11 +152,76 @@ describe('IvrFlowService.validate', () => {
     vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
     vi.mocked(mockRepo.storeValidationResult).mockResolvedValue(undefined);
     vi.mocked(mockRepo.findActiveExtensionIds).mockResolvedValue(new Set([EXT_ID]));
+    vi.mocked(mockRepo.findActivePromptRefs).mockResolvedValue(new Map());
     vi.mocked(mockRepo.markVersionValidated).mockResolvedValue({ ...version, state: 'validated' });
 
     const result = await service.validate(FLOW_ID, 'v1', TENANT_ID);
     expect(result.outcome.status).toBe('passed');
     expect(mockRepo.markVersionValidated).toHaveBeenCalledOnce();
+  });
+
+  it('fails when play_prompt.prompt_id does not resolve to an active prompt asset', async () => {
+    const graph = {
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'prompt' },
+        { id: 'prompt', type: 'play_prompt', prompt_id: PROMPT_ID, next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    };
+    const version = makeVersion('v1', 'draft', { graph_json: graph });
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
+    vi.mocked(mockRepo.storeValidationResult).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.findActiveExtensionIds).mockResolvedValue(new Set());
+    vi.mocked(mockRepo.findActivePromptRefs).mockResolvedValue(new Map());
+
+    const result = await service.validate(FLOW_ID, 'v1', TENANT_ID);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors.some((e) => e.message.includes(PROMPT_ID))).toBe(true);
+  });
+
+  it('fails when play_collect.prompt_id has no runtime storage_uri', async () => {
+    const graph = {
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'prompt' },
+        { id: 'prompt', type: 'play_collect', prompt_id: PROMPT_ID, next_node_id: 'end', invalid_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    };
+    const version = makeVersion('v1', 'draft', { graph_json: graph });
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
+    vi.mocked(mockRepo.storeValidationResult).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.findActiveExtensionIds).mockResolvedValue(new Set());
+    vi.mocked(mockRepo.findActivePromptRefs).mockResolvedValue(
+      new Map([[PROMPT_ID, { id: PROMPT_ID, name: 'welcome', storage_uri: null }]]),
+    );
+
+    const result = await service.validate(FLOW_ID, 'v1', TENANT_ID);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors.some((e) => e.message.includes('storage_uri'))).toBe(true);
+  });
+
+  it('passes when prompt nodes resolve to active prompt assets with runtime URIs', async () => {
+    const graph = {
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'prompt' },
+        { id: 'prompt', type: 'play_prompt', prompt_id: PROMPT_ID, next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    };
+    const version = makeVersion('v1', 'draft', { graph_json: graph });
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
+    vi.mocked(mockRepo.storeValidationResult).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.findActiveExtensionIds).mockResolvedValue(new Set());
+    vi.mocked(mockRepo.findActivePromptRefs).mockResolvedValue(
+      new Map([[PROMPT_ID, { id: PROMPT_ID, name: 'welcome', storage_uri: '/sounds/acme/welcome.wav' }]]),
+    );
+    vi.mocked(mockRepo.markVersionValidated).mockResolvedValue({ ...version, state: 'validated' });
+
+    const result = await service.validate(FLOW_ID, 'v1', TENANT_ID);
+    expect(result.outcome.status).toBe('passed');
   });
 });
 

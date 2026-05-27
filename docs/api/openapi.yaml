@@ -34,10 +34,14 @@ tags:
     description: SIP trunk management
   - name: PhoneNumbers
     description: Phone number management
+  - name: Prompts
+    description: Prompt asset metadata management
   - name: InboundRoutes
     description: Inbound route lifecycle (draft → validate → publish → rollback)
   - name: IvrFlows
     description: IVR flow lifecycle (draft → validate → publish → rollback)
+  - name: Runtime
+    description: Runtime-internal IVR resolver endpoints
   - name: CallEvents
     description: Call event query (tenant-facing) and ingestion (runtime-internal)
   - name: Platform
@@ -332,6 +336,88 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PhoneNumberResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /prompts:
+    get:
+      tags: [Prompts]
+      summary: List prompt assets
+      responses:
+        '200':
+          description: Prompt asset list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptAssetListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Prompts]
+      summary: Create prompt asset metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePromptAssetRequest'
+      responses:
+        '201':
+          description: Prompt asset created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptAssetResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /prompts/{promptId}:
+    parameters:
+      - $ref: '#/components/parameters/PromptIdParam'
+    get:
+      tags: [Prompts]
+      summary: Get prompt asset
+      responses:
+        '200':
+          description: Prompt asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptAssetResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [Prompts]
+      summary: Update prompt asset metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePromptAssetRequest'
+      responses:
+        '200':
+          description: Prompt asset updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptAssetResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /prompts/{promptId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/PromptIdParam'
+    post:
+      tags: [Prompts]
+      summary: Deactivate prompt asset
+      responses:
+        '200':
+          description: Prompt asset deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptAssetResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -765,6 +851,60 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /runtime/ivr/sessions:
+    post:
+      tags: [Runtime]
+      summary: Start an IVR runtime session
+      description: |
+        Runtime-internal endpoint. Pins the current published flow version and
+        resolves the first constrained runtime action.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartIvrRuntimeSessionRequest'
+      responses:
+        '201':
+          description: Runtime session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrRuntimeSessionResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /runtime/ivr/sessions/{sessionId}/advance:
+    parameters:
+      - $ref: '#/components/parameters/SessionIdParam'
+    post:
+      tags: [Runtime]
+      summary: Advance an IVR runtime session
+      description: |
+        Runtime-internal endpoint. Accepts the result of the current action and
+        resolves the next constrained runtime action, if any.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvanceIvrRuntimeSessionRequest'
+      responses:
+        '200':
+          description: Runtime session advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrRuntimeSessionResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
   /call-events:
     get:
       tags: [CallEvents]
@@ -1073,6 +1213,13 @@ components:
       schema:
         type: string
         format: uuid
+    PromptIdParam:
+      name: promptId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     RouteIdParam:
       name: routeId
       in: path
@@ -1089,6 +1236,13 @@ components:
         format: uuid
     VersionIdParam:
       name: versionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SessionIdParam:
+      name: sessionId
       in: path
       required: true
       schema:
@@ -1177,6 +1331,113 @@ components:
           type: string
         display_name:
           type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    PromptAsset:
+      type: object
+      required: [id, tenant_id, name, media_type, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        media_type:
+          type: string
+        language:
+          type: string
+          nullable: true
+        storage_uri:
+          type: string
+          nullable: true
+        checksum:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, inactive]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PromptAssetResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PromptAsset'
+
+    PromptAssetListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptAsset'
+
+    CreatePromptAssetRequest:
+      type: object
+      required: [name, media_type, storage_uri]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        media_type:
+          type: string
+          minLength: 1
+          maxLength: 255
+        language:
+          type: string
+          minLength: 1
+          maxLength: 32
+        storage_uri:
+          type: string
+          minLength: 1
+          maxLength: 2048
+        checksum:
+          type: string
+          minLength: 1
+          maxLength: 255
+
+    UpdatePromptAssetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        media_type:
+          type: string
+          minLength: 1
+          maxLength: 255
+        language:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 32
+            - type: 'null'
+        storage_uri:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 2048
+            - type: 'null'
+        checksum:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 255
+            - type: 'null'
         status:
           type: string
           enum: [active, inactive]
@@ -1975,6 +2236,192 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/IvrFlowPublishResult'
+
+    IvrRuntimeSession:
+      type: object
+      required: [id, tenant_id, flow_id, flow_version_id, call_id, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        flow_id:
+          type: string
+          format: uuid
+        flow_version_id:
+          type: string
+          format: uuid
+        call_id:
+          type: string
+        status:
+          type: string
+          enum: [running, completed, failed]
+        current_node_id:
+          type: string
+          nullable: true
+        caller_number:
+          type: string
+          nullable: true
+        destination_number:
+          type: string
+          nullable: true
+        last_digits:
+          type: string
+          nullable: true
+        variables_json:
+          type: object
+          additionalProperties:
+            type: string
+        last_action_json:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: 'null'
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    IvrRuntimeAction:
+      oneOf:
+        - $ref: '#/components/schemas/IvrRuntimePlayPromptAction'
+        - $ref: '#/components/schemas/IvrRuntimePlayCollectAction'
+        - $ref: '#/components/schemas/IvrRuntimeTransferAction'
+        - $ref: '#/components/schemas/IvrRuntimeHangupAction'
+
+    IvrRuntimePlayPromptAction:
+      type: object
+      required: [action, node_id, prompt_id, prompt_uri]
+      properties:
+        action:
+          type: string
+          const: play_prompt
+        node_id:
+          type: string
+        prompt_id:
+          type: string
+          format: uuid
+        prompt_uri:
+          type: string
+
+    IvrRuntimePlayCollectAction:
+      type: object
+      required: [action, node_id, prompt_id, prompt_uri, max_digits, timeout_ms, retries]
+      properties:
+        action:
+          type: string
+          const: play_collect
+        node_id:
+          type: string
+        prompt_id:
+          type: string
+          format: uuid
+        prompt_uri:
+          type: string
+        max_digits:
+          type: integer
+        timeout_ms:
+          type: integer
+        retries:
+          type: integer
+
+    IvrRuntimeTransferAction:
+      type: object
+      required: [action, node_id, target_type, target]
+      properties:
+        action:
+          type: string
+          const: transfer
+        node_id:
+          type: string
+        target_type:
+          type: string
+          enum: [extension]
+        target:
+          type: string
+        domain:
+          type: string
+          nullable: true
+
+    IvrRuntimeHangupAction:
+      type: object
+      required: [action, node_id]
+      properties:
+        action:
+          type: string
+          const: hangup
+        node_id:
+          type: string
+
+    StartIvrRuntimeSessionRequest:
+      type: object
+      required: [call_id, flow_id]
+      properties:
+        call_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        flow_id:
+          type: string
+          format: uuid
+        caller_number:
+          type: string
+          maxLength: 255
+        destination_number:
+          type: string
+          maxLength: 255
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 255
+
+    AdvanceIvrRuntimeSessionRequest:
+      type: object
+      required: [node_id, outcome]
+      properties:
+        node_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        outcome:
+          type: string
+          enum: [completed, digits, timeout, invalid]
+        digits:
+          type: string
+          minLength: 1
+          maxLength: 64
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 255
+
+    IvrRuntimeSessionResult:
+      type: object
+      required: [session]
+      properties:
+        session:
+          $ref: '#/components/schemas/IvrRuntimeSession'
+        action:
+          oneOf:
+            - $ref: '#/components/schemas/IvrRuntimeAction'
+            - type: 'null'
+
+    IvrRuntimeSessionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/IvrRuntimeSessionResult'
 
     CallEvent:
       type: object

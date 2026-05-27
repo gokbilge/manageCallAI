@@ -66,6 +66,19 @@ export interface FlowValidationResult {
   outcome: ValidationOutcome;
 }
 
+export interface PromptAssetReference {
+  id: string;
+  name: string;
+  storage_uri: string | null;
+}
+
+export interface ExtensionTransferReference {
+  id: string;
+  extension_number: string;
+  display_name: string;
+  directory_domain: string | null;
+}
+
 export interface SimulationScenario {
   digits?: string[];
   collected_digits?: Record<string, string>;

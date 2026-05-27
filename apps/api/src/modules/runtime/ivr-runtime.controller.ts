@@ -1,0 +1,101 @@
+import type { FastifyInstance, FastifyReply } from 'fastify';
+import { db } from '../../db/client.js';
+import { authenticateRuntime } from './runtime-auth.js';
+import { IvrRuntimeRepository } from './ivr-runtime.repository.js';
+import {
+  IvrRuntimeFlowNotPublishedError,
+  IvrRuntimeResolutionError,
+  IvrRuntimeService,
+  IvrRuntimeSessionNotFoundError,
+  IvrRuntimeSessionStateError,
+} from './ivr-runtime.service.js';
+import type {
+  AdvanceIvrRuntimeSessionInput,
+  StartIvrRuntimeSessionInput,
+} from './ivr-runtime.types.js';
+
+const service = new IvrRuntimeService(new IvrRuntimeRepository(db));
+
+function replyRuntimeError(err: unknown, reply: FastifyReply): FastifyReply {
+  if (err instanceof IvrRuntimeSessionNotFoundError || err instanceof IvrRuntimeFlowNotPublishedError) {
+    return reply.code(404).send({ error: err.message });
+  }
+  if (err instanceof IvrRuntimeSessionStateError) {
+    return reply.code(409).send({ error: err.message });
+  }
+  if (err instanceof IvrRuntimeResolutionError) {
+    return reply.code(422).send({ error: err.message });
+  }
+  throw err;
+}
+
+export async function ivrRuntimeController(app: FastifyInstance): Promise<void> {
+  app.post<{ Body: StartIvrRuntimeSessionInput }>(
+    '/sessions',
+    {
+      preHandler: authenticateRuntime,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['call_id', 'flow_id'],
+          additionalProperties: false,
+          properties: {
+            call_id: { type: 'string', minLength: 1, maxLength: 255 },
+            flow_id: { type: 'string', format: 'uuid' },
+            caller_number: { type: 'string', maxLength: 255 },
+            destination_number: { type: 'string', maxLength: 255 },
+            variables: {
+              type: 'object',
+              additionalProperties: { type: 'string', maxLength: 255 },
+            },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      try {
+        const result = await service.startSession(req.body);
+        return reply.code(201).send({ data: result });
+      } catch (err) {
+        return replyRuntimeError(err, reply);
+      }
+    },
+  );
+
+  app.post<{ Params: { sessionId: string }; Body: AdvanceIvrRuntimeSessionInput }>(
+    '/sessions/:sessionId/advance',
+    {
+      preHandler: authenticateRuntime,
+      schema: {
+        params: {
+          type: 'object',
+          required: ['sessionId'],
+          properties: {
+            sessionId: { type: 'string', format: 'uuid' },
+          },
+        },
+        body: {
+          type: 'object',
+          required: ['node_id', 'outcome'],
+          additionalProperties: false,
+          properties: {
+            node_id: { type: 'string', minLength: 1, maxLength: 255 },
+            outcome: { type: 'string', enum: ['completed', 'digits', 'timeout', 'invalid'] },
+            digits: { type: 'string', minLength: 1, maxLength: 64 },
+            variables: {
+              type: 'object',
+              additionalProperties: { type: 'string', maxLength: 255 },
+            },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      try {
+        return { data: await service.advanceSession(req.params.sessionId, req.body) };
+      } catch (err) {
+        return replyRuntimeError(err, reply);
+      }
+    },
+  );
+}

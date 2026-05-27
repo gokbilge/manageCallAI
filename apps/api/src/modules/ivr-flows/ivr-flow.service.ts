@@ -80,6 +80,12 @@ function toSimulationError(field: string, message: string) {
   return { field, message };
 }
 
+function getGraphNodes(graph: Record<string, unknown>): Array<Record<string, unknown>> {
+  return Array.isArray(graph.nodes)
+    ? (graph.nodes as Array<Record<string, unknown>>)
+    : [];
+}
+
 function simulateGraph(graph: Record<string, unknown>, scenario: SimulationScenario): SimulationOutcome {
   const baseValidation = validateIvrGraph(graph);
   if (baseValidation.status === 'failed') {
@@ -273,9 +279,7 @@ export class IvrFlowService {
     // Semantic check: transfer_extension nodes must reference active extensions
     // in the same tenant. Only runs when the graph is structurally valid.
     if (outcome.status === 'passed') {
-      const nodes = Array.isArray((version.graph_json as Record<string, unknown>).nodes)
-        ? ((version.graph_json as Record<string, unknown>).nodes as Array<Record<string, unknown>>)
-        : [];
+      const nodes = getGraphNodes(version.graph_json);
       const transferNodes = nodes.filter((n) => n.type === 'transfer_extension' && typeof n.extension_id === 'string');
       const extensionIds = transferNodes.map((n) => n.extension_id as string);
       const activeIds = await this.repo.findActiveExtensionIds(tenantId, extensionIds);
@@ -288,6 +292,29 @@ export class IvrFlowService {
           });
         }
       }
+
+      const promptNodes = nodes.filter((n) =>
+        (n.type === 'play_prompt' || n.type === 'play_collect') && typeof n.prompt_id === 'string');
+      const promptIds = promptNodes.map((n) => n.prompt_id as string);
+      const promptsById = await this.repo.findActivePromptRefs(tenantId, promptIds);
+      for (const node of promptNodes) {
+        const promptId = node.prompt_id as string;
+        const prompt = promptsById.get(promptId);
+        if (!prompt) {
+          outcome.errors.push({
+            field: `graph_json.nodes.${String(node.id)}.prompt_id`,
+            message: `Prompt asset not found or not active in this tenant: ${promptId}`,
+          });
+          continue;
+        }
+        if (!prompt.storage_uri) {
+          outcome.errors.push({
+            field: `graph_json.nodes.${String(node.id)}.prompt_id`,
+            message: `Prompt asset does not have a runtime storage_uri: ${promptId}`,
+          });
+        }
+      }
+
       if (outcome.errors.length > 0) {
         outcome.status = 'failed';
       }

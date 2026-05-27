@@ -1,0 +1,382 @@
+import type {
+  ExtensionTransferReference,
+  PromptAssetReference,
+} from '../ivr-flows/ivr-flow.types.js';
+import type { IvrRuntimeRepository } from './ivr-runtime.repository.js';
+import type {
+  AdvanceIvrRuntimeSessionInput,
+  IvrRuntimeAction,
+  IvrRuntimeSession,
+  IvrRuntimeSessionResult,
+  StartIvrRuntimeSessionInput,
+} from './ivr-runtime.types.js';
+
+type GraphNode = Record<string, unknown> & { id: string; type: string };
+
+export class IvrRuntimeFlowNotPublishedError extends Error {
+  constructor(flowId: string) {
+    super(`IVR flow is not active and published: ${flowId}`);
+    this.name = 'IvrRuntimeFlowNotPublishedError';
+  }
+}
+
+export class IvrRuntimeSessionNotFoundError extends Error {
+  constructor(sessionId: string) {
+    super(`IVR runtime session not found: ${sessionId}`);
+    this.name = 'IvrRuntimeSessionNotFoundError';
+  }
+}
+
+export class IvrRuntimeSessionStateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'IvrRuntimeSessionStateError';
+  }
+}
+
+export class IvrRuntimeResolutionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'IvrRuntimeResolutionError';
+  }
+}
+
+function isGraphNode(value: unknown): value is GraphNode {
+  return typeof value === 'object'
+    && value !== null
+    && !Array.isArray(value)
+    && typeof (value as Record<string, unknown>).id === 'string'
+    && typeof (value as Record<string, unknown>).type === 'string';
+}
+
+function mapNodes(graph: Record<string, unknown>): { entryNodeId: string; nodes: Map<string, GraphNode> } {
+  const entryNodeId = typeof graph.entry_node_id === 'string' ? graph.entry_node_id : '';
+  const rawNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
+  const nodes = new Map<string, GraphNode>();
+
+  for (const rawNode of rawNodes) {
+    if (isGraphNode(rawNode)) {
+      nodes.set(rawNode.id, rawNode);
+    }
+  }
+
+  return { entryNodeId, nodes };
+}
+
+function resolveSwitchInput(
+  node: GraphNode,
+  context: {
+    lastDigits?: string | null;
+    callerNumber?: string | null;
+    variables: Record<string, string>;
+  },
+): string | undefined {
+  const rawInput = typeof node.input === 'string' ? node.input : '{{last_digits}}';
+  const tokenMatch = rawInput.match(/^\{\{(.+)\}\}$/);
+  if (!tokenMatch) {
+    return rawInput;
+  }
+
+  const token = tokenMatch[1]?.trim();
+  if (!token) return undefined;
+  if (token === 'last_digits') return context.lastDigits ?? undefined;
+  if (token === 'caller_number') return context.callerNumber ?? undefined;
+  if (token === 'now.hour') return new Date().getHours().toString().padStart(2, '0');
+  if (token.startsWith('var.')) return context.variables[token.slice(4)];
+  return context.variables[token];
+}
+
+export class IvrRuntimeService {
+  constructor(private readonly repo: IvrRuntimeRepository) {}
+
+  async startSession(input: StartIvrRuntimeSessionInput): Promise<IvrRuntimeSessionResult> {
+    const active = await this.repo.findActiveFlowVersion(input.flow_id);
+    if (!active) {
+      throw new IvrRuntimeFlowNotPublishedError(input.flow_id);
+    }
+
+    const resolved = await this.resolveNextAction({
+      tenant_id: active.tenant_id,
+      graph_json: active.graph_json,
+      current_node_id: null,
+      entry_node_id_override: undefined,
+      caller_number: input.caller_number ?? null,
+      last_digits: null,
+      variables: { ...(input.variables ?? {}) },
+      transition: { kind: 'start' },
+    });
+
+    const session = await this.repo.createSession({
+      tenant_id: active.tenant_id,
+      flow_id: active.flow_id,
+      flow_version_id: active.flow_version_id,
+      call_id: input.call_id,
+      caller_number: input.caller_number,
+      destination_number: input.destination_number,
+      variables_json: resolved.variables,
+      current_node_id: resolved.current_node_id,
+      last_digits: resolved.last_digits,
+      last_action_json: resolved.action ? { ...resolved.action } : null,
+    });
+
+    if (!resolved.action) {
+      const completed = await this.repo.updateSessionState({
+        id: session.id,
+        status: 'completed',
+        current_node_id: null,
+        last_digits: resolved.last_digits,
+        variables_json: resolved.variables,
+        last_action_json: null,
+        completed_at: new Date(),
+      });
+      return { session: completed, action: null };
+    }
+
+    return { session, action: resolved.action };
+  }
+
+  async advanceSession(sessionId: string, input: AdvanceIvrRuntimeSessionInput): Promise<IvrRuntimeSessionResult> {
+    const session = await this.repo.findSessionById(sessionId);
+    if (!session) {
+      throw new IvrRuntimeSessionNotFoundError(sessionId);
+    }
+    if (session.status !== 'running') {
+      throw new IvrRuntimeSessionStateError(`Session is not running: ${session.status}`);
+    }
+    if (!session.current_node_id || session.current_node_id !== input.node_id) {
+      throw new IvrRuntimeSessionStateError('Action result does not match the current runtime node');
+    }
+
+    const flow = await this.repo.getFlowGraphForSession(sessionId);
+    if (!flow) {
+      throw new IvrRuntimeSessionStateError('Pinned flow version could not be loaded for this runtime session');
+    }
+
+    const variables = { ...(session.variables_json ?? {}), ...(input.variables ?? {}) };
+    const resolved = await this.resolveNextAction({
+      tenant_id: session.tenant_id,
+      graph_json: flow.graph_json,
+      current_node_id: session.current_node_id,
+      entry_node_id_override: undefined,
+      caller_number: session.caller_number,
+      last_digits: session.last_digits,
+      variables,
+      transition: input,
+    });
+
+    const updated = await this.repo.updateSessionState({
+      id: session.id,
+      status: resolved.action ? 'running' : 'completed',
+      current_node_id: resolved.current_node_id,
+      last_digits: resolved.last_digits,
+      variables_json: resolved.variables,
+      last_action_json: resolved.action ? { ...resolved.action } : null,
+      completed_at: resolved.action ? null : new Date(),
+    });
+
+    return { session: updated, action: resolved.action };
+  }
+
+  private async resolveNextAction(input: {
+    tenant_id: string;
+    graph_json: Record<string, unknown>;
+    current_node_id: string | null;
+    entry_node_id_override?: string;
+    caller_number: string | null;
+    last_digits: string | null;
+    variables: Record<string, string>;
+    transition:
+      | { kind: 'start' }
+      | AdvanceIvrRuntimeSessionInput;
+  }): Promise<{
+    action: IvrRuntimeAction | null;
+    current_node_id: string | null;
+    last_digits: string | null;
+    variables: Record<string, string>;
+  }> {
+    const { entryNodeId, nodes } = mapNodes(input.graph_json);
+    let nextNodeId = input.entry_node_id_override ?? entryNodeId;
+    let lastDigits = input.last_digits;
+    const variables = { ...input.variables };
+    const isStartTransition = 'kind' in input.transition && input.transition.kind === 'start';
+
+    if (!isStartTransition) {
+      const transition = input.transition as AdvanceIvrRuntimeSessionInput;
+      const currentNode = nodes.get(input.current_node_id ?? '');
+      if (!currentNode) {
+        throw new IvrRuntimeResolutionError(`Current runtime node could not be loaded: ${input.current_node_id}`);
+      }
+
+      const currentType = String(currentNode.type);
+      if (currentType === 'play_prompt') {
+        nextNodeId = typeof currentNode.next_node_id === 'string' ? currentNode.next_node_id : '';
+      } else if (currentType === 'play_collect') {
+        const outcome = transition.outcome;
+        if (outcome === 'timeout') {
+          nextNodeId = typeof currentNode.timeout_node_id === 'string'
+            ? currentNode.timeout_node_id
+            : typeof currentNode.default_node_id === 'string'
+              ? currentNode.default_node_id
+              : '';
+        } else if (outcome === 'invalid') {
+          nextNodeId = typeof currentNode.invalid_node_id === 'string'
+            ? currentNode.invalid_node_id
+            : typeof currentNode.default_node_id === 'string'
+              ? currentNode.default_node_id
+              : '';
+        } else {
+          const digits = transition.digits?.trim();
+          if (!digits) {
+            throw new IvrRuntimeSessionStateError('play_collect completion requires digits or an explicit timeout/invalid outcome');
+          }
+          lastDigits = digits;
+          variables.last_digits = digits;
+          variables[`node.${currentNode.id}.digits`] = digits;
+          nextNodeId = typeof currentNode.next_node_id === 'string' ? currentNode.next_node_id : '';
+        }
+      } else if (currentType === 'transfer_extension' || currentType === 'hangup') {
+        return {
+          action: null,
+          current_node_id: null,
+          last_digits: lastDigits,
+          variables,
+        };
+      } else {
+        throw new IvrRuntimeResolutionError(`Unsupported runtime completion node type: ${currentType}`);
+      }
+    }
+
+    let guard = 0;
+    while (nextNodeId && guard < 100) {
+      guard += 1;
+      const node = nodes.get(nextNodeId);
+      if (!node) {
+        throw new IvrRuntimeResolutionError(`Referenced runtime node does not exist: ${nextNodeId}`);
+      }
+
+      const type = String(node.type);
+      if (type === 'start') {
+        nextNodeId = typeof node.next_node_id === 'string' ? node.next_node_id : '';
+        continue;
+      }
+
+      if (type === 'switch') {
+        const cases = typeof node.cases === 'object' && node.cases !== null && !Array.isArray(node.cases)
+          ? (node.cases as Record<string, unknown>)
+          : {};
+        const selectedInput = resolveSwitchInput(node, {
+          lastDigits,
+          callerNumber: input.caller_number,
+          variables,
+        });
+        const selectedNodeId = selectedInput ? cases[selectedInput] : undefined;
+        nextNodeId = typeof selectedNodeId === 'string'
+          ? selectedNodeId
+          : typeof node.default_node_id === 'string'
+            ? node.default_node_id
+            : '';
+        continue;
+      }
+
+      if (type === 'play_prompt') {
+        const prompt = await this.requirePrompt(input.tenant_id, node);
+        return {
+          action: {
+            action: 'play_prompt',
+            node_id: node.id,
+            prompt_id: prompt.id,
+            prompt_uri: prompt.storage_uri!,
+          },
+          current_node_id: node.id,
+          last_digits: lastDigits,
+          variables,
+        };
+      }
+
+      if (type === 'play_collect') {
+        const prompt = await this.requirePrompt(input.tenant_id, node);
+        return {
+          action: {
+            action: 'play_collect',
+            node_id: node.id,
+            prompt_id: prompt.id,
+            prompt_uri: prompt.storage_uri!,
+            max_digits: typeof node.max_digits === 'number' ? node.max_digits : 1,
+            timeout_ms: typeof node.timeout_ms === 'number' ? node.timeout_ms : 5000,
+            retries: typeof node.retries === 'number' ? node.retries : 0,
+          },
+          current_node_id: node.id,
+          last_digits: lastDigits,
+          variables,
+        };
+      }
+
+      if (type === 'transfer_extension') {
+        const target = await this.requireExtensionTarget(input.tenant_id, node);
+        return {
+          action: {
+            action: 'transfer',
+            node_id: node.id,
+            target_type: 'extension',
+            target: target.extension_number,
+            domain: target.directory_domain,
+          },
+          current_node_id: node.id,
+          last_digits: lastDigits,
+          variables,
+        };
+      }
+
+      if (type === 'hangup') {
+        return {
+          action: {
+            action: 'hangup',
+            node_id: node.id,
+          },
+          current_node_id: node.id,
+          last_digits: lastDigits,
+          variables,
+        };
+      }
+
+      throw new IvrRuntimeResolutionError(`Unsupported runtime node type: ${type}`);
+    }
+
+    if (guard >= 100) {
+      throw new IvrRuntimeResolutionError('Runtime traversal exceeded the maximum step count');
+    }
+
+    return {
+      action: null,
+      current_node_id: null,
+      last_digits: lastDigits,
+      variables,
+    };
+  }
+
+  private async requirePrompt(tenantId: string, node: GraphNode): Promise<PromptAssetReference> {
+    const promptId = typeof node.prompt_id === 'string' ? node.prompt_id : '';
+    if (!promptId) {
+      throw new IvrRuntimeResolutionError(`Prompt node is missing prompt_id: ${node.id}`);
+    }
+    const prompts = await this.repo.findActivePromptRefs(tenantId, [promptId]);
+    const prompt = prompts.get(promptId);
+    if (!prompt || !prompt.storage_uri) {
+      throw new IvrRuntimeResolutionError(`Prompt asset is not active or lacks storage_uri: ${promptId}`);
+    }
+    return prompt;
+  }
+
+  private async requireExtensionTarget(tenantId: string, node: GraphNode): Promise<ExtensionTransferReference> {
+    const extensionId = typeof node.extension_id === 'string' ? node.extension_id : '';
+    if (!extensionId) {
+      throw new IvrRuntimeResolutionError(`Transfer node is missing extension_id: ${node.id}`);
+    }
+    const targets = await this.repo.findActiveExtensionTargets(tenantId, [extensionId]);
+    const target = targets.get(extensionId);
+    if (!target) {
+      throw new IvrRuntimeResolutionError(`Extension target is not active in this tenant: ${extensionId}`);
+    }
+    return target;
+  }
+}
