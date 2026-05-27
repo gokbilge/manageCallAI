@@ -66,6 +66,8 @@ SLICE-00 Current Baseline
   |
   +--> SLICE-12 Outbound Event Delivery ----------> SLICE-09
                                                     SLICE-10
+  |
+  +--> SLICE-13 Post-Release Expansion ------------> after first release
 ```
 
 ## 5. Parallel Work Tracks
@@ -93,6 +95,10 @@ SLICE-00 Current Baseline
 ### Track D - Release Readiness
 
 - `SLICE-11`
+
+### Track E - Post-Release Expansion
+
+- `SLICE-13`
 
 ## 6. Recommended Execution Order
 
@@ -122,6 +128,10 @@ SLICE-00 Current Baseline
 
 11. `SLICE-11` Release Hardening
 
+### Stage 6 - Post Release
+
+12. `SLICE-13` Post-Release Expansion
+
 ## 7. Minimal Release Gate
 
 The product is ready for the first release only when all of these are true:
@@ -148,3 +158,4 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-10](slices/SLICE-10-mcp-surfaces.md)
 - [SLICE-11](slices/SLICE-11-release-hardening.md)
 - [SLICE-12](slices/SLICE-12-outbound-event-delivery.md)
+- [SLICE-13](slices/SLICE-13-post-release-expansion.md)

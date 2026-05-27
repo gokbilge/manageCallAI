@@ -54,6 +54,9 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [slices/SLICE-12-outbound-event-delivery.md](slices/SLICE-12-outbound-event-delivery.md)
   Webhook subscription management and outbound event delivery for n8n and external consumers.
 
+- [slices/SLICE-13-post-release-expansion.md](slices/SLICE-13-post-release-expansion.md)
+  Post-release parking lane for advanced telecom features and broader expansion work that should not block v1.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)
