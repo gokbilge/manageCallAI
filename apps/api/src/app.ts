@@ -11,6 +11,8 @@ import { freeswitchController } from './modules/freeswitch/freeswitch.controller
 import { inboundRouteController } from './modules/inbound-routes/inbound-route.controller.js';
 import { ivrFlowController } from './modules/ivr-flows/ivr-flow.controller.js';
 import { platformController } from './modules/platform/platform.controller.js';
+import { phoneNumberController } from './modules/phone-numbers/phone-number.controller.js';
+import { sipTrunkController } from './modules/sip-trunks/sip-trunk.controller.js';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -30,6 +32,8 @@ export function buildApp() {
   app.register(healthController, { prefix: '/health' });
   app.register(authController, { prefix: '/api/v1/auth' });
   app.register(extensionController, { prefix: '/api/v1/extensions' });
+  app.register(sipTrunkController, { prefix: '/api/v1/sip-trunks' });
+  app.register(phoneNumberController, { prefix: '/api/v1/phone-numbers' });
   app.register(callEventController, { prefix: '/api/v1/call-events' });
   app.register(freeswitchController, { prefix: '/api/v1/freeswitch' });
   app.register(ivrFlowController, { prefix: '/api/v1/ivr-flows' });

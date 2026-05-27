@@ -1,14 +1,14 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-import dotenv from "dotenv";
-import pg from "pg";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
+const require = createRequire(import.meta.url);
+const pg = requireFromWorkspace("pg");
 
 loadEnv();
 
@@ -83,13 +83,62 @@ function loadEnv() {
   const exampleEnvPath = path.join(rootDir, ".env.example");
 
   if (existsSync(envPath)) {
-    dotenv.config({ path: envPath });
+    applyEnvFile(envPath);
     return;
   }
 
   if (existsSync(exampleEnvPath)) {
-    dotenv.config({ path: exampleEnvPath });
+    applyEnvFile(exampleEnvPath);
   }
+}
+
+function applyEnvFile(filePath) {
+  const content = readFileSync(filePath, "utf8");
+
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf("=");
+    if (separatorIndex < 0) {
+      continue;
+    }
+
+    const key = line.slice(0, separatorIndex).trim();
+    if (!key || process.env[key] !== undefined) {
+      continue;
+    }
+
+    let value = line.slice(separatorIndex + 1).trim();
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    process.env[key] = value;
+  }
+}
+
+function requireFromWorkspace(packageName) {
+  const resolutionPaths = [rootDir, path.join(rootDir, "apps", "api")];
+
+  for (const resolutionPath of resolutionPaths) {
+    try {
+      const resolved = require.resolve(packageName, { paths: [resolutionPath] });
+      return require(resolved);
+    } catch {
+      // Try the next workspace path.
+    }
+  }
+
+  throw new Error(
+    `Unable to resolve package "${packageName}" from workspace paths: ${resolutionPaths.join(", ")}`
+  );
 }
 
 async function ensureMigrationTable(dbClient) {

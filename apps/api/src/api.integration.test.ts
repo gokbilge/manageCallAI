@@ -159,6 +159,144 @@ describe('API integration', () => {
     });
   });
 
+  it('supports authenticated sip trunk CRUD without exposing auth_password', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const registerResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        tenant_name: `Trunk ${suffix}`,
+        tenant_slug: `trunk-${suffix}`,
+        email: `trunk-${suffix}@example.com`,
+        display_name: 'Trunk Owner',
+        password: 'Secret123!',
+      },
+    });
+
+    const token = registerResponse.json<{ token: string }>().token;
+    const authHeader = { authorization: `Bearer ${token}` };
+
+    const unauthorizedList = await app.inject({
+      method: 'GET',
+      url: '/api/v1/sip-trunks',
+    });
+    expect(unauthorizedList.statusCode).toBe(401);
+
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/sip-trunks',
+      headers: authHeader,
+      payload: {
+        name: 'Primary Carrier',
+        direction: 'bidirectional',
+        realm: 'sip.example.net',
+        proxy: 'sip.example.net',
+        port: 5060,
+        transport: 'udp',
+        username: 'tenant-200',
+        auth_username: 'carrier-user',
+        auth_password: 'CarrierPass123!',
+      },
+    });
+
+    expect(createResponse.statusCode).toBe(201);
+    expect(createResponse.json()).toMatchObject({
+      data: {
+        name: 'Primary Carrier',
+        direction: 'bidirectional',
+        realm: 'sip.example.net',
+        proxy: 'sip.example.net',
+        port: 5060,
+        transport: 'udp',
+        username: 'tenant-200',
+        auth_username: 'carrier-user',
+        status: 'active',
+      },
+    });
+    expect(createResponse.body).not.toContain('CarrierPass123!');
+    expect(createResponse.body).not.toContain('ciphertext');
+
+    const created = createResponse.json<{ data: { id: string; tenant_id: string } }>().data;
+
+    const dbSecretRow = await db.query<{
+      auth_password_ciphertext: string;
+      auth_password_key_id: string;
+    }>(
+      'SELECT auth_password_ciphertext, auth_password_key_id FROM sip_trunks WHERE id = $1',
+      [created.id],
+    );
+    expect(dbSecretRow.rows[0]?.auth_password_ciphertext).toBeTruthy();
+    expect(dbSecretRow.rows[0]?.auth_password_ciphertext).not.toContain('CarrierPass123!');
+    expect(dbSecretRow.rows[0]?.auth_password_key_id).toBeTruthy();
+
+    const listResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/sip-trunks',
+      headers: authHeader,
+    });
+    expect(listResponse.statusCode).toBe(200);
+    expect(listResponse.json<{ data: Array<{ id: string }> }>().data).toHaveLength(1);
+    expect(listResponse.body).not.toContain('CarrierPass123!');
+
+    const getResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/sip-trunks/${created.id}`,
+      headers: authHeader,
+    });
+    expect(getResponse.statusCode).toBe(200);
+    expect(getResponse.body).not.toContain('CarrierPass123!');
+
+    const patchResponse = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/sip-trunks/${created.id}`,
+      headers: authHeader,
+      payload: {
+        proxy: 'backup.example.net',
+        auth_password: 'CarrierPass456!',
+      },
+    });
+    expect(patchResponse.statusCode).toBe(200);
+    expect(patchResponse.json()).toMatchObject({
+      data: {
+        id: created.id,
+        proxy: 'backup.example.net',
+      },
+    });
+    expect(patchResponse.body).not.toContain('CarrierPass456!');
+
+    const otherRegister = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        tenant_name: `Other ${suffix}`,
+        tenant_slug: `other-${suffix}`,
+        email: `other-${suffix}@example.com`,
+        display_name: 'Other Owner',
+        password: 'Secret123!',
+      },
+    });
+    const otherToken = otherRegister.json<{ token: string }>().token;
+    const otherGet = await app.inject({
+      method: 'GET',
+      url: `/api/v1/sip-trunks/${created.id}`,
+      headers: { authorization: `Bearer ${otherToken}` },
+    });
+    expect(otherGet.statusCode).toBe(404);
+
+    const deactivateResponse = await app.inject({
+      method: 'POST',
+      url: `/api/v1/sip-trunks/${created.id}/deactivate`,
+      headers: authHeader,
+    });
+    expect(deactivateResponse.statusCode).toBe(200);
+    expect(deactivateResponse.json()).toMatchObject({
+      data: {
+        id: created.id,
+        status: 'inactive',
+      },
+    });
+  });
+
   it('enforces runtime token and tenant domain on FreeSWITCH directory lookup', async () => {
     const suffix = randomUUID().slice(0, 8);
     const registerResponse = await app.inject({

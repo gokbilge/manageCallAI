@@ -157,68 +157,83 @@ paths:
                 $ref: '#/components/schemas/ExtensionResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /trunks:
+  /sip-trunks:
     get:
       tags: [Trunks]
-      summary: List trunks
+      summary: List SIP trunks
       responses:
         '200':
-          description: Trunk collection
+          description: SIP trunk collection
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TrunkCollection'
+                $ref: '#/components/schemas/SipTrunkListResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [Trunks]
-      summary: Create trunk
+      summary: Create SIP trunk
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTrunkRequest'
+              $ref: '#/components/schemas/CreateSipTrunkRequestSnake'
       responses:
         '201':
-          description: Trunk created
+          description: SIP trunk created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Trunk'
+                $ref: '#/components/schemas/SipTrunkResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /trunks/{trunkId}:
+  /sip-trunks/{trunkId}:
     parameters:
       - $ref: '#/components/parameters/TrunkIdParam'
     get:
       tags: [Trunks]
-      summary: Get trunk
+      summary: Get SIP trunk
       responses:
         '200':
-          description: Trunk
+          description: SIP trunk
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Trunk'
+                $ref: '#/components/schemas/SipTrunkResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
     patch:
       tags: [Trunks]
-      summary: Update trunk
+      summary: Update SIP trunk
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateTrunkRequest'
+              $ref: '#/components/schemas/UpdateSipTrunkRequestSnake'
       responses:
         '200':
-          description: Trunk updated
+          description: SIP trunk updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Trunk'
+                $ref: '#/components/schemas/SipTrunkResponseSnake'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /sip-trunks/{trunkId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/TrunkIdParam'
+    post:
+      tags: [Trunks]
+      summary: Deactivate SIP trunk
+      responses:
+        '200':
+          description: SIP trunk deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SipTrunkResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
   /numbers:
@@ -1459,64 +1474,122 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExtensionSnake'
-    Trunk:
+    SipTrunkSnake:
       type: object
-      required: [id, name, direction, status]
+      required: [id, tenant_id, name, status, direction, realm, proxy, port, transport, auth_username, created_at, updated_at]
       properties:
         id:
           type: string
+        tenant_id:
+          type: string
         name:
           type: string
-        direction:
-          type: string
-          enum: [inbound, outbound, bidirectional]
         status:
           type: string
           enum: [active, inactive]
-        providerName:
+        direction:
           type: string
-        authenticationProfile:
-          $ref: '#/components/schemas/AuthenticationProfile'
-        networkProfile:
-          $ref: '#/components/schemas/NetworkProfile'
-    CreateTrunkRequest:
+          enum: [inbound, outbound, bidirectional]
+        realm:
+          type: string
+        proxy:
+          type: string
+        port:
+          type: integer
+        transport:
+          type: string
+          enum: [udp, tcp, tls]
+        username:
+          type: string
+          nullable: true
+        auth_username:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateSipTrunkRequestSnake:
       type: object
-      required: [name, direction]
+      required: [name, direction, realm, proxy, auth_username, auth_password]
       properties:
         name:
           type: string
         direction:
           type: string
           enum: [inbound, outbound, bidirectional]
-        providerName:
+        realm:
           type: string
-        authenticationProfile:
-          $ref: '#/components/schemas/AuthenticationProfile'
-        networkProfile:
-          $ref: '#/components/schemas/NetworkProfile'
-    UpdateTrunkRequest:
+        proxy:
+          type: string
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        transport:
+          type: string
+          enum: [udp, tcp, tls]
+        username:
+          type: string
+        auth_username:
+          type: string
+        auth_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+          description: >
+            Plaintext SIP trunk authentication password. Encrypted with AES-256-GCM before storage.
+            Never returned in API responses.
+    UpdateSipTrunkRequestSnake:
       type: object
       properties:
         name:
           type: string
         status:
           type: string
-        providerName:
+          enum: [active, inactive]
+        direction:
           type: string
-        authenticationProfile:
-          $ref: '#/components/schemas/AuthenticationProfile'
-        networkProfile:
-          $ref: '#/components/schemas/NetworkProfile'
-    TrunkCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/Trunk'
+          enum: [inbound, outbound, bidirectional]
+        realm:
+          type: string
+        proxy:
+          type: string
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        transport:
+          type: string
+          enum: [udp, tcp, tls]
+        username:
+          oneOf:
+            - type: string
+            - type: 'null'
+        auth_username:
+          type: string
+        auth_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+          description: >
+            Plaintext SIP trunk authentication password. Encrypted with AES-256-GCM before storage.
+            Never returned in API responses.
+    SipTrunkResponseSnake:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/SipTrunkSnake'
+    SipTrunkListResponseSnake:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SipTrunkSnake'
     PhoneNumber:
       type: object
       required: [id, e164Number, status]

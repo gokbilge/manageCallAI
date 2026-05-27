@@ -78,7 +78,7 @@ Primary resources:
 
 - `users`
 - `extensions`
-- `trunks`
+- `sip-trunks`
 - `numbers`
 - `inbound-routes`
 - `outbound-routes`
@@ -244,18 +244,40 @@ POST /api/v1/extensions/{extensionId}/deactivate
 
 Response shape matches create/get: `{ "data": { ...extension } }`.
 
-### 6.2 Trunks
+### 6.2 SIP Trunks
 
-#### List Trunks
+#### List SIP Trunks
 
 ```http
-GET /api/v1/trunks
+GET /api/v1/sip-trunks
 ```
 
-#### Create Trunk
+Example response:
+
+```json
+{
+  "data": [
+    {
+      "id": "trunk_001",
+      "tenant_id": "tenant_001",
+      "name": "Primary SIP Provider",
+      "status": "active",
+      "direction": "bidirectional",
+      "realm": "sip.example.net",
+      "proxy": "sip.example.net",
+      "port": 5060,
+      "transport": "udp",
+      "username": "tenant-200",
+      "auth_username": "carrier-user"
+    }
+  ]
+}
+```
+
+#### Create SIP Trunk
 
 ```http
-POST /api/v1/trunks
+POST /api/v1/sip-trunks
 ```
 
 Example request:
@@ -264,27 +286,65 @@ Example request:
 {
   "name": "Primary SIP Provider",
   "direction": "bidirectional",
-  "providerName": "ExampleTel",
-  "authenticationProfile": {
-    "type": "digest"
-  },
-  "networkProfile": {
-    "transport": "udp"
+  "realm": "sip.example.net",
+  "proxy": "sip.example.net",
+  "port": 5060,
+  "transport": "udp",
+  "username": "tenant-200",
+  "auth_username": "carrier-user",
+  "auth_password": "CarrierPass123!"
+}
+```
+
+Required fields: `name`, `direction`, `realm`, `proxy`, `auth_username`, `auth_password`.
+
+`auth_password` is write-only: the API accepts it on create/update and encrypts it with AES-256-GCM
+before storing `auth_password_ciphertext` and `auth_password_key_id`. The plaintext is never returned
+in any API response.
+
+Example response:
+
+```json
+{
+  "data": {
+    "id": "trunk_001",
+    "tenant_id": "tenant_001",
+    "name": "Primary SIP Provider",
+    "status": "active",
+    "direction": "bidirectional",
+    "realm": "sip.example.net",
+    "proxy": "sip.example.net",
+    "port": 5060,
+    "transport": "udp",
+    "username": "tenant-200",
+    "auth_username": "carrier-user"
   }
 }
 ```
 
-#### Get Trunk
+#### Get SIP Trunk
 
 ```http
-GET /api/v1/trunks/{trunkId}
+GET /api/v1/sip-trunks/{trunkId}
 ```
 
-#### Update Trunk
+Response shape matches create/get: `{ "data": { ...sip_trunk } }`.
+
+#### Update SIP Trunk
 
 ```http
-PATCH /api/v1/trunks/{trunkId}
+PATCH /api/v1/sip-trunks/{trunkId}
 ```
+
+Response shape matches create/get: `{ "data": { ...sip_trunk } }`.
+
+#### Deactivate SIP Trunk
+
+```http
+POST /api/v1/sip-trunks/{trunkId}/deactivate
+```
+
+Response shape matches create/get: `{ "data": { ...sip_trunk } }`.
 
 ### 6.3 Numbers
 

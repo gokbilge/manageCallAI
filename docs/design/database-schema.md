@@ -87,8 +87,20 @@ Secret-handling rule:
 
 Practical design direction:
 
-- Keep non-secret trunk metadata in `authentication_profile`.
-- Store secret material in dedicated encrypted columns or secret references.
+- Use explicit non-secret metadata columns:
+  - `name`
+  - `direction`
+  - `realm`
+  - `proxy`
+  - `port`
+  - `transport`
+  - `username`
+  - `auth_username`
+- Store secret material in dedicated encrypted columns:
+  - `auth_password_ciphertext`
+  - `auth_password_key_id`
+- The API accepts plaintext `auth_password` on create/update and encrypts it before persistence.
+- The API never returns plaintext, ciphertext, or key-id fields in normal trunk responses.
 - Treat external secret-provider integration as the long-term target rather than the initial blocker.
 
 ### 4.5 phone_numbers
