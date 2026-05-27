@@ -37,7 +37,6 @@ jobs:
       FREESWITCH_ESL_PORT: 8021
       FREESWITCH_ESL_PASSWORD: ClueCon
       LOG_LEVEL: info
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
       - uses: actions/checkout@v5
@@ -77,5 +76,5 @@ jobs:
       - name: Tests
         run: pnpm test
 
-      - name: Go build
-        run: cd apps/freeswitch-agent && go build ./...
+      - name: Go test
+        run: cd apps/freeswitch-agent && go test ./...

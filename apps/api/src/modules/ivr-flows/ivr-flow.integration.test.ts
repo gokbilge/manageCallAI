@@ -66,7 +66,7 @@ describe('IVR Flows API integration', () => {
       method: 'POST',
       url: '/api/v1/ivr-flows',
       headers: { authorization: `Bearer ${token}` },
-      payload: { name: 'Main Menu', description: 'Primary IVR', definition: validDefinition },
+      payload: { name: 'Main Menu', description: 'Primary IVR', graph_json: validDefinition },
     });
     expect(res.statusCode).toBe(201);
     const { data } = res.json<{ data: Record<string, unknown> }>();
@@ -78,6 +78,29 @@ describe('IVR Flows API integration', () => {
     expect(versions).toHaveLength(1);
     expect((versions[0] as Record<string, unknown>)['version_number']).toBe(1);
     expect((versions[0] as Record<string, unknown>)['state']).toBe('draft');
+    expect((versions[0] as Record<string, unknown>)['graph_json']).toBeTruthy();
+  });
+
+  it('GET /ivr-flows/:id/versions → lists versions for the tenant flow', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/ivr-flows',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Main Menu', graph_json: validDefinition },
+    });
+    const flow = createRes.json<{ data: { id: string } }>().data;
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/ivr-flows/${flow.id}/versions`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ data: Array<{ version_number: number }> }>();
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0]?.version_number).toBe(1);
   });
 
   it('POST /ivr-flows/:id/versions/:vid/validate → 422 for invalid definition', async () => {
@@ -100,6 +123,27 @@ describe('IVR Flows API integration', () => {
     const body = res.json<{ data: { outcome: { status: string; errors: unknown[] } } }>();
     expect(body.data.outcome.status).toBe('failed');
     expect(body.data.outcome.errors.length).toBeGreaterThan(0);
+  });
+
+  it('POST /ivr-flows/:id/validate → validates the current draft version', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/ivr-flows',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Draft Validate Flow', graph_json: validDefinition },
+    });
+    const flow = createRes.json<{ data: { id: string } }>().data;
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/ivr-flows/${flow.id}/validate`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ data: { outcome: { status: string } } }>();
+    expect(body.data.outcome.status).toBe('passed');
   });
 
   it('full lifecycle: create → validate → publish → rollback', async () => {

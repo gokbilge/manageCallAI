@@ -511,7 +511,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IvrFlowResponse'
+                $ref: '#/components/schemas/IvrFlowDetailResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -527,7 +527,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IvrFlowResponse'
+                $ref: '#/components/schemas/IvrFlowDetailResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     patch:
@@ -552,19 +552,27 @@ paths:
   /ivr-flows/{flowId}/versions:
     parameters:
       - $ref: '#/components/parameters/FlowIdParam'
+    get:
+      tags: [IvrFlows]
+      summary: List IVR flow versions
+      responses:
+        '200':
+          description: Flow version list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowVersionListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [IvrFlows]
       summary: Create draft version
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              type: object
-              required: [definition]
-              properties:
-                definition:
-                  type: object
+              $ref: '#/components/schemas/FlowVersionDraftRequest'
       responses:
         '201':
           description: Draft version created
@@ -579,6 +587,18 @@ paths:
     parameters:
       - $ref: '#/components/parameters/FlowIdParam'
       - $ref: '#/components/parameters/VersionIdParam'
+    get:
+      tags: [IvrFlows]
+      summary: Get IVR flow version
+      responses:
+        '200':
+          description: Flow version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowVersionResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
     patch:
       tags: [IvrFlows]
       summary: Update draft version definition
@@ -587,11 +607,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [definition]
-              properties:
-                definition:
-                  type: object
+              $ref: '#/components/schemas/FlowVersionDraftRequest'
       responses:
         '200':
           description: Version definition updated
@@ -615,13 +631,35 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidationResultResponse'
+                $ref: '#/components/schemas/IvrFlowValidationResponse'
         '422':
           description: Validation failed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidationResultResponse'
+                $ref: '#/components/schemas/IvrFlowValidationResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /ivr-flows/{flowId}/validate:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+    post:
+      tags: [IvrFlows]
+      summary: Validate current draft flow version
+      responses:
+        '200':
+          description: Validation passed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrFlowValidationResponse'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrFlowValidationResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -1553,22 +1591,25 @@ components:
       required: [outcome]
       properties:
         outcome:
-          type: object
-          required: [status]
-          properties:
-            status:
-              type: string
-              enum: [passed, failed]
-            errors:
-              type: array
-              items:
-                type: object
-                additionalProperties: true
-            warnings:
-              type: array
-              items:
-                type: object
-                additionalProperties: true
+          $ref: '#/components/schemas/ValidationOutcome'
+
+    ValidationOutcome:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [passed, failed]
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        warnings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
 
     ValidationResultResponse:
       type: object
@@ -1619,6 +1660,24 @@ components:
         data:
           $ref: '#/components/schemas/IvrFlow'
 
+    IvrFlowWithVersions:
+      allOf:
+        - $ref: '#/components/schemas/IvrFlow'
+        - type: object
+          required: [versions]
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: '#/components/schemas/FlowVersion'
+
+    IvrFlowDetailResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/IvrFlowWithVersions'
+
     IvrFlowListResponse:
       type: object
       required: [data]
@@ -1630,7 +1689,7 @@ components:
 
     CreateIvrFlowRequest:
       type: object
-      required: [name, definition]
+      required: [name]
       properties:
         name:
           type: string
@@ -1639,9 +1698,12 @@ components:
         description:
           type: string
           maxLength: 1000
+        graph_json:
+          type: object
+          description: Draft graph schema for the first version.
         definition:
           type: object
-          description: Flow definition graph (nodes + edges)
+          description: Compatibility alias for graph_json.
 
     UpdateIvrFlowRequest:
       type: object
@@ -1655,6 +1717,18 @@ components:
             - type: string
               maxLength: 1000
             - type: 'null'
+        status:
+          type: string
+          enum: [draft, active, inactive]
+
+    FlowVersionDraftRequest:
+      type: object
+      properties:
+        graph_json:
+          type: object
+        definition:
+          type: object
+          description: Compatibility alias for graph_json.
 
     FlowVersion:
       type: object
@@ -1670,8 +1744,8 @@ components:
           type: integer
         state:
           type: string
-          enum: [draft, validated, published, superseded, rolled_back]
-        definition:
+          enum: [draft, validated, simulated, published, superseded, rolled_back]
+        graph_json:
           type: object
         created_by:
           type: string
@@ -1680,6 +1754,14 @@ components:
         created_at:
           type: string
           format: date-time
+        validated_at:
+          type: string
+          format: date-time
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
 
     FlowVersionResponse:
       type: object
@@ -1687,6 +1769,31 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/FlowVersion'
+
+    FlowVersionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlowVersion'
+
+    IvrFlowValidationResult:
+      type: object
+      required: [version, outcome]
+      properties:
+        version:
+          $ref: '#/components/schemas/FlowVersion'
+        outcome:
+          $ref: '#/components/schemas/ValidationOutcome'
+
+    IvrFlowValidationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/IvrFlowValidationResult'
 
     # ── Call Events ───────────────────────────────────────────────────────────
 

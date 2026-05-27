@@ -1,5 +1,7 @@
 # manageCallAI
 
+[![CI](https://github.com/gokbilge/manageCallAI/actions/workflows/ci.yml/badge.svg)](https://github.com/gokbilge/manageCallAI/actions/workflows/ci.yml)
+
 **AI-native telecom control plane over FreeSWITCH with MCP, n8n, REST API, visual IVR, validation, simulation, and rollback.**
 
 manageCallAI is an open-source platform for building programmable PBX, IVR, and telecom automation systems on top of FreeSWITCH.
@@ -34,9 +36,11 @@ The main project design and architecture reference lives here:
 - [db/README.md](db/README.md)
 - [docs/design/software-design.md](docs/design/software-design.md)
 - [docs/architecture/overview.md](docs/architecture/overview.md)
-- [docs/first-local-demo.md](docs/first-local-demo.md)
+- [docs/development/demo-loop.md](docs/development/demo-loop.md)
+- [docs/development/ivr-flow-foundation-proof.md](docs/development/ivr-flow-foundation-proof.md)
 - [docs/development/first-vertical-slice.md](docs/development/first-vertical-slice.md)
 - [docs/development/live-freeswitch-registration.md](docs/development/live-freeswitch-registration.md)
+- [docs/ivr/IVR_ARCHITECTURE.md](docs/ivr/IVR_ARCHITECTURE.md)
 - [packages/sdk/README.md](packages/sdk/README.md)
 
 If other documents drift, the source-of-truth document is the canonical reference until updated.
@@ -53,9 +57,30 @@ manageCallAI replaces low-level telecom administration with safe business-level 
 
 ## Current Status
 
-The project is in early design and development.
+The core runtime slice is implemented and passing CI:
+
+- Multi-tenant auth (register / login, JWT with role claim)
+- Extension CRUD with AES-256-GCM encrypted SIP credentials
+- FreeSWITCH `mod_xml_curl` directory endpoint
+- Inbound route lookup endpoint
+- Call-event ingestion from the Go ESL agent
+- Role-based capability model (`tenant_admin` / `platform_admin`)
+- React admin panel with tenant and platform workspaces
+- Go FreeSWITCH adapter (ESL connection, event normalization)
+- Docker Compose profiles separating core services from FreeSWITCH runtime
+
+**Run the full demo loop in one sitting:**
+
+```text
+docs/development/demo-loop.md
+```
 
 The initial target is a safe IVR and routing control plane where an AI agent or workflow can create, validate, simulate, and publish a working IVR on FreeSWITCH without direct knowledge of FreeSWITCH internals.
+
+The IVR architecture and foundation runbook now live here:
+
+- [docs/ivr/IVR_ARCHITECTURE.md](docs/ivr/IVR_ARCHITECTURE.md)
+- [docs/development/ivr-flow-foundation-proof.md](docs/development/ivr-flow-foundation-proof.md)
 
 ## Technology Stack
 

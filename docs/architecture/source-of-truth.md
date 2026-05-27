@@ -44,6 +44,15 @@ manageCallAI converts telecom administration into safe business actions such as:
 - Trigger downstream workflow automation
 - Review call events and outcomes
 
+IVR itself is treated as desired-state flow data with a mandatory lifecycle:
+
+- draft
+- validate
+- simulate
+- approve or policy-check
+- publish
+- rollback
+
 ## 3. Problem Statement
 
 FreeSWITCH is powerful, but most teams that want programmable voice systems still have to work directly with telecom-specific primitives.
@@ -326,6 +335,9 @@ Each publishable object should support:
 - Version history
 - Active version pointer
 - Rollback target selection
+
+IVR flow graphs must not be treated as raw FreeSWITCH XML fragments. They are
+tenant-scoped business objects whose active versions are projected into runtime behavior only after validation and publish.
 
 ## 10. State Model
 

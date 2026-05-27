@@ -182,4 +182,39 @@ export class InboundRouteService {
     if (!result) throw new RollbackNotAvailableError();
     return result.route;
   }
+
+  async activate(id: string, tenantId: string): Promise<InboundRoute> {
+    const route = await this.repo.findById(id, tenantId);
+    if (!route) throw new InboundRouteNotFoundError(id);
+
+    if (!route.target_id) {
+      throw new InboundRouteInputError('Route must have a target_id to be activated');
+    }
+
+    const targetExists = await this.repo.targetExists(route.target_type, route.target_id, tenantId);
+    if (!targetExists) {
+      throw new InboundRouteInputError(
+        `Target ${route.target_type} '${route.target_id}' does not exist or is not active`,
+      );
+    }
+
+    const hasConflict = await this.repo.hasConflictingActiveRoute(tenantId, route.match_type, route.match_value, id);
+    if (hasConflict) {
+      throw new InboundRouteInputError(
+        `An active route already exists for ${route.match_type}='${route.match_value}'`,
+      );
+    }
+
+    const updated = await this.repo.setStatus(id, tenantId, 'active');
+    if (!updated) throw new InboundRouteNotFoundError(id);
+    return updated;
+  }
+
+  async deactivate(id: string, tenantId: string): Promise<InboundRoute> {
+    const route = await this.repo.findById(id, tenantId);
+    if (!route) throw new InboundRouteNotFoundError(id);
+    const updated = await this.repo.setStatus(id, tenantId, 'inactive');
+    if (!updated) throw new InboundRouteNotFoundError(id);
+    return updated;
+  }
 }

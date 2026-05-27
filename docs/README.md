@@ -37,6 +37,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [development/live-freeswitch-registration.md](development/live-freeswitch-registration.md)
   Full local runtime proof: stock FreeSWITCH startup, containerized ESL agent, real SIP REGISTER, and persisted `registration_seen` event.
 
+- [development/ivr-flow-foundation-proof.md](development/ivr-flow-foundation-proof.md)
+  Command-driven proof of the first IVR desired-state slice: create flow, inspect versions, and validate a draft.
+
 - [design/database-schema.md](design/database-schema.md)
   PostgreSQL schema direction covering relational mapping, versioning strategy, integrity rules, and the initial SQL DDL reference.
 
@@ -62,6 +65,23 @@ This directory contains the primary project documentation for `manageCallAI`.
 
 - [ui/ICONOGRAPHY.md](ui/ICONOGRAPHY.md)
   Icon-library selection, accessibility rules, and recommended icon map for platform and tenant surfaces.
+
+## IVR Documents
+
+- [ivr/IVR_ARCHITECTURE.md](ivr/IVR_ARCHITECTURE.md)
+  Desired-state IVR architecture, lifecycle, and boundaries between API, runtime resolver, FreeSWITCH, n8n, and MCP.
+
+- [ivr/FLOW_SCHEMA.md](ivr/FLOW_SCHEMA.md)
+  Initial graph schema, node types, and graph integrity rules for IVR flow definitions.
+
+- [ivr/VALIDATION_AND_SIMULATION.md](ivr/VALIDATION_AND_SIMULATION.md)
+  Validation and simulation goals, safety role, and example request/response shapes.
+
+- [ivr/RUNTIME_EXECUTION.md](ivr/RUNTIME_EXECUTION.md)
+  Runtime session and execution design for stock FreeSWITCH with a thin Lua helper and backend resolver.
+
+- [ivr/N8N_AND_MCP_PROGRAMMABILITY.md](ivr/N8N_AND_MCP_PROGRAMMABILITY.md)
+  Safe programmability model for workflow automation and future MCP tools.
 
 ## Historical Documents
 

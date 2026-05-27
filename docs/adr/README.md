@@ -19,6 +19,8 @@ ADRs capture decisions that are important enough to preserve beyond informal dis
 - [ADR-0003: Fastify Instead of NestJS](0003-fastify-instead-of-nestjs.md)
 - [ADR-0004: Lua as Thin Helper Only](0004-lua-thin-helper-only.md)
 - [ADR-0007: UI Surfaces and Design System](0007-ui-surfaces-and-design-system.md)
+- [ADR-0008: Platform Operator Bootstrap](0008-platform-operator-bootstrap.md)
+- [ADR-0009: IVR Desired-State Flow Engine](0009-ivr-desired-state-flow-engine.md)
 - [ADR-001: Use Stock FreeSWITCH, No Fork](adr-001-use-stock-freeswitch-no-fork.md)
 - [ADR-002: Use Node.js + TypeScript for the Control Plane](adr-002-use-nodejs-typescript-control-plane.md)
 - [ADR-003: Use Go for the FreeSWITCH Adapter Service](adr-003-use-go-for-freeswitch-adapter-service.md)

@@ -12,7 +12,7 @@ export interface FlowVersion {
   flow_id: string;
   version_number: number;
   state: FlowVersionState;
-  definition: Record<string, unknown>;
+  graph_json: Record<string, unknown>;
   created_by: string | null;
   created_at: Date;
   validated_at: Date | null;
@@ -39,13 +39,14 @@ export interface CreateIvrFlowInput {
   tenant_id: string;
   name: string;
   description?: string;
-  definition: Record<string, unknown>;
+  graph_json: Record<string, unknown>;
   created_by?: string;
 }
 
 export interface UpdateIvrFlowInput {
   name?: string;
   description?: string | null;
+  status?: IvrFlow['status'];
 }
 
 export interface ValidationError {
@@ -57,4 +58,9 @@ export interface ValidationOutcome {
   status: 'passed' | 'failed';
   errors: ValidationError[];
   warnings: ValidationError[];
+}
+
+export interface FlowValidationResult {
+  version: FlowVersion;
+  outcome: ValidationOutcome;
 }

@@ -22,7 +22,7 @@ export class IvrFlowRepository {
     if (!flowR.rows[0]) return null;
 
     const versionsR = await this.db.query<FlowVersion>(
-      `SELECT id, tenant_id, flow_id, version_number, state, definition, created_by, created_at, validated_at, published_at
+      `SELECT id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at
        FROM flow_versions WHERE flow_id = $1 ORDER BY version_number DESC`,
       [id],
     );
@@ -31,7 +31,7 @@ export class IvrFlowRepository {
 
   async findVersionById(versionId: string, flowId: string, tenantId: string): Promise<FlowVersion | null> {
     const r = await this.db.query<FlowVersion>(
-      `SELECT fv.id, fv.tenant_id, fv.flow_id, fv.version_number, fv.state, fv.definition, fv.created_by, fv.created_at, fv.validated_at, fv.published_at
+      `SELECT fv.id, fv.tenant_id, fv.flow_id, fv.version_number, fv.state, fv.definition AS graph_json, fv.created_by, fv.created_at, fv.validated_at, fv.published_at
        FROM flow_versions fv
        JOIN ivr_flows f ON f.id = fv.flow_id
        WHERE fv.id = $1 AND fv.flow_id = $2 AND f.tenant_id = $3`,
@@ -44,7 +44,7 @@ export class IvrFlowRepository {
     tenant_id: string;
     name: string;
     description?: string;
-    definition: Record<string, unknown>;
+    graph_json: Record<string, unknown>;
     created_by?: string;
   }): Promise<IvrFlowWithVersions> {
     const client = await this.db.connect();
@@ -62,8 +62,8 @@ export class IvrFlowRepository {
       const versionR = await client.query<FlowVersion>(
         `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by)
          VALUES ($1, $2, 1, 'draft', $3, $4)
-         RETURNING id, tenant_id, flow_id, version_number, state, definition, created_by, created_at, validated_at, published_at`,
-        [input.tenant_id, flow.id, JSON.stringify(input.definition), input.created_by ?? null],
+         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at`,
+        [input.tenant_id, flow.id, JSON.stringify(input.graph_json), input.created_by ?? null],
       );
       const version = versionR.rows[0]!;
 
@@ -118,7 +118,7 @@ export class IvrFlowRepository {
       const versionR = await client.query<FlowVersion>(
         `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by)
          VALUES ($1, $2, $3, 'draft', $4, $5)
-         RETURNING id, tenant_id, flow_id, version_number, state, definition, created_by, created_at, validated_at, published_at`,
+         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at`,
         [input.tenant_id, input.flow_id, input.version_number, JSON.stringify(input.definition), input.created_by ?? null],
       );
       const version = versionR.rows[0]!;
@@ -141,7 +141,7 @@ export class IvrFlowRepository {
       `UPDATE flow_versions SET definition = $1
        WHERE id = $2 AND flow_id = $3 AND state = 'draft'
          AND tenant_id = (SELECT tenant_id FROM ivr_flows WHERE id = $3 AND tenant_id = $4 LIMIT 1)
-       RETURNING id, tenant_id, flow_id, version_number, state, definition, created_by, created_at, validated_at, published_at`,
+       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at`,
       [JSON.stringify(definition), versionId, flowId, tenantId],
     );
     return r.rows[0] ?? null;
@@ -152,10 +152,23 @@ export class IvrFlowRepository {
       `UPDATE flow_versions SET state = 'validated', validated_at = NOW()
        WHERE id = $1 AND flow_id = $2
          AND tenant_id = (SELECT tenant_id FROM ivr_flows WHERE id = $2 AND tenant_id = $3 LIMIT 1)
-       RETURNING id, tenant_id, flow_id, version_number, state, definition, created_by, created_at, validated_at, published_at`,
+       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, published_at`,
       [versionId, flowId, tenantId],
     );
     return r.rows[0] ?? null;
+  }
+
+  async findVersionsByFlowId(flowId: string, tenantId: string): Promise<FlowVersion[]> {
+    const r = await this.db.query<FlowVersion>(
+      `SELECT fv.id, fv.tenant_id, fv.flow_id, fv.version_number, fv.state, fv.definition AS graph_json,
+              fv.created_by, fv.created_at, fv.validated_at, fv.published_at
+       FROM flow_versions fv
+       JOIN ivr_flows f ON f.id = fv.flow_id
+       WHERE fv.flow_id = $1 AND f.tenant_id = $2
+       ORDER BY fv.version_number DESC`,
+      [flowId, tenantId],
+    );
+    return r.rows;
   }
 
   async storeValidationResult(input: {

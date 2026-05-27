@@ -566,25 +566,20 @@ GET /api/v1/prompts/{promptId}
 PATCH /api/v1/prompts/{promptId}
 ```
 
-### 6.7 Flows
+### 6.7 IVR Flows
 
-#### List Flows
+Implemented IVR endpoints use the `ivr-flows` resource name and snake_case graph fields.
+
+#### List IVR Flows
 
 ```http
-GET /api/v1/flows
+GET /api/v1/ivr-flows
 ```
 
-Query parameters:
-
-- `status`
-- `search`
-- `page`
-- `pageSize`
-
-#### Create Flow
+#### Create IVR Flow
 
 ```http
-POST /api/v1/flows
+POST /api/v1/ivr-flows
 ```
 
 Example request:
@@ -593,134 +588,145 @@ Example request:
 {
   "name": "Main IVR",
   "description": "Primary inbound caller menu",
-  "draftDefinition": {
-    "startNodeId": "n1",
+  "graph_json": {
+    "entry_node_id": "start",
     "nodes": [
       {
-        "id": "n1",
-        "type": "play_prompt",
-        "promptId": "prompt_greeting"
+        "id": "start",
+        "type": "start",
+        "next_node_id": "end"
+      },
+      {
+        "id": "end",
+        "type": "hangup"
       }
-    ],
-    "edges": []
+    ]
   }
 }
 ```
 
-#### Get Flow
+`graph_json` is optional. When omitted, the backend creates a minimal `start -> hangup` draft graph.
+
+#### Get IVR Flow
 
 ```http
-GET /api/v1/flows/{flowId}
+GET /api/v1/ivr-flows/{flowId}
 ```
 
-Suggested response:
+Returns the flow plus `versions`.
+
+#### Update IVR Flow Metadata
+
+```http
+PATCH /api/v1/ivr-flows/{flowId}
+```
+
+Currently supports: `name`, `description`, `status`.
+
+#### List IVR Flow Versions
+
+```http
+GET /api/v1/ivr-flows/{flowId}/versions
+```
+
+#### Create IVR Flow Version
+
+```http
+POST /api/v1/ivr-flows/{flowId}/versions
+```
+
+Example request:
 
 ```json
 {
-  "id": "flow_main",
-  "name": "Main IVR",
-  "description": "Primary inbound caller menu",
-  "status": "draft",
-  "draftVersionId": "flowver_001",
-  "activeVersionId": null
+  "graph_json": {
+    "entry_node_id": "start",
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "next_node_id": "menu"
+      },
+      {
+        "id": "menu",
+        "type": "play_collect",
+        "next_node_id": "end",
+        "timeout_node_id": "end",
+        "invalid_node_id": "end"
+      },
+      {
+        "id": "end",
+        "type": "hangup"
+      }
+    ]
+  }
 }
 ```
 
-#### Update Flow Draft
+If the request body omits `graph_json`, the backend copies the current draft graph.
+
+#### Get IVR Flow Version
 
 ```http
-PATCH /api/v1/flows/{flowId}
+GET /api/v1/ivr-flows/{flowId}/versions/{versionId}
 ```
 
-#### Get Flow Versions
+#### Update Draft IVR Flow Version
 
 ```http
-GET /api/v1/flows/{flowId}/versions
+PATCH /api/v1/ivr-flows/{flowId}/versions/{versionId}
 ```
 
-#### Get Flow Version
+The request accepts `graph_json`. `definition` is still accepted as a compatibility alias during the transition to the newer graph contract.
+
+#### Validate Current Draft
 
 ```http
-GET /api/v1/flows/{flowId}/versions/{versionId}
+POST /api/v1/ivr-flows/{flowId}/validate
 ```
 
-#### Validate Flow
+#### Validate Specific Version
 
 ```http
-POST /api/v1/flows/{flowId}/validate
+POST /api/v1/ivr-flows/{flowId}/versions/{versionId}/validate
 ```
+
+Current MVP validation scope is structural only:
+
+- `graph_json` must be an object
+- `entry_node_id` must exist
+- `nodes` must exist
+- node IDs must be unique
+- referenced node IDs must exist
 
 Example response:
 
 ```json
 {
-  "id": "val_001",
-  "objectType": "flow",
-  "objectId": "flow_main",
-  "versionId": "flowver_001",
-  "status": "passed",
-  "errors": [],
-  "warnings": []
-}
-```
-
-#### Simulate Flow
-
-```http
-POST /api/v1/flows/{flowId}/simulate
-```
-
-Example request:
-
-```json
-{
-  "scenario": {
-    "inboundNumber": "+15551234567",
-    "dtmfSequence": ["1", "2"]
+  "data": {
+    "version": {
+      "id": "flowver_001",
+      "state": "validated"
+    },
+    "outcome": {
+      "status": "passed",
+      "errors": [],
+      "warnings": []
+    }
   }
 }
 ```
 
-#### Publish Flow
+#### Publish Validated Version
 
 ```http
-POST /api/v1/flows/{flowId}/publish
+POST /api/v1/ivr-flows/{flowId}/versions/{versionId}/publish
 ```
 
-Example request:
-
-```json
-{
-  "reason": "Release approved main menu update"
-}
-```
-
-Example response:
-
-```json
-{
-  "publishId": "pub_001",
-  "objectType": "flow",
-  "objectId": "flow_main",
-  "versionId": "flowver_001",
-  "actionType": "publish",
-  "result": "success"
-}
-```
-
-#### Roll Back Flow
+#### Roll Back to Previous Published Version
 
 ```http
-POST /api/v1/flows/{flowId}/rollback
-```
-
-Example request:
-
-```json
-{
-  "targetVersionId": "flowver_000",
-  "reason": "Restore previous stable version"
-}
+POST /api/v1/ivr-flows/{flowId}/rollback
 ```
 
 ### 6.8 Validations

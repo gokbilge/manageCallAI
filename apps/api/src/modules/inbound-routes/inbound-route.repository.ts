@@ -336,4 +336,15 @@ export class InboundRouteRepository {
     );
     return parseInt(r.rows[0]?.count ?? '0', 10) > 0;
   }
+
+  async setStatus(id: string, tenantId: string, status: 'draft' | 'active' | 'inactive'): Promise<InboundRoute | null> {
+    const r = await this.db.query<InboundRoute>(
+      `UPDATE inbound_routes SET status = $1, updated_at = NOW()
+       WHERE id = $2 AND tenant_id = $3
+       RETURNING id, tenant_id, name, match_type, match_value, phone_number_id, target_type, target_id,
+                 status, draft_version_id, active_version_id, created_at, updated_at`,
+      [status, id, tenantId],
+    );
+    return r.rows[0] ?? null;
+  }
 }

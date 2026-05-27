@@ -6,6 +6,8 @@ import { PlatformTenantsPage } from '@/features/platform/platform-tenants-page';
 import { RuntimeHealthPage } from '@/features/platform/runtime-health-page';
 import { TenantDashboardPage } from '@/features/tenant/tenant-dashboard-page';
 import { ExtensionsPage } from '@/features/extensions/extensions-page';
+import { IvrFlowDetailPage } from '@/features/ivr-flows/ivr-flow-detail-page';
+import { IvrFlowsPage } from '@/features/ivr-flows/ivr-flows-page';
 import { CallsPage } from '@/features/calls/calls-page';
 import { DirectorySmokeTestPage } from '@/features/integrations/directory-smoke-test-page';
 import { RequireSession } from '@/lib/auth/require-session';
@@ -36,6 +38,13 @@ const router = createBrowserRouter([
           { path: 'tenant', element: <Navigate to="/tenant/extensions" replace /> },
           { path: 'tenant/dashboard', element: <TenantDashboardPage /> },
           { path: 'tenant/extensions', element: <ExtensionsPage /> },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_IVR_FLOWS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/ivr-flows', element: <IvrFlowsPage /> },
+              { path: 'tenant/ivr-flows/:flowId', element: <IvrFlowDetailPage /> },
+            ],
+          },
           { path: 'tenant/calls', element: <CallsPage /> },
           { path: 'tenant/integrations/directory-smoke-test', element: <DirectorySmokeTestPage /> },
         ],

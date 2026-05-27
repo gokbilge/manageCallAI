@@ -364,6 +364,7 @@ Then:
 
 - Prompt manager
 - Inbound route management
+- IVR flow list/detail foundation
 - Visual IVR builder
 - Validation/simulation UI
 - Publish/rollback UI

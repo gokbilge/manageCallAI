@@ -15,7 +15,7 @@ export type FlowVersion = {
   flow_id: string;
   version_number: number;
   state: FlowVersionState;
-  definition: Record<string, unknown>;
+  graph_json: Record<string, unknown>;
   created_at: string;
   validated_at: string | null;
   published_at: string | null;
@@ -69,7 +69,7 @@ export function useCreateIvrFlow() {
   const { session } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { name: string; description?: string; definition: Record<string, unknown> }) => {
+    mutationFn: async (body: { name: string; description?: string; graph_json?: Record<string, unknown> }) => {
       const r = await apiRequest<{ data: IvrFlowWithVersions }>('/ivr-flows', {
         method: 'POST',
         body: JSON.stringify(body),
@@ -78,6 +78,19 @@ export function useCreateIvrFlow() {
       return r.data;
     },
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ['ivr-flows'] }); },
+  });
+}
+
+export function useFlowVersions(flowId: string) {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ['ivr-flows', flowId, 'versions'],
+    queryFn: async () => {
+      const r = await apiRequest<{ data: FlowVersion[] }>(`/ivr-flows/${flowId}/versions`, { accessToken: session?.token });
+      return r.data;
+    },
+    enabled: Boolean(session?.token && flowId),
+    retry: noRetryOnAuthError,
   });
 }
 
@@ -93,6 +106,24 @@ export function useValidateFlowVersion(flowId: string) {
       return r.data;
     },
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ['ivr-flows', flowId] }); },
+  });
+}
+
+export function useValidateCurrentDraft(flowId: string) {
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const r = await apiRequest<{ data: { version: FlowVersion; outcome: { status: string; errors: unknown[]; warnings: unknown[] } } }>(
+        `/ivr-flows/${flowId}/validate`,
+        { method: 'POST', accessToken: session?.token },
+      );
+      return r.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['ivr-flows', flowId] });
+      void qc.invalidateQueries({ queryKey: ['ivr-flows', flowId, 'versions'] });
+    },
   });
 }
 

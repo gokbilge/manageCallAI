@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, type NavLinkRenderProps } from 'react-router-dom';
 import {
   Activity,
   Building2,
@@ -7,12 +7,13 @@ import {
   PhoneCall,
   RadioTower,
   TestTube2,
+  Workflow,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Workspace } from '@/lib/routes/workspace';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/lib/auth/use-auth';
-import { CAPABILITIES, hasCapability } from '@/lib/permissions/capabilities';
+import { type Capability, CAPABILITIES, hasCapability } from '@/lib/permissions/capabilities';
 
 type AppSidebarProps = {
   workspace: Workspace;
@@ -23,6 +24,7 @@ type NavItem = {
   to: string;
   label: string;
   icon: LucideIcon;
+  capability?: Capability;
 };
 
 const platformNav: NavItem[] = [
@@ -34,6 +36,7 @@ const platformNav: NavItem[] = [
 const tenantNav: NavItem[] = [
   { to: '/tenant/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/tenant/extensions', label: 'Extensions', icon: Phone },
+  { to: '/tenant/ivr-flows', label: 'IVR Flows', icon: Workflow, capability: CAPABILITIES.TENANT_IVR_FLOWS_VIEW },
   { to: '/tenant/calls', label: 'Call Events', icon: PhoneCall },
   { to: '/tenant/integrations/directory-smoke-test', label: 'Smoke Test', icon: TestTube2 },
 ];
@@ -45,7 +48,7 @@ export function AppSidebar({ workspace }: AppSidebarProps) {
 
   const items = workspace === 'platform'
     ? (canAccessPlatform ? platformNav : [])
-    : tenantNav;
+    : tenantNav.filter((item) => !item.capability || hasCapability(role, item.capability));
   const workspaceTitle = workspace === 'platform' ? 'Platform Workspace' : 'Tenant Workspace';
 
   return (
@@ -61,7 +64,7 @@ export function AppSidebar({ workspace }: AppSidebarProps) {
           <NavLink
             key={item.to}
             to={item.to}
-            className={({ isActive }) =>
+            className={({ isActive }: NavLinkRenderProps) =>
               cn(
                 'flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm transition-colors',
                 isActive
