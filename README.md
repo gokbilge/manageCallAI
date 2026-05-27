@@ -36,6 +36,7 @@ The main project design and architecture reference lives here:
 - [docs/architecture/overview.md](docs/architecture/overview.md)
 - [docs/first-local-demo.md](docs/first-local-demo.md)
 - [docs/development/first-vertical-slice.md](docs/development/first-vertical-slice.md)
+- [docs/development/live-freeswitch-registration.md](docs/development/live-freeswitch-registration.md)
 - [packages/sdk/README.md](packages/sdk/README.md)
 
 If other documents drift, the source-of-truth document is the canonical reference until updated.
@@ -117,6 +118,20 @@ The current local MVP smoke path can also be exercised with:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mvp-smoke.ps1
 ```
+
+The full live runtime proof is now documented here:
+
+```text
+docs/development/live-freeswitch-registration.md
+```
+
+That runbook covers:
+
+1. API container startup
+2. stock FreeSWITCH startup
+3. containerized `freeswitch-agent`
+4. real SIP `REGISTER`
+5. persisted `registration_seen` event through the API
 
 For MVP, use Lua only for:
 

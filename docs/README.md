@@ -34,6 +34,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [development/first-vertical-slice.md](development/first-vertical-slice.md)
   Fresh-checkout smoke test for the MVP path: tenant registration, encrypted SIP credential storage, and FreeSWITCH directory XML lookup.
 
+- [development/live-freeswitch-registration.md](development/live-freeswitch-registration.md)
+  Full local runtime proof: stock FreeSWITCH startup, containerized ESL agent, real SIP REGISTER, and persisted `registration_seen` event.
+
 - [design/database-schema.md](design/database-schema.md)
   PostgreSQL schema direction covering relational mapping, versioning strategy, integrity rules, and the initial SQL DDL reference.
 

@@ -1,12 +1,13 @@
 # First Vertical Slice
 
-This guide proves the MVP path from a fresh checkout:
+This guide proves the API-first MVP path from a fresh checkout:
 
 1. register a tenant
 2. create an extension
 3. store the SIP secret encrypted at rest
 4. look up the extension through the FreeSWITCH directory endpoint
 5. optionally start the stock FreeSWITCH reference container
+6. optionally continue to the live SIP registration proof
 
 ## 1. Prepare the Environment
 
@@ -159,3 +160,16 @@ It performs:
 3. FreeSWITCH directory lookup
 4. test call-event ingestion
 5. call-event listing verification
+
+## 9. Continue to the Live Runtime Proof
+
+If you want to prove the real SIP registration and ESL event path on top of this API-first slice, continue with:
+
+- [live-freeswitch-registration.md](live-freeswitch-registration.md)
+
+That guide covers:
+
+1. stock FreeSWITCH runtime startup
+2. containerized `freeswitch-agent` startup
+3. real SIP `REGISTER`
+4. `registration_seen` event ingestion into PostgreSQL

@@ -1,14 +1,17 @@
 # Live FreeSWITCH Registration Smoke Test
 
-This guide proves the runtime path that goes beyond the API-only vertical slice:
+This guide proves the full runtime slice against stock FreeSWITCH:
 
 1. start PostgreSQL
-2. start the API
-3. start stock FreeSWITCH
+2. run migrations
+3. start the API container
 4. create a tenant and extension
-5. run the Go ESL agent
-6. register a SIP endpoint against FreeSWITCH
-7. confirm the registration event appears through the API
+5. start stock FreeSWITCH
+6. start the Go ESL agent container
+7. register a SIP endpoint against FreeSWITCH
+8. confirm the registration event is stored through the API
+
+This is the currently verified local path.
 
 ## Prerequisites
 
@@ -17,36 +20,50 @@ This guide proves the runtime path that goes beyond the API-only vertical slice:
 - `SIP_SECRET_MASTER_KEY` and `SIP_SECRET_KEY_ID` configured
 - Node.js available to run the SIP REGISTER smoke script
 
-## Start Base Services
+Recommended `.env` values for local runtime proof:
+
+```dotenv
+RUNTIME_API_TOKEN=dev-runtime-token-change-in-production
+FREESWITCH_ESL_PASSWORD=ClueCon
+SIP_SECRET_KEY_ID=v1
+```
+
+## 1. Start PostgreSQL and Run Migrations
 
 ```powershell
 pnpm db:up
 pnpm db:migrate
-pnpm --filter @managecallai/api build
-node apps/api/dist/server.js
-docker compose up -d freeswitch
 ```
 
-The FreeSWITCH container renders `xml_curl.conf.xml` and `event_socket.conf.xml` from env at startup.
-By default it points directory lookups at:
+## 2. Start the API Container
 
-```text
-http://api:3000/api/v1/freeswitch/directory
+```powershell
+docker compose up -d --build api
 ```
 
-inside Compose, with `runtime_token` attached from `RUNTIME_API_TOKEN`.
+Health check:
 
-## Create Tenant and Extension
+```powershell
+Invoke-RestMethod http://localhost:3000/health
+```
 
-Register a tenant and save the returned JWT:
+Expected:
+
+```json
+{"status":"ok","db":"ok"}
+```
+
+## 3. Register a Tenant and Create an Extension
+
+Register a tenant and save the JWT:
 
 ```powershell
 $register = Invoke-RestMethod -Method Post -Uri 'http://localhost:3000/api/v1/auth/register' `
   -ContentType 'application/json' `
   -Body (@{
-    tenant_name = 'Acme Live'
-    tenant_slug = 'acme-live'
-    email = 'owner@acme-live.local'
+    tenant_name = 'Live E2E'
+    tenant_slug = 'live-e2e'
+    email = 'owner@live-e2e.local'
     display_name = 'Owner'
     password = 'Secret123!'
   } | ConvertTo-Json)
@@ -57,7 +74,7 @@ $jwt = $register.token
 Create an extension:
 
 ```powershell
-Invoke-RestMethod -Method Post -Uri 'http://localhost:3000/api/v1/extensions' `
+$extension = Invoke-RestMethod -Method Post -Uri 'http://localhost:3000/api/v1/extensions' `
   -Headers @{ Authorization = "Bearer $jwt" } `
   -ContentType 'application/json' `
   -Body (@{
@@ -67,36 +84,61 @@ Invoke-RestMethod -Method Post -Uri 'http://localhost:3000/api/v1/extensions' `
   } | ConvertTo-Json)
 ```
 
-The tenant domain is:
+Tenant domain pattern:
 
 ```text
-acme-live.managecallai.local
+<tenant_slug>.managecallai.local
 ```
 
-## Start the Go Agent
+For the example above, the runtime SIP domain is:
 
-Set the tenant UUID to the value from the register token payload or the created extension response.
+```text
+live-e2e.managecallai.local
+```
+
+Capture the tenant ID for the agent:
 
 ```powershell
-$env:FREESWITCH_ESL_HOST='127.0.0.1'
-$env:FREESWITCH_ESL_PORT='8021'
-$env:FREESWITCH_ESL_PASSWORD='ClueCon'
-$env:MANAGECALLAI_TENANT_ID='<tenant-uuid>'
-$env:RUNTIME_API_TOKEN=$env:RUNTIME_API_TOKEN
-$env:API_BASE_URL='http://localhost:3000'
-go run .\apps\freeswitch-agent
+$tenantId = $extension.data.tenant_id
 ```
 
-## Send a Real SIP REGISTER
+## 4. Start FreeSWITCH and the ESL Agent
 
-Run the smoke script:
+Start FreeSWITCH:
+
+```powershell
+docker compose up -d --build freeswitch
+```
+
+Start the containerized Go agent with the tenant ID:
+
+```powershell
+$env:MANAGECALLAI_TENANT_ID = $tenantId
+docker compose up -d --build freeswitch-agent
+```
+
+Verify both runtime services:
+
+```powershell
+docker compose ps
+docker logs managecallai-freeswitch-agent-1 --tail 20
+```
+
+Expected agent log lines:
+
+- `authenticated to esl`
+- `esl subscription active`
+
+## 5. Run a Real SIP REGISTER
+
+Use the included smoke client:
 
 ```powershell
 $env:SIP_HOST='127.0.0.1'
 $env:SIP_PORT='5080'
 $env:SIP_USERNAME='200'
 $env:SIP_PASSWORD='PhonePass123!'
-$env:SIP_DOMAIN='acme-live.managecallai.local'
+$env:SIP_DOMAIN='live-e2e.managecallai.local'
 node .\scripts\sip-register-smoke.mjs
 ```
 
@@ -104,13 +146,35 @@ Expected result:
 
 - first response is `401 Unauthorized`
 - second response is `200 OK`
+- script prints `REGISTER succeeded.`
 
-## Verify the Registration Event
-
-List call events:
+## 6. Verify FreeSWITCH Registration State
 
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:3000/api/v1/call-events?tenant_id=<tenant-uuid>" `
+docker exec managecallai-freeswitch-1 /bin/sh -lc "/usr/local/freeswitch/bin/fs_cli -x 'sofia status profile external reg'"
+```
+
+Expected result:
+
+- registration exists for `200@live-e2e.managecallai.local`
+- status shows `Registered(UDP)`
+
+## 7. Verify Event Ingestion Through the API
+
+Inspect the agent log:
+
+```powershell
+docker logs managecallai-freeswitch-agent-1 --tail 50
+```
+
+Expected line:
+
+- `received normalized esl event` with `event_type=registration_seen`
+
+List call events through the API:
+
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/api/v1/call-events?tenant_id=$tenantId" `
   -Headers @{ Authorization = "Bearer $jwt" }
 ```
 
@@ -118,4 +182,16 @@ Expected result:
 
 - at least one event with `event_type = registration_seen`
 - `source = freeswitch-esl`
-- payload contains `Event-Subclass = sofia::register`
+- payload includes `Event-Subclass = sofia::register`
+
+Optional DB confirmation:
+
+```powershell
+docker exec managecallai-postgres-1 psql -U managecallai -d managecallai -c "select event_type, call_id, source, event_time from call_events order by ingested_at desc limit 5;"
+```
+
+## Notes
+
+- The clean local proof now uses the containerized `freeswitch-agent` service, not a long-running Windows host process.
+- `mod_xml_curl` is configured to call the API with uppercase `POST`.
+- The SIP smoke client preserves a stable `From` tag across REGISTER challenge and retry, which is required for a valid authenticated registration flow.
