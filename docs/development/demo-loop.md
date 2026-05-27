@@ -144,6 +144,7 @@ You can extend the API proof with the first IVR desired-state foundation:
 Full command-driven walkthrough:
 
 - [ivr-flow-foundation-proof.md](ivr-flow-foundation-proof.md)
+- [live-freeswitch-ivr-loop.md](live-freeswitch-ivr-loop.md)
 
 ---
 

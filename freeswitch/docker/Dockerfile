@@ -38,6 +38,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libswscale-dev \
     libavresample-dev \
     liblua5.2-dev \
+    lua-socket \
+    lua-cjson \
     libopus-dev \
     libpq-dev \
     libsndfile1-dev \
@@ -91,7 +93,9 @@ RUN cd /usr/src/freeswitch \
 COPY conf/autoload_configs/xml_curl.conf.xml.example /usr/local/freeswitch/conf/autoload_configs/xml_curl.conf.xml.tmpl
 COPY conf/autoload_configs/event_socket.conf.xml.example /usr/local/freeswitch/conf/autoload_configs/event_socket.conf.xml.tmpl
 COPY conf/dialplan/managecall_entry.xml.example /usr/local/freeswitch/conf/dialplan/managecall_entry.xml
+COPY conf/dialplan/inbound_did.xml.example /usr/local/freeswitch/conf/dialplan/inbound_did.xml
 COPY lua/managecall_entry.lua /usr/local/freeswitch/scripts/managecall_entry.lua
+COPY lua/inbound_route.lua /usr/local/freeswitch/scripts/inbound_route.lua
 COPY docker/entrypoint.sh /usr/local/bin/managecallai-freeswitch-entrypoint
 
 RUN chmod +x /usr/local/bin/managecallai-freeswitch-entrypoint

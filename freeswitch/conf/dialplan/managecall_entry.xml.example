@@ -1,7 +1,14 @@
 <include>
   <extension name="managecall_entry">
     <condition field="destination_number" expression="^9191$">
-      <action application="lua" data="managecall_entry.lua play_prompt" />
+      <!--
+        Demo IVR entry for a preselected published flow.
+
+        Before using this route, set managecall_flow_id on the channel or replace
+        ${managecall_flow_id} with a concrete flow UUID for local testing.
+      -->
+      <action application="set" data="managecall_flow_id=${managecall_flow_id}" />
+      <action application="lua" data="managecall_entry.lua ${managecall_flow_id}" />
     </condition>
   </extension>
 </include>

@@ -22,3 +22,21 @@ Minimal stock-FreeSWITCH integration assets for `manageCallAI`.
 - Do not place business logic in Lua.
 - Use `mod_xml_curl`, ESL / `mod_event_socket`, and thin Lua helpers only.
 - `mod_xml_curl` requests must include the shared runtime token expected by the API.
+
+## Current thin Lua boundary
+
+The current runtime helper surface is intentionally small:
+
+- `inbound_route.lua`
+  - resolves inbound DID targets through the backend
+  - bridges direct extension targets
+  - enters `managecall_entry.lua` for flow targets
+- `managecall_entry.lua`
+  - starts backend runtime sessions
+  - executes `play_prompt`, `play_collect`, `transfer`, and `hangup`
+  - advances the backend runtime session after each constrained action
+
+See:
+
+- [../docs/ivr/RUNTIME_EXECUTION.md](../docs/ivr/RUNTIME_EXECUTION.md)
+- [../docs/development/live-freeswitch-ivr-loop.md](../docs/development/live-freeswitch-ivr-loop.md)

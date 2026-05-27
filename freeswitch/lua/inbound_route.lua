@@ -1,7 +1,6 @@
 -- Resolve an inbound DID against the manageCallAI route-lookup API and
--- route the call to the matched target.  Only 'extension' targets are
--- bridged at this milestone; 'flow' targets are reserved for a later
--- IVR-execution milestone.
+-- route the call to the matched target. Extension targets are bridged
+-- directly. Flow targets enter the thin Lua IVR runtime loop.
 
 local did = session:getVariable("destination_number")
 if not did or did == "" then
@@ -10,12 +9,12 @@ if not did or did == "" then
   return
 end
 
-local api_base     = os.getenv("MANAGECALLAI_API_BASE") or "http://api:3000"
+local api_base     = os.getenv("MANAGECALLAI_API_BASE") or "http://api:3000/api/v1"
 local runtime_token = os.getenv("RUNTIME_API_TOKEN") or ""
 
 -- URL-encode the leading '+' so the query string survives intact.
 local encoded_did = did:gsub("+", "%%2B")
-local url = api_base .. "/api/v1/freeswitch/route-lookup?did=" .. encoded_did
+local url = api_base .. "/freeswitch/route-lookup?did=" .. encoded_did
 
 freeswitch.consoleLog("info", "[manageCallAI] route-lookup: " .. url .. "\n")
 
@@ -71,10 +70,18 @@ if target_type == "extension" then
   session:execute("bridge", bridge_str)
 
 elseif target_type == "flow" then
-  -- IVR flow execution is a future milestone.
-  freeswitch.consoleLog("warning",
-    string.format("[manageCallAI] flow routing not yet implemented (flow: %s)\n", tostring(data.target_id)))
-  session:execute("hangup", "SERVICE_UNAVAILABLE")
+  if not data.target_id then
+    freeswitch.consoleLog("err", "[manageCallAI] flow target missing target_id\n")
+    session:execute("hangup", "DESTINATION_OUT_OF_ORDER")
+    return
+  end
+
+  session:setVariable("managecall_route_id", tostring(data.route_id or ""))
+  session:setVariable("managecall_tenant_id", tostring(data.tenant_id or ""))
+  session:setVariable("managecall_flow_id", tostring(data.target_id))
+  freeswitch.consoleLog("info",
+    string.format("[manageCallAI] entering flow runtime for flow %s\n", tostring(data.target_id)))
+  session:execute("lua", "managecall_entry.lua " .. tostring(data.target_id))
 
 else
   freeswitch.consoleLog("warning",

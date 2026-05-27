@@ -41,6 +41,7 @@ The main project design and architecture reference lives here:
 - [docs/development/ivr-runtime-resolver-proof.md](docs/development/ivr-runtime-resolver-proof.md)
 - [docs/development/first-vertical-slice.md](docs/development/first-vertical-slice.md)
 - [docs/development/live-freeswitch-registration.md](docs/development/live-freeswitch-registration.md)
+- [docs/development/live-freeswitch-ivr-loop.md](docs/development/live-freeswitch-ivr-loop.md)
 - [docs/ivr/IVR_ARCHITECTURE.md](docs/ivr/IVR_ARCHITECTURE.md)
 - [docs/planning/README.md](docs/planning/README.md)
 - [packages/sdk/README.md](packages/sdk/README.md)
@@ -84,6 +85,7 @@ The IVR architecture and foundation runbook now live here:
 - [docs/ivr/IVR_ARCHITECTURE.md](docs/ivr/IVR_ARCHITECTURE.md)
 - [docs/development/ivr-flow-foundation-proof.md](docs/development/ivr-flow-foundation-proof.md)
 - [docs/development/ivr-runtime-resolver-proof.md](docs/development/ivr-runtime-resolver-proof.md)
+- [docs/development/live-freeswitch-ivr-loop.md](docs/development/live-freeswitch-ivr-loop.md)
 
 The current IVR foundation now includes:
 

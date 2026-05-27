@@ -4,7 +4,8 @@
 
     Catches any E.164 or 7–15 digit DID that arrives on the public context
     and hands off to inbound_route.lua, which calls the route-lookup API
-    and bridges to the matched extension (or hangs up if no active route).
+    and either bridges to the matched extension or enters the published
+    manageCallAI IVR runtime loop for flow targets.
 
     Activation: copy this file to inbound_did.xml inside the FreeSWITCH
     dialplan directory (e.g. conf/dialplan/default/) and reload the

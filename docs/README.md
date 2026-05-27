@@ -37,6 +37,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [development/live-freeswitch-registration.md](development/live-freeswitch-registration.md)
   Full local runtime proof: stock FreeSWITCH startup, containerized ESL agent, real SIP REGISTER, and persisted `registration_seen` event.
 
+- [development/live-freeswitch-ivr-loop.md](development/live-freeswitch-ivr-loop.md)
+  Live inbound-call proof for the thin Lua IVR runtime loop: DID -> flow target -> runtime session -> transfer.
+
 - [development/ivr-flow-foundation-proof.md](development/ivr-flow-foundation-proof.md)
   Command-driven proof of the first IVR desired-state slice: create flow, inspect versions, validate a draft, simulate it, and attempt publish safely.
 

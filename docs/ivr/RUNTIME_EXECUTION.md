@@ -137,3 +137,34 @@ Current runtime rules:
 - richer runtime actions
 - hybrid Go/ESL assist for more advanced scenarios
 - queue and voicemail execution after the foundational IVR runtime proves stable
+
+## 8. Implemented FreeSWITCH loop
+
+The current stock-FreeSWITCH loop now works like this:
+
+```text
+Inbound DID
+  ↓
+inbound_route.lua
+  ↓
+GET /api/v1/freeswitch/route-lookup
+  ↓
+target_type = flow
+  ↓
+managecall_entry.lua
+  ↓
+POST /api/v1/runtime/ivr/sessions
+  ↓
+execute constrained action
+  ↓
+POST /api/v1/runtime/ivr/sessions/:sessionId/advance
+  ↓
+repeat until transfer or hangup
+```
+
+Current live runtime guarantees:
+
+- inbound DID routes can target published IVR flows
+- FreeSWITCH does not execute raw backend-authored dialplan logic
+- Lua remains a thin executor over backend-decided actions
+- each call pins a runtime session and published flow version

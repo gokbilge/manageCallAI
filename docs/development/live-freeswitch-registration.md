@@ -17,6 +17,8 @@ This guide proves the full runtime slice against stock FreeSWITCH:
 
 This is the currently verified local path.
 
+For the next step after registration, where an inbound DID enters a published IVR flow and the thin Lua helper advances runtime sessions, use [live-freeswitch-ivr-loop.md](live-freeswitch-ivr-loop.md).
+
 ## Prerequisites
 
 - `.env` copied from `.env.example`

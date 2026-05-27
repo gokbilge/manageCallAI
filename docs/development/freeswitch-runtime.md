@@ -11,8 +11,8 @@ The integration points are:
 | Integration | Mechanism |
 |-------------|-----------|
 | SIP registration / auth | `mod_xml_curl` -> `GET /api/v1/freeswitch/directory` |
-| Inbound DID routing | `mod_xml_curl` -> `GET/POST /api/v1/freeswitch/dialplan` |
-| JSON route lookup fallback | Lua helper -> `GET /api/v1/freeswitch/route-lookup` |
+| Inbound DID routing to extension targets | `mod_xml_curl` -> `GET/POST /api/v1/freeswitch/dialplan` |
+| Inbound DID routing to flow targets | Lua helper -> `GET /api/v1/freeswitch/route-lookup` -> runtime session endpoints |
 | Call event ingestion | Go ESL agent -> `POST /api/v1/call-events/internal/ingest` |
 
 The runtime API token (`RUNTIME_API_TOKEN`) protects all runtime-only paths.
@@ -68,9 +68,14 @@ them in `.env` for anything shared or production-like.
 
 ## Lua helpers
 
-`freeswitch/lua/inbound_route.lua` remains available as a thin fallback helper
-for older local demos, but the preferred MVP inbound routing path is dynamic
-dialplan projection through `mod_xml_curl`.
+`freeswitch/lua/inbound_route.lua` is now the thin entry for inbound flow
+targets. It resolves the DID through the backend and:
+
+- bridges immediately for extension targets
+- enters `managecall_entry.lua` for published flow targets
+
+Dynamic dialplan projection through `mod_xml_curl` remains the preferred path
+for direct extension targets.
 
 `freeswitch/conf/dialplan/inbound_did.xml.example` is the example static
 dialplan fragment for the Lua fallback path. Copy it to
@@ -107,6 +112,11 @@ provides the base; manageCallAI overlays only what is needed.
 - Verify the request includes the tenant `domain` or `domain_name`.
 - Verify the route is published, not just drafted.
 - Verify the route target is currently an active `extension`.
+
+**Inbound flow target hangs up immediately**
+- Check `docker logs managecallai-freeswitch-1` for `managecall_entry.lua` errors.
+- Verify `MANAGECALLAI_API_BASE` ends with `/api/v1` with no trailing slash.
+- Verify the target flow is published and the prompt assets referenced by the flow are active and have a valid `storage_uri`.
 
 **Lua fallback fails silently**
 - Check `docker logs managecallai-freeswitch-1` for Lua errors.
