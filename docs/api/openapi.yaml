@@ -4,12 +4,22 @@ info:
   version: 0.1.0
   summary: Business-level telecom control plane API over FreeSWITCH
   description: |
-    OpenAPI contract for the initial manageCallAI REST API.
+    OpenAPI contract for the manageCallAI REST API.
 
-    This API exposes business objects and lifecycle operations such as
-    validation, simulation, publish, and rollback. It intentionally avoids
-    exposing low-level FreeSWITCH control primitives as first-class public API
-    operations.
+    **MVP response envelope**: all implemented endpoints return `{ "data": ... }` for
+    both single-resource and list responses. Pagination will be introduced later
+    where required. Error responses return `{ "error": "<message>" }`.
+
+    **Auth model**:
+    - Human-facing endpoints: `Authorization: Bearer <JWT>` (issued by `/auth/login`
+      or `/auth/register`). JWT claims include `sub`, `tenant_id`, `email`, `role`.
+    - Runtime/internal endpoints: `Authorization: Bearer <RUNTIME_API_TOKEN>` or
+      header `x-managecallai-runtime-token: <token>`. These are called by
+      FreeSWITCH and the Go ESL agent — not by end users.
+
+    Only implemented endpoints are documented here. Future resources (outbound
+    routes, prompts, CDRs, audit events, approvals, simulations) will be added
+    when implemented.
 servers:
   - url: https://api.example.com/api/v1
     description: Production placeholder
@@ -17,21 +27,23 @@ servers:
     description: Local development
 tags:
   - name: Auth
+    description: Tenant registration and login
   - name: Extensions
-  - name: Trunks
-  - name: Numbers
+    description: SIP extension management
+  - name: SipTrunks
+    description: SIP trunk management
+  - name: PhoneNumbers
+    description: Phone number management
   - name: InboundRoutes
-  - name: OutboundRoutes
-  - name: Prompts
-  - name: Flows
-  - name: Validations
-  - name: Simulations
-  - name: Publishes
-  - name: Approvals
-  - name: AuditEvents
+    description: Inbound route lifecycle (draft → validate → publish → rollback)
+  - name: IvrFlows
+    description: IVR flow lifecycle (draft → validate → publish → rollback)
   - name: CallEvents
-  - name: CDRs
+    description: Call event query (tenant-facing) and ingestion (runtime-internal)
   - name: Platform
+    description: Platform operator endpoints (require platform_admin role)
+  - name: FreeSWITCH
+    description: Runtime-internal endpoints called by FreeSWITCH and the ESL agent
 security:
   - bearerAuth: []
 paths:
@@ -39,6 +51,7 @@ paths:
     post:
       tags: [Auth]
       summary: Register tenant and first user
+      security: []
       requestBody:
         required: true
         content:
@@ -54,10 +67,12 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /auth/login:
     post:
       tags: [Auth]
       summary: Login
+      security: []
       requestBody:
         required: true
         content:
@@ -73,22 +88,18 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /extensions:
     get:
       tags: [Extensions]
-      summary: List extensions
-      parameters:
-        - $ref: '#/components/parameters/StatusParam'
-        - $ref: '#/components/parameters/SearchParam'
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
+      summary: List extensions for the authenticated tenant
       responses:
         '200':
-          description: Extension collection
+          description: Extension list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionListResponseSnake'
+                $ref: '#/components/schemas/ExtensionListResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     post:
@@ -99,16 +110,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateExtensionRequestSnake'
+              $ref: '#/components/schemas/CreateExtensionRequest'
       responses:
         '201':
           description: Extension created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionResponseSnake'
+                $ref: '#/components/schemas/ExtensionResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /extensions/{extensionId}:
     parameters:
       - $ref: '#/components/parameters/ExtensionIdParam'
@@ -121,7 +133,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionResponseSnake'
+                $ref: '#/components/schemas/ExtensionResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     patch:
@@ -132,16 +144,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateExtensionRequestSnake'
+              $ref: '#/components/schemas/UpdateExtensionRequest'
       responses:
         '200':
           description: Extension updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionResponseSnake'
+                $ref: '#/components/schemas/ExtensionResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /extensions/{extensionId}/deactivate:
     parameters:
       - $ref: '#/components/parameters/ExtensionIdParam'
@@ -154,45 +167,47 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtensionResponseSnake'
+                $ref: '#/components/schemas/ExtensionResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /sip-trunks:
     get:
-      tags: [Trunks]
+      tags: [SipTrunks]
       summary: List SIP trunks
       responses:
         '200':
-          description: SIP trunk collection
+          description: SIP trunk list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SipTrunkListResponseSnake'
+                $ref: '#/components/schemas/SipTrunkListResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     post:
-      tags: [Trunks]
+      tags: [SipTrunks]
       summary: Create SIP trunk
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateSipTrunkRequestSnake'
+              $ref: '#/components/schemas/CreateSipTrunkRequest'
       responses:
         '201':
           description: SIP trunk created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SipTrunkResponseSnake'
+                $ref: '#/components/schemas/SipTrunkResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /sip-trunks/{trunkId}:
     parameters:
       - $ref: '#/components/parameters/TrunkIdParam'
     get:
-      tags: [Trunks]
+      tags: [SipTrunks]
       summary: Get SIP trunk
       responses:
         '200':
@@ -200,32 +215,33 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SipTrunkResponseSnake'
+                $ref: '#/components/schemas/SipTrunkResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     patch:
-      tags: [Trunks]
+      tags: [SipTrunks]
       summary: Update SIP trunk
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateSipTrunkRequestSnake'
+              $ref: '#/components/schemas/UpdateSipTrunkRequest'
       responses:
         '200':
           description: SIP trunk updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SipTrunkResponseSnake'
+                $ref: '#/components/schemas/SipTrunkResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /sip-trunks/{trunkId}/deactivate:
     parameters:
       - $ref: '#/components/parameters/TrunkIdParam'
     post:
-      tags: [Trunks]
+      tags: [SipTrunks]
       summary: Deactivate SIP trunk
       responses:
         '200':
@@ -233,25 +249,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SipTrunkResponseSnake'
+                $ref: '#/components/schemas/SipTrunkResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /phone-numbers:
     get:
-      tags: [Numbers]
-      summary: List numbers
+      tags: [PhoneNumbers]
+      summary: List phone numbers
       responses:
         '200':
-          description: Number collection
+          description: Phone number list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PhoneNumberCollection'
+                $ref: '#/components/schemas/PhoneNumberListResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     post:
-      tags: [Numbers]
-      summary: Create number
+      tags: [PhoneNumbers]
+      summary: Create phone number
       requestBody:
         required: true
         content:
@@ -260,31 +277,32 @@ paths:
               $ref: '#/components/schemas/CreatePhoneNumberRequest'
       responses:
         '201':
-          description: Number created
+          description: Phone number created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PhoneNumber'
+                $ref: '#/components/schemas/PhoneNumberResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /phone-numbers/{numberId}:
     parameters:
       - $ref: '#/components/parameters/NumberIdParam'
     get:
-      tags: [Numbers]
-      summary: Get number
+      tags: [PhoneNumbers]
+      summary: Get phone number
       responses:
         '200':
-          description: Number
+          description: Phone number
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PhoneNumber'
+                $ref: '#/components/schemas/PhoneNumberResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     patch:
-      tags: [Numbers]
-      summary: Update number
+      tags: [PhoneNumbers]
+      summary: Update phone number
       requestBody:
         required: true
         content:
@@ -293,24 +311,41 @@ paths:
               $ref: '#/components/schemas/UpdatePhoneNumberRequest'
       responses:
         '200':
-          description: Number updated
+          description: Phone number updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PhoneNumber'
+                $ref: '#/components/schemas/PhoneNumberResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
+  /phone-numbers/{numberId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/NumberIdParam'
+    post:
+      tags: [PhoneNumbers]
+      summary: Deactivate phone number
+      responses:
+        '200':
+          description: Phone number deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
   /inbound-routes:
     get:
       tags: [InboundRoutes]
       summary: List inbound routes
       responses:
         '200':
-          description: Inbound route collection
+          description: Inbound route list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InboundRouteCollection'
+                $ref: '#/components/schemas/InboundRouteListResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     post:
@@ -328,27 +363,28 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InboundRoute'
+                $ref: '#/components/schemas/InboundRouteResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /inbound-routes/{routeId}:
     parameters:
       - $ref: '#/components/parameters/RouteIdParam'
     get:
       tags: [InboundRoutes]
-      summary: Get inbound route
+      summary: Get inbound route with versions
       responses:
         '200':
           description: Inbound route
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InboundRoute'
+                $ref: '#/components/schemas/InboundRouteResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     patch:
       tags: [InboundRoutes]
-      summary: Update inbound route draft
+      summary: Update inbound route metadata
       requestBody:
         required: true
         content:
@@ -361,15 +397,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InboundRoute'
+                $ref: '#/components/schemas/InboundRouteResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /inbound-routes/{routeId}/versions:
     parameters:
       - $ref: '#/components/parameters/RouteIdParam'
     post:
       tags: [InboundRoutes]
-      summary: Create inbound route draft version
+      summary: Create draft version
       requestBody:
         required: true
         content:
@@ -382,861 +419,493 @@ paths:
                   type: object
       responses:
         '201':
-          description: Draft route version created
+          description: Draft version created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RouteVersion'
+                $ref: '#/components/schemas/RouteVersionResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /inbound-routes/{routeId}/versions/{versionId}/validate:
     parameters:
       - $ref: '#/components/parameters/RouteIdParam'
       - $ref: '#/components/parameters/VersionIdParam'
     post:
-      tags: [InboundRoutes, Validations]
+      tags: [InboundRoutes]
       summary: Validate inbound route version
       responses:
         '200':
-          description: Validation result
+          description: Validation passed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidationResult'
+                $ref: '#/components/schemas/ValidationResultResponse'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResultResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /inbound-routes/{routeId}/versions/{versionId}/publish:
     parameters:
       - $ref: '#/components/parameters/RouteIdParam'
       - $ref: '#/components/parameters/VersionIdParam'
     post:
-      tags: [InboundRoutes, Publishes]
-      summary: Publish inbound route version
+      tags: [InboundRoutes]
+      summary: Publish validated version
       responses:
         '200':
-          description: Published inbound route
+          description: Route published
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InboundRoute'
+                $ref: '#/components/schemas/InboundRouteResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /inbound-routes/{routeId}/rollback:
     parameters:
       - $ref: '#/components/parameters/RouteIdParam'
     post:
-      tags: [InboundRoutes, Publishes]
-      summary: Roll back inbound route
+      tags: [InboundRoutes]
+      summary: Roll back to previous published version
       responses:
         '200':
-          description: Rolled back inbound route
+          description: Route rolled back
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InboundRoute'
+                $ref: '#/components/schemas/InboundRouteResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /outbound-routes:
+
+  /ivr-flows:
     get:
-      tags: [OutboundRoutes]
-      summary: List outbound routes
+      tags: [IvrFlows]
+      summary: List IVR flows
       responses:
         '200':
-          description: Outbound route collection
+          description: IVR flow list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OutboundRouteCollection'
+                $ref: '#/components/schemas/IvrFlowListResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     post:
-      tags: [OutboundRoutes]
-      summary: Create outbound route
+      tags: [IvrFlows]
+      summary: Create IVR flow
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateOutboundRouteRequest'
+              $ref: '#/components/schemas/CreateIvrFlowRequest'
       responses:
         '201':
-          description: Outbound route created
+          description: IVR flow created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OutboundRoute'
+                $ref: '#/components/schemas/IvrFlowResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /outbound-routes/{routeId}:
-    parameters:
-      - $ref: '#/components/parameters/RouteIdParam'
-    get:
-      tags: [OutboundRoutes]
-      summary: Get outbound route
-      responses:
-        '200':
-          description: Outbound route
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OutboundRoute'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-    patch:
-      tags: [OutboundRoutes]
-      summary: Update outbound route draft
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateOutboundRouteRequest'
-      responses:
-        '200':
-          description: Outbound route updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OutboundRoute'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /outbound-routes/{routeId}/validate:
-    parameters:
-      - $ref: '#/components/parameters/RouteIdParam'
-    post:
-      tags: [OutboundRoutes, Validations]
-      summary: Validate outbound route
-      responses:
-        '200':
-          description: Validation result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationResult'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /outbound-routes/{routeId}/publish:
-    parameters:
-      - $ref: '#/components/parameters/RouteIdParam'
-    post:
-      tags: [OutboundRoutes, Publishes]
-      summary: Publish outbound route
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PublishRequest'
-      responses:
-        '200':
-          description: Publish record
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublishRecord'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /prompts:
-    get:
-      tags: [Prompts]
-      summary: List prompts
-      responses:
-        '200':
-          description: Prompt collection
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PromptCollection'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-    post:
-      tags: [Prompts]
-      summary: Create prompt metadata
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePromptRequest'
-      responses:
-        '201':
-          description: Prompt created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PromptAsset'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /prompts/{promptId}:
-    parameters:
-      - $ref: '#/components/parameters/PromptIdParam'
-    get:
-      tags: [Prompts]
-      summary: Get prompt
-      responses:
-        '200':
-          description: Prompt
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PromptAsset'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-    patch:
-      tags: [Prompts]
-      summary: Update prompt
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdatePromptRequest'
-      responses:
-        '200':
-          description: Prompt updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PromptAsset'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /flows:
-    get:
-      tags: [Flows]
-      summary: List flows
-      parameters:
-        - $ref: '#/components/parameters/StatusParam'
-        - $ref: '#/components/parameters/SearchParam'
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
-      responses:
-        '200':
-          description: Flow collection
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FlowCollection'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-    post:
-      tags: [Flows]
-      summary: Create flow
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateFlowRequest'
-      responses:
-        '201':
-          description: Flow created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Flow'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /flows/{flowId}:
+
+  /ivr-flows/{flowId}:
     parameters:
       - $ref: '#/components/parameters/FlowIdParam'
     get:
-      tags: [Flows]
-      summary: Get flow
+      tags: [IvrFlows]
+      summary: Get IVR flow with versions
       responses:
         '200':
-          description: Flow
+          description: IVR flow
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Flow'
+                $ref: '#/components/schemas/IvrFlowResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     patch:
-      tags: [Flows]
-      summary: Update flow draft
+      tags: [IvrFlows]
+      summary: Update IVR flow metadata
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateFlowRequest'
+              $ref: '#/components/schemas/UpdateIvrFlowRequest'
       responses:
         '200':
-          description: Flow updated
+          description: IVR flow updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Flow'
+                $ref: '#/components/schemas/IvrFlowResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /flows/{flowId}/versions:
+
+  /ivr-flows/{flowId}/versions:
     parameters:
       - $ref: '#/components/parameters/FlowIdParam'
-    get:
-      tags: [Flows]
-      summary: List flow versions
+    post:
+      tags: [IvrFlows]
+      summary: Create draft version
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [definition]
+              properties:
+                definition:
+                  type: object
       responses:
-        '200':
-          description: Flow version collection
+        '201':
+          description: Draft version created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlowVersionCollection'
+                $ref: '#/components/schemas/FlowVersionResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /flows/{flowId}/versions/{versionId}:
+
+  /ivr-flows/{flowId}/versions/{versionId}:
     parameters:
       - $ref: '#/components/parameters/FlowIdParam'
       - $ref: '#/components/parameters/VersionIdParam'
-    get:
-      tags: [Flows]
-      summary: Get flow version
-      responses:
-        '200':
-          description: Flow version
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FlowVersion'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /flows/{flowId}/validate:
-    parameters:
-      - $ref: '#/components/parameters/FlowIdParam'
-    post:
-      tags: [Flows, Validations]
-      summary: Validate flow
-      responses:
-        '200':
-          description: Validation result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationResult'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /flows/{flowId}/simulate:
-    parameters:
-      - $ref: '#/components/parameters/FlowIdParam'
-    post:
-      tags: [Flows, Simulations]
-      summary: Simulate flow
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SimulateFlowRequest'
-      responses:
-        '200':
-          description: Simulation result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SimulationResult'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /flows/{flowId}/publish:
-    parameters:
-      - $ref: '#/components/parameters/FlowIdParam'
-    post:
-      tags: [Flows, Publishes]
-      summary: Publish flow
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PublishRequest'
-      responses:
-        '200':
-          description: Publish record
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublishRecord'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /flows/{flowId}/rollback:
-    parameters:
-      - $ref: '#/components/parameters/FlowIdParam'
-    post:
-      tags: [Flows, Publishes]
-      summary: Roll back flow
+    patch:
+      tags: [IvrFlows]
+      summary: Update draft version definition
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RollbackRequest'
+              type: object
+              required: [definition]
+              properties:
+                definition:
+                  type: object
       responses:
         '200':
-          description: Rollback record
+          description: Version definition updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublishRecord'
+                $ref: '#/components/schemas/FlowVersionResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /validations:
-    get:
-      tags: [Validations]
-      summary: List validation results
-      parameters:
-        - $ref: '#/components/parameters/ObjectTypeParam'
-        - $ref: '#/components/parameters/ObjectIdParam'
-        - $ref: '#/components/parameters/VersionQueryParam'
-        - $ref: '#/components/parameters/StatusParam'
-      responses:
-        '200':
-          description: Validation result collection
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationResultCollection'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /validations/{validationId}:
+
+  /ivr-flows/{flowId}/versions/{versionId}/validate:
     parameters:
-      - $ref: '#/components/parameters/ValidationIdParam'
-    get:
-      tags: [Validations]
-      summary: Get validation result
-      responses:
-        '200':
-          description: Validation result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationResult'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /simulations:
-    get:
-      tags: [Simulations]
-      summary: List simulation results
-      parameters:
-        - $ref: '#/components/parameters/ObjectTypeParam'
-        - $ref: '#/components/parameters/ObjectIdParam'
-        - $ref: '#/components/parameters/VersionQueryParam'
-        - $ref: '#/components/parameters/StatusParam'
-      responses:
-        '200':
-          description: Simulation result collection
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SimulationResultCollection'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /simulations/{simulationId}:
-    parameters:
-      - $ref: '#/components/parameters/SimulationIdParam'
-    get:
-      tags: [Simulations]
-      summary: Get simulation result
-      responses:
-        '200':
-          description: Simulation result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SimulationResult'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /publishes:
-    get:
-      tags: [Publishes]
-      summary: List publish records
-      parameters:
-        - $ref: '#/components/parameters/ObjectTypeParam'
-        - $ref: '#/components/parameters/ObjectIdParam'
-        - name: actionType
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Publish record collection
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublishRecordCollection'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /publishes/{publishId}:
-    parameters:
-      - $ref: '#/components/parameters/PublishIdParam'
-    get:
-      tags: [Publishes]
-      summary: Get publish record
-      responses:
-        '200':
-          description: Publish record
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublishRecord'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /approvals:
-    get:
-      tags: [Approvals]
-      summary: List approval requests
-      responses:
-        '200':
-          description: Approval request collection
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApprovalRequestCollection'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
+      - $ref: '#/components/parameters/FlowIdParam'
+      - $ref: '#/components/parameters/VersionIdParam'
     post:
-      tags: [Approvals]
-      summary: Create approval request
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateApprovalRequest'
+      tags: [IvrFlows]
+      summary: Validate flow version
       responses:
-        '201':
-          description: Approval request created
+        '200':
+          description: Validation passed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApprovalRequest'
+                $ref: '#/components/schemas/ValidationResultResponse'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResultResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /approvals/{approvalId}/approve:
+
+  /ivr-flows/{flowId}/versions/{versionId}/publish:
     parameters:
-      - $ref: '#/components/parameters/ApprovalIdParam'
+      - $ref: '#/components/parameters/FlowIdParam'
+      - $ref: '#/components/parameters/VersionIdParam'
     post:
-      tags: [Approvals]
-      summary: Approve request
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApprovalDecisionRequest'
+      tags: [IvrFlows]
+      summary: Publish validated flow version
       responses:
         '200':
-          description: Approval request approved
+          description: Flow published
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApprovalRequest'
+                $ref: '#/components/schemas/IvrFlowResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /approvals/{approvalId}/reject:
+
+  /ivr-flows/{flowId}/rollback:
     parameters:
-      - $ref: '#/components/parameters/ApprovalIdParam'
+      - $ref: '#/components/parameters/FlowIdParam'
     post:
-      tags: [Approvals]
-      summary: Reject request
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApprovalDecisionRequest'
+      tags: [IvrFlows]
+      summary: Roll back to previous published version
       responses:
         '200':
-          description: Approval request rejected
+          description: Flow rolled back
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApprovalRequest'
+                $ref: '#/components/schemas/IvrFlowResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /audit-events:
-    get:
-      tags: [AuditEvents]
-      summary: List audit events
-      parameters:
-        - name: actorType
-          in: query
-          schema:
-            type: string
-        - name: actorId
-          in: query
-          schema:
-            type: string
-        - $ref: '#/components/parameters/ObjectTypeParam'
-        - $ref: '#/components/parameters/ObjectIdParam'
-        - name: action
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Audit event collection
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuditEventCollection'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /audit-events/{auditEventId}:
-    parameters:
-      - $ref: '#/components/parameters/AuditEventIdParam'
-    get:
-      tags: [AuditEvents]
-      summary: Get audit event
-      responses:
-        '200':
-          description: Audit event
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuditEvent'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
+
   /call-events:
     get:
       tags: [CallEvents]
-      summary: List call events
+      summary: List call events for the authenticated tenant
       parameters:
         - name: tenant_id
           in: query
           schema:
             type: string
-          description: Optional tenant override; must match the tenant in the JWT.
+          description: Must match the tenant_id in the JWT. Ignored if different.
       responses:
         '200':
-          description: Call event collection
+          description: Call event list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CallEventListResponseSnake'
+                $ref: '#/components/schemas/CallEventListResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
+  /call-events/internal/ingest:
+    post:
+      tags: [CallEvents]
+      summary: Ingest a call event from the runtime agent
+      description: |
+        **Runtime-internal endpoint.** Called by the Go FreeSWITCH ESL agent.
+        Requires runtime token auth, not a user JWT.
+        Header: `Authorization: Bearer <RUNTIME_API_TOKEN>`
+        or: `x-managecallai-runtime-token: <RUNTIME_API_TOKEN>`
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestCallEventRequest'
+      responses:
+        '201':
+          description: Event ingested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallEventResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
   /platform/tenants:
     get:
       tags: [Platform]
-      summary: List tenant summaries for platform operators
+      summary: List all tenants (platform_admin only)
       responses:
         '200':
-          description: Tenant collection
+          description: Tenant list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TenantSummaryListResponse'
+                $ref: '#/components/schemas/TenantListResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
   /platform/runtime/health:
     get:
       tags: [Platform]
-      summary: Runtime health for platform operators
+      summary: Runtime health summary (platform_admin only)
       responses:
         '200':
-          description: Runtime health summary
+          description: Runtime health
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RuntimeHealthResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /call-events/{callEventId}:
-    parameters:
-      - $ref: '#/components/parameters/CallEventIdParam'
+
+  /freeswitch/directory:
     get:
-      tags: [CallEvents]
-      summary: Get call event
-      responses:
-        '200':
-          description: Call event
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CallEvent'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /cdrs:
-    get:
-      tags: [CDRs]
-      summary: List call detail records
+      tags: [FreeSWITCH]
+      summary: FreeSWITCH XML directory lookup
+      description: |
+        **Runtime-internal endpoint.** Called by FreeSWITCH `mod_xml_curl` for
+        SIP registration and authentication. Returns FreeSWITCH XML.
+        Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
+        or query param `runtime_token=<token>` (local/dev compatibility only).
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
       parameters:
-        - name: callId
+        - name: user
           in: query
           schema:
             type: string
-        - name: fromNumber
+          description: SIP username (extension number)
+        - name: domain
           in: query
           schema:
             type: string
-        - name: toNumber
+          description: SIP domain
+        - name: runtime_token
           in: query
           schema:
             type: string
-        - name: startFrom
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: startTo
-          in: query
-          schema:
-            type: string
-            format: date-time
+          description: Dev-only token fallback. Prefer Authorization header.
       responses:
         '200':
-          description: CDR collection
+          description: FreeSWITCH XML directory response
           content:
-            application/json:
+            text/xml:
               schema:
-                $ref: '#/components/schemas/CDRCollection'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-  /cdrs/{cdrId}:
-    parameters:
-      - $ref: '#/components/parameters/CDRIdParam'
+                type: string
+        '404':
+          description: User not found — FreeSWITCH XML with empty groups
+          content:
+            text/xml:
+              schema:
+                type: string
+    post:
+      tags: [FreeSWITCH]
+      summary: FreeSWITCH XML directory lookup (POST form)
+      description: |
+        Same as GET /freeswitch/directory but accepts form-encoded body
+        as sent by some FreeSWITCH `mod_xml_curl` configurations.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: string
+                domain:
+                  type: string
+                runtime_token:
+                  type: string
+      responses:
+        '200':
+          description: FreeSWITCH XML directory response
+          content:
+            text/xml:
+              schema:
+                type: string
+
+  /freeswitch/route-lookup:
     get:
-      tags: [CDRs]
-      summary: Get call detail record
+      tags: [FreeSWITCH]
+      summary: Resolve an inbound DID to a route target
+      description: |
+        **Runtime-internal endpoint.** Called by the FreeSWITCH Lua inbound
+        script (`inbound_route.lua`) on every inbound call.
+        Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
+        or header `x-managecallai-runtime-token: <token>`.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - name: did
+          in: query
+          required: true
+          schema:
+            type: string
+          description: E.164 DID to resolve (URL-encoded, e.g. %2B15551234567)
+        - name: trunk
+          in: query
+          schema:
+            type: string
+          description: Trunk name for trunk-match routing (optional)
       responses:
         '200':
-          description: CDR
+          description: Route resolved or not matched
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CallDetailRecord'
+                $ref: '#/components/schemas/RouteLookupResponse'
+        '400':
+          description: Missing did parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: User JWT issued by /auth/login or /auth/register
+    runtimeTokenBearer:
+      type: http
+      scheme: bearer
+      description: RUNTIME_API_TOKEN as Bearer token (preferred)
+    runtimeTokenHeader:
+      type: apiKey
+      in: header
+      name: x-managecallai-runtime-token
+      description: RUNTIME_API_TOKEN as custom header
+
   parameters:
-    StatusParam:
-      name: status
-      in: query
-      schema:
-        type: string
-    SearchParam:
-      name: search
-      in: query
-      schema:
-        type: string
-    PageParam:
-      name: page
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        default: 1
-    PageSizeParam:
-      name: pageSize
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-        default: 50
-    ObjectTypeParam:
-      name: objectType
-      in: query
-      schema:
-        type: string
-    ObjectIdParam:
-      name: objectId
-      in: query
-      schema:
-        type: string
-    VersionQueryParam:
-      name: versionId
-      in: query
-      schema:
-        type: string
     ExtensionIdParam:
       name: extensionId
       in: path
       required: true
       schema:
         type: string
+        format: uuid
     TrunkIdParam:
       name: trunkId
       in: path
       required: true
       schema:
         type: string
+        format: uuid
     NumberIdParam:
       name: numberId
       in: path
       required: true
       schema:
         type: string
+        format: uuid
     RouteIdParam:
       name: routeId
       in: path
       required: true
       schema:
         type: string
-    PromptIdParam:
-      name: promptId
-      in: path
-      required: true
-      schema:
-        type: string
+        format: uuid
     FlowIdParam:
       name: flowId
       in: path
       required: true
       schema:
         type: string
+        format: uuid
     VersionIdParam:
       name: versionId
       in: path
       required: true
       schema:
         type: string
-    ValidationIdParam:
-      name: validationId
-      in: path
-      required: true
-      schema:
-        type: string
-    SimulationIdParam:
-      name: simulationId
-      in: path
-      required: true
-      schema:
-        type: string
-    PublishIdParam:
-      name: publishId
-      in: path
-      required: true
-      schema:
-        type: string
-    ApprovalIdParam:
-      name: approvalId
-      in: path
-      required: true
-      schema:
-        type: string
-    AuditEventIdParam:
-      name: auditEventId
-      in: path
-      required: true
-      schema:
-        type: string
-    CallEventIdParam:
-      name: callEventId
-      in: path
-      required: true
-      schema:
-        type: string
-    CDRIdParam:
-      name: cdrId
-      in: path
-      required: true
-      schema:
-        type: string
+        format: uuid
+
   responses:
     ErrorResponse:
       description: Error response
@@ -1244,44 +913,43 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+
   schemas:
-    Pagination:
-      type: object
-      required: [page, pageSize, total]
-      properties:
-        page:
-          type: integer
-        pageSize:
-          type: integer
-        total:
-          type: integer
     ErrorResponse:
       type: object
       required: [error]
       properties:
         error:
           type: string
-    AuthResponse:
-      type: object
-      required: [token]
-      properties:
-        token:
-          type: string
+
+    # ── Auth ──────────────────────────────────────────────────────────────────
+
     RegisterRequest:
       type: object
       required: [tenant_name, tenant_slug, email, display_name, password]
       properties:
         tenant_name:
           type: string
+          minLength: 1
+          maxLength: 100
         tenant_slug:
           type: string
+          minLength: 1
+          maxLength: 50
+          pattern: '^[a-z0-9][a-z0-9-]*[a-z0-9]$'
         email:
           type: string
+          format: email
         display_name:
           type: string
+          minLength: 1
+          maxLength: 255
         password:
           type: string
           minLength: 8
+          maxLength: 128
+          writeOnly: true
+
     LoginRequest:
       type: object
       required: [tenant_slug, email, password]
@@ -1292,100 +960,30 @@ components:
           type: string
         password:
           type: string
-    AuthenticationProfile:
+          writeOnly: true
+
+    AuthResponse:
       type: object
-      additionalProperties: true
-    NetworkProfile:
-      type: object
-      additionalProperties: true
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: >
+            Signed JWT. Claims include sub, tenant_id, email, role
+            ('tenant_admin' | 'platform_admin').
+
+    # ── Extensions ────────────────────────────────────────────────────────────
+
     Extension:
-      type: object
-      required: [id, extensionNumber, displayName, status, sipUsername]
-      properties:
-        id:
-          type: string
-        extensionNumber:
-          type: string
-        displayName:
-          type: string
-        status:
-          type: string
-          enum: [active, inactive]
-        sipUsername:
-          type: string
-          description: SIP username used for FreeSWITCH registration (defaults to extensionNumber)
-        defaultDestinationType:
-          type: string
-          enum: [flow, extension, user, queue]
-        defaultDestinationId:
-          type: string
-    CreateExtensionRequest:
-      type: object
-      required: [extensionNumber, displayName, sipPassword]
-      properties:
-        extensionNumber:
-          type: string
-        displayName:
-          type: string
-        sipUsername:
-          type: string
-          description: Defaults to extensionNumber when omitted
-        sipPassword:
-          type: string
-          writeOnly: true
-          description: >
-            Plaintext SIP registration password. Encrypted with AES-256-GCM before storage.
-            Never returned in API responses.
-          minLength: 8
-        defaultDestinationType:
-          type: string
-        defaultDestinationId:
-          type: string
-    UpdateExtensionRequest:
-      type: object
-      properties:
-        extensionNumber:
-          type: string
-        displayName:
-          type: string
-        status:
-          type: string
-          enum: [active, inactive]
-        sipUsername:
-          type: string
-        sipPassword:
-          type: string
-          writeOnly: true
-          description: >
-            Plaintext SIP registration password. Encrypted with AES-256-GCM before storage.
-            Never returned in API responses.
-          minLength: 8
-        defaultDestinationType:
-          type: string
-        defaultDestinationId:
-          type: string
-    ExtensionResponse:
-      type: object
-      required: [data]
-      properties:
-        data:
-          $ref: '#/components/schemas/Extension'
-    ExtensionListResponse:
-      type: object
-      required: [data]
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Extension'
-    ExtensionSnake:
       type: object
       required: [id, tenant_id, extension_number, display_name, status, sip_username, created_at, updated_at]
       properties:
         id:
           type: string
+          format: uuid
         tenant_id:
           type: string
+          format: uuid
         extension_number:
           type: string
         display_name:
@@ -1402,48 +1000,85 @@ components:
         default_destination_id:
           type: string
           nullable: true
+          format: uuid
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
-    CreateExtensionRequestSnake:
+
+    ExtensionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Extension'
+
+    ExtensionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Extension'
+
+    CreateExtensionRequest:
       type: object
       required: [extension_number, display_name, sip_password]
       properties:
         extension_number:
           type: string
+          minLength: 1
+          maxLength: 20
         display_name:
           type: string
+          minLength: 1
+          maxLength: 255
         sip_username:
           type: string
+          minLength: 1
+          maxLength: 64
           description: Defaults to extension_number when omitted
         sip_password:
           type: string
           writeOnly: true
           minLength: 8
+          maxLength: 128
+          description: >
+            Plaintext SIP password. Encrypted with AES-256-GCM before storage.
+            Never returned in any API response.
         default_destination_type:
           type: string
           enum: [flow, extension, user, queue]
         default_destination_id:
           type: string
-    UpdateExtensionRequestSnake:
+          format: uuid
+
+    UpdateExtensionRequest:
       type: object
       properties:
         extension_number:
           type: string
+          minLength: 1
+          maxLength: 20
         display_name:
           type: string
+          minLength: 1
+          maxLength: 255
         status:
           type: string
           enum: [active, inactive]
         sip_username:
           type: string
+          minLength: 1
+          maxLength: 64
         sip_password:
           type: string
           writeOnly: true
           minLength: 8
+          maxLength: 128
         default_destination_type:
           oneOf:
             - type: string
@@ -1452,29 +1087,21 @@ components:
         default_destination_id:
           oneOf:
             - type: string
+              format: uuid
             - type: 'null'
-    ExtensionResponseSnake:
-      type: object
-      required: [data]
-      properties:
-        data:
-          $ref: '#/components/schemas/ExtensionSnake'
-    ExtensionListResponseSnake:
-      type: object
-      required: [data]
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ExtensionSnake'
-    SipTrunkSnake:
+
+    # ── SIP Trunks ────────────────────────────────────────────────────────────
+
+    SipTrunk:
       type: object
       required: [id, tenant_id, name, status, direction, realm, proxy, port, transport, auth_username, created_at, updated_at]
       properties:
         id:
           type: string
+          format: uuid
         tenant_id:
           type: string
+          format: uuid
         name:
           type: string
         status:
@@ -1503,12 +1130,31 @@ components:
         updated_at:
           type: string
           format: date-time
-    CreateSipTrunkRequestSnake:
+
+    SipTrunkResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/SipTrunk'
+
+    SipTrunkListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SipTrunk'
+
+    CreateSipTrunkRequest:
       type: object
       required: [name, direction, realm, proxy, auth_username, auth_password]
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 255
         direction:
           type: string
           enum: [inbound, outbound, bidirectional]
@@ -1532,9 +1178,10 @@ components:
           writeOnly: true
           minLength: 8
           description: >
-            Plaintext SIP trunk authentication password. Encrypted with AES-256-GCM before storage.
-            Never returned in API responses.
-    UpdateSipTrunkRequestSnake:
+            Plaintext SIP trunk auth password. Encrypted with AES-256-GCM before
+            storage. Never returned in API responses.
+
+    UpdateSipTrunkRequest:
       type: object
       properties:
         name:
@@ -1566,71 +1213,55 @@ components:
           type: string
           writeOnly: true
           minLength: 8
-          description: >
-            Plaintext SIP trunk authentication password. Encrypted with AES-256-GCM before storage.
-            Never returned in API responses.
-    SipTrunkResponseSnake:
-      type: object
-      required: [data]
-      properties:
-        data:
-          $ref: '#/components/schemas/SipTrunkSnake'
-    SipTrunkListResponseSnake:
-      type: object
-      required: [data]
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/SipTrunkSnake'
+
+    # ── Phone Numbers ─────────────────────────────────────────────────────────
+
     PhoneNumber:
       type: object
-      required: [id, e164_number, status]
+      required: [id, tenant_id, e164_number, status, created_at, updated_at]
       properties:
         id:
           type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
         e164_number:
           type: string
+          description: E.164-formatted number, e.g. +15551234567
         display_label:
           type: string
+          nullable: true
         status:
           type: string
           enum: [active, inactive]
         trunk_id:
           type: string
+          nullable: true
+          format: uuid
         assigned_target_type:
           type: string
-          enum: [inbound_route, flow, extension]
+          nullable: true
+          enum: [inbound_route, flow, extension, null]
         assigned_target_id:
           type: string
-    CreatePhoneNumberRequest:
+          nullable: true
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PhoneNumberResponse:
       type: object
-      required: [e164_number]
+      required: [data]
       properties:
-        e164_number:
-          type: string
-        display_label:
-          type: string
-        trunk_id:
-          type: string
-        assigned_target_type:
-          type: string
-        assigned_target_id:
-          type: string
-    UpdatePhoneNumberRequest:
-      type: object
-      properties:
-        display_label:
-          type: string
-        status:
-          type: string
-        trunk_id:
-          type: string
-        assigned_target_type:
-          type: string
-        assigned_target_id:
-          type: string
-    PhoneNumberCollection:
+        data:
+          $ref: '#/components/schemas/PhoneNumber'
+
+    PhoneNumberListResponse:
       type: object
       required: [data]
       properties:
@@ -1638,12 +1269,63 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PhoneNumber'
+
+    CreatePhoneNumberRequest:
+      type: object
+      required: [e164_number]
+      properties:
+        e164_number:
+          type: string
+          minLength: 2
+          maxLength: 32
+        display_label:
+          type: string
+          minLength: 1
+          maxLength: 255
+        trunk_id:
+          type: string
+          format: uuid
+
+    UpdatePhoneNumberRequest:
+      type: object
+      properties:
+        display_label:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 255
+            - type: 'null'
+        trunk_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        assigned_target_type:
+          oneOf:
+            - type: string
+              enum: [inbound_route, flow, extension]
+            - type: 'null'
+        assigned_target_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        status:
+          type: string
+          enum: [active, inactive]
+
+    # ── Inbound Routes ────────────────────────────────────────────────────────
+
     InboundRoute:
       type: object
-      required: [id, name, match_type, match_value, target_type, status]
+      required: [id, tenant_id, name, match_type, match_value, target_type, status, created_at, updated_at]
       properties:
         id:
           type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
         name:
           type: string
         match_type:
@@ -1653,52 +1335,41 @@ components:
           type: string
         phone_number_id:
           type: string
+          nullable: true
+          format: uuid
         target_type:
           type: string
           enum: [flow, extension]
         target_id:
           type: string
+          nullable: true
+          format: uuid
         status:
           type: string
           enum: [draft, active, inactive]
         draft_version_id:
           type: string
+          nullable: true
+          format: uuid
         active_version_id:
           type: string
-    CreateInboundRouteRequest:
+          nullable: true
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    InboundRouteResponse:
       type: object
-      required: [name, match_type, match_value, target_type]
+      required: [data]
       properties:
-        name:
-          type: string
-        match_type:
-          type: string
-        match_value:
-          type: string
-        phone_number_id:
-          type: string
-        target_type:
-          type: string
-        target_id:
-          type: string
-    UpdateInboundRouteRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        match_type:
-          type: string
-        match_value:
-          type: string
-        phone_number_id:
-          type: string
-        target_type:
-          type: string
-        target_id:
-          type: string
-        status:
-          type: string
-    InboundRouteCollection:
+        data:
+          $ref: '#/components/schemas/InboundRoute'
+
+    InboundRouteListResponse:
       type: object
       required: [data]
       properties:
@@ -1706,516 +1377,247 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InboundRoute'
+
+    CreateInboundRouteRequest:
+      type: object
+      required: [name, match_type, match_value, target_type]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        match_type:
+          type: string
+          enum: [did, trunk, pattern]
+        match_value:
+          type: string
+          minLength: 1
+          maxLength: 255
+        phone_number_id:
+          type: string
+          format: uuid
+          description: >
+            Optional. When supplied, match_type must be 'did' and match_value
+            is normalized from the linked phone number's e164_number.
+        target_type:
+          type: string
+          enum: [flow, extension]
+        target_id:
+          type: string
+          format: uuid
+
+    UpdateInboundRouteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        match_type:
+          type: string
+          enum: [did, trunk, pattern]
+        match_value:
+          type: string
+          minLength: 1
+          maxLength: 255
+        phone_number_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        target_type:
+          type: string
+          enum: [flow, extension]
+        target_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+
     RouteVersion:
       type: object
-      required: [id, route_id, version_number, state]
+      required: [id, route_id, version_number, state, created_at]
       properties:
         id:
           type: string
+          format: uuid
         route_id:
           type: string
+          format: uuid
         version_number:
           type: integer
         state:
           type: string
-          enum: [draft, validated, simulated, published, superseded, rolled_back]
+          enum: [draft, validated, published, superseded, rolled_back]
         definition:
           type: object
-    OutboundRoute:
-      type: object
-      required: [id, name, destinationPattern, status]
-      properties:
-        id:
+        created_by:
           type: string
-        name:
-          type: string
-        matchStrategy:
-          type: string
-        destinationPattern:
-          type: string
-        trunkSelectionStrategy:
-          type: string
-        status:
-          type: string
-          enum: [draft, active, inactive]
-        draftVersionId:
-          type: string
-        activeVersionId:
-          type: string
-    CreateOutboundRouteRequest:
-      type: object
-      required: [name, destinationPattern]
-      properties:
-        name:
-          type: string
-        matchStrategy:
-          type: string
-        destinationPattern:
-          type: string
-        trunkSelectionStrategy:
-          type: string
-    UpdateOutboundRouteRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        matchStrategy:
-          type: string
-        destinationPattern:
-          type: string
-        trunkSelectionStrategy:
-          type: string
-        status:
-          type: string
-    OutboundRouteCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/OutboundRoute'
-    PromptAsset:
-      type: object
-      required: [id, name, mediaType, status]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        mediaType:
-          type: string
-        language:
-          type: string
-        storageUri:
-          type: string
-        checksum:
-          type: string
-        status:
-          type: string
-          enum: [active, inactive]
-    CreatePromptRequest:
-      type: object
-      required: [name, mediaType]
-      properties:
-        name:
-          type: string
-        mediaType:
-          type: string
-        language:
-          type: string
-    UpdatePromptRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        language:
-          type: string
-        status:
-          type: string
-    PromptCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/PromptAsset'
-    FlowNode:
-      type: object
-      required: [id, type]
-      properties:
-        id:
-          type: string
-        type:
-          type: string
-        promptId:
-          type: string
-        targetId:
-          type: string
-        config:
-          type: object
-          additionalProperties: true
-    FlowEdge:
-      type: object
-      required: [from, to]
-      properties:
-        from:
-          type: string
-        to:
-          type: string
-        condition:
-          type: string
-    FlowDefinition:
-      type: object
-      required: [startNodeId, nodes, edges]
-      properties:
-        startNodeId:
-          type: string
-        nodes:
-          type: array
-          items:
-            $ref: '#/components/schemas/FlowNode'
-        edges:
-          type: array
-          items:
-            $ref: '#/components/schemas/FlowEdge'
-    Flow:
-      type: object
-      required: [id, name, status]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        status:
-          type: string
-          enum: [draft, active, inactive]
-        draftVersionId:
-          type: string
+          format: uuid
           nullable: true
-        activeVersionId:
+        created_at:
           type: string
-          nullable: true
-    CreateFlowRequest:
+          format: date-time
+
+    RouteVersionResponse:
       type: object
-      required: [name, draftDefinition]
+      required: [data]
       properties:
-        name:
-          type: string
-        description:
-          type: string
-        draftDefinition:
-          $ref: '#/components/schemas/FlowDefinition'
-    UpdateFlowRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        draftDefinition:
-          $ref: '#/components/schemas/FlowDefinition'
-    FlowCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/Flow'
-    FlowVersion:
-      type: object
-      required: [id, flowId, versionNumber, state, definition, createdAt]
-      properties:
-        id:
-          type: string
-        flowId:
-          type: string
-        versionNumber:
-          type: integer
-        state:
-          type: string
-          enum: [draft, validated, simulated, published, superseded, rolled_back]
-        definition:
-          $ref: '#/components/schemas/FlowDefinition'
-        createdBy:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        validatedAt:
-          type: string
-          format: date-time
-        simulatedAt:
-          type: string
-          format: date-time
-        publishedAt:
-          type: string
-          format: date-time
-    FlowVersionCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/FlowVersion'
+        data:
+          $ref: '#/components/schemas/RouteVersion'
+
     ValidationResult:
       type: object
-      required: [id, objectType, objectId, status, errors, warnings]
+      required: [outcome]
+      properties:
+        outcome:
+          type: object
+          required: [status]
+          properties:
+            status:
+              type: string
+              enum: [passed, failed]
+            errors:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            warnings:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+
+    ValidationResultResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ValidationResult'
+
+    # ── IVR Flows ─────────────────────────────────────────────────────────────
+
+    IvrFlow:
+      type: object
+      required: [id, tenant_id, name, status, created_at, updated_at]
       properties:
         id:
           type: string
-        objectType:
+          format: uuid
+        tenant_id:
           type: string
-        objectId:
+          format: uuid
+        name:
           type: string
-        versionId:
+        description:
           type: string
-        validatorVersion:
-          type: string
+          nullable: true
         status:
           type: string
-          enum: [passed, failed, warning_only]
-        errors:
-          type: array
-          items:
-            type: object
-            additionalProperties: true
-        warnings:
-          type: array
-          items:
-            type: object
-            additionalProperties: true
-        createdAt:
+          enum: [draft, active, inactive]
+        draft_version_id:
+          type: string
+          nullable: true
+          format: uuid
+        active_version_id:
+          type: string
+          nullable: true
+          format: uuid
+        created_at:
           type: string
           format: date-time
-    ValidationResultCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/ValidationResult'
-    SimulationScenario:
-      type: object
-      additionalProperties: true
-    SimulateFlowRequest:
-      type: object
-      properties:
-        scenario:
-          $ref: '#/components/schemas/SimulationScenario'
-    SimulationResult:
-      type: object
-      required: [id, objectType, objectId, status]
-      properties:
-        id:
-          type: string
-        objectType:
-          type: string
-        objectId:
-          type: string
-        versionId:
-          type: string
-        scenario:
-          $ref: '#/components/schemas/SimulationScenario'
-        status:
-          type: string
-          enum: [passed, failed, inconclusive]
-        resultPayload:
-          type: object
-          additionalProperties: true
-        createdAt:
+        updated_at:
           type: string
           format: date-time
-    SimulationResultCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/SimulationResult'
-    PublishRequest:
+
+    IvrFlowResponse:
       type: object
+      required: [data]
       properties:
-        reason:
-          type: string
-    RollbackRequest:
-      type: object
-      required: [targetVersionId]
-      properties:
-        targetVersionId:
-          type: string
-        reason:
-          type: string
-    PublishRecord:
-      type: object
-      required: [id, objectType, objectId, versionId, actionType, result]
-      properties:
-        id:
-          type: string
-        objectType:
-          type: string
-        objectId:
-          type: string
-        versionId:
-          type: string
-        actionType:
-          type: string
-          enum: [publish, rollback]
-        triggeredByType:
-          type: string
-        triggeredById:
-          type: string
-        approvalRequestId:
-          type: string
-        result:
-          type: string
-          enum: [success, failed, pending_approval]
-        createdAt:
-          type: string
-          format: date-time
-    PublishRecordCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/PublishRecord'
-    CreateApprovalRequest:
-      type: object
-      required: [objectType, objectId, versionId]
-      properties:
-        objectType:
-          type: string
-        objectId:
-          type: string
-        versionId:
-          type: string
-        reason:
-          type: string
-    ApprovalDecisionRequest:
-      type: object
-      properties:
-        reason:
-          type: string
-    ApprovalRequest:
-      type: object
-      required: [id, objectType, objectId, versionId, status, createdAt]
-      properties:
-        id:
-          type: string
-        objectType:
-          type: string
-        objectId:
-          type: string
-        versionId:
-          type: string
-        requestedBy:
-          type: string
-        status:
-          type: string
-          enum: [pending, approved, rejected, expired]
-        decisionBy:
-          type: string
-        decisionAt:
-          type: string
-          format: date-time
-        reason:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-    ApprovalRequestCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/ApprovalRequest'
-    AuditEvent:
-      type: object
-      required: [id, actorType, action, objectType, objectId, createdAt]
-      properties:
-        id:
-          type: string
-        actorType:
-          type: string
-          enum: [user, workflow, ai_agent, system]
-        actorId:
-          type: string
-        action:
-          type: string
-        objectType:
-          type: string
-        objectId:
-          type: string
-        metadata:
-          type: object
-          additionalProperties: true
-        createdAt:
-          type: string
-          format: date-time
-    AuditEventCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/AuditEvent'
-    CallEvent:
-      type: object
-      required: [id, callId, eventType, eventTime]
-      properties:
-        id:
-          type: string
-        callId:
-          type: string
-        eventType:
-          type: string
-        eventTime:
-          type: string
-          format: date-time
-        source:
-          type: string
-        payload:
-          type: object
-          additionalProperties: true
-        ingestedAt:
-          type: string
-          format: date-time
-    CallEventCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/CallEvent'
-    CallEventListResponse:
+        data:
+          $ref: '#/components/schemas/IvrFlow'
+
+    IvrFlowListResponse:
       type: object
       required: [data]
       properties:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/CallEvent'
-    CallEventSnake:
+            $ref: '#/components/schemas/IvrFlow'
+
+    CreateIvrFlowRequest:
+      type: object
+      required: [name, definition]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        definition:
+          type: object
+          description: Flow definition graph (nodes + edges)
+
+    UpdateIvrFlowRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          oneOf:
+            - type: string
+              maxLength: 1000
+            - type: 'null'
+
+    FlowVersion:
+      type: object
+      required: [id, flow_id, version_number, state, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        flow_id:
+          type: string
+          format: uuid
+        version_number:
+          type: integer
+        state:
+          type: string
+          enum: [draft, validated, published, superseded, rolled_back]
+        definition:
+          type: object
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    FlowVersionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/FlowVersion'
+
+    # ── Call Events ───────────────────────────────────────────────────────────
+
+    CallEvent:
       type: object
       required: [id, tenant_id, call_id, event_type, event_time, payload, ingested_at]
       properties:
         id:
           type: string
+          format: uuid
         tenant_id:
           type: string
+          format: uuid
         call_id:
           type: string
         event_type:
@@ -2232,20 +1634,54 @@ components:
         ingested_at:
           type: string
           format: date-time
-    CallEventListResponseSnake:
+
+    CallEventResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CallEvent'
+
+    CallEventListResponse:
       type: object
       required: [data]
       properties:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/CallEventSnake'
+            $ref: '#/components/schemas/CallEvent'
+
+    IngestCallEventRequest:
+      type: object
+      required: [tenant_id, call_id, event_type]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        call_id:
+          type: string
+          minLength: 1
+        event_type:
+          type: string
+          minLength: 1
+        event_time:
+          type: string
+          format: date-time
+        source:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+
+    # ── Platform ──────────────────────────────────────────────────────────────
+
     TenantSummary:
       type: object
       required: [id, name, slug, directory_domain, status, created_at, updated_at]
       properties:
         id:
           type: string
+          format: uuid
         name:
           type: string
         slug:
@@ -2260,7 +1696,8 @@ components:
         updated_at:
           type: string
           format: date-time
-    TenantSummaryListResponse:
+
+    TenantListResponse:
       type: object
       required: [data]
       properties:
@@ -2268,70 +1705,65 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TenantSummary'
+
     ServiceHealth:
       type: object
-      required: [name, url, status, detail]
+      required: [name, status]
       properties:
         name:
           type: string
         url:
           type: string
+          nullable: true
         status:
           type: string
           enum: [healthy, degraded, unreachable]
         detail:
           type: string
-    RuntimeHealthSummary:
-      type: object
-      required: [services]
-      properties:
-        services:
-          type: array
-          items:
-            $ref: '#/components/schemas/ServiceHealth'
+          nullable: true
+
     RuntimeHealthResponse:
       type: object
       required: [data]
       properties:
         data:
-          $ref: '#/components/schemas/RuntimeHealthSummary'
-    CallDetailRecord:
-      type: object
-      required: [id, callId, direction, startTime]
-      properties:
-        id:
-          type: string
-        callId:
-          type: string
-        direction:
-          type: string
-          enum: [inbound, outbound]
-        fromNumber:
-          type: string
-        toNumber:
-          type: string
-        startTime:
-          type: string
-          format: date-time
-        endTime:
-          type: string
-          format: date-time
-        durationSeconds:
-          type: integer
-        terminationReason:
-          type: string
-        finalDisposition:
-          type: string
-        ingestedAt:
-          type: string
-          format: date-time
-    CDRCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
+          type: object
+          required: [services]
           properties:
-            items:
+            services:
               type: array
               items:
-                $ref: '#/components/schemas/CallDetailRecord'
+                $ref: '#/components/schemas/ServiceHealth'
+
+    # ── FreeSWITCH runtime ────────────────────────────────────────────────────
+
+    RouteLookupResponse:
+      type: object
+      required: [matched]
+      properties:
+        matched:
+          type: boolean
+        route_id:
+          type: string
+          format: uuid
+          description: Present when matched is true
+        tenant_id:
+          type: string
+          format: uuid
+          description: Present when matched is true
+        target_type:
+          type: string
+          enum: [extension, flow]
+          description: Present when matched is true
+        target_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Present when matched is true
+        target:
+          type: object
+          nullable: true
+          description: >
+            Resolved target details. For extension: { extension_number, directory_domain }.
+            For flow: { flow_id }. null when target not resolved.
+          additionalProperties: true

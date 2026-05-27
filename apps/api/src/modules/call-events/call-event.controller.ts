@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
-import { authenticate } from '../auth/authenticate.js';
+import { CAPABILITIES } from '../auth/capabilities.js';
+import { requireCapability } from '../auth/require-capability.js';
 import { CallEventRepository } from './call-event.repository.js';
 import { CallEventService } from './call-event.service.js';
 import type { IngestCallEventInput } from './call-event.types.js';
@@ -12,7 +13,7 @@ export async function callEventController(app: FastifyInstance): Promise<void> {
   app.get<{ Querystring: { tenant_id?: string } }>(
     '/',
     {
-      preHandler: authenticate,
+      preHandler: requireCapability(CAPABILITIES.TENANT_CALLS_VIEW),
       schema: {
         querystring: {
           type: 'object',

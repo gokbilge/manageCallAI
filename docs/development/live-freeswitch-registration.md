@@ -108,17 +108,21 @@ $tenantId = $extension.data.tenant_id
 
 ## 4. Start FreeSWITCH and the ESL Agent
 
-Start FreeSWITCH:
-
-```powershell
-docker compose up -d --build freeswitch
-```
-
-Start the containerized Go agent with the tenant ID:
+FreeSWITCH and the agent run under the `freeswitch` compose profile.
+The first run triggers a source build (10–25 minutes). See
+[freeswitch-runtime.md](freeswitch-runtime.md) for details.
 
 ```powershell
 $env:MANAGECALLAI_TENANT_ID = $tenantId
-docker compose up -d --build freeswitch-agent
+docker compose --profile freeswitch up -d --build
+```
+
+Or build just FreeSWITCH first, then bring everything up:
+
+```powershell
+docker compose --profile freeswitch build freeswitch
+$env:MANAGECALLAI_TENANT_ID = $tenantId
+docker compose --profile freeswitch up -d
 ```
 
 Verify both runtime services:

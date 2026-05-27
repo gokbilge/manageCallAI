@@ -38,13 +38,27 @@ application/json
 
 ### 3.3 Authentication
 
-All protected endpoints require authenticated access.
-
-Suggested pattern:
+**Human-facing endpoints** require a user JWT:
 
 ```text
-Authorization: Bearer <token>
+Authorization: Bearer <JWT>
 ```
+
+The JWT is issued by `/auth/register` or `/auth/login` and includes claims:
+`sub`, `tenant_id`, `email`, `role` (`tenant_admin` | `platform_admin`).
+
+**Runtime-internal endpoints** (`/freeswitch/*`, `/call-events/internal/ingest`)
+are called by FreeSWITCH and the Go ESL agent — not by end users. They require
+a shared runtime token:
+
+```text
+Authorization: Bearer <RUNTIME_API_TOKEN>
+# or
+x-managecallai-runtime-token: <RUNTIME_API_TOKEN>
+```
+
+The `runtime_token` query parameter is accepted only as a local/dev fallback for
+`mod_xml_curl` setups that cannot send custom headers.
 
 ### 3.4 Tenant Context
 
@@ -94,36 +108,17 @@ Primary resources:
 
 ## 5. Error Model
 
-Suggested error shape:
+Current MVP implementation returns a flat error string:
 
 ```json
 {
-  "error": {
-    "code": "validation_failed",
-    "message": "The flow contains an unreachable node.",
-    "details": [
-      {
-        "field": "definition.nodes[3]",
-        "reason": "unreachable"
-      }
-    ],
-    "requestId": "req_123"
-  }
+  "error": "Extension not found"
 }
 ```
 
-Suggested error codes:
-
-- `unauthenticated`
-- `unauthorized`
-- `not_found`
-- `conflict`
-- `validation_failed`
-- `simulation_failed`
-- `approval_required`
-- `invalid_state_transition`
-- `rate_limited`
-- `internal_error`
+HTTP status codes carry the error class (401 = unauthenticated, 403 = forbidden,
+404 = not found, 409 = conflict, 422 = domain validation failure, 500 = server error).
+Structured error codes and detail arrays may be added in a future iteration.
 
 ## 6. Resource Contracts
 
@@ -364,13 +359,14 @@ Example request:
 
 ```json
 {
-  "e164Number": "+15551234567",
-  "displayLabel": "Main Office",
-  "trunkId": "trunk_001",
-  "assignedTargetType": "inbound_route",
-  "assignedTargetId": "route_main"
+  "e164_number": "+15551234567",
+  "display_label": "Main Office",
+  "trunk_id": "trunk_001"
 }
 ```
+
+All fields use snake_case. `assigned_target_type` and `assigned_target_id` are
+set via PATCH after creation.
 
 #### Get Phone Number
 
