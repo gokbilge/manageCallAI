@@ -15,6 +15,9 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [release-plan.md](release-plan.md)
   Release roadmap, execution order, dependency graph, and parallel work tracks.
 
+- [post-release-roadmap.md](post-release-roadmap.md)
+  Seven post-release expansion workstreams (advanced IVR nodes, queue/voicemail, schedule routing, outbound, observability, automation depth, enterprise hardening). Nothing here enters a sprint before v1 ships.
+
 - [verification/slice-07-live-proof.md](verification/slice-07-live-proof.md)
   Live close-out checklist for the inbound IVR and call-group runtime proof.
 

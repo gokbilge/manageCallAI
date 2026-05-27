@@ -5,6 +5,14 @@
 Capture the intentionally deferred work that should not block the first product
 release, but should remain visible as the next structured expansion lane.
 
+## Status
+
+**CLOSED** — 2026-05-28
+
+Deferred items are documented and grouped into seven workstreams in
+[`docs/planning/post-release-roadmap.md`](../post-release-roadmap.md).
+First-release boundaries are explicit. No deferred items pulled forward.
+
 ## Scope
 
 - advanced IVR node types beyond the current release scope
