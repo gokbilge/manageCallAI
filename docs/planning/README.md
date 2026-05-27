@@ -51,6 +51,9 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [slices/SLICE-11-release-hardening.md](slices/SLICE-11-release-hardening.md)
   Final release gates, smoke tests, docs, security, and operations readiness.
 
+- [slices/SLICE-12-outbound-event-delivery.md](slices/SLICE-12-outbound-event-delivery.md)
+  Webhook subscription management and outbound event delivery for n8n and external consumers.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)

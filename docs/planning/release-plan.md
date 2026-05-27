@@ -55,14 +55,17 @@ SLICE-00 Current Baseline
   +--> SLICE-03 Prompt Assets -------------------+            |
   |                                              |            +--> SLICE-09 n8n Surfaces
   +--> SLICE-04 IVR Runtime Resolver ------------+------------+--> SLICE-10 MCP Surfaces
-          |                                      |
-          +--> SLICE-05 FreeSWITCH Runtime Loop -+
-          |
-          +--> SLICE-06 Call Groups -------------+
-                    |
-                    +--> SLICE-07 Inbound IVR and Call Group Projection
-                                      |
-                                      +--> SLICE-11 Release Hardening
+  |       |                                      |
+  |       +--> SLICE-05 FreeSWITCH Runtime Loop -+
+  |       |
+  |       +--> SLICE-06 Call Groups -------------+
+  |                 |
+  |                 +--> SLICE-07 Inbound IVR and Call Group Projection
+  |                                   |
+  |                                   +--> SLICE-11 Release Hardening
+  |
+  +--> SLICE-12 Outbound Event Delivery ----------> SLICE-09
+                                                    SLICE-10
 ```
 
 ## 5. Parallel Work Tracks
@@ -83,6 +86,7 @@ SLICE-00 Current Baseline
 
 ### Track C - Automation Surfaces
 
+- `SLICE-12`
 - `SLICE-09`
 - `SLICE-10`
 
@@ -143,3 +147,4 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-09](slices/SLICE-09-n8n-surfaces.md)
 - [SLICE-10](slices/SLICE-10-mcp-surfaces.md)
 - [SLICE-11](slices/SLICE-11-release-hardening.md)
+- [SLICE-12](slices/SLICE-12-outbound-event-delivery.md)
