@@ -1,5 +1,8 @@
 import type { ValidationOutcome } from './ivr-flow.types.js';
 
+// MVP node types only. Aliases (play, menu, transfer, condition) and future
+// types (queue) are intentionally excluded — add them when the runtime
+// supports them.
 const SUPPORTED_NODE_TYPES = new Set([
   'start',
   'play_prompt',
@@ -7,11 +10,6 @@ const SUPPORTED_NODE_TYPES = new Set([
   'switch',
   'transfer_extension',
   'hangup',
-  'play',
-  'menu',
-  'transfer',
-  'condition',
-  'queue',
 ]);
 
 type GraphNode = Record<string, unknown> & {

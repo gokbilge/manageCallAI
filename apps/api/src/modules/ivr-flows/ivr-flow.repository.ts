@@ -9,6 +9,9 @@ import type {
   ValidationOutcome,
 } from './ivr-flow.types.js';
 
+// Naming convention: the DB column is `definition`; the external API field is
+// `graph_json`. Every query aliases `definition AS graph_json` so callers
+// never see the internal column name.
 export class IvrFlowRepository {
   constructor(private readonly db: Pool) {}
 
@@ -407,5 +410,14 @@ export class IvrFlowRepository {
       [flowId],
     );
     return (r.rows[0]?.max ?? 0) + 1;
+  }
+
+  async findActiveExtensionIds(tenantId: string, ids: string[]): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    const r = await this.db.query<{ id: string }>(
+      `SELECT id FROM extensions WHERE tenant_id = $1 AND id = ANY($2) AND status = 'active'`,
+      [tenantId, ids],
+    );
+    return new Set(r.rows.map((row) => row.id));
   }
 }

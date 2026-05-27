@@ -270,6 +270,29 @@ export class IvrFlowService {
 
     const outcome = validateIvrGraph(version.graph_json);
 
+    // Semantic check: transfer_extension nodes must reference active extensions
+    // in the same tenant. Only runs when the graph is structurally valid.
+    if (outcome.status === 'passed') {
+      const nodes = Array.isArray((version.graph_json as Record<string, unknown>).nodes)
+        ? ((version.graph_json as Record<string, unknown>).nodes as Array<Record<string, unknown>>)
+        : [];
+      const transferNodes = nodes.filter((n) => n.type === 'transfer_extension' && typeof n.extension_id === 'string');
+      const extensionIds = transferNodes.map((n) => n.extension_id as string);
+      const activeIds = await this.repo.findActiveExtensionIds(tenantId, extensionIds);
+      for (const node of transferNodes) {
+        const eid = node.extension_id as string;
+        if (!activeIds.has(eid)) {
+          outcome.errors.push({
+            field: `graph_json.nodes.${String(node.id)}.extension_id`,
+            message: `Extension not found or not active in this tenant: ${eid}`,
+          });
+        }
+      }
+      if (outcome.errors.length > 0) {
+        outcome.status = 'failed';
+      }
+    }
+
     await this.repo.storeValidationResult({ tenant_id: tenantId, flow_id: flowId, version_id: versionId, outcome });
 
     if (outcome.status === 'passed') {

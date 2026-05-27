@@ -56,12 +56,12 @@ describe('IVR Flows API integration', () => {
   }
 
   const validDefinition = {
+    entry_node_id: 'start',
     nodes: [
-      { id: 'start', type: 'play', prompt: 'Welcome to our system' },
-      { id: 'menu', type: 'menu', options: { '1': 'sales', '2': 'support' } },
+      { id: 'start', type: 'start', next_node_id: 'menu' },
+      { id: 'menu', type: 'play_prompt', next_node_id: 'end' },
       { id: 'end', type: 'hangup' },
     ],
-    entry_node_id: 'start',
   };
 
   const invalidDefinition = { greeting: 'hello' };
