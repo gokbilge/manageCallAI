@@ -52,6 +52,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [adr/README.md](adr/README.md)
   Architecture Decision Record index and foundational decisions.
 
+- [planning/README.md](planning/README.md)
+  Release planning index with slice-by-slice dependency and sequencing guidance from the current baseline to product release.
+
 ## UI Documents
 
 - [ui/UI_ARCHITECTURE.md](ui/UI_ARCHITECTURE.md)

@@ -41,6 +41,7 @@ The main project design and architecture reference lives here:
 - [docs/development/first-vertical-slice.md](docs/development/first-vertical-slice.md)
 - [docs/development/live-freeswitch-registration.md](docs/development/live-freeswitch-registration.md)
 - [docs/ivr/IVR_ARCHITECTURE.md](docs/ivr/IVR_ARCHITECTURE.md)
+- [docs/planning/README.md](docs/planning/README.md)
 - [packages/sdk/README.md](packages/sdk/README.md)
 
 If other documents drift, the source-of-truth document is the canonical reference until updated.
