@@ -6,6 +6,8 @@ import { PlatformTenantsPage } from '@/features/platform/platform-tenants-page';
 import { RuntimeHealthPage } from '@/features/platform/runtime-health-page';
 import { TenantDashboardPage } from '@/features/tenant/tenant-dashboard-page';
 import { ExtensionsPage } from '@/features/extensions/extensions-page';
+import { NumbersPage } from '@/features/numbers/numbers-page';
+import { InboundRoutesPage } from '@/features/inbound-routes/inbound-routes-page';
 import { IvrFlowDetailPage } from '@/features/ivr-flows/ivr-flow-detail-page';
 import { IvrFlowsPage } from '@/features/ivr-flows/ivr-flows-page';
 import { CallsPage } from '@/features/calls/calls-page';
@@ -38,6 +40,18 @@ const router = createBrowserRouter([
           { path: 'tenant', element: <Navigate to="/tenant/extensions" replace /> },
           { path: 'tenant/dashboard', element: <TenantDashboardPage /> },
           { path: 'tenant/extensions', element: <ExtensionsPage /> },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/numbers', element: <NumbersPage /> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/routes/inbound', element: <InboundRoutesPage /> },
+            ],
+          },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_IVR_FLOWS_VIEW} redirectTo="/tenant/extensions" />,
             children: [

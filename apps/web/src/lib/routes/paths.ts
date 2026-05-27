@@ -7,6 +7,8 @@ export const paths = {
   tenant: {
     dashboard: '/tenant/dashboard',
     extensions: '/tenant/extensions',
+    numbers: '/tenant/numbers',
+    inboundRoutes: '/tenant/routes/inbound',
     ivrFlows: '/tenant/ivr-flows',
     calls: '/tenant/calls',
     smokeTest: '/tenant/integrations/directory-smoke-test',

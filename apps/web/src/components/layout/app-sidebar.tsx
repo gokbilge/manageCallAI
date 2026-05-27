@@ -2,6 +2,8 @@ import { NavLink, type NavLinkRenderProps } from 'react-router-dom';
 import {
   Activity,
   Building2,
+  GitBranch,
+  Hash,
   LayoutDashboard,
   Phone,
   PhoneCall,
@@ -36,6 +38,8 @@ const platformNav: NavItem[] = [
 const tenantNav: NavItem[] = [
   { to: '/tenant/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/tenant/extensions', label: 'Extensions', icon: Phone },
+  { to: '/tenant/numbers', label: 'Phone Numbers', icon: Hash, capability: CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW },
+  { to: '/tenant/routes/inbound', label: 'Inbound Routes', icon: GitBranch, capability: CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW },
   { to: '/tenant/ivr-flows', label: 'IVR Flows', icon: Workflow, capability: CAPABILITIES.TENANT_IVR_FLOWS_VIEW },
   { to: '/tenant/calls', label: 'Call Events', icon: PhoneCall },
   { to: '/tenant/integrations/directory-smoke-test', label: 'Smoke Test', icon: TestTube2 },

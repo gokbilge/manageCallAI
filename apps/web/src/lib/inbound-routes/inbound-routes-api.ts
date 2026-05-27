@@ -140,3 +140,33 @@ export function useRollbackRoute(routeId: string) {
     },
   });
 }
+
+export function useActivateRoute() {
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const r = await apiRequest<{ data: InboundRoute }>(`/inbound-routes/${id}/activate`, {
+        method: 'POST',
+        accessToken: session?.token,
+      });
+      return r.data;
+    },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['inbound-routes'] }); },
+  });
+}
+
+export function useDeactivateRoute() {
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const r = await apiRequest<{ data: InboundRoute }>(`/inbound-routes/${id}/deactivate`, {
+        method: 'POST',
+        accessToken: session?.token,
+      });
+      return r.data;
+    },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['inbound-routes'] }); },
+  });
+}
