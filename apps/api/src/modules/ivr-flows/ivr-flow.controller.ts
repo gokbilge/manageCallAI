@@ -3,6 +3,7 @@ import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
+import { fireWebhooks } from '../automation/webhook-delivery.js';
 import { IvrFlowRepository } from './ivr-flow.repository.js';
 import {
   FlowVersionNotFoundError,
@@ -338,6 +339,8 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
       const user = req.user as AuthClaims;
       try {
         const result = await service.publish(req.params.id, req.params.vid, user.tenant_id, user.sub, user.role);
+        const event = result.status === 'pending_approval' ? 'ivr_flow.publish_pending' : 'ivr_flow.published';
+        fireWebhooks(user.tenant_id, event, { flow_id: req.params.id, version_id: req.params.vid });
         const statusCode = result.status === 'pending_approval' ? 202 : 200;
         return reply.code(statusCode).send({ data: result });
       } catch (err) {
@@ -358,6 +361,7 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
       const user = req.user as AuthClaims;
       try {
         const result = await service.rollback(req.params.id, user.tenant_id, user.sub, user.role);
+        fireWebhooks(user.tenant_id, 'ivr_flow.rollback_completed', { flow_id: req.params.id });
         const statusCode = result.status === 'pending_approval' ? 202 : 200;
         return reply.code(statusCode).send({ data: result });
       } catch (err) {

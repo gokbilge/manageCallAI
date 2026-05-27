@@ -10,6 +10,7 @@ import { extensionController } from './modules/extensions/extension.controller.j
 import { freeswitchController } from './modules/freeswitch/freeswitch.controller.js';
 import { inboundRouteController } from './modules/inbound-routes/inbound-route.controller.js';
 import { approvalController, policiesController } from './modules/approvals/approval.controller.js';
+import { automationController } from './modules/automation/automation.controller.js';
 import { callGroupController } from './modules/call-groups/call-group.controller.js';
 import { ivrFlowController } from './modules/ivr-flows/ivr-flow.controller.js';
 import { platformController } from './modules/platform/platform.controller.js';
@@ -48,6 +49,7 @@ export function buildApp() {
   app.register(policiesController, { prefix: '/api/v1/policies' });
   app.register(inboundRouteController, { prefix: '/api/v1/inbound-routes' });
   app.register(platformController, { prefix: '/api/v1/platform' });
+  app.register(automationController, { prefix: '/api/v1/automation' });
 
   return app;
 }

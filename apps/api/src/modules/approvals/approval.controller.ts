@@ -4,6 +4,7 @@ import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { IvrFlowRepository } from '../ivr-flows/ivr-flow.repository.js';
+import { fireWebhooks } from '../automation/webhook-delivery.js';
 import { ApprovalRepository } from './approval.repository.js';
 import {
   ApprovalAlreadyDecidedError,
@@ -48,7 +49,9 @@ export async function approvalController(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
-        return reply.code(200).send({ data: await service.approve(req.params.id, user.tenant_id, user.sub) });
+        const result = await service.approve(req.params.id, user.tenant_id, user.sub);
+        fireWebhooks(user.tenant_id, 'approval.approved', { approval_request_id: req.params.id });
+        return reply.code(200).send({ data: result });
       } catch (err) {
         return replyError(err, reply);
       }
@@ -66,7 +69,9 @@ export async function approvalController(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
-        return reply.code(200).send({ data: await service.reject(req.params.id, user.tenant_id, user.sub) });
+        const result = await service.reject(req.params.id, user.tenant_id, user.sub);
+        fireWebhooks(user.tenant_id, 'approval.rejected', { approval_request_id: req.params.id });
+        return reply.code(200).send({ data: result });
       } catch (err) {
         return replyError(err, reply);
       }

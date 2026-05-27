@@ -43,6 +43,11 @@ export const CAPABILITIES = {
   TENANT_CALL_GROUPS_CREATE: 'tenant.call_groups.create',
   TENANT_CALL_GROUPS_UPDATE: 'tenant.call_groups.update',
   TENANT_CALL_GROUPS_DEACTIVATE: 'tenant.call_groups.deactivate',
+
+  TENANT_AUTOMATION_KEYS_VIEW: 'tenant.automation.keys.view',
+  TENANT_AUTOMATION_KEYS_MANAGE: 'tenant.automation.keys.manage',
+  TENANT_AUTOMATION_WEBHOOKS_VIEW: 'tenant.automation.webhooks.view',
+  TENANT_AUTOMATION_WEBHOOKS_MANAGE: 'tenant.automation.webhooks.manage',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -84,6 +89,10 @@ const TENANT_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_CALL_GROUPS_CREATE,
   CAPABILITIES.TENANT_CALL_GROUPS_UPDATE,
   CAPABILITIES.TENANT_CALL_GROUPS_DEACTIVATE,
+  CAPABILITIES.TENANT_AUTOMATION_KEYS_VIEW,
+  CAPABILITIES.TENANT_AUTOMATION_KEYS_MANAGE,
+  CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW,
+  CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_MANAGE,
 ];
 
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
