@@ -1,0 +1,22 @@
+<include>
+  <!--
+    Inbound DID routing — manageCallAI managed dialplan.
+
+    Catches any E.164 or 7–15 digit DID that arrives on the public context
+    and hands off to inbound_route.lua, which calls the route-lookup API
+    and bridges to the matched extension (or hangs up if no active route).
+
+    Activation: copy this file to inbound_did.xml inside the FreeSWITCH
+    dialplan directory (e.g. conf/dialplan/default/) and reload the
+    dialplan with "reloadxml" from the FreeSWITCH console.
+
+    Ordering: place this extension AFTER any more-specific extensions
+    (e.g. managecall_entry.xml for internal test DIDs) so it acts as the
+    catch-all for real inbound calls.
+  -->
+  <extension name="managecall_inbound_did" continue="false">
+    <condition field="destination_number" expression="^(\+?[0-9]{7,15})$">
+      <action application="lua" data="inbound_route.lua" />
+    </condition>
+  </extension>
+</include>

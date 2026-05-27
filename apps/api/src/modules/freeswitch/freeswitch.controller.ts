@@ -3,6 +3,7 @@ import { db } from '../../db/client.js';
 import { decryptSipPassword } from '../../crypto/sip-secret.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { ExtensionRepository } from '../extensions/extension.repository.js';
+import { RouteLookupRepository } from './route-lookup.repository.js';
 
 type DirectoryLookup = {
   section?: string;
@@ -19,6 +20,7 @@ type DirectoryLookup = {
 };
 
 const extensionRepo = new ExtensionRepository(db);
+const routeLookupRepo = new RouteLookupRepository(db);
 
 export async function freeswitchController(app: FastifyInstance): Promise<void> {
   const handler = async (
@@ -95,6 +97,38 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
         .code(result.statusCode)
         .type('text/xml; charset=utf-8')
         .send(result.body);
+    },
+  );
+
+  app.get<{ Querystring: { did?: string; trunk?: string } }>(
+    '/route-lookup',
+    { preHandler: authenticateRuntime },
+    async (req, reply) => {
+      const { did, trunk } = req.query as { did?: string; trunk?: string };
+      if (!did?.trim()) {
+        return reply.code(400).send({ error: 'did query parameter is required' });
+      }
+
+      const route = await routeLookupRepo.findRouteForCall(did.trim(), trunk?.trim());
+      if (!route) {
+        return reply.send({ matched: false });
+      }
+
+      let target = null;
+      if (route.target_type === 'extension' && route.target_id) {
+        target = await routeLookupRepo.findExtensionTarget(route.target_id);
+      } else if (route.target_type === 'flow' && route.target_id) {
+        target = await routeLookupRepo.findFlowTarget(route.target_id);
+      }
+
+      return reply.send({
+        matched: true,
+        route_id: route.route_id,
+        tenant_id: route.tenant_id,
+        target_type: route.target_type,
+        target_id: route.target_id,
+        target,
+      });
     },
   );
 }
