@@ -31,3 +31,5 @@ This directory contains the PostgreSQL schema baseline and future migrations for
    `pnpm db:status`
 
 The migration runner applies files in lexical order and records them in the `schema_migrations` table.
+If an older applied migration filename is no longer present in `db/migrations`, status reports it as
+`applied-missing` so migration history drift stays visible instead of being silently ignored.

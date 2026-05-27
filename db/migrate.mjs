@@ -156,11 +156,19 @@ function printStatus(files, applied) {
     return;
   }
 
+  const fileSet = new Set(files);
+
   for (const filename of files) {
     if (applied.has(filename)) {
       console.log(`applied\t${filename}\t${applied.get(filename).toISOString()}`);
     } else {
       console.log(`pending\t${filename}`);
+    }
+  }
+
+  for (const [filename, appliedAt] of applied.entries()) {
+    if (!fileSet.has(filename)) {
+      console.log(`applied-missing\t${filename}\t${appliedAt.toISOString()}`);
     }
   }
 }
