@@ -845,6 +845,88 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /freeswitch/dialplan:
+    get:
+      tags: [FreeSWITCH]
+      summary: FreeSWITCH XML dialplan projection for inbound DID routing
+      description: |
+        **Runtime-internal endpoint.** Called by FreeSWITCH `mod_xml_curl` for
+        inbound DID routing. Returns FreeSWITCH XML dialplan for active inbound
+        routes that currently resolve to an `extension` target.
+        Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
+        or `x-managecallai-runtime-token: <token>`.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - name: Caller-Destination-Number
+          in: query
+          schema:
+            type: string
+          description: Inbound DID in E.164 form
+        - name: destination_number
+          in: query
+          schema:
+            type: string
+          description: Alternate FreeSWITCH destination field
+        - name: domain
+          in: query
+          schema:
+            type: string
+          description: Tenant directory domain
+        - name: domain_name
+          in: query
+          schema:
+            type: string
+          description: Alternate tenant domain field
+        - name: runtime_token
+          in: query
+          schema:
+            type: string
+          description: Dev-only token fallback. Prefer Authorization header.
+      responses:
+        '200':
+          description: FreeSWITCH XML dialplan response
+          content:
+            text/xml:
+              schema:
+                type: string
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [FreeSWITCH]
+      summary: FreeSWITCH XML dialplan projection (POST form)
+      description: |
+        Same as GET /freeswitch/dialplan but accepts form-encoded body as sent
+        by `mod_xml_curl`.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                Caller-Destination-Number:
+                  type: string
+                destination_number:
+                  type: string
+                domain:
+                  type: string
+                domain_name:
+                  type: string
+                runtime_token:
+                  type: string
+      responses:
+        '200':
+          description: FreeSWITCH XML dialplan response
+          content:
+            text/xml:
+              schema:
+                type: string
+
 components:
   securitySchemes:
     bearerAuth:

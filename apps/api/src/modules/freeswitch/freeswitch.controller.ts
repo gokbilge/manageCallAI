@@ -19,6 +19,16 @@ type DirectoryLookup = {
   sip_to_host?: string;
 };
 
+type DialplanLookup = {
+  destination_number?: string;
+  'Caller-Destination-Number'?: string;
+  'Hunt-Destination-Number'?: string;
+  context?: string;
+  domain?: string;
+  domain_name?: string;
+  runtime_token?: string;
+};
+
 const extensionRepo = new ExtensionRepository(db);
 const routeLookupRepo = new RouteLookupRepository(db);
 
@@ -97,6 +107,84 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
         .code(result.statusCode)
         .type('text/xml; charset=utf-8')
         .send(result.body);
+    },
+  );
+
+  const dialplanHandler = async (
+    lookup: DialplanLookup,
+  ): Promise<{ body: string; statusCode: number }> => {
+    const bodyParsed: DialplanLookup =
+      typeof lookup === 'string'
+        ? (Object.fromEntries(new URLSearchParams(lookup as string).entries()) as DialplanLookup)
+        : lookup;
+
+    const destinationNumber = firstNonEmpty(
+      bodyParsed.destination_number,
+      bodyParsed['Caller-Destination-Number'],
+      bodyParsed['Hunt-Destination-Number'],
+    );
+    const domain = firstNonEmpty(bodyParsed.domain, bodyParsed.domain_name);
+
+    if (!destinationNumber) {
+      return { statusCode: 200, body: buildNotFoundDialplan() };
+    }
+
+    let tenantId: string | undefined;
+    if (domain) {
+      const tenant = await routeLookupRepo.findTenantByDomain(domain);
+      if (!tenant) {
+        return { statusCode: 200, body: buildNotFoundDialplan() };
+      }
+      tenantId = tenant.id;
+    }
+
+    if (!tenantId) {
+      return { statusCode: 200, body: buildNotFoundDialplan() };
+    }
+
+    const route = await routeLookupRepo.findRouteForDialplan(tenantId, destinationNumber);
+    if (!route || route.target_type !== 'extension' || !route.target_id) {
+      return { statusCode: 200, body: buildNotFoundDialplan() };
+    }
+
+    const target = await routeLookupRepo.findExtensionTarget(route.target_id);
+    if (!target || !target.directory_domain) {
+      return { statusCode: 200, body: buildNotFoundDialplan() };
+    }
+
+    return {
+      statusCode: 200,
+      body: buildDialplanResponse({
+        routeId: route.route_id,
+        tenantId: route.tenant_id,
+        matchValue: route.match_value,
+        extensionNumber: target.extension_number,
+        domain: target.directory_domain,
+      }),
+    };
+  };
+
+  app.get<{ Querystring: DialplanLookup }>(
+    '/dialplan',
+    { preHandler: authenticateRuntime },
+    async (req, reply) => {
+      const result = await dialplanHandler(req.query as DialplanLookup);
+      return reply.code(result.statusCode).type('text/xml; charset=utf-8').send(result.body);
+    },
+  );
+
+  app.post<{ Body: DialplanLookup }>(
+    '/dialplan',
+    { preHandler: authenticateRuntime },
+    async (req, reply) => {
+      const merged: DialplanLookup = {
+        ...(typeof req.body === 'string'
+          ? Object.fromEntries(new URLSearchParams(req.body as string).entries())
+          : (req.body as DialplanLookup ?? {})),
+        ...(req.query as DialplanLookup ?? {}),
+      };
+      const result = await dialplanHandler(merged);
+      return reply.code(result.statusCode).type('text/xml; charset=utf-8').send(result.body);
     },
   );
 
@@ -188,6 +276,10 @@ function xmlEscape(value: string): string {
     .replaceAll("'", '&apos;');
 }
 
+function regexEscape(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function buildDirectoryResponse(input: {
   extensionId: string;
   extensionNumber: string;
@@ -228,6 +320,41 @@ function buildNotFoundDirectory(domain: string): string {
     <domain name="${xmlEscape(domain)}">
       <groups />
     </domain>
+  </section>
+</document>`;
+}
+
+function buildDialplanResponse(input: {
+  routeId: string;
+  tenantId: string;
+  matchValue: string;
+  extensionNumber: string;
+  domain: string;
+}): string {
+  const bridge = `sofia/internal/${input.extensionNumber}@${input.domain}`;
+  const destinationPattern = `^${regexEscape(input.matchValue)}$`;
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="dialplan">
+    <context name="default">
+      <extension name="managecall_inbound_${xmlEscape(input.routeId)}" continue="false">
+        <condition field="destination_number" expression="${xmlEscape(destinationPattern)}">
+          <action application="set" data="managecall_route_id=${xmlEscape(input.routeId)}" />
+          <action application="set" data="managecall_tenant_id=${xmlEscape(input.tenantId)}" />
+          <action application="bridge" data="${xmlEscape(bridge)}" />
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>`;
+}
+
+function buildNotFoundDialplan(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="dialplan">
+    <context name="default" />
   </section>
 </document>`;
 }

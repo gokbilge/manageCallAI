@@ -260,4 +260,63 @@ describe('Route Lookup API integration', () => {
     expect(body.target_type).toBe('flow');
     expect(body.target.name).toBe('Welcome Flow');
   });
+
+  it('GET /freeswitch/dialplan → 401 without runtime token', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15550000001&domain=tenant-demo.managecallai.local',
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('returns empty dialplan XML when the tenant domain is unknown', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15550000001&domain=missing.managecallai.local',
+      headers: { 'x-managecallai-runtime-token': 'test-runtime-token' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('<section name="dialplan">');
+    expect(res.body).toContain('<context name="default" />');
+  });
+
+  it('returns dialplan XML for an active DID route to an extension target', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const token = await register(suffix);
+    const extId = await createExtension(token, '5001');
+    await createActiveRoute(token, 'Inbound Main', 'did', '+15554440001', 'extension', extId);
+
+    const domain = `tenant-${suffix}.managecallai.local`;
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15554440001&domain=${domain}`,
+      headers: { 'x-managecallai-runtime-token': 'test-runtime-token' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('<section name="dialplan">');
+    expect(res.body).toContain('application="bridge"');
+    expect(res.body).toContain('sofia/internal/5001@tenant-');
+    expect(res.body).toContain('.managecallai.local');
+    expect(res.body).toContain('managecall_route_id=');
+  });
+
+  it('returns dialplan XML for a DID route bound through phone_number_id', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const token = await register(suffix);
+    const extId = await createExtension(token, '5002');
+    const phoneId = await createPhoneNumber(token, '+15554440002');
+    await createActiveRoute(token, 'Bound Inbound Main', 'did', 'placeholder', 'extension', extId, phoneId);
+
+    const domain = `tenant-${suffix}.managecallai.local`;
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/freeswitch/dialplan?runtime_token=test-runtime-token`,
+      payload: `Caller-Destination-Number=%2B15554440002&domain=${encodeURIComponent(domain)}`,
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('sofia/internal/5002@');
+    expect(res.body).toContain(domain);
+    expect(res.body).toContain('^\\+15554440002$');
+  });
 });

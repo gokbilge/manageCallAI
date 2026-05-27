@@ -5,37 +5,38 @@ why it builds from source, and how contributors can work with or without it.
 
 ## Architecture
 
-manageCallAI uses **stock FreeSWITCH** — no fork, no custom C patches. The
-integration points are:
+manageCallAI uses **stock FreeSWITCH** with no fork and no custom C patches.
+The integration points are:
 
 | Integration | Mechanism |
 |-------------|-----------|
-| SIP registration / auth | `mod_xml_curl` → `GET /api/v1/freeswitch/directory` |
-| Inbound DID routing | Lua script → `GET /api/v1/freeswitch/route-lookup` |
-| Call event ingestion | Go ESL agent → `POST /api/v1/call-events/internal/ingest` |
+| SIP registration / auth | `mod_xml_curl` -> `GET /api/v1/freeswitch/directory` |
+| Inbound DID routing | `mod_xml_curl` -> `GET/POST /api/v1/freeswitch/dialplan` |
+| JSON route lookup fallback | Lua helper -> `GET /api/v1/freeswitch/route-lookup` |
+| Call event ingestion | Go ESL agent -> `POST /api/v1/call-events/internal/ingest` |
 
-The runtime API token (`RUNTIME_API_TOKEN`) protects all three paths. User JWTs
-are never used for runtime calls.
+The runtime API token (`RUNTIME_API_TOKEN`) protects all runtime-only paths.
+User JWTs are never used for runtime calls.
 
 ## Why source build?
 
 The FreeSWITCH Docker Hub image is not regularly maintained. The official
 packages require a paid subscription for production builds. Building from source
-gives a reproducible image pinned to a known tag (e.g. `v1.10.12`) with only
-the modules we need enabled.
+gives a reproducible image pinned to a known tag (for example `v1.10.12`) with
+only the modules we need enabled.
 
 The Dockerfile is at `freeswitch/docker/Dockerfile`. It pins the FreeSWITCH
 version via build arg `FREESWITCH_VERSION` (default `v1.10.12`).
 
 ## Build time warning
 
-The source build takes **10–25 minutes** depending on CPU and Docker cache state.
-Subsequent builds of the same version are fast because layer caching reuses the
-compiled binary.
+The source build takes **10-25 minutes** depending on CPU and Docker cache
+state. Subsequent builds of the same version are much faster because layer
+caching reuses the compiled binary.
 
 Contributors should complete the API-first smoke test
 (`docs/development/first-vertical-slice.md`) before attempting the live runtime
-proof — the API can be verified entirely without building FreeSWITCH.
+proof. The API can be verified entirely without building FreeSWITCH.
 
 ## Compose profiles
 
@@ -56,41 +57,39 @@ pnpm runtime:down
 
 | Variable | Used by |
 |----------|---------|
-| `MANAGECALLAI_DIRECTORY_URL` | FreeSWITCH → `mod_xml_curl` binding |
-| `MANAGECALLAI_API_BASE` | FreeSWITCH Lua → `route-lookup` calls |
-| `RUNTIME_API_TOKEN` | All three integration points |
+| `MANAGECALLAI_DIRECTORY_URL` | FreeSWITCH -> `mod_xml_curl` directory binding |
+| `MANAGECALLAI_DIALPLAN_URL` | FreeSWITCH -> `mod_xml_curl` dialplan binding |
+| `MANAGECALLAI_API_BASE` | Lua fallback -> `route-lookup` |
+| `RUNTIME_API_TOKEN` | All runtime paths |
 | `FREESWITCH_ESL_PASSWORD` | Go agent ESL connection |
 
 All have safe defaults in `docker-compose.yml` for local development. Override
-in `.env` for anything shared or production-like.
+them in `.env` for anything shared or production-like.
 
 ## Lua helpers
 
-`freeswitch/lua/inbound_route.lua` — called by the dialplan on every inbound
-call. It reads `MANAGECALLAI_API_BASE` and `RUNTIME_API_TOKEN` from environment,
-calls `route-lookup`, and bridges the call to the resolved extension.
+`freeswitch/lua/inbound_route.lua` remains available as a thin fallback helper
+for older local demos, but the preferred MVP inbound routing path is dynamic
+dialplan projection through `mod_xml_curl`.
 
-`freeswitch/conf/dialplan/inbound_did.xml.example` — example dialplan fragment.
-Copy to `conf/dialplan/inbound_did.xml` inside the container (or bake into the
-image) and run `reloadxml`.
+`freeswitch/conf/dialplan/inbound_did.xml.example` is the example static
+dialplan fragment for the Lua fallback path. Copy it to
+`conf/dialplan/inbound_did.xml` inside the container (or bake it into the
+image) and run `reloadxml` only when you are intentionally using that fallback.
 
 ## Future: prebuilt GHCR image
 
-A prebuilt FreeSWITCH image pinned to `v1.10.12` with manageCallAI Lua scripts
-baked in will be published to GHCR. When available, the `freeswitch` service in
-`docker-compose.yml` will switch to `image: ghcr.io/gokbilge/managecallai-freeswitch:v1.10.12`
-and contributors will no longer need to build from source for the runtime proof.
-
-The source-build Dockerfile will remain in the repository for reproducibility
-and custom builds.
+A prebuilt FreeSWITCH image pinned to `v1.10.12` with manageCallAI runtime
+overlays baked in can later be published to GHCR. The source-build Dockerfile
+should remain in the repository for reproducibility and custom builds.
 
 ## Modules used
 
 | Module | Purpose |
 |--------|---------|
-| `mod_xml_curl` | Dynamic directory XML from API |
+| `mod_xml_curl` | Dynamic directory and dialplan XML from API |
 | `mod_event_socket` | ESL connection for the Go agent |
-| `mod_lua` | Inbound route Lua script |
+| `mod_lua` | Thin fallback helper scripts |
 | `mod_sofia` | SIP stack |
 
 No other custom modules are loaded. The standard FreeSWITCH default config
@@ -99,18 +98,24 @@ provides the base; manageCallAI overlays only what is needed.
 ## Troubleshooting
 
 **FS can't reach the API**
-- Both must be on the same Docker network (the default compose network).
+- Both must be on the same Docker network.
 - Use the Docker service name `api`, not `localhost`.
-- Check `MANAGECALLAI_DIRECTORY_URL` and `MANAGECALLAI_API_BASE` point to `http://api:3000/...`.
+- Check `MANAGECALLAI_DIRECTORY_URL`, `MANAGECALLAI_DIALPLAN_URL`, and
+  `MANAGECALLAI_API_BASE` point to `http://api:3000/...`.
 
-**Lua script fails silently**
+**Dialplan lookup returns an empty context**
+- Verify the request includes the tenant `domain` or `domain_name`.
+- Verify the route is published, not just drafted.
+- Verify the route target is currently an active `extension`.
+
+**Lua fallback fails silently**
 - Check `docker logs managecallai-freeswitch-1` for Lua errors.
-- Verify `MANAGECALLAI_API_BASE` ends with `/api/v1` (no trailing slash).
-- DID must be URL-encoded: `+` → `%2B`.
+- Verify `MANAGECALLAI_API_BASE` ends with `/api/v1` with no trailing slash.
+- DID must be URL-encoded: `+` -> `%2B`.
 
 **ESL agent won't connect**
-- `FREESWITCH_ESL_PASSWORD` must match in both FS config and agent env.
-- Default password is `ClueCon` (change in production).
+- `FREESWITCH_ESL_PASSWORD` must match in both FreeSWITCH config and agent env.
+- Default password is `ClueCon` and should be changed in production.
 
 **Source build fails**
 - Ensure Docker has at least 4 GB of memory allocated.

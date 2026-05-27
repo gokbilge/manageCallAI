@@ -10,9 +10,10 @@ This guide proves the API-first MVP path from a fresh checkout:
 2. create an extension
 3. store the SIP secret encrypted at rest
 4. look up the extension through the FreeSWITCH directory endpoint
-5. create an inbound route and verify route lookup
-6. optionally start the stock FreeSWITCH reference container
-7. optionally continue to the live SIP registration proof
+5. create and publish an inbound route
+6. verify FreeSWITCH dialplan XML projection
+7. optionally start the stock FreeSWITCH reference container
+8. optionally continue to the live SIP registration proof
 
 ## 1. Prepare the Environment
 
@@ -141,42 +142,47 @@ curl -X POST http://localhost:3000/api/v1/inbound-routes \
     "match_type": "did",
     "match_value": "+15551234567",
     "target_type": "extension",
-    "target_id": "<extension-id-from-step-5>",
-    "status": "active"
+    "target_id": "<extension-id-from-step-5>"
   }'
 ```
 
 Expected behavior:
 
 - returns `201`
-- response includes `id`, `match_type`, `match_value`, `status`
+- response includes `id`, `match_type`, `match_value`, `status=draft`
 
-Save the returned `id` as `ROUTE_ID`.
+Save the returned `id` as `ROUTE_ID` and the initial version id as `ROUTE_VERSION_ID`.
 
-## 8. Verify Route Lookup
-
-This endpoint is what the FreeSWITCH Lua script calls on every inbound call:
+Validate and publish the route:
 
 ```bash
-curl "http://localhost:3000/api/v1/freeswitch/route-lookup?did=%2B15551234567" \
+curl -X POST http://localhost:3000/api/v1/inbound-routes/<ROUTE_ID>/versions/<ROUTE_VERSION_ID>/validate \
+  -H "Authorization: Bearer <JWT>"
+```
+
+```bash
+curl -X POST http://localhost:3000/api/v1/inbound-routes/<ROUTE_ID>/versions/<ROUTE_VERSION_ID>/publish \
+  -H "Authorization: Bearer <JWT>"
+```
+
+## 8. Verify FreeSWITCH Dialplan Projection
+
+This endpoint is what `mod_xml_curl` can call for inbound DID routing:
+
+```bash
+curl "http://localhost:3000/api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15551234567&domain=acme-demo.managecallai.local" \
   -H "x-managecallai-runtime-token: <RUNTIME_API_TOKEN>"
 ```
 
-Expected response:
+Expected behavior:
 
-```json
-{
-  "matched": true,
-  "route_id": "<uuid>",
-  "tenant_id": "<uuid>",
-  "target_type": "extension",
-  "target_id": "<uuid>",
-  "target": {
-    "extension_number": "200",
-    "directory_domain": "acme-demo.managecallai.local"
-  }
-}
-```
+- returns `200`
+- returns FreeSWITCH XML dialplan
+- XML contains:
+  - `<section name="dialplan">`
+  - `destination_number`
+  - `managecall_route_id`
+  - `sofia/internal/200@acme-demo.managecallai.local`
 
 ## 10. Optional: Start the Stock FreeSWITCH Reference Container
 

@@ -77,4 +77,35 @@ export class RouteLookupRepository {
     );
     return r.rows[0] ?? null;
   }
+
+  async findTenantByDomain(domain: string): Promise<{ id: string } | null> {
+    const r = await this.db.query<{ id: string }>(
+      `SELECT id FROM tenants WHERE LOWER(directory_domain) = LOWER($1) AND status = 'active' LIMIT 1`,
+      [domain],
+    );
+    return r.rows[0] ?? null;
+  }
+
+  async findRouteForDialplan(tenantId: string, destinationNumber: string): Promise<RouteMatch | null> {
+    const r = await this.db.query<RouteMatch>(
+      `SELECT ir.id AS route_id, ir.tenant_id, ir.match_type, ir.match_value, ir.target_type, ir.target_id
+       FROM inbound_routes ir
+       LEFT JOIN phone_numbers pn ON pn.id = ir.phone_number_id
+       WHERE ir.status = 'active'
+         AND ir.tenant_id = $1
+         AND ir.match_type = 'did'
+         AND (
+           (ir.phone_number_id IS NOT NULL AND pn.e164_number = $2)
+           OR (ir.phone_number_id IS NULL AND ir.match_value = $2)
+         )
+       ORDER BY
+         CASE
+           WHEN ir.phone_number_id IS NOT NULL THEN 0
+           ELSE 1
+         END
+       LIMIT 1`,
+      [tenantId, destinationNumber],
+    );
+    return r.rows[0] ?? null;
+  }
 }

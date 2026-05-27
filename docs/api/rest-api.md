@@ -458,6 +458,40 @@ Example rollback request:
 }
 ```
 
+### 6.4.1 FreeSWITCH Dialplan Projection
+
+#### Project Inbound DID to FreeSWITCH Dialplan XML
+
+```http
+GET /api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15551234567&domain=acme-demo.managecallai.local
+```
+
+This is a runtime-internal endpoint. It requires the runtime token and returns
+FreeSWITCH XML dialplan for active inbound DID routes that currently resolve to
+an `extension` target.
+
+Expected behavior:
+
+- unknown domain or DID returns empty dialplan XML
+- unpublished routes are ignored
+- DID routes bound through `phone_number_id` resolve using the linked phone number's `e164_number`
+- the XML bridges to `sofia/internal/<extension_number>@<directory_domain>`
+
+Example response fragment:
+
+```xml
+<section name="dialplan">
+  <context name="default">
+    <extension name="managecall_inbound_route_001" continue="false">
+      <condition field="destination_number" expression="^\+15551234567$">
+        <action application="set" data="managecall_route_id=route_001" />
+        <action application="bridge" data="sofia/internal/200@acme-demo.managecallai.local" />
+      </condition>
+    </extension>
+  </context>
+</section>
+```
+
 ### 6.5 Outbound Routes
 
 #### List Outbound Routes
