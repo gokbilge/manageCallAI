@@ -1,5 +1,9 @@
 # First Local Demo
 
+> Execution guide only.
+> Canonical architecture, scope boundaries, and design decisions live in [architecture/source-of-truth.md](architecture/source-of-truth.md).
+> If this runbook conflicts with architecture docs, the source-of-truth document wins.
+
 This is the shortest path to proving the first local `manageCallAI` slice.
 
 ## 0. Create a Local Environment File

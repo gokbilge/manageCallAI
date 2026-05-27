@@ -1,5 +1,9 @@
 # Live FreeSWITCH Registration Smoke Test
 
+> Execution guide only.
+> Canonical architecture, scope boundaries, and design decisions live in [../architecture/source-of-truth.md](../architecture/source-of-truth.md).
+> If this runbook conflicts with architecture docs, the source-of-truth document wins.
+
 This guide proves the full runtime slice against stock FreeSWITCH:
 
 1. start PostgreSQL

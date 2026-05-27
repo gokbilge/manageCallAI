@@ -1,5 +1,9 @@
 # First Vertical Slice
 
+> Execution guide only.
+> Canonical architecture, scope boundaries, and design decisions live in [../architecture/source-of-truth.md](../architecture/source-of-truth.md).
+> If this runbook conflicts with architecture docs, the source-of-truth document wins.
+
 This guide proves the API-first MVP path from a fresh checkout:
 
 1. register a tenant
