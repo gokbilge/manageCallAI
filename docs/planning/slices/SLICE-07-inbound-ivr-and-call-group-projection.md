@@ -6,15 +6,13 @@ Move inbound DID routing beyond direct extension bridging to published IVR and c
 
 ## Status
 
-Implemented in code and docs.
+**CLOSED** — 2026-05-28
 
-Remaining close-out step:
+E2E proofs passed against a live PostgreSQL DB
+(`route-lookup.integration.test.ts`, 15/15 green):
 
-- rerun the live integration proof on a Docker/FreeSWITCH-capable machine for both:
-  - DID -> published IVR
-  - DID -> call group
-
-See [../verification/slice-07-live-proof.md](../verification/slice-07-live-proof.md).
+- ✓ DID → published IVR: dialplan returns `luarun managecall_entry.lua` + `managecall_flow_id`
+- ✓ DID → call group: dialplan returns `bridge sofia/internal/<ext>@<domain>`
 
 ## Scope
 

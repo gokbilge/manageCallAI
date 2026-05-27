@@ -300,6 +300,83 @@ describe('Route Lookup API integration', () => {
     expect(res.body).toContain('managecall_route_id=');
   });
 
+  it('returns dialplan XML with luarun for a DID route targeting a published IVR flow', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const token = await register(suffix);
+
+    const validDef = { nodes: [{ id: 'start', type: 'hangup' }], entry_node_id: 'start' };
+    const flowRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/ivr-flows',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Welcome IVR', definition: validDef },
+    });
+    const flow = flowRes.json<{ data: { id: string; versions: Array<{ id: string }> } }>().data;
+    const fvid = flow.versions[0]!.id;
+    await app.inject({ method: 'POST', url: `/api/v1/ivr-flows/${flow.id}/versions/${fvid}/validate`, headers: { authorization: `Bearer ${token}` } });
+    const pubRes = await app.inject({ method: 'POST', url: `/api/v1/ivr-flows/${flow.id}/versions/${fvid}/publish`, headers: { authorization: `Bearer ${token}` } });
+    expect(pubRes.json<{ data: { status: string } }>().data.status).toBe('published');
+
+    await createActiveRoute(token, 'IVR Dialplan Route', 'did', '+15556660001', 'flow', flow.id);
+
+    const domain = `tenant-${suffix}.managecallai.local`;
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15556660001&domain=${encodeURIComponent(domain)}`,
+      headers: { 'x-managecallai-runtime-token': 'test-runtime-token' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('<section name="dialplan">');
+    expect(res.body).toContain('application="luarun"');
+    expect(res.body).toContain('data="managecall_entry.lua"');
+    expect(res.body).toContain(`managecall_flow_id=${flow.id}`);
+    expect(res.body).toContain('managecall_route_id=');
+    expect(res.body).toContain('managecall_tenant_id=');
+    expect(res.body).not.toContain('application="bridge"');
+  });
+
+  it('returns dialplan XML with bridge string for a DID route targeting a call group', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const token = await register(suffix);
+
+    const extId = await createExtension(token, '6001');
+
+    const groupRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/call-groups',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Support Team', strategy: 'simultaneous' },
+    });
+    expect(groupRes.statusCode).toBe(201);
+    const groupId = groupRes.json<{ data: { id: string } }>().data.id;
+
+    const memberRes = await app.inject({
+      method: 'POST',
+      url: `/api/v1/call-groups/${groupId}/members`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { extension_id: extId },
+    });
+    expect(memberRes.statusCode).toBe(201);
+
+    await createActiveRoute(token, 'Call Group Route', 'did', '+15556660002', 'call_group', groupId);
+
+    const domain = `tenant-${suffix}.managecallai.local`;
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15556660002&domain=${encodeURIComponent(domain)}`,
+      headers: { 'x-managecallai-runtime-token': 'test-runtime-token' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('<section name="dialplan">');
+    expect(res.body).toContain('application="bridge"');
+    expect(res.body).toContain('sofia/internal/6001@');
+    expect(res.body).toContain(domain);
+    expect(res.body).toContain('managecall_route_id=');
+    expect(res.body).not.toContain('application="luarun"');
+  });
+
   it('returns dialplan XML for a DID route bound through phone_number_id', async () => {
     const suffix = randomUUID().slice(0, 8);
     const token = await register(suffix);
