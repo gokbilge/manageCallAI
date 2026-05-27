@@ -1,11 +1,4 @@
--- Expose SIP trunk network and authentication fields as first-class columns.
--- The original schema stored these in authentication_profile/network_profile jsonb;
--- explicit columns let the API expose them cleanly without jsonb parsing.
-
-ALTER TABLE sip_trunks
-  ADD COLUMN IF NOT EXISTS username      text,
-  ADD COLUMN IF NOT EXISTS realm         text,
-  ADD COLUMN IF NOT EXISTS proxy         text,
-  ADD COLUMN IF NOT EXISTS port          integer,
-  ADD COLUMN IF NOT EXISTS transport     text CHECK (transport IN ('udp', 'tcp', 'tls')),
-  ADD COLUMN IF NOT EXISTS auth_username text;
+-- No-op: the explicit sip_trunks columns (realm, proxy, port, transport,
+-- auth_username, auth_password_ciphertext, auth_password_key_id) were already
+-- added by 0005_explicit_sip_trunk_fields.sql.  This file is intentionally
+-- empty to preserve migration sequence numbering.

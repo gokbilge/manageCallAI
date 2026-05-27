@@ -26,6 +26,7 @@ export interface InboundRoute {
   name: string;
   match_type: 'did' | 'trunk' | 'pattern';
   match_value: string;
+  phone_number_id: string | null;
   target_type: 'flow' | 'extension';
   target_id: string | null;
   status: 'draft' | 'active' | 'inactive';
@@ -44,6 +45,7 @@ export interface CreateInboundRouteInput {
   name: string;
   match_type: 'did' | 'trunk' | 'pattern';
   match_value: string;
+  phone_number_id?: string | null;
   target_type: 'flow' | 'extension';
   target_id?: string;
   created_by?: string;
@@ -53,6 +55,7 @@ export interface UpdateInboundRouteInput {
   name?: string;
   match_type?: 'did' | 'trunk' | 'pattern';
   match_value?: string;
+  phone_number_id?: string | null;
   target_type?: 'flow' | 'extension';
   target_id?: string | null;
 }

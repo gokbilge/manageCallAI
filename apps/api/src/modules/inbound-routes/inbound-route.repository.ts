@@ -13,7 +13,7 @@ export class InboundRouteRepository {
 
   async findAllByTenant(tenantId: string): Promise<InboundRoute[]> {
     const r = await this.db.query<InboundRoute>(
-      `SELECT id, tenant_id, name, match_type, match_value, target_type, target_id,
+      `SELECT id, tenant_id, name, match_type, match_value, phone_number_id, target_type, target_id,
               status, draft_version_id, active_version_id, created_at, updated_at
        FROM inbound_routes WHERE tenant_id = $1 ORDER BY created_at DESC`,
       [tenantId],
@@ -23,7 +23,7 @@ export class InboundRouteRepository {
 
   async findById(id: string, tenantId: string): Promise<InboundRouteWithVersions | null> {
     const routeR = await this.db.query<InboundRoute>(
-      `SELECT id, tenant_id, name, match_type, match_value, target_type, target_id,
+      `SELECT id, tenant_id, name, match_type, match_value, phone_number_id, target_type, target_id,
               status, draft_version_id, active_version_id, created_at, updated_at
        FROM inbound_routes WHERE id = $1 AND tenant_id = $2`,
       [id, tenantId],
@@ -57,15 +57,16 @@ export class InboundRouteRepository {
       await client.query('BEGIN');
 
       const routeR = await client.query<InboundRoute>(
-        `INSERT INTO inbound_routes (tenant_id, name, match_type, match_value, target_type, target_id, status)
-         VALUES ($1, $2, $3, $4, $5, $6, 'draft')
-         RETURNING id, tenant_id, name, match_type, match_value, target_type, target_id,
+        `INSERT INTO inbound_routes (tenant_id, name, match_type, match_value, phone_number_id, target_type, target_id, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'draft')
+         RETURNING id, tenant_id, name, match_type, match_value, phone_number_id, target_type, target_id,
                    status, draft_version_id, active_version_id, created_at, updated_at`,
         [
           input.tenant_id,
           input.name,
           input.match_type,
           input.match_value,
+          input.phone_number_id ?? null,
           input.target_type,
           input.target_id ?? null,
         ],
@@ -75,6 +76,7 @@ export class InboundRouteRepository {
       const definition: Record<string, unknown> = {
         match_type: input.match_type,
         match_value: input.match_value,
+        phone_number_id: input.phone_number_id ?? null,
         target_type: input.target_type,
         target_id: input.target_id ?? null,
       };
@@ -111,10 +113,11 @@ export class InboundRouteRepository {
     for (const col of cols) {
       if (col in input && input[col] !== undefined) { fields.push(`${col} = $${idx++}`); values.push(input[col]); }
     }
+    if ('phone_number_id' in input) { fields.push(`phone_number_id = $${idx++}`); values.push(input.phone_number_id ?? null); }
     if ('target_id' in input) { fields.push(`target_id = $${idx++}`); values.push(input.target_id ?? null); }
     if (fields.length === 0) {
       const r = await this.db.query<InboundRoute>(
-        `SELECT id, tenant_id, name, match_type, match_value, target_type, target_id,
+        `SELECT id, tenant_id, name, match_type, match_value, phone_number_id, target_type, target_id,
                 status, draft_version_id, active_version_id, created_at, updated_at
          FROM inbound_routes WHERE id = $1 AND tenant_id = $2`,
         [id, tenantId],
@@ -125,7 +128,7 @@ export class InboundRouteRepository {
     values.push(id, tenantId);
     const r = await this.db.query<InboundRoute>(
       `UPDATE inbound_routes SET ${fields.join(', ')} WHERE id = $${idx} AND tenant_id = $${idx + 1}
-       RETURNING id, tenant_id, name, match_type, match_value, target_type, target_id,
+       RETURNING id, tenant_id, name, match_type, match_value, phone_number_id, target_type, target_id,
                  status, draft_version_id, active_version_id, created_at, updated_at`,
       values,
     );
@@ -216,7 +219,7 @@ export class InboundRouteRepository {
       const routeR = await client.query<InboundRoute>(
         `UPDATE inbound_routes SET active_version_id = $1, status = 'active', updated_at = NOW()
          WHERE id = $2
-         RETURNING id, tenant_id, name, match_type, match_value, target_type, target_id,
+         RETURNING id, tenant_id, name, match_type, match_value, phone_number_id, target_type, target_id,
                    status, draft_version_id, active_version_id, created_at, updated_at`,
         [input.version_id, input.route_id],
       );
@@ -267,7 +270,7 @@ export class InboundRouteRepository {
       const routeR = await client.query<InboundRoute>(
         `UPDATE inbound_routes SET active_version_id = $1, updated_at = NOW()
          WHERE id = $2
-         RETURNING id, tenant_id, name, match_type, match_value, target_type, target_id,
+         RETURNING id, tenant_id, name, match_type, match_value, phone_number_id, target_type, target_id,
                    status, draft_version_id, active_version_id, created_at, updated_at`,
         [target.id, input.route_id],
       );
@@ -312,6 +315,16 @@ export class InboundRouteRepository {
       [target_id, tenantId],
     );
     return parseInt(r.rows[0]?.count ?? '0', 10) > 0;
+  }
+
+  async findPhoneNumberById(phoneNumberId: string, tenantId: string): Promise<{ id: string; e164_number: string; status: string } | null> {
+    const result = await this.db.query<{ id: string; e164_number: string; status: string }>(
+      `SELECT id, e164_number, status
+       FROM phone_numbers
+       WHERE id = $1 AND tenant_id = $2`,
+      [phoneNumberId, tenantId],
+    );
+    return result.rows[0] ?? null;
   }
 
   async hasConflictingActiveRoute(tenantId: string, matchType: string, matchValue: string, excludeRouteId?: string): Promise<boolean> {

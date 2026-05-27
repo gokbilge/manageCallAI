@@ -236,7 +236,7 @@ paths:
                 $ref: '#/components/schemas/SipTrunkResponseSnake'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /numbers:
+  /phone-numbers:
     get:
       tags: [Numbers]
       summary: List numbers
@@ -267,7 +267,7 @@ paths:
                 $ref: '#/components/schemas/PhoneNumber'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /numbers/{numberId}:
+  /phone-numbers/{numberId}:
     parameters:
       - $ref: '#/components/parameters/NumberIdParam'
     get:
@@ -364,12 +364,38 @@ paths:
                 $ref: '#/components/schemas/InboundRoute'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /inbound-routes/{routeId}/validate:
+  /inbound-routes/{routeId}/versions:
     parameters:
       - $ref: '#/components/parameters/RouteIdParam'
     post:
+      tags: [InboundRoutes]
+      summary: Create inbound route draft version
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [definition]
+              properties:
+                definition:
+                  type: object
+      responses:
+        '201':
+          description: Draft route version created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteVersion'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /inbound-routes/{routeId}/versions/{versionId}/validate:
+    parameters:
+      - $ref: '#/components/parameters/RouteIdParam'
+      - $ref: '#/components/parameters/VersionIdParam'
+    post:
       tags: [InboundRoutes, Validations]
-      summary: Validate inbound route
+      summary: Validate inbound route version
       responses:
         '200':
           description: Validation result
@@ -379,25 +405,20 @@ paths:
                 $ref: '#/components/schemas/ValidationResult'
         default:
           $ref: '#/components/responses/ErrorResponse'
-  /inbound-routes/{routeId}/publish:
+  /inbound-routes/{routeId}/versions/{versionId}/publish:
     parameters:
       - $ref: '#/components/parameters/RouteIdParam'
+      - $ref: '#/components/parameters/VersionIdParam'
     post:
       tags: [InboundRoutes, Publishes]
-      summary: Publish inbound route
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PublishRequest'
+      summary: Publish inbound route version
       responses:
         '200':
-          description: Publish record
+          description: Published inbound route
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublishRecord'
+                $ref: '#/components/schemas/InboundRoute'
         default:
           $ref: '#/components/responses/ErrorResponse'
   /inbound-routes/{routeId}/rollback:
@@ -406,19 +427,13 @@ paths:
     post:
       tags: [InboundRoutes, Publishes]
       summary: Roll back inbound route
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RollbackRequest'
       responses:
         '200':
-          description: Rollback record
+          description: Rolled back inbound route
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublishRecord'
+                $ref: '#/components/schemas/InboundRoute'
         default:
           $ref: '#/components/responses/ErrorResponse'
   /outbound-routes:
@@ -1660,6 +1675,8 @@ components:
           enum: [did, trunk, pattern]
         matchValue:
           type: string
+        phoneNumberId:
+          type: string
         targetType:
           type: string
           enum: [flow, extension]
@@ -1674,13 +1691,15 @@ components:
           type: string
     CreateInboundRouteRequest:
       type: object
-      required: [name, matchType, matchValue, targetType, targetId]
+      required: [name, matchType, matchValue, targetType]
       properties:
         name:
           type: string
         matchType:
           type: string
         matchValue:
+          type: string
+        phoneNumberId:
           type: string
         targetType:
           type: string
@@ -1694,6 +1713,8 @@ components:
         matchType:
           type: string
         matchValue:
+          type: string
+        phoneNumberId:
           type: string
         targetType:
           type: string
@@ -1711,6 +1732,21 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/InboundRoute'
+    RouteVersion:
+      type: object
+      required: [id, routeId, versionNumber, state]
+      properties:
+        id:
+          type: string
+        routeId:
+          type: string
+        versionNumber:
+          type: integer
+        state:
+          type: string
+          enum: [draft, validated, simulated, published, superseded, rolled_back]
+        definition:
+          type: object
     OutboundRoute:
       type: object
       required: [id, name, destinationPattern, status]

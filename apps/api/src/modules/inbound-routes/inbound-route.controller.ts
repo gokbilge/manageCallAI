@@ -5,6 +5,7 @@ import type { AuthClaims } from '../auth/auth-claims.js';
 import { InboundRouteRepository } from './inbound-route.repository.js';
 import {
   InboundRouteNotFoundError,
+  InboundRouteInputError,
   InboundRouteService,
   RollbackNotAvailableError,
   RouteVersionNotFoundError,
@@ -16,6 +17,9 @@ const service = new InboundRouteService(new InboundRouteRepository(db));
 function replyError(err: unknown, reply: FastifyReply): FastifyReply {
   if (err instanceof InboundRouteNotFoundError || err instanceof RouteVersionNotFoundError) {
     return reply.code(404).send({ error: err.message });
+  }
+  if (err instanceof InboundRouteInputError) {
+    return reply.code(422).send({ error: err.message });
   }
   if (err instanceof RouteVersionStateError || err instanceof RollbackNotAvailableError) {
     return reply.code(409).send({ error: err.message });
@@ -36,7 +40,7 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   });
 
   // Create route
-  app.post<{ Body: { name: string; match_type: 'did' | 'trunk' | 'pattern'; match_value: string; target_type: 'flow' | 'extension'; target_id?: string } }>(
+  app.post<{ Body: { name: string; match_type: 'did' | 'trunk' | 'pattern'; match_value: string; phone_number_id?: string; target_type: 'flow' | 'extension'; target_id?: string } }>(
     '/',
     {
       schema: {
@@ -48,6 +52,7 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
             name: { type: 'string', minLength: 1, maxLength: 255 },
             match_type: { type: 'string', enum: [...MATCH_TYPES] },
             match_value: { type: 'string', minLength: 1, maxLength: 255 },
+            phone_number_id: { type: 'string', format: 'uuid' },
             target_type: { type: 'string', enum: [...TARGET_TYPES] },
             target_id: { type: 'string', format: 'uuid' },
           },
@@ -56,8 +61,10 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
-      const route = await service.create({ ...req.body, tenant_id: user.tenant_id, created_by: user.sub });
-      return reply.code(201).send({ data: route });
+      try {
+        const route = await service.create({ ...req.body, tenant_id: user.tenant_id, created_by: user.sub });
+        return reply.code(201).send({ data: route });
+      } catch (err) { return replyError(err, reply); }
     },
   );
 
@@ -74,7 +81,7 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Update route metadata
-  app.patch<{ Params: { id: string }; Body: { name?: string; match_type?: 'did' | 'trunk' | 'pattern'; match_value?: string; target_type?: 'flow' | 'extension'; target_id?: string | null } }>(
+  app.patch<{ Params: { id: string }; Body: { name?: string; match_type?: 'did' | 'trunk' | 'pattern'; match_value?: string; phone_number_id?: string | null; target_type?: 'flow' | 'extension'; target_id?: string | null } }>(
     '/:id',
     {
       schema: {
@@ -86,6 +93,7 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
             name: { type: 'string', minLength: 1, maxLength: 255 },
             match_type: { type: 'string', enum: [...MATCH_TYPES] },
             match_value: { type: 'string', minLength: 1, maxLength: 255 },
+            phone_number_id: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
             target_type: { type: 'string', enum: [...TARGET_TYPES] },
             target_id: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
           },

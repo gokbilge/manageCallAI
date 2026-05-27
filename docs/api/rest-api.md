@@ -346,18 +346,18 @@ POST /api/v1/sip-trunks/{trunkId}/deactivate
 
 Response shape matches create/get: `{ "data": { ...sip_trunk } }`.
 
-### 6.3 Numbers
+### 6.3 Phone Numbers
 
-#### List Numbers
+#### List Phone Numbers
 
 ```http
-GET /api/v1/numbers
+GET /api/v1/phone-numbers
 ```
 
-#### Create Number
+#### Create Phone Number
 
 ```http
-POST /api/v1/numbers
+POST /api/v1/phone-numbers
 ```
 
 Example request:
@@ -372,16 +372,16 @@ Example request:
 }
 ```
 
-#### Get Number
+#### Get Phone Number
 
 ```http
-GET /api/v1/numbers/{numberId}
+GET /api/v1/phone-numbers/{numberId}
 ```
 
-#### Update Number
+#### Update Phone Number
 
 ```http
-PATCH /api/v1/numbers/{numberId}
+PATCH /api/v1/phone-numbers/{numberId}
 ```
 
 ### 6.4 Inbound Routes
@@ -403,12 +403,19 @@ Example request:
 ```json
 {
   "name": "Main Number Route",
-  "matchType": "did",
-  "matchValue": "+15551234567",
-  "targetType": "flow",
-  "targetId": "flow_main"
+  "match_type": "did",
+  "match_value": "+15551234567",
+  "phone_number_id": "num_001",
+  "target_type": "flow",
+  "target_id": "flow_main"
 }
 ```
+
+`phone_number_id` is optional. When supplied:
+
+- it must reference a phone number owned by the same tenant
+- `match_type` must be `did`
+- the backend normalizes `match_value` from the linked phone number's `e164_number`
 
 #### Get Inbound Route
 
@@ -422,16 +429,22 @@ GET /api/v1/inbound-routes/{routeId}
 PATCH /api/v1/inbound-routes/{routeId}
 ```
 
+#### Create Inbound Route Version
+
+```http
+POST /api/v1/inbound-routes/{routeId}/versions
+```
+
 #### Validate Inbound Route
 
 ```http
-POST /api/v1/inbound-routes/{routeId}/validate
+POST /api/v1/inbound-routes/{routeId}/versions/{versionId}/validate
 ```
 
 #### Publish Inbound Route
 
 ```http
-POST /api/v1/inbound-routes/{routeId}/publish
+POST /api/v1/inbound-routes/{routeId}/versions/{versionId}/publish
 ```
 
 #### Roll Back Inbound Route

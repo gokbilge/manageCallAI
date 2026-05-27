@@ -59,6 +59,16 @@ describe('Inbound Routes API integration', () => {
     return flow.id;
   }
 
+  async function createPhoneNumber(token: string, e164Number: string): Promise<string> {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/phone-numbers',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { e164_number: e164Number },
+    });
+    return res.json<{ data: { id: string } }>().data.id;
+  }
+
   it('GET /inbound-routes → 401 without auth', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/inbound-routes' });
     expect(res.statusCode).toBe(401);
@@ -81,6 +91,49 @@ describe('Inbound Routes API integration', () => {
     const versions = data['versions'] as unknown[];
     expect(versions).toHaveLength(1);
     expect((versions[0] as Record<string, unknown>)['state']).toBe('draft');
+  });
+
+  it('creates a DID route bound to a real phone number', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const phoneNumberId = await createPhoneNumber(token, '+15551239999');
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/inbound-routes',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Bound DID',
+        match_type: 'did',
+        match_value: 'placeholder',
+        phone_number_id: phoneNumberId,
+        target_type: 'flow',
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const { data } = res.json<{ data: Record<string, unknown> }>();
+    expect(data['phone_number_id']).toBe(phoneNumberId);
+    expect(data['match_value']).toBe('+15551239999');
+  });
+
+  it('rejects phone_number_id when match_type is not did', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const phoneNumberId = await createPhoneNumber(token, '+15551238888');
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/inbound-routes',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Invalid Binding',
+        match_type: 'trunk',
+        match_value: 'carrier-a',
+        phone_number_id: phoneNumberId,
+        target_type: 'flow',
+      },
+    });
+
+    expect(res.statusCode).toBe(422);
   });
 
   it('validate → 422 when target flow is not active', async () => {

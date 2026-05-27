@@ -107,6 +107,11 @@ Practical design direction:
 
 Stores DIDs and their assigned targets.
 
+`phone_numbers` also provide the canonical DID inventory for inbound route binding.
+When an inbound route links `phone_number_id`, the application normalizes the route
+`match_value` from the referenced `e164_number` so business routing stays aligned
+with number inventory.
+
 ### 4.6 prompt_assets
 
 Stores metadata for IVR prompt media.
@@ -122,6 +127,9 @@ Stores metadata for IVR prompt media.
 Route tables store the durable route identity and active or draft pointers.
 
 `route_versions` stores versioned definitions for both inbound and outbound route types.
+
+`inbound_routes.phone_number_id` is optional and is used for DID-backed routes that
+should bind to a real tenant phone number instead of relying on free-form text only.
 
 ### 4.9 validation_results and simulation_results
 

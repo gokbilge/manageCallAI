@@ -128,6 +128,7 @@ CREATE TABLE inbound_routes (
     name text NOT NULL,
     match_type text NOT NULL CHECK (match_type IN ('did', 'trunk', 'pattern')),
     match_value text NOT NULL,
+    phone_number_id uuid,
     target_type text NOT NULL CHECK (target_type IN ('flow', 'extension')),
     target_id uuid,
     status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'inactive')),
@@ -214,6 +215,10 @@ ALTER TABLE inbound_routes
 ALTER TABLE inbound_routes
     ADD CONSTRAINT inbound_routes_active_version_fk
     FOREIGN KEY (active_version_id) REFERENCES route_versions(id) ON DELETE SET NULL;
+
+ALTER TABLE inbound_routes
+    ADD CONSTRAINT inbound_routes_phone_number_fk
+    FOREIGN KEY (phone_number_id) REFERENCES phone_numbers(id) ON DELETE SET NULL;
 
 ALTER TABLE outbound_routes
     ADD CONSTRAINT outbound_routes_draft_version_fk
@@ -336,6 +341,7 @@ CREATE INDEX idx_phone_numbers_trunk_id ON phone_numbers (trunk_id);
 CREATE INDEX idx_ivr_flows_tenant_id ON ivr_flows (tenant_id);
 CREATE INDEX idx_flow_versions_flow_id ON flow_versions (flow_id);
 CREATE INDEX idx_inbound_routes_tenant_id ON inbound_routes (tenant_id);
+CREATE INDEX idx_inbound_routes_phone_number_id ON inbound_routes (phone_number_id);
 CREATE INDEX idx_outbound_routes_tenant_id ON outbound_routes (tenant_id);
 CREATE INDEX idx_route_versions_route_lookup ON route_versions (route_type, route_id);
 CREATE INDEX idx_validation_results_lookup ON validation_results (tenant_id, object_type, object_id, created_at DESC);
