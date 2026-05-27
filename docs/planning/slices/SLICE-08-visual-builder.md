@@ -39,3 +39,10 @@ Replace raw `graph_json` editing with a real visual flow authoring experience.
 ## Out Of Scope
 
 - advanced collaborative editing
+
+## Status
+
+- Implemented: first React Flow-based builder surface in the tenant IVR flow detail page
+- Still later:
+  - collaborative editing
+  - richer node families beyond the MVP runtime set

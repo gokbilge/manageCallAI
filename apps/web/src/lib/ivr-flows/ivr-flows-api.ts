@@ -35,6 +35,21 @@ export type IvrFlow = {
 
 export type IvrFlowWithVersions = IvrFlow & { versions: FlowVersion[] };
 
+export type PromptAssetOption = {
+  id: string;
+  name: string;
+  language: string | null;
+  status: 'active' | 'inactive';
+  storage_uri: string | null;
+};
+
+export type ExtensionOption = {
+  id: string;
+  extension_number: string;
+  display_name: string;
+  status: 'active' | 'inactive';
+};
+
 export type FlowValidationResponse = {
   version: FlowVersion;
   outcome: { status: string; errors: unknown[]; warnings: unknown[] };
@@ -123,6 +138,54 @@ export function useFlowVersions(flowId: string) {
       return r.data;
     },
     enabled: Boolean(session?.token && flowId),
+    retry: noRetryOnAuthError,
+  });
+}
+
+export function useUpdateFlowVersion(flowId: string) {
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { versionId: string; graph_json: Record<string, unknown> }) => {
+      const r = await apiRequest<{ data: FlowVersion }>(
+        `/ivr-flows/${flowId}/versions/${input.versionId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ graph_json: input.graph_json }),
+          accessToken: session?.token,
+        },
+      );
+      return r.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['ivr-flows', flowId] });
+      void qc.invalidateQueries({ queryKey: ['ivr-flows', flowId, 'versions'] });
+    },
+  });
+}
+
+export function usePromptAssetOptions() {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ['prompts', 'options'],
+    queryFn: async () => {
+      const r = await apiRequest<{ data: PromptAssetOption[] }>('/prompts', { accessToken: session?.token });
+      return r.data;
+    },
+    enabled: Boolean(session?.token),
+    retry: noRetryOnAuthError,
+  });
+}
+
+export function useExtensionOptions() {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ['extensions', 'options'],
+    queryFn: async () => {
+      const r = await apiRequest<{ data: ExtensionOption[] }>('/extensions', { accessToken: session?.token });
+      return r.data;
+    },
+    enabled: Boolean(session?.token),
     retry: noRetryOnAuthError,
   });
 }

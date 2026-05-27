@@ -7,19 +7,26 @@ import { DataCard } from '@/components/data/data-card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import {
+  useExtensionOptions,
   useFlowVersions,
   useIvrFlow,
+  usePromptAssetOptions,
   usePublishFlowVersion,
   useRollbackFlow,
   useSimulateCurrentDraft,
+  useUpdateFlowVersion,
   useValidateCurrentDraft,
 } from '@/lib/ivr-flows/ivr-flows-api';
 import { paths } from '@/lib/routes/paths';
+import { IvrFlowBuilder } from './ivr-flow-builder';
 
 export function IvrFlowDetailPage() {
   const { flowId = '' } = useParams();
   const flowQuery = useIvrFlow(flowId);
   const versionsQuery = useFlowVersions(flowId);
+  const promptsQuery = usePromptAssetOptions();
+  const extensionsQuery = useExtensionOptions();
+  const updateVersion = useUpdateFlowVersion(flowId);
   const validateDraft = useValidateCurrentDraft(flowId);
   const simulateDraft = useSimulateCurrentDraft(flowId);
   const publishFlowVersion = usePublishFlowVersion(flowId);
@@ -30,15 +37,21 @@ export function IvrFlowDetailPage() {
     [flowQuery.data?.draft_version_id, versionsQuery.data],
   );
 
+  const builderReady = Boolean(
+    draftVersion
+    && promptsQuery.data
+    && extensionsQuery.data,
+  );
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Tenant Workspace"
         title={flowQuery.data?.name ?? 'IVR Flow'}
-        description="Inspect flow metadata, draft JSON, and validation state before publish. The visual builder comes after the simulation/runtime foundation."
+        description="Edit the current draft visually, then validate, simulate, and publish without leaving the flow detail page."
         actions={(
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => flowQuery.refetch()} variant="secondary">
+            <Button onClick={() => { void flowQuery.refetch(); void versionsQuery.refetch(); }} variant="secondary">
               <RefreshCcw className="size-4" aria-hidden="true" />
               Refresh
             </Button>
@@ -73,7 +86,7 @@ export function IvrFlowDetailPage() {
         )}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-6 xl:grid-cols-[0.75fr_1fr]">
         <div className="space-y-6">
           <DataCard title="Flow Metadata" description="Desired-state object metadata and current lifecycle pointers.">
             {flowQuery.isLoading ? (
@@ -105,7 +118,7 @@ export function IvrFlowDetailPage() {
             )}
           </DataCard>
 
-          <DataCard title="Flow Versions" description="Immutable versions are the unit of validation, publish, and rollback.">
+          <DataCard title="Flow Versions" description="Immutable versions remain the unit of validation, simulation, publish, and rollback.">
             {versionsQuery.isLoading ? (
               <p className="text-sm text-[var(--color-muted-fg)]">Loading versions...</p>
             ) : versionsQuery.isError ? (
@@ -133,52 +146,52 @@ export function IvrFlowDetailPage() {
               <p className="text-sm text-[var(--color-muted-fg)]">No versions yet.</p>
             )}
           </DataCard>
+
+          <DataCard title="Validation Result" description="Structural and semantic checks run against the current draft version.">
+            {validateDraft.data ? (
+              <ResultBlock
+                details={validateDraft.data.outcome.errors}
+                emptyMessage="No validation errors detected."
+                status={validateDraft.data.outcome.status === 'passed' ? 'validated' : 'warning'}
+                title={validateDraft.data.outcome.status === 'passed' ? 'Draft validation passed' : 'Draft validation failed'}
+                warnings={validateDraft.data.outcome.warnings}
+              />
+            ) : (
+              <p className="text-sm text-[var(--color-muted-fg)]">No validation result yet. Save the draft, then validate it.</p>
+            )}
+          </DataCard>
         </div>
 
         <div className="space-y-6">
-          <DataCard title="Draft Graph JSON" description="Current draft version rendered as JSON until the visual editor lands.">
-            {draftVersion ? (
-              <pre className="overflow-x-auto rounded-[var(--radius-md)] bg-[#0f172a] p-4 text-xs text-slate-100">
-                <code>{JSON.stringify(draftVersion.graph_json, null, 2)}</code>
-              </pre>
-            ) : (
-              <p className="text-sm text-[var(--color-muted-fg)]">No draft version found for this flow.</p>
-            )}
-          </DataCard>
-
-          <DataCard title="Validation Result" description="MVP structural validation checks graph integrity before any publish operation.">
-            {validateDraft.data ? (
-              <div className="space-y-4 text-sm">
-                <div className="flex items-center gap-3">
-                  <StatusBadge status={validateDraft.data.outcome.status === 'passed' ? 'validated' : 'warning'} />
-                  <span className="font-medium">
-                    {validateDraft.data.outcome.status === 'passed' ? 'Draft validation passed' : 'Draft validation failed'}
-                  </span>
-                </div>
-                {validateDraft.data.outcome.errors.length > 0 ? (
-                  <ul className="space-y-2 text-[var(--color-danger)]">
-                    {validateDraft.data.outcome.errors.map((error, index) => (
-                      <li key={`${String((error as { field?: string }).field)}-${index}`} className="rounded-[var(--radius-md)] bg-[var(--color-danger)]/10 px-3 py-2">
-                        {JSON.stringify(error)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-[var(--color-muted-fg)]">No structural errors detected.</p>
-                )}
-                {validateDraft.data.outcome.warnings.length > 0 ? (
-                  <ul className="space-y-2 text-[var(--color-warning)]">
-                    {validateDraft.data.outcome.warnings.map((warning, index) => (
-                      <li key={`${String((warning as { field?: string }).field)}-${index}`} className="rounded-[var(--radius-md)] bg-[var(--color-warning)]/10 px-3 py-2">
-                        {JSON.stringify(warning)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
+          <DataCard title="Visual Builder" description="Build the current draft version with typed nodes and edges instead of raw graph JSON.">
+            {flowQuery.isLoading || versionsQuery.isLoading || promptsQuery.isLoading || extensionsQuery.isLoading ? (
+              <p className="text-sm text-[var(--color-muted-fg)]">Loading builder dependencies...</p>
+            ) : flowQuery.isError || versionsQuery.isError || promptsQuery.isError || extensionsQuery.isError ? (
+              <ErrorState
+                message={
+                  (flowQuery.error as Error | undefined)?.message
+                  ?? (versionsQuery.error as Error | undefined)?.message
+                  ?? (promptsQuery.error as Error | undefined)?.message
+                  ?? (extensionsQuery.error as Error | undefined)?.message
+                  ?? 'Could not load the visual builder.'
+                }
+              />
+            ) : builderReady && draftVersion ? (
+              <IvrFlowBuilder
+                extensions={extensionsQuery.data ?? []}
+                isSaving={updateVersion.isPending}
+                onSave={async (graph_json) => {
+                  await updateVersion.mutateAsync({
+                    versionId: draftVersion.id,
+                    graph_json,
+                  });
+                }}
+                prompts={promptsQuery.data ?? []}
+                version={draftVersion}
+              />
             ) : (
               <p className="text-sm text-[var(--color-muted-fg)]">
-                No validation result yet. Run validation on the current draft before publish.
+                No draft version available yet. Create or restore a draft before editing visually.
               </p>
             )}
           </DataCard>
@@ -217,13 +230,11 @@ export function IvrFlowDetailPage() {
                 )}
               </div>
             ) : (
-              <p className="text-sm text-[var(--color-muted-fg)]">
-                No simulation result yet. Run a draft simulation before publish when changing customer-facing call behavior.
-              </p>
+              <p className="text-sm text-[var(--color-muted-fg)]">No simulation result yet. Simulate the saved draft before publish.</p>
             )}
           </DataCard>
 
-          <DataCard title="Publish State" description="Publish and rollback may be gated by approval policy depending on tenant rules.">
+          <DataCard title="Publish State" description="Publish and rollback remain approval-aware and visible on the same operator surface.">
             {publishFlowVersion.data?.status === 'pending_approval' ? (
               <p className="text-sm text-[var(--color-warning)]">
                 Publish request queued for approval: {publishFlowVersion.data.approval_request_id}
@@ -239,10 +250,14 @@ export function IvrFlowDetailPage() {
             )}
           </DataCard>
 
-          <DataCard title="Next UI Slice" description="This foundation stays intentionally narrow until validation, simulation, and runtime resolver contracts are proven.">
-            <p className="text-sm text-[var(--color-muted-fg)]">
-              Visual builder will be added after validation, simulation, and runtime execution foundations are implemented.
-            </p>
+          <DataCard title="Fallback Debug View" description="The raw graph remains visible for diagnostics, but normal authoring should stay visual.">
+            {draftVersion ? (
+              <pre className="overflow-x-auto rounded-[var(--radius-md)] bg-[#0f172a] p-4 text-xs text-slate-100">
+                <code>{JSON.stringify(draftVersion.graph_json, null, 2)}</code>
+              </pre>
+            ) : (
+              <p className="text-sm text-[var(--color-muted-fg)]">No draft version found for this flow.</p>
+            )}
             <Link className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-[var(--color-tenant)] hover:underline" to={paths.tenant.ivrFlows}>
               <Workflow className="size-4" aria-hidden="true" />
               Back to IVR flow list
@@ -267,6 +282,49 @@ function ErrorState({ message }: { message: string }) {
   return (
     <div className="rounded-[var(--radius-lg)] border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10 px-4 py-4 text-sm text-[var(--color-danger)]">
       {message}
+    </div>
+  );
+}
+
+function ResultBlock({
+  status,
+  title,
+  details,
+  warnings,
+  emptyMessage,
+}: {
+  status: string;
+  title: string;
+  details: unknown[];
+  warnings?: unknown[];
+  emptyMessage: string;
+}) {
+  return (
+    <div className="space-y-4 text-sm">
+      <div className="flex items-center gap-3">
+        <StatusBadge status={status} />
+        <span className="font-medium">{title}</span>
+      </div>
+      {details.length > 0 ? (
+        <ul className="space-y-2 text-[var(--color-danger)]">
+          {details.map((detail, index) => (
+            <li key={`detail-${index}`} className="rounded-[var(--radius-md)] bg-[var(--color-danger)]/10 px-3 py-2">
+              {JSON.stringify(detail)}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[var(--color-muted-fg)]">{emptyMessage}</p>
+      )}
+      {warnings && warnings.length > 0 ? (
+        <ul className="space-y-2 text-[var(--color-warning)]">
+          {warnings.map((warning, index) => (
+            <li key={`warning-${index}`} className="rounded-[var(--radius-md)] bg-[var(--color-warning)]/10 px-3 py-2">
+              {JSON.stringify(warning)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

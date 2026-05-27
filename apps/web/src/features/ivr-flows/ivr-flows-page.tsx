@@ -78,7 +78,7 @@ export function IvrFlowsPage() {
           ) : (
             <EmptyState
               title="No IVR flows yet"
-              description="Create your first draft flow now. The visual builder comes later, after validation and runtime foundations are solid."
+              description="Create your first draft flow now. Open the flow detail page to edit it visually, validate it, and simulate it."
             />
           )}
         </DataCard>

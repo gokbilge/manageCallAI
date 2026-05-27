@@ -219,14 +219,13 @@ With the web app running:
 2. open `/tenant/ivr-flows`
 3. create a flow
 4. open `/tenant/ivr-flows/:flowId`
-5. review versions and raw `graph_json`
+5. edit the draft visually in the React Flow builder
 6. run `Validate Draft`
 7. run `Simulate Draft`
 8. observe publish status or pending approval state
 
 Current boundary:
 
-- no visual builder yet
 - no runtime execution yet
 - simulation remains deterministic preview only, not live call execution
 - approval requests are created, but approval decision endpoints are still a later slice
