@@ -29,6 +29,8 @@ function makeWebhook(overrides: Partial<AutomationWebhook> = {}): AutomationWebh
     name: 'my-hook',
     url: 'https://example.com/hook',
     events: ['ivr_flow.published'],
+    failure_count: 0,
+    disabled_at: null,
     created_by: USER_ID,
     created_at: now,
     revoked_at: null,
@@ -46,6 +48,8 @@ function makeMockRepo(): AutomationRepository {
     listWebhooks: vi.fn(),
     revokeWebhook: vi.fn(),
     findActiveWebhooksForEvent: vi.fn(),
+    recordDeliveryFailure: vi.fn(),
+    resetDeliveryFailure: vi.fn(),
   } as unknown as AutomationRepository;
 }
 
@@ -136,6 +140,47 @@ describe('AutomationService', () => {
     it('throws WebhookNotFoundError when webhook does not exist', async () => {
       vi.mocked(repo.revokeWebhook).mockResolvedValue(false);
       await expect(service.revokeWebhook(HOOK_ID, TENANT_ID)).rejects.toThrow(WebhookNotFoundError);
+    });
+  });
+
+  describe('fireWebhooks delivery failure tracking', () => {
+    it('calls recordDeliveryFailure when fetch rejects', async () => {
+      const target = { id: HOOK_ID, url: 'https://example.com/hook', signing_secret: 'sec' };
+      vi.mocked(repo.findActiveWebhooksForEvent).mockResolvedValue([target]);
+      vi.mocked(repo.recordDeliveryFailure).mockResolvedValue(undefined);
+
+      global.fetch = vi.fn().mockRejectedValue(new Error('network error'));
+
+      service.fireWebhooks(TENANT_ID, 'ivr_flow.published', {});
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(repo.recordDeliveryFailure).toHaveBeenCalledWith(HOOK_ID);
+    });
+
+    it('calls resetDeliveryFailure when fetch succeeds', async () => {
+      const target = { id: HOOK_ID, url: 'https://example.com/hook', signing_secret: 'sec' };
+      vi.mocked(repo.findActiveWebhooksForEvent).mockResolvedValue([target]);
+      vi.mocked(repo.resetDeliveryFailure).mockResolvedValue(undefined);
+
+      global.fetch = vi.fn().mockResolvedValue({ ok: true });
+
+      service.fireWebhooks(TENANT_ID, 'ivr_flow.published', {});
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(repo.resetDeliveryFailure).toHaveBeenCalledWith(HOOK_ID);
+    });
+
+    it('calls recordDeliveryFailure when fetch returns non-ok status', async () => {
+      const target = { id: HOOK_ID, url: 'https://example.com/hook', signing_secret: 'sec' };
+      vi.mocked(repo.findActiveWebhooksForEvent).mockResolvedValue([target]);
+      vi.mocked(repo.recordDeliveryFailure).mockResolvedValue(undefined);
+
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+
+      service.fireWebhooks(TENANT_ID, 'ivr_flow.published', {});
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(repo.recordDeliveryFailure).toHaveBeenCalledWith(HOOK_ID);
     });
   });
 

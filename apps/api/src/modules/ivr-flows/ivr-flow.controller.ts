@@ -217,6 +217,12 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
       const user = req.user as AuthClaims;
       try {
         const result = await service.validateCurrentDraft(req.params.id, user.tenant_id);
+        if (result.outcome.status !== 'passed') {
+          fireWebhooks(user.tenant_id, 'ivr_flow.validation_failed', {
+            flow_id: req.params.id,
+            errors: result.outcome.errors ?? [],
+          });
+        }
         const statusCode = result.outcome.status === 'passed' ? 200 : 422;
         return reply.code(statusCode).send({ data: result });
       } catch (err) {

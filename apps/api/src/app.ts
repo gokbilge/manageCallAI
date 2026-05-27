@@ -11,6 +11,7 @@ import { freeswitchController } from './modules/freeswitch/freeswitch.controller
 import { inboundRouteController } from './modules/inbound-routes/inbound-route.controller.js';
 import { approvalController, policiesController } from './modules/approvals/approval.controller.js';
 import { automationController } from './modules/automation/automation.controller.js';
+import { webhooksController } from './modules/webhooks/webhooks.controller.js';
 import { callGroupController } from './modules/call-groups/call-group.controller.js';
 import { ivrFlowController } from './modules/ivr-flows/ivr-flow.controller.js';
 import { platformController } from './modules/platform/platform.controller.js';
@@ -50,6 +51,7 @@ export function buildApp() {
   app.register(inboundRouteController, { prefix: '/api/v1/inbound-routes' });
   app.register(platformController, { prefix: '/api/v1/platform' });
   app.register(automationController, { prefix: '/api/v1/automation' });
+  app.register(webhooksController, { prefix: '/api/v1/webhooks' });
 
   return app;
 }

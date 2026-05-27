@@ -10,6 +10,7 @@ import {
   RadioTower,
   TestTube2,
   Workflow,
+  Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Workspace } from '@/lib/routes/workspace';
@@ -42,6 +43,7 @@ const tenantNav: NavItem[] = [
   { to: '/tenant/routes/inbound', label: 'Inbound Routes', icon: GitBranch, capability: CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW },
   { to: '/tenant/ivr-flows', label: 'IVR Flows', icon: Workflow, capability: CAPABILITIES.TENANT_IVR_FLOWS_VIEW },
   { to: '/tenant/calls', label: 'Call Events', icon: PhoneCall },
+  { to: '/tenant/webhooks', label: 'Webhooks', icon: Zap, capability: CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW },
   { to: '/tenant/integrations/directory-smoke-test', label: 'Smoke Test', icon: TestTube2 },
 ];
 

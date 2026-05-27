@@ -76,7 +76,7 @@ export class AutomationRepository {
     const r = await this.db.query<AutomationWebhook>(
       `INSERT INTO automation_webhooks (tenant_id, name, url, events, signing_secret, created_by)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, tenant_id, name, url, events, created_by, created_at, revoked_at`,
+       RETURNING id, tenant_id, name, url, events, failure_count, disabled_at, created_by, created_at, revoked_at`,
       [input.tenant_id, input.name, input.url, input.events, input.signing_secret, input.created_by ?? null],
     );
     return r.rows[0]!;
@@ -84,7 +84,7 @@ export class AutomationRepository {
 
   async listWebhooks(tenantId: string): Promise<AutomationWebhook[]> {
     const r = await this.db.query<AutomationWebhook>(
-      `SELECT id, tenant_id, name, url, events, created_by, created_at, revoked_at
+      `SELECT id, tenant_id, name, url, events, failure_count, disabled_at, created_by, created_at, revoked_at
        FROM automation_webhooks WHERE tenant_id = $1 ORDER BY created_at DESC`,
       [tenantId],
     );
@@ -106,9 +106,26 @@ export class AutomationRepository {
   ): Promise<Array<{ id: string; url: string; signing_secret: string }>> {
     const r = await this.db.query<{ id: string; url: string; signing_secret: string }>(
       `SELECT id, url, signing_secret FROM automation_webhooks
-       WHERE tenant_id = $1 AND revoked_at IS NULL AND $2 = ANY(events)`,
+       WHERE tenant_id = $1 AND revoked_at IS NULL AND disabled_at IS NULL AND $2 = ANY(events)`,
       [tenantId, event],
     );
     return r.rows;
+  }
+
+  async recordDeliveryFailure(id: string): Promise<void> {
+    await this.db.query(
+      `UPDATE automation_webhooks
+       SET failure_count = failure_count + 1,
+           disabled_at   = CASE WHEN failure_count + 1 >= 5 THEN NOW() ELSE disabled_at END
+       WHERE id = $1 AND revoked_at IS NULL AND disabled_at IS NULL`,
+      [id],
+    );
+  }
+
+  async resetDeliveryFailure(id: string): Promise<void> {
+    await this.db.query(
+      `UPDATE automation_webhooks SET failure_count = 0 WHERE id = $1`,
+      [id],
+    );
   }
 }

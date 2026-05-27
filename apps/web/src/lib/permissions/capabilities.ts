@@ -35,6 +35,9 @@ export const CAPABILITIES = {
 
   TENANT_APPROVALS_VIEW: 'tenant.approvals.view',
   TENANT_APPROVALS_DECIDE: 'tenant.approvals.decide',
+
+  TENANT_AUTOMATION_WEBHOOKS_VIEW: 'tenant.automation.webhooks.view',
+  TENANT_AUTOMATION_WEBHOOKS_MANAGE: 'tenant.automation.webhooks.manage',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -66,6 +69,8 @@ const TENANT_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_IVR_FLOWS_ROLLBACK,
   CAPABILITIES.TENANT_APPROVALS_VIEW,
   CAPABILITIES.TENANT_APPROVALS_DECIDE,
+  CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW,
+  CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_MANAGE,
 ];
 
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {

@@ -3,6 +3,18 @@
 ## Goal
 
 Deliver IVR lifecycle events to tenant-registered webhook endpoints,
+
+## Status
+
+**CLOSED** — 2026-05-28
+
+API tests 182/182, web tests 21/21 green:
+
+- ✓ `POST /api/v1/webhooks`, `GET /api/v1/webhooks`, `DELETE /api/v1/webhooks/:id`
+- ✓ `ivr_flow.validation_failed` event fired on failed validate
+- ✓ Failure tracking: `failure_count` incremented on non-OK response or network error; `disabled_at` set at 5 consecutive failures; `failure_count` reset on success
+- ✓ `GET /api/v1/webhooks` excludes disabled subscriptions from delivery
+- ✓ Web UI: read-only webhook subscription list at `/tenant/webhooks`
 enabling n8n workflows and other external consumers to react to
 publish, rollback, validation, and approval outcomes without polling.
 

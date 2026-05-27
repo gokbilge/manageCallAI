@@ -92,7 +92,15 @@ export class AutomationService {
         },
         body: payload,
         signal: AbortSignal.timeout(10_000),
-      }).catch(() => {});
+      }).then(async (res) => {
+        if (res.ok) {
+          await this.repo.resetDeliveryFailure(target.id).catch(() => {});
+        } else {
+          await this.repo.recordDeliveryFailure(target.id).catch(() => {});
+        }
+      }).catch(async () => {
+        await this.repo.recordDeliveryFailure(target.id).catch(() => {});
+      });
     }
   }
 }
