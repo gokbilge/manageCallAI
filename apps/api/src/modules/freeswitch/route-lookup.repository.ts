@@ -5,7 +5,7 @@ export interface RouteMatch {
   tenant_id: string;
   match_type: string;
   match_value: string;
-  target_type: 'extension' | 'flow';
+  target_type: 'extension' | 'flow' | 'call_group';
   target_id: string | null;
 }
 
@@ -19,6 +19,17 @@ export interface ExtensionTarget {
 export interface FlowTarget {
   name: string;
   definition: Record<string, unknown> | null;
+}
+
+export interface CallGroupMemberEntry {
+  extension_number: string;
+  directory_domain: string;
+  position: number;
+}
+
+export interface CallGroupTarget {
+  strategy: 'simultaneous' | 'sequential';
+  members: CallGroupMemberEntry[];
 }
 
 export class RouteLookupRepository {
@@ -76,6 +87,30 @@ export class RouteLookupRepository {
       [flowId],
     );
     return r.rows[0] ?? null;
+  }
+
+  async findCallGroupTarget(groupId: string): Promise<CallGroupTarget | null> {
+    const groupR = await this.db.query<{ strategy: string }>(
+      `SELECT strategy FROM call_groups WHERE id = $1 AND status = 'active'`,
+      [groupId],
+    );
+    if (!groupR.rows[0]) return null;
+
+    const membersR = await this.db.query<CallGroupMemberEntry>(
+      `SELECT e.extension_number, t.directory_domain, cgm.position
+       FROM call_group_members cgm
+       JOIN extensions e ON e.id = cgm.extension_id
+       JOIN tenants t ON t.id = cgm.tenant_id
+       WHERE cgm.call_group_id = $1 AND e.status = 'active'
+       ORDER BY cgm.position ASC, e.extension_number ASC`,
+      [groupId],
+    );
+    if (membersR.rows.length === 0) return null;
+
+    return {
+      strategy: groupR.rows[0].strategy as 'simultaneous' | 'sequential',
+      members: membersR.rows,
+    };
   }
 
   async findTenantByDomain(domain: string): Promise<{ id: string } | null> {

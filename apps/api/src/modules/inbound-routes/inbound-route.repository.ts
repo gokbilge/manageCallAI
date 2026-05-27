@@ -302,10 +302,17 @@ export class InboundRouteRepository {
     return (r.rows[0]?.max ?? 0) + 1;
   }
 
-  async targetExists(target_type: 'flow' | 'extension', target_id: string, tenantId: string): Promise<boolean> {
+  async targetExists(target_type: 'flow' | 'extension' | 'call_group', target_id: string, tenantId: string): Promise<boolean> {
     if (target_type === 'flow') {
       const r = await this.db.query<{ count: string }>(
         `SELECT COUNT(*) AS count FROM ivr_flows WHERE id = $1 AND tenant_id = $2 AND status = 'active'`,
+        [target_id, tenantId],
+      );
+      return parseInt(r.rows[0]?.count ?? '0', 10) > 0;
+    }
+    if (target_type === 'call_group') {
+      const r = await this.db.query<{ count: string }>(
+        `SELECT COUNT(*) AS count FROM call_groups WHERE id = $1 AND tenant_id = $2 AND status = 'active'`,
         [target_id, tenantId],
       );
       return parseInt(r.rows[0]?.count ?? '0', 10) > 0;

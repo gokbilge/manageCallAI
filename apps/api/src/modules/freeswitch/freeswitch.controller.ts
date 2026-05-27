@@ -143,25 +143,61 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     }
 
     const route = await routeLookupRepo.findRouteForDialplan(tenantId, destinationNumber);
-    if (!route || route.target_type !== 'extension' || !route.target_id) {
+    if (!route || !route.target_id) {
       return { statusCode: 200, body: buildNotFoundDialplan() };
     }
 
-    const target = await routeLookupRepo.findExtensionTarget(route.target_id);
-    if (!target || !target.directory_domain) {
-      return { statusCode: 200, body: buildNotFoundDialplan() };
+    if (route.target_type === 'extension') {
+      const target = await routeLookupRepo.findExtensionTarget(route.target_id);
+      if (!target || !target.directory_domain) {
+        return { statusCode: 200, body: buildNotFoundDialplan() };
+      }
+      return {
+        statusCode: 200,
+        body: buildDialplanResponse({
+          routeId: route.route_id,
+          tenantId: route.tenant_id,
+          matchValue: route.match_value,
+          extensionNumber: target.extension_number,
+          domain: target.directory_domain,
+        }),
+      };
     }
 
-    return {
-      statusCode: 200,
-      body: buildDialplanResponse({
-        routeId: route.route_id,
-        tenantId: route.tenant_id,
-        matchValue: route.match_value,
-        extensionNumber: target.extension_number,
-        domain: target.directory_domain,
-      }),
-    };
+    if (route.target_type === 'flow') {
+      const target = await routeLookupRepo.findFlowTarget(route.target_id);
+      if (!target) {
+        return { statusCode: 200, body: buildNotFoundDialplan() };
+      }
+      return {
+        statusCode: 200,
+        body: buildIvrDialplanResponse({
+          routeId: route.route_id,
+          tenantId: route.tenant_id,
+          matchValue: route.match_value,
+          flowId: route.target_id,
+        }),
+      };
+    }
+
+    if (route.target_type === 'call_group') {
+      const target = await routeLookupRepo.findCallGroupTarget(route.target_id);
+      if (!target) {
+        return { statusCode: 200, body: buildNotFoundDialplan() };
+      }
+      return {
+        statusCode: 200,
+        body: buildCallGroupDialplanResponse({
+          routeId: route.route_id,
+          tenantId: route.tenant_id,
+          matchValue: route.match_value,
+          strategy: target.strategy,
+          members: target.members,
+        }),
+      };
+    }
+
+    return { statusCode: 200, body: buildNotFoundDialplan() };
   };
 
   app.get<{ Querystring: DialplanLookup }>(
@@ -207,6 +243,8 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
         target = await routeLookupRepo.findExtensionTarget(route.target_id);
       } else if (route.target_type === 'flow' && route.target_id) {
         target = await routeLookupRepo.findFlowTarget(route.target_id);
+      } else if (route.target_type === 'call_group' && route.target_id) {
+        target = await routeLookupRepo.findCallGroupTarget(route.target_id);
       }
 
       return reply.send({
@@ -343,6 +381,60 @@ function buildDialplanResponse(input: {
           <action application="set" data="managecall_route_id=${xmlEscape(input.routeId)}" />
           <action application="set" data="managecall_tenant_id=${xmlEscape(input.tenantId)}" />
           <action application="bridge" data="${xmlEscape(bridge)}" />
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>`;
+}
+
+export function buildIvrDialplanResponse(input: {
+  routeId: string;
+  tenantId: string;
+  matchValue: string;
+  flowId: string;
+}): string {
+  const destinationPattern = `^${regexEscape(input.matchValue)}$`;
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="dialplan">
+    <context name="default">
+      <extension name="managecall_inbound_${xmlEscape(input.routeId)}" continue="false">
+        <condition field="destination_number" expression="${xmlEscape(destinationPattern)}">
+          <action application="set" data="managecall_route_id=${xmlEscape(input.routeId)}" />
+          <action application="set" data="managecall_tenant_id=${xmlEscape(input.tenantId)}" />
+          <action application="set" data="managecall_flow_id=${xmlEscape(input.flowId)}" />
+          <action application="luarun" data="managecall_entry.lua" />
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>`;
+}
+
+export function buildCallGroupDialplanResponse(input: {
+  routeId: string;
+  tenantId: string;
+  matchValue: string;
+  strategy: 'simultaneous' | 'sequential';
+  members: Array<{ extension_number: string; directory_domain: string }>;
+}): string {
+  const separator = input.strategy === 'simultaneous' ? ',' : '|';
+  const bridge = input.members
+    .map(m => `sofia/internal/${xmlEscape(m.extension_number)}@${xmlEscape(m.directory_domain)}`)
+    .join(separator);
+  const destinationPattern = `^${regexEscape(input.matchValue)}$`;
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="dialplan">
+    <context name="default">
+      <extension name="managecall_inbound_${xmlEscape(input.routeId)}" continue="false">
+        <condition field="destination_number" expression="${xmlEscape(destinationPattern)}">
+          <action application="set" data="managecall_route_id=${xmlEscape(input.routeId)}" />
+          <action application="set" data="managecall_tenant_id=${xmlEscape(input.tenantId)}" />
+          <action application="bridge" data="${bridge}" />
         </condition>
       </extension>
     </context>
