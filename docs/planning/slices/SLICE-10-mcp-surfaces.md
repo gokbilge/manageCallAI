@@ -4,6 +4,17 @@
 
 Expose safe MCP tools for AI agents over the same desired-state lifecycle as humans and workflows.
 
+## Status
+
+**CLOSED** — 2026-05-28
+
+15/15 unit tests green (`apps/mcp/src/tools/ivr-flows.test.ts`):
+
+- ✓ `list_ivr_flows`, `get_ivr_flow`, `create_ivr_flow`, `update_flow_definition`
+- ✓ `validate_flow` (soft 422 vs hard error distinction)
+- ✓ `simulate_flow` (optional fields, soft 422)
+- ✓ `request_publish`, unknown tool guard
+
 ## Scope
 
 - list and inspect IVR flows
