@@ -29,15 +29,17 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     const domain = normalized.domain;
 
     if (!user) {
+      // Domain existence check from FreeSWITCH (no user param) — return 200 so FS
+      // proceeds to the per-user sip_auth lookup instead of aborting with 403.
       return {
-        statusCode: 400,
+        statusCode: 200,
         body: buildNotFoundDirectory(domain ?? 'default'),
       };
     }
 
     if (!domain) {
       return {
-        statusCode: 400,
+        statusCode: 200,
         body: buildNotFoundDirectory('default'),
       };
     }
