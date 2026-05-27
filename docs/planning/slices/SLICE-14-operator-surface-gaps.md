@@ -3,6 +3,17 @@
 ## Goal
 
 Close the operator surface gaps left after SLICE-01 through SLICE-04:
+
+## Status
+
+**CLOSED** — 2026-05-28
+
+API 182/182, web 28/28 green:
+
+- ✓ Sidebar: Approvals, Prompts, Sessions nav items added (each capability-gated)
+- ✓ `PromptsPage` at `/tenant/prompts` — asset table with deactivate button + create form; 4 tests
+- ✓ `RuntimeSessionsPage` at `/tenant/runtime/sessions` — read-only session table; 3 tests
+- ✓ `GET /api/v1/runtime/ivr/sessions` — JWT-authed operator list endpoint with optional status filter
 sidebar navigation is missing links to implemented pages, and prompt assets
 have no web management surface despite a complete API backend.
 

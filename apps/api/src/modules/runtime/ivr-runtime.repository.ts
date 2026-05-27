@@ -141,6 +141,23 @@ export class IvrRuntimeRepository {
     return result.rows[0] ?? null;
   }
 
+  async listSessionsByTenant(
+    tenantId: string,
+    status?: IvrRuntimeSession['status'],
+  ): Promise<IvrRuntimeSession[]> {
+    const params: unknown[] = [tenantId];
+    const statusClause = status ? ` AND status = $${params.push(status)}` : '';
+    const result = await this.db.query<IvrRuntimeSession>(
+      `SELECT ${this.sessionColumns}
+       FROM ivr_flow_sessions
+       WHERE tenant_id = $1${statusClause}
+       ORDER BY created_at DESC
+       LIMIT 200`,
+      params,
+    );
+    return result.rows;
+  }
+
   async findActivePromptRefs(tenantId: string, ids: string[]): Promise<Map<string, PromptAssetReference>> {
     if (ids.length === 0) return new Map();
     const result = await this.db.query<PromptAssetReference>(

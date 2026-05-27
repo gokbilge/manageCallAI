@@ -14,6 +14,8 @@ import { IvrFlowsPage } from '@/features/ivr-flows/ivr-flows-page';
 import { CallsPage } from '@/features/calls/calls-page';
 import { DirectorySmokeTestPage } from '@/features/integrations/directory-smoke-test-page';
 import { WebhooksPage } from '@/features/integrations/webhooks-page';
+import { PromptsPage } from '@/features/prompts/prompts-page';
+import { RuntimeSessionsPage } from '@/features/runtime/runtime-sessions-page';
 import { RequireSession } from '@/lib/auth/require-session';
 import { RequireCapability } from '@/lib/auth/require-capability';
 import { CAPABILITIES } from '@/lib/permissions/capabilities';
@@ -65,6 +67,18 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_APPROVALS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/approvals', element: <ApprovalsPage /> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_PROMPTS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/prompts', element: <PromptsPage /> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_IVR_FLOWS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/runtime/sessions', element: <RuntimeSessionsPage /> },
             ],
           },
           { path: 'tenant/calls', element: <CallsPage /> },

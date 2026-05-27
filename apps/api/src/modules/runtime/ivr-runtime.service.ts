@@ -89,6 +89,10 @@ function resolveSwitchInput(
 export class IvrRuntimeService {
   constructor(private readonly repo: IvrRuntimeRepository) {}
 
+  listSessions(tenantId: string, status?: IvrRuntimeSession['status']): Promise<IvrRuntimeSession[]> {
+    return this.repo.listSessionsByTenant(tenantId, status);
+  }
+
   async startSession(input: StartIvrRuntimeSessionInput): Promise<IvrRuntimeSessionResult> {
     const active = await this.repo.findActiveFlowVersion(input.flow_id);
     if (!active) {

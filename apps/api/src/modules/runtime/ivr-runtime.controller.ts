@@ -1,5 +1,8 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
+import type { AuthClaims } from '../auth/auth-claims.js';
+import { CAPABILITIES } from '../auth/capabilities.js';
+import { requireCapability } from '../auth/require-capability.js';
 import { authenticateRuntime } from './runtime-auth.js';
 import { IvrRuntimeRepository } from './ivr-runtime.repository.js';
 import {
@@ -30,6 +33,26 @@ function replyRuntimeError(err: unknown, reply: FastifyReply): FastifyReply {
 }
 
 export async function ivrRuntimeController(app: FastifyInstance): Promise<void> {
+  app.get<{ Querystring: { status?: string } }>(
+    '/sessions',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
+      schema: {
+        querystring: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', enum: ['running', 'completed', 'failed'] },
+          },
+        },
+      },
+    },
+    async (req) => {
+      const user = req.user as AuthClaims;
+      const status = req.query.status as 'running' | 'completed' | 'failed' | undefined;
+      return { data: await service.listSessions(user.tenant_id, status) };
+    },
+  );
+
   app.post<{ Body: StartIvrRuntimeSessionInput }>(
     '/sessions',
     {
