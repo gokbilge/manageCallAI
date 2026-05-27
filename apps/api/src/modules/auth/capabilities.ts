@@ -38,6 +38,11 @@ export const CAPABILITIES = {
 
   TENANT_APPROVALS_VIEW: 'tenant.approvals.view',
   TENANT_APPROVALS_DECIDE: 'tenant.approvals.decide',
+
+  TENANT_CALL_GROUPS_VIEW: 'tenant.call_groups.view',
+  TENANT_CALL_GROUPS_CREATE: 'tenant.call_groups.create',
+  TENANT_CALL_GROUPS_UPDATE: 'tenant.call_groups.update',
+  TENANT_CALL_GROUPS_DEACTIVATE: 'tenant.call_groups.deactivate',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -75,6 +80,10 @@ const TENANT_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_IVR_FLOWS_ROLLBACK,
   CAPABILITIES.TENANT_APPROVALS_VIEW,
   CAPABILITIES.TENANT_APPROVALS_DECIDE,
+  CAPABILITIES.TENANT_CALL_GROUPS_VIEW,
+  CAPABILITIES.TENANT_CALL_GROUPS_CREATE,
+  CAPABILITIES.TENANT_CALL_GROUPS_UPDATE,
+  CAPABILITIES.TENANT_CALL_GROUPS_DEACTIVATE,
 ];
 
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
