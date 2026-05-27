@@ -44,10 +44,14 @@ export type FlowSimulationResponse = {
   version: FlowVersion;
   scenario: {
     digits?: string[];
+    collected_digits?: Record<string, string>;
     caller_number?: string;
     now?: string;
     force_timeout?: boolean;
+    force_timeout_nodes?: string[];
     force_invalid?: boolean;
+    force_invalid_nodes?: string[];
+    variables?: Record<string, string>;
   };
   outcome: {
     status: string;
@@ -162,10 +166,14 @@ export function useSimulateCurrentDraft(flowId: string) {
   return useMutation({
     mutationFn: async (body?: {
       digits?: string[];
+      collected_digits?: Record<string, string>;
       caller_number?: string;
       now?: string;
       force_timeout?: boolean;
+      force_timeout_nodes?: string[];
       force_invalid?: boolean;
+      force_invalid_nodes?: string[];
+      variables?: Record<string, string>;
     }) => {
       const r = await apiRequest<{ data: FlowSimulationResponse }>(
         `/ivr-flows/${flowId}/simulate`,

@@ -739,10 +739,34 @@ Example request:
 }
 ```
 
+Richer scenarios can also provide:
+
+- `collected_digits` keyed by node ID for multi-step menus
+- `force_timeout_nodes` for per-node timeout simulation
+- `force_invalid_nodes` for per-node invalid-input simulation
+- `variables` for `switch` inputs like `{{var.customer_tier}}`
+
+Example multi-step request:
+
+```json
+{
+  "collected_digits": {
+    "language_menu": "9",
+    "department_menu": "2"
+  },
+  "caller_number": "+905551112233",
+  "now": "2026-05-27T10:00:00+03:00",
+  "variables": {
+    "customer_tier": "vip"
+  }
+}
+```
+
 Current MVP simulation scope:
 
 - supports `start`, `play_prompt`, `play_collect`, `switch`, `transfer_extension`, and `hangup`
 - also accepts early compatibility node types `play`, `menu`, `transfer`, and `condition`
+- resolves `switch.input` from `{{last_digits}}`, `{{caller_number}}`, `{{now.hour}}`, and `{{var.<name>}}`
 - persists the simulation scenario and result in `simulation_results`
 - stamps `simulated_at` on the version after a successful simulation
 

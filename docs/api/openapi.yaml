@@ -1877,6 +1877,10 @@ components:
           type: array
           items:
             type: string
+        collected_digits:
+          type: object
+          additionalProperties:
+            type: string
         caller_number:
           type: string
         now:
@@ -1884,8 +1888,20 @@ components:
           format: date-time
         force_timeout:
           type: boolean
+        force_timeout_nodes:
+          type: array
+          items:
+            type: string
         force_invalid:
           type: boolean
+        force_invalid_nodes:
+          type: array
+          items:
+            type: string
+        variables:
+          type: object
+          additionalProperties:
+            type: string
 
     IvrFlowSimulationFinalAction:
       type: object

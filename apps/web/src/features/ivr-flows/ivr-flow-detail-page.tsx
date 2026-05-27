@@ -52,7 +52,11 @@ export function IvrFlowDetailPage() {
             </Button>
             <Button
               disabled={!flowQuery.data?.draft_version_id || simulateDraft.isPending}
-              onClick={() => void simulateDraft.mutateAsync({ digits: ['1'] })}
+              onClick={() => void simulateDraft.mutateAsync({
+                digits: ['1'],
+                caller_number: '+905551112233',
+                now: '2026-05-27T10:00:00+03:00',
+              })}
               variant="secondary"
             >
               <FlaskConical className="size-4" aria-hidden="true" />

@@ -27,10 +27,12 @@ Validation must check:
 Simulation should support:
 
 - DTMF sequence input
+- node-specific collected digits for multi-step menus
 - timeout path
 - invalid input path
 - selected time
 - caller number
+- explicit simulation variables
 - expected path output
 - final action output
 
@@ -80,11 +82,12 @@ Current slice now includes:
 - persisted simulation results in `simulation_results`
 - `simulated_at` stamping on successful runs
 - approval-gated publish / rollback behavior driven by tenant policy
+- `switch` resolution from `{{last_digits}}`, `{{caller_number}}`, `{{now.hour}}`, and scenario variables
+- node-specific `collected_digits` plus per-node timeout/invalid forcing for multi-step simulations
 
 Still intentionally out of scope:
 
 - prompt existence checks during validation
 - extension existence checks during validation
-- time-based routing simulation
 - business-hours, queue, ring-group, webhook, or AI-action node execution
 - live runtime call testing through FreeSWITCH

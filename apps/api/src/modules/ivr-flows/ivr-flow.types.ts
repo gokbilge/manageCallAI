@@ -68,10 +68,14 @@ export interface FlowValidationResult {
 
 export interface SimulationScenario {
   digits?: string[];
+  collected_digits?: Record<string, string>;
   caller_number?: string;
   now?: string;
   force_timeout?: boolean;
+  force_timeout_nodes?: string[];
   force_invalid?: boolean;
+  force_invalid_nodes?: string[];
+  variables?: Record<string, string>;
 }
 
 export interface SimulationFinalAction {

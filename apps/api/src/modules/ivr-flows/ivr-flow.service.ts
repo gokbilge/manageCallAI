@@ -34,6 +34,48 @@ function normalizeDigits(scenario: SimulationScenario): string | undefined {
   return scenario.digits.join('');
 }
 
+function resolveScenarioHour(now: string | undefined): string | undefined {
+  if (!now) return undefined;
+  const match = now.match(/T(\d{2}):\d{2}/);
+  return match?.[1];
+}
+
+function hasNodeFlag(nodeId: string, globalFlag: boolean | undefined, nodeIds: string[] | undefined): boolean {
+  return globalFlag === true || nodeIds?.includes(nodeId) === true;
+}
+
+function getCollectedDigitsForNode(nodeId: string, scenario: SimulationScenario): string | undefined {
+  const nodeDigits = scenario.collected_digits?.[nodeId];
+  if (typeof nodeDigits === 'string' && nodeDigits.length > 0) {
+    return nodeDigits;
+  }
+  return normalizeDigits(scenario);
+}
+
+function resolveSwitchInput(
+  node: Record<string, unknown>,
+  context: {
+    lastDigits?: string;
+    callerNumber?: string;
+    scenarioHour?: string;
+    variables: Record<string, string>;
+  },
+): string | undefined {
+  const rawInput = typeof node.input === 'string' ? node.input : '{{last_digits}}';
+  const tokenMatch = rawInput.match(/^\{\{(.+)\}\}$/);
+  if (!tokenMatch) {
+    return rawInput;
+  }
+
+  const token = tokenMatch[1]?.trim();
+  if (!token) return undefined;
+  if (token === 'last_digits') return context.lastDigits;
+  if (token === 'caller_number') return context.callerNumber;
+  if (token === 'now.hour') return context.scenarioHour;
+  if (token.startsWith('var.')) return context.variables[token.slice(4)];
+  return context.variables[token];
+}
+
 function toSimulationError(field: string, message: string) {
   return { field, message };
 }
@@ -69,8 +111,11 @@ function simulateGraph(graph: Record<string, unknown>, scenario: SimulationScena
 
   const path: string[] = [];
   let currentId: string | undefined = entryNodeId;
-  const digits = normalizeDigits(scenario);
   let steps = 0;
+  let lastDigits = normalizeDigits(scenario);
+  const variables: Record<string, string> = { ...(scenario.variables ?? {}) };
+  const callerNumber = scenario.caller_number;
+  const scenarioHour = resolveScenarioHour(scenario.now);
 
   while (currentId && steps < 100) {
     steps += 1;
@@ -97,11 +142,12 @@ function simulateGraph(graph: Record<string, unknown>, scenario: SimulationScena
     }
 
     if (type === 'menu' || type === 'play_collect') {
-      if (scenario.force_timeout) {
+      if (hasNodeFlag(currentId, scenario.force_timeout, scenario.force_timeout_nodes)) {
         currentId = typeof node.timeout_node_id === 'string' ? node.timeout_node_id : undefined;
         continue;
       }
-      if (scenario.force_invalid || !digits) {
+      const collectedDigits = getCollectedDigitsForNode(currentId, scenario);
+      if (hasNodeFlag(currentId, scenario.force_invalid, scenario.force_invalid_nodes) || !collectedDigits) {
         currentId = typeof node.invalid_node_id === 'string'
           ? node.invalid_node_id
           : typeof node.default_node_id === 'string'
@@ -109,6 +155,9 @@ function simulateGraph(graph: Record<string, unknown>, scenario: SimulationScena
             : undefined;
         continue;
       }
+      lastDigits = collectedDigits;
+      variables.last_digits = collectedDigits;
+      variables[`node.${currentId}.digits`] = collectedDigits;
       currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
       continue;
     }
@@ -118,7 +167,8 @@ function simulateGraph(graph: Record<string, unknown>, scenario: SimulationScena
       const lookup = typeof cases === 'object' && cases !== null && !Array.isArray(cases)
         ? (cases as Record<string, unknown>)
         : {};
-      const selected = digits ? lookup[digits] : undefined;
+      const resolvedInput = resolveSwitchInput(node, { lastDigits, callerNumber, scenarioHour, variables });
+      const selected = resolvedInput ? lookup[resolvedInput] : undefined;
       currentId = typeof selected === 'string'
         ? selected
         : typeof node.default_node_id === 'string'

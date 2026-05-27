@@ -255,10 +255,20 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
           additionalProperties: false,
           properties: {
             digits: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 8 } },
+            collected_digits: {
+              type: 'object',
+              additionalProperties: { type: 'string', minLength: 1, maxLength: 32 },
+            },
             caller_number: { type: 'string', maxLength: 64 },
             now: { type: 'string', format: 'date-time' },
             force_timeout: { type: 'boolean' },
+            force_timeout_nodes: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 255 } },
             force_invalid: { type: 'boolean' },
+            force_invalid_nodes: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 255 } },
+            variables: {
+              type: 'object',
+              additionalProperties: { type: 'string', maxLength: 255 },
+            },
           },
         },
       },
@@ -286,10 +296,20 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
           additionalProperties: false,
           properties: {
             digits: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 8 } },
+            collected_digits: {
+              type: 'object',
+              additionalProperties: { type: 'string', minLength: 1, maxLength: 32 },
+            },
             caller_number: { type: 'string', maxLength: 64 },
             now: { type: 'string', format: 'date-time' },
             force_timeout: { type: 'boolean' },
+            force_timeout_nodes: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 255 } },
             force_invalid: { type: 'boolean' },
+            force_invalid_nodes: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 255 } },
+            variables: {
+              type: 'object',
+              additionalProperties: { type: 'string', maxLength: 255 },
+            },
           },
         },
       },

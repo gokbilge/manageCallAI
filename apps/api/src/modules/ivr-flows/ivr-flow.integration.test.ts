@@ -88,6 +88,75 @@ describe('IVR Flows API integration', () => {
     ],
   };
 
+  const callerNumberSimulationDefinition = {
+    entry_node_id: 'start',
+    nodes: [
+      { id: 'start', type: 'start', next_node_id: 'route_caller' },
+      {
+        id: 'route_caller',
+        type: 'switch',
+        input: '{{caller_number}}',
+        cases: { '+905551112233': 'vip' },
+        default_node_id: 'end',
+      },
+      { id: 'vip', type: 'transfer_extension', extension_number: '900' },
+      { id: 'end', type: 'hangup' },
+    ],
+  };
+
+  const hourSimulationDefinition = {
+    entry_node_id: 'start',
+    nodes: [
+      { id: 'start', type: 'start', next_node_id: 'hours' },
+      {
+        id: 'hours',
+        type: 'switch',
+        input: '{{now.hour}}',
+        cases: { '10': 'open_extension' },
+        default_node_id: 'after_hours',
+      },
+      { id: 'open_extension', type: 'transfer_extension', extension_number: '201' },
+      { id: 'after_hours', type: 'hangup' },
+    ],
+  };
+
+  const multiCollectSimulationDefinition = {
+    entry_node_id: 'start',
+    nodes: [
+      { id: 'start', type: 'start', next_node_id: 'language_menu' },
+      {
+        id: 'language_menu',
+        type: 'play_collect',
+        next_node_id: 'language_switch',
+        timeout_node_id: 'hangup',
+        invalid_node_id: 'hangup',
+      },
+      {
+        id: 'language_switch',
+        type: 'switch',
+        input: '{{last_digits}}',
+        cases: { '9': 'department_menu' },
+        default_node_id: 'hangup',
+      },
+      {
+        id: 'department_menu',
+        type: 'play_collect',
+        next_node_id: 'department_switch',
+        timeout_node_id: 'hangup',
+        invalid_node_id: 'hangup',
+      },
+      {
+        id: 'department_switch',
+        type: 'switch',
+        input: '{{last_digits}}',
+        cases: { '2': 'support' },
+        default_node_id: 'hangup',
+      },
+      { id: 'support', type: 'transfer_extension', extension_number: '202' },
+      { id: 'hangup', type: 'hangup' },
+    ],
+  };
+
   it('GET /ivr-flows returns 401 without auth', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/ivr-flows' });
     expect(res.statusCode).toBe(401);
@@ -242,6 +311,87 @@ describe('IVR Flows API integration', () => {
     const body = res.json<{ data: { outcome: { status: string; errors: Array<{ message: string }> } } }>();
     expect(body.data.outcome.status).toBe('failed');
     expect(body.data.outcome.errors[0]?.message).toContain('Unsupported node type');
+  });
+
+  it('simulation resolves switch input from caller_number', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/ivr-flows',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Caller Flow', graph_json: callerNumberSimulationDefinition },
+    });
+    const flow = createRes.json<{ data: { id: string } }>().data;
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/ivr-flows/${flow.id}/simulate`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { caller_number: '+905551112233' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ data: { outcome: { path: string[]; final_action: { extension_number?: string } } } }>();
+    expect(body.data.outcome.path).toEqual(['start', 'route_caller', 'vip']);
+    expect(body.data.outcome.final_action.extension_number).toBe('900');
+  });
+
+  it('simulation resolves switch input from now.hour', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/ivr-flows',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Business Hours Flow', graph_json: hourSimulationDefinition },
+    });
+    const flow = createRes.json<{ data: { id: string } }>().data;
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/ivr-flows/${flow.id}/simulate`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { now: '2026-05-27T10:00:00+03:00' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ data: { outcome: { path: string[]; final_action: { extension_number?: string } } } }>();
+    expect(body.data.outcome.path).toEqual(['start', 'hours', 'open_extension']);
+    expect(body.data.outcome.final_action.extension_number).toBe('201');
+  });
+
+  it('simulation supports node-specific collected digits across multiple play_collect nodes', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/ivr-flows',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Multi Collect Flow', graph_json: multiCollectSimulationDefinition },
+    });
+    const flow = createRes.json<{ data: { id: string } }>().data;
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/ivr-flows/${flow.id}/simulate`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        collected_digits: {
+          language_menu: '9',
+          department_menu: '2',
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ data: { outcome: { path: string[]; final_action: { extension_number?: string } } } }>();
+    expect(body.data.outcome.path).toEqual([
+      'start',
+      'language_menu',
+      'language_switch',
+      'department_menu',
+      'department_switch',
+      'support',
+    ]);
+    expect(body.data.outcome.final_action.extension_number).toBe('202');
   });
 
   it('full lifecycle: create, validate, publish, rollback', async () => {

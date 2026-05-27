@@ -2235,11 +2235,19 @@ export interface components {
         };
         IvrFlowSimulationRequest: {
             digits?: string[];
+            collected_digits?: {
+                [key: string]: string;
+            };
             caller_number?: string;
             /** Format: date-time */
             now?: string;
             force_timeout?: boolean;
+            force_timeout_nodes?: string[];
             force_invalid?: boolean;
+            force_invalid_nodes?: string[];
+            variables?: {
+                [key: string]: string;
+            };
         };
         IvrFlowSimulationFinalAction: {
             /** @enum {string} */

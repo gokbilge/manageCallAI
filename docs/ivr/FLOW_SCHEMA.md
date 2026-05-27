@@ -140,6 +140,11 @@ Documented but not implemented in this slice:
 
 - resolves input and branches by `cases`
 - may define `default_node_id`
+- MVP simulation can currently resolve:
+  - `{{last_digits}}`
+  - `{{caller_number}}`
+  - `{{now.hour}}`
+  - `{{var.<name>}}`
 
 ### transfer_extension
 
