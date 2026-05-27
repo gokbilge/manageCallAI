@@ -1,9 +1,12 @@
+import type { Role } from '@/lib/permissions/capabilities';
+
 export type WorkspaceAccess = 'platform' | 'tenant';
 
 export type SessionClaims = {
   sub: string;
   tenant_id: string;
   email: string;
+  role?: Role;
 };
 
 export type SessionState = {
@@ -34,6 +37,7 @@ export function decodeJwtClaims(token: string): SessionClaims {
     sub: decoded.sub,
     tenant_id: decoded.tenant_id,
     email: decoded.email,
+    role: decoded.role,
   };
 }
 
@@ -57,13 +61,16 @@ export function createSession(input: {
   tenantName?: string;
   displayName?: string;
 }): SessionState {
+  const claims = decodeJwtClaims(input.token);
+  const workspaces: WorkspaceAccess[] =
+    claims.role === 'platform_admin' ? ['tenant', 'platform'] : ['tenant'];
   return {
     token: input.token,
-    claims: decodeJwtClaims(input.token),
+    claims,
     tenantSlug: input.tenantSlug,
     tenantName: input.tenantName,
     displayName: input.displayName,
-    workspaces: ['tenant', 'platform'],
+    workspaces,
   };
 }
 

@@ -11,6 +11,8 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import type { Workspace } from '@/lib/routes/workspace';
 import { cn } from '@/lib/cn';
+import { useAuth } from '@/lib/auth/use-auth';
+import { CAPABILITIES, hasCapability } from '@/lib/permissions/capabilities';
 
 type AppSidebarProps = {
   workspace: Workspace;
@@ -37,7 +39,13 @@ const tenantNav: NavItem[] = [
 ];
 
 export function AppSidebar({ workspace }: AppSidebarProps) {
-  const items = workspace === 'platform' ? platformNav : tenantNav;
+  const { session } = useAuth();
+  const role = session?.claims.role;
+  const canAccessPlatform = hasCapability(role, CAPABILITIES.PLATFORM_TENANTS_VIEW);
+
+  const items = workspace === 'platform'
+    ? (canAccessPlatform ? platformNav : [])
+    : tenantNav;
   const workspaceTitle = workspace === 'platform' ? 'Platform Workspace' : 'Tenant Workspace';
 
   return (

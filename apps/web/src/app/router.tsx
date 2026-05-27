@@ -9,6 +9,8 @@ import { ExtensionsPage } from '@/features/extensions/extensions-page';
 import { CallsPage } from '@/features/calls/calls-page';
 import { DirectorySmokeTestPage } from '@/features/integrations/directory-smoke-test-page';
 import { RequireSession } from '@/lib/auth/require-session';
+import { RequireCapability } from '@/lib/auth/require-capability';
+import { CAPABILITIES } from '@/lib/permissions/capabilities';
 
 const router = createBrowserRouter([
   {
@@ -23,9 +25,14 @@ const router = createBrowserRouter([
       {
         element: <RequireSession />,
         children: [
-          { path: 'platform', element: <PlatformHomePage /> },
-          { path: 'platform/tenants', element: <PlatformTenantsPage /> },
-          { path: 'platform/runtime', element: <RuntimeHealthPage /> },
+          {
+            element: <RequireCapability capability={CAPABILITIES.PLATFORM_TENANTS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'platform', element: <PlatformHomePage /> },
+              { path: 'platform/tenants', element: <PlatformTenantsPage /> },
+              { path: 'platform/runtime', element: <RuntimeHealthPage /> },
+            ],
+          },
           { path: 'tenant', element: <Navigate to="/tenant/extensions" replace /> },
           { path: 'tenant/dashboard', element: <TenantDashboardPage /> },
           { path: 'tenant/extensions', element: <ExtensionsPage /> },

@@ -1,5 +1,3 @@
-export type Role = 'platform_admin' | 'tenant_admin';
-
 export const CAPABILITIES = {
   PLATFORM_TENANTS_VIEW: 'platform.tenants.view',
   PLATFORM_RUNTIME_VIEW: 'platform.runtime.view',
@@ -15,6 +13,8 @@ export const CAPABILITIES = {
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
+
+export type Role = 'platform_admin' | 'tenant_admin';
 
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   platform_admin: [

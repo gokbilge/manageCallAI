@@ -39,6 +39,7 @@ services:
         condition: service_healthy
 
   freeswitch:
+    profiles: [freeswitch]
     build:
       context: ./freeswitch
       dockerfile: docker/Dockerfile
@@ -46,6 +47,7 @@ services:
         FREESWITCH_VERSION: ${FREESWITCH_VERSION:-v1.10.12}
     environment:
       MANAGECALLAI_DIRECTORY_URL: ${MANAGECALLAI_DIRECTORY_URL:-http://api:3000/api/v1/freeswitch/directory}
+      MANAGECALLAI_API_BASE: ${MANAGECALLAI_API_BASE:-http://api:3000/api/v1}
       RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN:-change-me-runtime-token}
       FREESWITCH_ESL_PASSWORD: ${FREESWITCH_ESL_PASSWORD:-ClueCon}
     ports:
@@ -60,6 +62,7 @@ services:
         condition: service_healthy
 
   freeswitch-agent:
+    profiles: [freeswitch]
     build:
       context: .
       dockerfile: apps/freeswitch-agent/Dockerfile

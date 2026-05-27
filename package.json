@@ -14,7 +14,11 @@
     "db:status": "node ./db/migrate.mjs --status",
     "db:up": "docker compose up -d postgres",
     "dev": "pnpm -r --parallel dev",
+    "dev:api": "pnpm --filter @managecallai/api dev",
+    "dev:web": "pnpm --filter @managecallai/web dev",
     "lint": "pnpm -r lint",
+    "runtime:up": "docker compose --profile freeswitch up -d",
+    "runtime:down": "docker compose --profile freeswitch down",
     "test": "pnpm -r test"
   }
 }

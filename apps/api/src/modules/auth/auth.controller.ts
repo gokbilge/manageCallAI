@@ -1,8 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../../db/client.js';
+import { config } from '../../config/env.js';
 import { AuthRepository } from './auth.repository.js';
 import { AuthError, AuthService } from './auth.service.js';
 import type { LoginInput, RegisterInput } from './auth.types.js';
+import type { Role } from './capabilities.js';
 
 const service = new AuthService(new AuthRepository(db));
 
@@ -37,10 +39,14 @@ export async function authController(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       try {
         const result = await service.register(req.body);
+        const role: Role = config.platformOperatorEmails.includes(result.email)
+          ? 'platform_admin'
+          : 'tenant_admin';
         const token = app.jwt.sign({
           sub: result.id,
           tenant_id: result.tenant_id,
           email: result.email,
+          role,
         });
         return reply.code(201).send({ token });
       } catch (err) {
@@ -71,10 +77,14 @@ export async function authController(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       try {
         const result = await service.login(req.body);
+        const role: Role = config.platformOperatorEmails.includes(result.email)
+          ? 'platform_admin'
+          : 'tenant_admin';
         const token = app.jwt.sign({
           sub: result.id,
           tenant_id: result.tenant_id,
           email: result.email,
+          role,
         });
         return { token };
       } catch (err) {

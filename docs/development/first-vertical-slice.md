@@ -10,8 +10,9 @@ This guide proves the API-first MVP path from a fresh checkout:
 2. create an extension
 3. store the SIP secret encrypted at rest
 4. look up the extension through the FreeSWITCH directory endpoint
-5. optionally start the stock FreeSWITCH reference container
-6. optionally continue to the live SIP registration proof
+5. create an inbound route and verify route lookup
+6. optionally start the stock FreeSWITCH reference container
+7. optionally continue to the live SIP registration proof
 
 ## 1. Prepare the Environment
 
@@ -129,7 +130,55 @@ Expected behavior:
   - `<user id="200">`
   - `<param name="password" value="PhonePass123!" />`
 
-## 7. Optional: Start the Stock FreeSWITCH Reference Container
+## 7. Create an Inbound Route (DID Match)
+
+```bash
+curl -X POST http://localhost:3000/api/v1/inbound-routes \
+  -H "Authorization: Bearer <JWT>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Main DID",
+    "match_type": "did",
+    "match_value": "+15551234567",
+    "target_type": "extension",
+    "target_id": "<extension-id-from-step-5>",
+    "status": "active"
+  }'
+```
+
+Expected behavior:
+
+- returns `201`
+- response includes `id`, `match_type`, `match_value`, `status`
+
+Save the returned `id` as `ROUTE_ID`.
+
+## 8. Verify Route Lookup
+
+This endpoint is what the FreeSWITCH Lua script calls on every inbound call:
+
+```bash
+curl "http://localhost:3000/api/v1/freeswitch/route-lookup?did=%2B15551234567" \
+  -H "x-managecallai-runtime-token: <RUNTIME_API_TOKEN>"
+```
+
+Expected response:
+
+```json
+{
+  "matched": true,
+  "route_id": "<uuid>",
+  "tenant_id": "<uuid>",
+  "target_type": "extension",
+  "target_id": "<uuid>",
+  "target": {
+    "extension_number": "200",
+    "directory_domain": "acme-demo.managecallai.local"
+  }
+}
+```
+
+## 10. Optional: Start the Stock FreeSWITCH Reference Container
 
 ```bash
 docker compose build freeswitch
@@ -149,7 +198,7 @@ Expected result for both:
 true
 ```
 
-## 8. Automated Smoke Script
+## 11. Automated Smoke Script
 
 The repo also includes a PowerShell smoke script for the current MVP path:
 
@@ -165,7 +214,7 @@ It performs:
 4. test call-event ingestion
 5. call-event listing verification
 
-## 9. Continue to the Live Runtime Proof
+## 12. Continue to the Live Runtime Proof
 
 If you want to prove the real SIP registration and ESL event path on top of this API-first slice, continue with:
 

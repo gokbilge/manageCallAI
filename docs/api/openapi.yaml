@@ -1255,34 +1255,12 @@ components:
           type: integer
         total:
           type: integer
-    ErrorDetail:
-      type: object
-      required: [reason]
-      properties:
-        field:
-          type: string
-        reason:
-          type: string
-    ErrorEnvelope:
-      type: object
-      required: [code, message]
-      properties:
-        code:
-          type: string
-        message:
-          type: string
-        details:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorDetail'
-        requestId:
-          type: string
     ErrorResponse:
       type: object
       required: [error]
       properties:
         error:
-          $ref: '#/components/schemas/ErrorEnvelope'
+          type: string
     AuthResponse:
       type: object
       required: [token]
@@ -1607,140 +1585,136 @@ components:
             $ref: '#/components/schemas/SipTrunkSnake'
     PhoneNumber:
       type: object
-      required: [id, e164Number, status]
+      required: [id, e164_number, status]
       properties:
         id:
           type: string
-        e164Number:
+        e164_number:
           type: string
-        displayLabel:
+        display_label:
           type: string
         status:
           type: string
           enum: [active, inactive]
-        trunkId:
+        trunk_id:
           type: string
-        assignedTargetType:
+        assigned_target_type:
           type: string
           enum: [inbound_route, flow, extension]
-        assignedTargetId:
+        assigned_target_id:
           type: string
     CreatePhoneNumberRequest:
       type: object
-      required: [e164Number]
+      required: [e164_number]
       properties:
-        e164Number:
+        e164_number:
           type: string
-        displayLabel:
+        display_label:
           type: string
-        trunkId:
+        trunk_id:
           type: string
-        assignedTargetType:
+        assigned_target_type:
           type: string
-        assignedTargetId:
+        assigned_target_id:
           type: string
     UpdatePhoneNumberRequest:
       type: object
       properties:
-        displayLabel:
+        display_label:
           type: string
         status:
           type: string
-        trunkId:
+        trunk_id:
           type: string
-        assignedTargetType:
+        assigned_target_type:
           type: string
-        assignedTargetId:
+        assigned_target_id:
           type: string
     PhoneNumberCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/PhoneNumber'
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhoneNumber'
     InboundRoute:
       type: object
-      required: [id, name, matchType, matchValue, targetType, status]
+      required: [id, name, match_type, match_value, target_type, status]
       properties:
         id:
           type: string
         name:
           type: string
-        matchType:
+        match_type:
           type: string
           enum: [did, trunk, pattern]
-        matchValue:
+        match_value:
           type: string
-        phoneNumberId:
+        phone_number_id:
           type: string
-        targetType:
+        target_type:
           type: string
           enum: [flow, extension]
-        targetId:
+        target_id:
           type: string
         status:
           type: string
           enum: [draft, active, inactive]
-        draftVersionId:
+        draft_version_id:
           type: string
-        activeVersionId:
+        active_version_id:
           type: string
     CreateInboundRouteRequest:
       type: object
-      required: [name, matchType, matchValue, targetType]
+      required: [name, match_type, match_value, target_type]
       properties:
         name:
           type: string
-        matchType:
+        match_type:
           type: string
-        matchValue:
+        match_value:
           type: string
-        phoneNumberId:
+        phone_number_id:
           type: string
-        targetType:
+        target_type:
           type: string
-        targetId:
+        target_id:
           type: string
     UpdateInboundRouteRequest:
       type: object
       properties:
         name:
           type: string
-        matchType:
+        match_type:
           type: string
-        matchValue:
+        match_value:
           type: string
-        phoneNumberId:
+        phone_number_id:
           type: string
-        targetType:
+        target_type:
           type: string
-        targetId:
+        target_id:
           type: string
         status:
           type: string
     InboundRouteCollection:
-      allOf:
-        - $ref: '#/components/schemas/Pagination'
-        - type: object
-          required: [items]
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/InboundRoute'
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/InboundRoute'
     RouteVersion:
       type: object
-      required: [id, routeId, versionNumber, state]
+      required: [id, route_id, version_number, state]
       properties:
         id:
           type: string
-        routeId:
+        route_id:
           type: string
-        versionNumber:
+        version_number:
           type: integer
         state:
           type: string

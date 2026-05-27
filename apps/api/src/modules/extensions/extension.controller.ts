@@ -2,6 +2,8 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import { authenticate } from '../auth/authenticate.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
+import { CAPABILITIES } from '../auth/capabilities.js';
+import { requireCapability } from '../auth/require-capability.js';
 import { ExtensionRepository } from './extension.repository.js';
 import { ExtensionNotFoundError, ExtensionService } from './extension.service.js';
 import type { CreateExtensionBody, UpdateExtensionInput } from './extension.types.js';
@@ -18,11 +20,9 @@ function replyNotFound(err: unknown, reply: FastifyReply): FastifyReply {
 }
 
 export async function extensionController(app: FastifyInstance): Promise<void> {
-  // All extension routes require a valid JWT.
-  app.addHook('preHandler', authenticate);
-
   app.get<{ Querystring: Record<string, never> }>(
     '/',
+    { preHandler: authenticate },
     async (req) => {
       const user = req.user as AuthClaims;
       const extensions = await service.listByTenant(user.tenant_id);
@@ -33,6 +33,7 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
   app.post<{ Body: CreateExtensionBody }>(
     '/',
     {
+      preHandler: requireCapability(CAPABILITIES.TENANT_EXTENSIONS_CREATE),
       schema: {
         body: {
           type: 'object',
@@ -62,6 +63,7 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
   app.get<{ Params: { id: string } }>(
     '/:id',
     {
+      preHandler: authenticate,
       schema: {
         params: {
           type: 'object',
@@ -83,6 +85,7 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
   app.patch<{ Params: { id: string }; Body: UpdateExtensionInput }>(
     '/:id',
     {
+      preHandler: requireCapability(CAPABILITIES.TENANT_EXTENSIONS_UPDATE),
       schema: {
         params: {
           type: 'object',
@@ -119,6 +122,7 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
   app.post<{ Params: { id: string } }>(
     '/:id/deactivate',
     {
+      preHandler: requireCapability(CAPABILITIES.TENANT_EXTENSIONS_DEACTIVATE),
       schema: {
         params: {
           type: 'object',
