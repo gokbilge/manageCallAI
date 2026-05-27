@@ -29,6 +29,13 @@ describe('hasCapability', () => {
       expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_INBOUND_ROUTES_TEST)).toBe(true);
     });
 
+    it('grants prompt capabilities', () => {
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_PROMPTS_VIEW)).toBe(true);
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_PROMPTS_CREATE)).toBe(true);
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_PROMPTS_UPDATE)).toBe(true);
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_PROMPTS_DEACTIVATE)).toBe(true);
+    });
+
     it('grants ivr flow capabilities', () => {
       expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_IVR_FLOWS_VIEW)).toBe(true);
       expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_IVR_FLOWS_CREATE)).toBe(true);
@@ -37,6 +44,11 @@ describe('hasCapability', () => {
       expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE)).toBe(true);
       expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH)).toBe(true);
       expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_IVR_FLOWS_ROLLBACK)).toBe(true);
+    });
+
+    it('grants approval capabilities', () => {
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_APPROVALS_VIEW)).toBe(true);
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_APPROVALS_DECIDE)).toBe(true);
     });
 
     it('denies all platform capabilities', () => {
@@ -59,6 +71,7 @@ describe('hasCapability', () => {
       expect(hasCapability('platform_admin', CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW)).toBe(true);
       expect(hasCapability('platform_admin', CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW)).toBe(true);
       expect(hasCapability('platform_admin', CAPABILITIES.TENANT_INBOUND_ROUTES_ACTIVATE)).toBe(true);
+      expect(hasCapability('platform_admin', CAPABILITIES.TENANT_PROMPTS_VIEW)).toBe(true);
       expect(hasCapability('platform_admin', CAPABILITIES.TENANT_IVR_FLOWS_VIEW)).toBe(true);
       expect(hasCapability('platform_admin', CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH)).toBe(true);
     });
@@ -69,6 +82,7 @@ describe('hasCapability', () => {
       expect(hasCapability(undefined, CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(true);
       expect(hasCapability(undefined, CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW)).toBe(true);
       expect(hasCapability(undefined, CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW)).toBe(true);
+      expect(hasCapability(undefined, CAPABILITIES.TENANT_PROMPTS_VIEW)).toBe(true);
       expect(hasCapability(undefined, CAPABILITIES.TENANT_IVR_FLOWS_VIEW)).toBe(true);
       expect(hasCapability(undefined, CAPABILITIES.PLATFORM_TENANTS_VIEW)).toBe(false);
     });

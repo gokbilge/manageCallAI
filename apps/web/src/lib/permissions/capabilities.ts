@@ -32,6 +32,9 @@ export const CAPABILITIES = {
   TENANT_IVR_FLOWS_SIMULATE: 'tenant.ivr_flows.simulate',
   TENANT_IVR_FLOWS_PUBLISH: 'tenant.ivr_flows.publish',
   TENANT_IVR_FLOWS_ROLLBACK: 'tenant.ivr_flows.rollback',
+
+  TENANT_APPROVALS_VIEW: 'tenant.approvals.view',
+  TENANT_APPROVALS_DECIDE: 'tenant.approvals.decide',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -61,6 +64,8 @@ const TENANT_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE,
   CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH,
   CAPABILITIES.TENANT_IVR_FLOWS_ROLLBACK,
+  CAPABILITIES.TENANT_APPROVALS_VIEW,
+  CAPABILITIES.TENANT_APPROVALS_DECIDE,
 ];
 
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {

@@ -10,6 +10,7 @@ export const paths = {
     numbers: '/tenant/numbers',
     inboundRoutes: '/tenant/routes/inbound',
     ivrFlows: '/tenant/ivr-flows',
+    approvals: '/tenant/approvals',
     calls: '/tenant/calls',
     smokeTest: '/tenant/integrations/directory-smoke-test',
   },

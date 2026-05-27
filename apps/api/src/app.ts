@@ -9,9 +9,12 @@ import { callEventController } from './modules/call-events/call-event.controller
 import { extensionController } from './modules/extensions/extension.controller.js';
 import { freeswitchController } from './modules/freeswitch/freeswitch.controller.js';
 import { inboundRouteController } from './modules/inbound-routes/inbound-route.controller.js';
+import { approvalController, policiesController } from './modules/approvals/approval.controller.js';
 import { ivrFlowController } from './modules/ivr-flows/ivr-flow.controller.js';
 import { platformController } from './modules/platform/platform.controller.js';
 import { phoneNumberController } from './modules/phone-numbers/phone-number.controller.js';
+import { promptAssetController } from './modules/prompts/prompt-asset.controller.js';
+import { ivrRuntimeController } from './modules/runtime/ivr-runtime.controller.js';
 import { sipTrunkController } from './modules/sip-trunks/sip-trunk.controller.js';
 
 export function buildApp() {
@@ -34,9 +37,13 @@ export function buildApp() {
   app.register(extensionController, { prefix: '/api/v1/extensions' });
   app.register(sipTrunkController, { prefix: '/api/v1/sip-trunks' });
   app.register(phoneNumberController, { prefix: '/api/v1/phone-numbers' });
+  app.register(promptAssetController, { prefix: '/api/v1/prompts' });
   app.register(callEventController, { prefix: '/api/v1/call-events' });
   app.register(freeswitchController, { prefix: '/api/v1/freeswitch' });
+  app.register(ivrRuntimeController, { prefix: '/api/v1/runtime/ivr' });
   app.register(ivrFlowController, { prefix: '/api/v1/ivr-flows' });
+  app.register(approvalController, { prefix: '/api/v1/approvals' });
+  app.register(policiesController, { prefix: '/api/v1/policies' });
   app.register(inboundRouteController, { prefix: '/api/v1/inbound-routes' });
   app.register(platformController, { prefix: '/api/v1/platform' });
 

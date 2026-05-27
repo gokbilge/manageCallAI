@@ -8,6 +8,7 @@ import { TenantDashboardPage } from '@/features/tenant/tenant-dashboard-page';
 import { ExtensionsPage } from '@/features/extensions/extensions-page';
 import { NumbersPage } from '@/features/numbers/numbers-page';
 import { InboundRoutesPage } from '@/features/inbound-routes/inbound-routes-page';
+import { ApprovalsPage } from '@/features/approvals/approvals-page';
 import { IvrFlowDetailPage } from '@/features/ivr-flows/ivr-flow-detail-page';
 import { IvrFlowsPage } from '@/features/ivr-flows/ivr-flows-page';
 import { CallsPage } from '@/features/calls/calls-page';
@@ -57,6 +58,12 @@ const router = createBrowserRouter([
             children: [
               { path: 'tenant/ivr-flows', element: <IvrFlowsPage /> },
               { path: 'tenant/ivr-flows/:flowId', element: <IvrFlowDetailPage /> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_APPROVALS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/approvals', element: <ApprovalsPage /> },
             ],
           },
           { path: 'tenant/calls', element: <CallsPage /> },
