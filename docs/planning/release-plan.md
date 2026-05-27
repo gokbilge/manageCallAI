@@ -65,9 +65,12 @@ SLICE-00 Current Baseline
   |                                   +--> SLICE-11 Release Hardening
   |
   +--> SLICE-12 Outbound Event Delivery ----------> SLICE-09
-                                                    SLICE-10
+  |                                                 SLICE-10
   |
   +--> SLICE-13 Post-Release Expansion ------------> after first release
+  |
+  +--> SLICE-14 Operator Surface Gaps ----+-------> SLICE-11 Release Hardening
+       (nav, prompts UI, session view)
 ```
 
 ## 5. Parallel Work Tracks
@@ -77,6 +80,7 @@ SLICE-00 Current Baseline
 - `SLICE-01`
 - `SLICE-02`
 - `SLICE-08`
+- `SLICE-14`
 
 ### Track B - IVR Runtime Core
 
@@ -123,14 +127,15 @@ SLICE-00 Current Baseline
 8. `SLICE-08` Visual Builder
 9. `SLICE-09` n8n Surfaces
 10. `SLICE-10` MCP Surfaces
+11. `SLICE-14` Operator Surface Gaps (nav, prompts UI, session observability)
 
 ### Stage 5 - Release
 
-11. `SLICE-11` Release Hardening
+12. `SLICE-11` Release Hardening
 
 ### Stage 6 - Post Release
 
-12. `SLICE-13` Post-Release Expansion
+13. `SLICE-13` Post-Release Expansion
 
 ## 7. Minimal Release Gate
 
@@ -159,3 +164,4 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-11](slices/SLICE-11-release-hardening.md)
 - [SLICE-12](slices/SLICE-12-outbound-event-delivery.md)
 - [SLICE-13](slices/SLICE-13-post-release-expansion.md)
+- [SLICE-14](slices/SLICE-14-operator-surface-gaps.md)

@@ -57,6 +57,9 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [slices/SLICE-13-post-release-expansion.md](slices/SLICE-13-post-release-expansion.md)
   Post-release parking lane for advanced telecom features and broader expansion work that should not block v1.
 
+- [slices/SLICE-14-operator-surface-gaps.md](slices/SLICE-14-operator-surface-gaps.md)
+  Sidebar nav completeness, prompt assets web page, and runtime session observability.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)
