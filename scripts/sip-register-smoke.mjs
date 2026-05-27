@@ -15,12 +15,12 @@ function md5(value) {
   return crypto.createHash('md5').update(value, 'utf8').digest('hex');
 }
 
-function buildRegister({ cseq, callId, branch, authHeader, expires = 300 }) {
+function buildRegister({ cseq, callId, branch, fromTag, authHeader, expires = 300 }) {
   const lines = [
     `REGISTER sip:${DOMAIN} SIP/2.0`,
     `Via: SIP/2.0/${TRANSPORT} ${LOCAL_IP}:${LOCAL_PORT};branch=${branch};rport`,
     'Max-Forwards: 70',
-    `From: <sip:${USERNAME}@${DOMAIN}>;tag=mcai${Math.floor(Math.random() * 9000 + 1000)}`,
+    `From: <sip:${USERNAME}@${DOMAIN}>;tag=${fromTag}`,
     `To: <sip:${USERNAME}@${DOMAIN}>`,
     `Call-ID: ${callId}`,
     `CSeq: ${cseq} REGISTER`,
@@ -119,9 +119,10 @@ async function main() {
     const requestUri = `sip:${DOMAIN}`;
     const callId = `${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}@${LOCAL_IP}`;
     const firstBranch = `z9hG4bK${Math.floor(Math.random() * 900000 + 100000)}`;
+    const fromTag = `mcai${Math.floor(Math.random() * 9000 + 1000)}`;
 
     console.log(`Sending unauthenticated REGISTER to ${HOST}:${PORT} for ${USERNAME}@${DOMAIN}`);
-    socket.send(buildRegister({ cseq: 1, callId, branch: firstBranch }), PORT, HOST);
+    socket.send(buildRegister({ cseq: 1, callId, branch: firstBranch, fromTag }), PORT, HOST);
     const first = await receiveMessage(socket);
 
     if (!first.includes('401')) {
@@ -136,7 +137,11 @@ async function main() {
     console.log('Sending authenticated REGISTER');
     const authHeader = buildAuthorization(wwwAuthenticate, requestUri);
     const secondBranch = `z9hG4bK${Math.floor(Math.random() * 900000 + 100000)}`;
-    socket.send(buildRegister({ cseq: 2, callId, branch: secondBranch, authHeader }), PORT, HOST);
+    socket.send(
+      buildRegister({ cseq: 2, callId, branch: secondBranch, fromTag, authHeader }),
+      PORT,
+      HOST,
+    );
     const second = await receiveMessage(socket);
 
     if (!second.includes('200 OK')) {

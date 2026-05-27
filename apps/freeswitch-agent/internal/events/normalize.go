@@ -17,10 +17,7 @@ type NormalizedEvent struct {
 }
 
 func NormalizeMVP(headers map[string]string, tenantID string) (NormalizedEvent, bool) {
-	eventName := firstNonEmpty(
-		headers["Event-Name"],
-		headers["Event-Subclass"],
-	)
+	eventName := normalizedEventName(headers)
 
 	switch eventName {
 	case "CHANNEL_CREATE":
@@ -34,6 +31,15 @@ func NormalizeMVP(headers map[string]string, tenantID string) (NormalizedEvent, 
 	default:
 		return NormalizedEvent{}, false
 	}
+}
+
+func normalizedEventName(headers map[string]string) string {
+	eventName := decodeValue(firstNonEmpty(headers["Event-Name"]))
+	if eventName == "CUSTOM" {
+		return firstNonEmpty(decodeValue(headers["Event-Subclass"]), eventName)
+	}
+
+	return firstNonEmpty(eventName, decodeValue(headers["Event-Subclass"]))
 }
 
 func fromHeaders(eventType string, headers map[string]string, tenantID string) NormalizedEvent {

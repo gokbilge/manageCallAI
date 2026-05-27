@@ -2,7 +2,7 @@
   <bindings>
     <binding name="directory">
       <param name="gateway-url" value="__MANAGECALLAI_DIRECTORY_URL__?runtime_token=__RUNTIME_API_TOKEN__" />
-      <param name="method" value="get" />
+      <param name="method" value="POST" />
     </binding>
   </bindings>
 </configuration>

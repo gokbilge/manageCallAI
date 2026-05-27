@@ -61,6 +61,11 @@ func (c *Client) runSession(ctx context.Context, address string) error {
 	}
 	defer conn.Close()
 
+	go func() {
+		<-ctx.Done()
+		_ = conn.Close()
+	}()
+
 	reader := bufio.NewReader(conn)
 	if err := c.authenticate(reader, conn); err != nil {
 		return err
@@ -73,14 +78,15 @@ func (c *Client) runSession(ctx context.Context, address string) error {
 	c.logger.Info("esl subscription active", slog.String("address", address))
 
 	for {
-		if err := conn.SetReadDeadline(time.Now().Add(30 * time.Second)); err != nil {
-			return err
-		}
-
 		msg, err := readMessage(reader)
 		if err != nil {
 			return err
 		}
+
+		c.logger.Debug("received esl message",
+			slog.String("content_type", msg.Headers["Content-Type"]),
+			slog.String("reply_text", msg.Headers["Reply-Text"]),
+		)
 
 		if !isEventMessage(msg.Headers) {
 			continue
@@ -140,9 +146,7 @@ func (c *Client) authenticate(reader *bufio.Reader, conn net.Conn) error {
 
 func (c *Client) subscribe(reader *bufio.Reader, conn net.Conn) error {
 	commands := []string{
-		"events plain CHANNEL_CREATE CHANNEL_ANSWER CHANNEL_HANGUP CUSTOM",
-		"filter Event-Subclass sofia::register",
-		"filter Event-Subclass sofia::unregister",
+		"events plain all",
 	}
 
 	for _, command := range commands {
