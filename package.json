@@ -7,6 +7,10 @@
     "dotenv": "^16.4.5",
     "pg": "^8.13.1"
   },
+  "devDependencies": {
+    "@managecallai/contracts": "workspace:*",
+    "yaml": "^2.8.0"
+  },
   "scripts": {
     "build": "pnpm -r build",
     "db:check": "node ./db/migrate.mjs",
@@ -20,6 +24,8 @@
     "runtime:up": "docker compose --profile freeswitch up -d",
     "runtime:down": "docker compose --profile freeswitch down",
     "runtime:smoke": "powershell -ExecutionPolicy Bypass -File ./scripts/live-runtime-smoke.ps1",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "generate:openapi": "node scripts/generate-openapi.mjs",
+    "generate:web-types": "node scripts/generate-web-types.mjs"
   }
 }

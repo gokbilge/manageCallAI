@@ -1,0 +1,28 @@
+export { registry, z } from './registry.js';
+export { OpenApiGeneratorV31, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
+import './schemas/register.js';
+
+export * from './schemas/common.js';
+export * from './schemas/auth.js';
+export * from './schemas/extensions.js';
+export * from './schemas/sip-trunks.js';
+export * from './schemas/phone-numbers.js';
+export * from './schemas/prompts.js';
+export * from './schemas/call-groups.js';
+export * from './schemas/queues.js';
+export * from './schemas/voicemail-boxes.js';
+export * from './schemas/inbound-routes.js';
+export * from './schemas/ivr-flows.js';
+export * from './schemas/approvals.js';
+export * from './schemas/automation.js';
+export * from './schemas/call-events.js';
+export * from './schemas/schedules.js';
+export * from './schemas/outbound-routes.js';
+export * from './schemas/users.js';
+export * from './schemas/recordings.js';
+export * from './schemas/runtime.js';
+export * from './schemas/channel-accounts.js';
+export * from './schemas/channel-messages.js';
+export * from './schemas/meeting-sessions.js';
+export * from './schemas/provider-work.js';
+export * from './schemas/platform.js';

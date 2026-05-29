@@ -125,14 +125,16 @@ if (schemasIdx === -1) {
       schemaBlock += l + '\n';
     }
 
-    // Check required fields
-    const requiredLine = schemaBlock.match(/required:\s*\[([^\]]+)\]/);
-    if (!requiredLine) {
+    // Check required fields — supports both inline `required: [a, b]` and block `- field` format
+    const hasRequired = /required/.test(schemaBlock);
+    if (!hasRequired) {
       failures.push('ErrorResponse schema has no required: list');
     } else {
-      const declared = requiredLine[1].split(',').map((s) => s.trim());
       for (const f of ['error', 'message', 'request_id']) {
-        if (!declared.includes(f)) {
+        // Match inline [error, ...] OR block "- error" entry
+        const inlineMatch = new RegExp(`required:\\s*\\[[^\\]]*\\b${f}\\b[^\\]]*\\]`).test(schemaBlock);
+        const blockMatch = new RegExp(`-\\s+${f}\\b`).test(schemaBlock);
+        if (!inlineMatch && !blockMatch) {
           failures.push(`ErrorResponse required list missing: ${f}`);
         }
       }
