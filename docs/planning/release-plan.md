@@ -51,7 +51,7 @@ Reference:
 | `SLICE-10` | completed |
 | `SLICE-11` | completed |
 | `SLICE-12` | completed |
-| `SLICE-13` | completed |
+| `SLICE-13` | closed planning lane (post-release) |
 | `SLICE-14` | completed |
 
 All release-plan slices are now closed from a planning perspective.
