@@ -5,7 +5,13 @@
  * Strategy (hybrid):
  *   - Component schemas: generated from Zod via @asteasolutions/zod-to-openapi
  *   - Path definitions:  read from the existing openapi.yaml (kept as source of truth
- *                        for paths until SLICE-34 migrates them to code)
+ *                        for paths until they are migrated to code)
+ *
+ * Path $ref renames:
+ *   The path YAML was written with legacy naming conventions (XxxRequest, AuthResponse, …).
+ *   PATH_REF_RENAMES maps each legacy name to the Zod-registered component name so the
+ *   generator can rewrite all $refs in the paths tree before emitting the spec.
+ *   Remove an entry once the source YAML is updated to use the canonical name.
  *
  * Run:
  *   node scripts/generate-openapi.mjs
@@ -75,21 +81,111 @@ const generated = generator.generateDocument({
   },
 });
 
-// Merge: use existing paths + existing responses + generated schemas
+// ── 3. Rename legacy path $refs to canonical Zod component names ──────────────
+// The path YAML predates Zod schema registration and uses old naming conventions.
+// Keys are legacy names; values are the canonical Zod-generated names.
+const PATH_REF_RENAMES = {
+  RegisterRequest: 'RegisterBody',
+  LoginRequest: 'LoginBody',
+  AuthResponse: 'AuthTokenResponse',
+  CreateExtensionRequest: 'CreateExtensionBody',
+  UpdateExtensionRequest: 'UpdateExtensionBody',
+  CreateSipTrunkRequest: 'CreateSipTrunkBody',
+  UpdateSipTrunkRequest: 'UpdateSipTrunkBody',
+  CreatePhoneNumberRequest: 'CreatePhoneNumberBody',
+  UpdatePhoneNumberRequest: 'UpdatePhoneNumberBody',
+  CreatePromptAssetRequest: 'CreatePromptAssetBody',
+  UpdatePromptAssetRequest: 'UpdatePromptAssetBody',
+  CreateQueueRequest: 'CreateQueueBody',
+  UpdateQueueRequest: 'UpdateQueueBody',
+  AddQueueMemberRequest: 'AddQueueMemberBody',
+  CreateVoicemailBoxRequest: 'CreateVoicemailBoxBody',
+  UpdateVoicemailBoxRequest: 'UpdateVoicemailBoxBody',
+  CreateInboundRouteRequest: 'CreateInboundRouteBody',
+  UpdateInboundRouteRequest: 'UpdateInboundRouteBody',
+  FlowVersionDraftRequest: 'CreateFlowVersionBody',
+  CreateIvrFlowRequest: 'CreateIvrFlowBody',
+  UpdateIvrFlowRequest: 'UpdateIvrFlowBody',
+  IvrFlowSimulationRequest: 'SimulationScenario',
+  StartIvrRuntimeSessionRequest: 'StartIvrRuntimeSessionBody',
+  AdvanceIvrRuntimeSessionRequest: 'AdvanceIvrRuntimeSessionBody',
+  CreateIvrAiTurnRequest: 'CreateIvrAiTurnBody',
+  ClaimIvrAiTurnRequest: 'ClaimWorkRequestBody',
+  CompleteIvrAiTurnRequest: 'CompleteIvrAiTurnBody',
+  IngestCallEventRequest: 'IngestCallEventBody',
+  IngestRecordingRequest: 'IngestRecordingBody',
+  CreateRecordingAnalysisRequest: 'CreateRecordingAnalysisBody',
+  ClaimRecordingAnalysisRequest: 'ClaimWorkRequestBody',
+  CompleteRecordingAnalysisRequest: 'CompleteRecordingAnalysisBody',
+  CreateChannelAccountRequest: 'CreateChannelAccountBody',
+  CreateOutboundChannelMessageRequest: 'CreateOutboundMessageBody',
+  IngestInboundChannelMessageRequest: 'IngestInboundMessageBody',
+  CreateChannelVoiceSessionRequest: 'CreateMeetingSessionBody',
+  CreatePromptGenerationRequest: 'CreatePromptGenerationBody',
+  ClaimPromptGenerationRequest: 'ClaimWorkRequestBody',
+  CompletePromptGenerationRequest: 'CompletePromptGenerationBody',
+};
+
+function applyRefRenames(node, renames) {
+  if (node && typeof node === 'object') {
+    if (node.$ref && typeof node.$ref === 'string') {
+      const m = node.$ref.match(/^#\/components\/schemas\/(.+)$/);
+      if (m && renames[m[1]]) {
+        node.$ref = `#/components/schemas/${renames[m[1]]}`;
+      }
+    }
+    for (const v of Object.values(node)) applyRefRenames(v, renames);
+  }
+}
+
+const paths = JSON.parse(JSON.stringify(existing.paths));
+applyRefRenames(paths, PATH_REF_RENAMES);
+
+// ── 4. Verify all path $refs resolve to generated components ──────────────────
+const generatedSchemas = generated.components?.schemas ?? {};
+
+function collectRefs(node, refs = new Set()) {
+  if (node && typeof node === 'object') {
+    if (node.$ref && typeof node.$ref === 'string') {
+      const m = node.$ref.match(/^#\/components\/schemas\/(.+)$/);
+      if (m) refs.add(m[1]);
+    }
+    for (const v of Object.values(node)) collectRefs(v, refs);
+  }
+  return refs;
+}
+
+const refsInPaths = collectRefs(paths);
+const missingRefs = [];
+for (const name of refsInPaths) {
+  if (!generatedSchemas[name]) {
+    missingRefs.push(name);
+  }
+}
+
+if (missingRefs.length > 0) {
+  console.error(`ERROR: ${missingRefs.length} path $ref(s) unresolved after renames:`);
+  for (const ref of missingRefs) console.error(`  - ${ref}`);
+  console.error('');
+  console.error('To fix: register the schema in packages/contracts/src/schemas/register.ts,');
+  console.error('or add a rename entry to PATH_REF_RENAMES in this script.');
+  process.exit(1);
+}
+
+// ── 5. Assemble and write the spec ────────────────────────────────────────────
 const newSpec = {
   openapi: '3.1.0',
   info: existing.info,
   servers: existing.servers,
   tags: existing.tags,
   security: existing.security,
-  paths: existing.paths,
+  paths,
   components: {
     ...existing.components,
-    schemas: generated.components?.schemas ?? {},
+    schemas: generatedSchemas,
   },
 };
 
-// ── 3. Write ──────────────────────────────────────────────────────────────────
 const header =
   '# This file is GENERATED by scripts/generate-openapi.mjs\n' +
   '# Do not edit manually — edit packages/contracts/src/schemas/*.ts instead.\n' +
@@ -100,3 +196,4 @@ writeFileSync(specPath, header + stringify(newSpec, { lineWidth: 120 }), 'utf8')
 console.log(`Generated ${specPath}`);
 console.log(`  schemas: ${Object.keys(newSpec.components?.schemas ?? {}).length} components`);
 console.log(`  paths:   ${Object.keys(newSpec.paths ?? {}).length} path entries`);
+console.log(`  renames applied: ${Object.keys(PATH_REF_RENAMES).length}`);

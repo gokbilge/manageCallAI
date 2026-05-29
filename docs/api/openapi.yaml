@@ -83,14 +83,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RegisterRequest"
+              $ref: "#/components/schemas/RegisterBody"
       responses:
         "201":
           description: JWT issued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthResponse"
+                $ref: "#/components/schemas/AuthTokenResponse"
         default:
           $ref: "#/components/responses/ErrorResponse"
   /auth/login:
@@ -104,14 +104,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginRequest"
+              $ref: "#/components/schemas/LoginBody"
       responses:
         "200":
           description: JWT issued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthResponse"
+                $ref: "#/components/schemas/AuthTokenResponse"
         default:
           $ref: "#/components/responses/ErrorResponse"
   /extensions:
@@ -137,7 +137,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateExtensionRequest"
+              $ref: "#/components/schemas/CreateExtensionBody"
       responses:
         "201":
           description: Extension created
@@ -172,7 +172,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateExtensionRequest"
+              $ref: "#/components/schemas/UpdateExtensionBody"
       responses:
         "200":
           description: Extension updated
@@ -221,7 +221,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateSipTrunkRequest"
+              $ref: "#/components/schemas/CreateSipTrunkBody"
       responses:
         "201":
           description: SIP trunk created
@@ -256,7 +256,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateSipTrunkRequest"
+              $ref: "#/components/schemas/UpdateSipTrunkBody"
       responses:
         "200":
           description: SIP trunk updated
@@ -305,7 +305,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreatePhoneNumberRequest"
+              $ref: "#/components/schemas/CreatePhoneNumberBody"
       responses:
         "201":
           description: Phone number created
@@ -340,7 +340,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdatePhoneNumberRequest"
+              $ref: "#/components/schemas/UpdatePhoneNumberBody"
       responses:
         "200":
           description: Phone number updated
@@ -389,7 +389,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreatePromptAssetRequest"
+              $ref: "#/components/schemas/CreatePromptAssetBody"
       responses:
         "201":
           description: Prompt asset created
@@ -424,7 +424,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdatePromptAssetRequest"
+              $ref: "#/components/schemas/UpdatePromptAssetBody"
       responses:
         "200":
           description: Prompt asset updated
@@ -482,7 +482,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreatePromptGenerationRequest"
+              $ref: "#/components/schemas/CreatePromptGenerationBody"
       responses:
         "201":
           description: Prompt generation request created
@@ -523,7 +523,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ClaimPromptGenerationRequest"
+              $ref: "#/components/schemas/ClaimWorkRequestBody"
       responses:
         "200":
           description: Prompt generation request claimed
@@ -551,7 +551,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CompletePromptGenerationRequest"
+              $ref: "#/components/schemas/CompletePromptGenerationBody"
       responses:
         "200":
           description: Prompt generation result accepted
@@ -584,7 +584,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateQueueRequest"
+              $ref: "#/components/schemas/CreateQueueBody"
       responses:
         "201":
           description: Queue created
@@ -619,7 +619,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateQueueRequest"
+              $ref: "#/components/schemas/UpdateQueueBody"
       responses:
         "200":
           description: Queue updated
@@ -657,7 +657,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddQueueMemberRequest"
+              $ref: "#/components/schemas/AddQueueMemberBody"
       responses:
         "201":
           description: Queue member created
@@ -703,7 +703,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateVoicemailBoxRequest"
+              $ref: "#/components/schemas/CreateVoicemailBoxBody"
       responses:
         "201":
           description: Voicemail box created
@@ -738,7 +738,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateVoicemailBoxRequest"
+              $ref: "#/components/schemas/UpdateVoicemailBoxBody"
       responses:
         "200":
           description: Voicemail box updated
@@ -787,7 +787,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateInboundRouteRequest"
+              $ref: "#/components/schemas/CreateInboundRouteBody"
       responses:
         "201":
           description: Inbound route created
@@ -822,7 +822,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateInboundRouteRequest"
+              $ref: "#/components/schemas/UpdateInboundRouteBody"
       responses:
         "200":
           description: Inbound route updated
@@ -938,7 +938,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateIvrFlowRequest"
+              $ref: "#/components/schemas/CreateIvrFlowBody"
       responses:
         "201":
           description: IVR flow created
@@ -973,7 +973,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateIvrFlowRequest"
+              $ref: "#/components/schemas/UpdateIvrFlowBody"
       responses:
         "200":
           description: IVR flow updated
@@ -1008,7 +1008,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/FlowVersionDraftRequest"
+              $ref: "#/components/schemas/CreateFlowVersionBody"
       responses:
         "201":
           description: Draft version created
@@ -1044,7 +1044,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/FlowVersionDraftRequest"
+              $ref: "#/components/schemas/CreateFlowVersionBody"
       responses:
         "200":
           description: Version definition updated
@@ -1111,7 +1111,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/IvrFlowSimulationRequest"
+              $ref: "#/components/schemas/SimulationScenario"
       responses:
         "200":
           description: Simulation passed
@@ -1140,7 +1140,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/IvrFlowSimulationRequest"
+              $ref: "#/components/schemas/SimulationScenario"
       responses:
         "200":
           description: Simulation passed
@@ -1255,7 +1255,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StartIvrRuntimeSessionRequest"
+              $ref: "#/components/schemas/StartIvrRuntimeSessionBody"
       responses:
         "201":
           description: Runtime session started
@@ -1299,7 +1299,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AdvanceIvrRuntimeSessionRequest"
+              $ref: "#/components/schemas/AdvanceIvrRuntimeSessionBody"
       responses:
         "200":
           description: Runtime session advanced
@@ -1327,7 +1327,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateIvrAiTurnRequest"
+              $ref: "#/components/schemas/CreateIvrAiTurnBody"
       responses:
         "201":
           description: IVR AI turn request created
@@ -1369,7 +1369,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ClaimIvrAiTurnRequest"
+              $ref: "#/components/schemas/ClaimWorkRequestBody"
       responses:
         "200":
           description: IVR AI turn request claimed
@@ -1397,7 +1397,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CompleteIvrAiTurnRequest"
+              $ref: "#/components/schemas/CompleteIvrAiTurnBody"
       responses:
         "200":
           description: IVR AI turn result accepted
@@ -1445,7 +1445,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/IngestCallEventRequest"
+              $ref: "#/components/schemas/IngestCallEventBody"
       responses:
         "201":
           description: Event ingested
@@ -1552,7 +1552,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/IngestRecordingRequest"
+              $ref: "#/components/schemas/IngestRecordingBody"
       responses:
         "201":
           description: Recording metadata created
@@ -1597,7 +1597,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateRecordingAnalysisRequest"
+              $ref: "#/components/schemas/CreateRecordingAnalysisBody"
       responses:
         "201":
           description: Analysis request created
@@ -1644,7 +1644,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ClaimRecordingAnalysisRequest"
+              $ref: "#/components/schemas/ClaimWorkRequestBody"
       responses:
         "200":
           description: Analysis request claimed
@@ -1674,7 +1674,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CompleteRecordingAnalysisRequest"
+              $ref: "#/components/schemas/CompleteRecordingAnalysisBody"
       responses:
         "200":
           description: Analysis result accepted
@@ -1711,7 +1711,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateChannelAccountRequest"
+              $ref: "#/components/schemas/CreateChannelAccountBody"
       responses:
         "201":
           description: Channel account created
@@ -1751,7 +1751,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateOutboundChannelMessageRequest"
+              $ref: "#/components/schemas/CreateOutboundMessageBody"
       responses:
         "202":
           description: Outbound channel message accepted
@@ -1774,7 +1774,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/IngestInboundChannelMessageRequest"
+              $ref: "#/components/schemas/IngestInboundMessageBody"
       responses:
         "201":
           description: Inbound channel message ingested
@@ -1798,7 +1798,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateChannelVoiceSessionRequest"
+              $ref: "#/components/schemas/CreateMeetingSessionBody"
       responses:
         "202":
           description: Channel voice or meeting session accepted
@@ -3780,6 +3780,15 @@ components:
         status:
           type: string
           enum: *a16
+    CreateFlowVersionBody:
+      type: object
+      properties:
+        graph_json:
+          type: object
+          additionalProperties: {}
+        definition:
+          type: object
+          additionalProperties: {}
     ApprovalRequest:
       type: object
       properties:
@@ -5986,3 +5995,384 @@ components:
       required:
         - status
         - timestamp
+    ExtensionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Extension"
+      required:
+        - data
+    ExtensionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Extension"
+      required:
+        - data
+    SipTrunkResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/SipTrunk"
+      required:
+        - data
+    SipTrunkListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SipTrunk"
+      required:
+        - data
+    PhoneNumberResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PhoneNumber"
+      required:
+        - data
+    PhoneNumberListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhoneNumber"
+      required:
+        - data
+    PromptAssetResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PromptAsset"
+      required:
+        - data
+    PromptAssetListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PromptAsset"
+      required:
+        - data
+    QueueResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/QueueWithMembers"
+      required:
+        - data
+    QueueListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Queue"
+      required:
+        - data
+    QueueMemberResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/QueueMember"
+      required:
+        - data
+    VoicemailBoxResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/VoicemailBox"
+      required:
+        - data
+    VoicemailBoxListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/VoicemailBox"
+      required:
+        - data
+    InboundRouteResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/InboundRouteWithVersions"
+      required:
+        - data
+    InboundRouteListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/InboundRoute"
+      required:
+        - data
+    RouteVersionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/RouteVersion"
+      required:
+        - data
+    ValidationResultResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ValidationOutcome"
+      required:
+        - data
+    IvrFlowResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/IvrFlow"
+      required:
+        - data
+    IvrFlowDetailResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/IvrFlowWithVersions"
+      required:
+        - data
+    IvrFlowListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/IvrFlow"
+      required:
+        - data
+    FlowVersionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/FlowVersion"
+      required:
+        - data
+    FlowVersionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowVersion"
+      required:
+        - data
+    IvrFlowValidationResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/FlowValidationResult"
+      required:
+        - data
+    IvrFlowSimulationResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/FlowSimulationResult"
+      required:
+        - data
+    IvrFlowPublishResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PublishAttemptResult"
+      required:
+        - data
+    IvrFlowHistoryResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/FlowHistory"
+      required:
+        - data
+    IvrRuntimeSessionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/IvrRuntimeSessionResult"
+      required:
+        - data
+    IvrRuntimeSessionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/IvrRuntimeSession"
+      required:
+        - data
+    IvrRuntimeSessionReplayResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/IvrRuntimeSessionResult"
+      required:
+        - data
+    PromptGenerationRequestResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PromptGenerationRequest"
+      required:
+        - data
+    PromptGenerationRequestListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PromptGenerationRequest"
+      required:
+        - data
+    IvrAiTurnRequestResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/IvrAiTurnRequest"
+      required:
+        - data
+    CallEventResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/CallEvent"
+      required:
+        - data
+    CallEventListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CallEvent"
+      required:
+        - data
+    RecordingResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Recording"
+      required:
+        - data
+    RecordingListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Recording"
+      required:
+        - data
+    RecordingAnalysisRequestResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingAnalysisRequest"
+      required:
+        - data
+    RecordingAnalysisRequestListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecordingAnalysisRequest"
+      required:
+        - data
+    WebhookDeliveryQueueListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebhookDeliveryQueueItem"
+      required:
+        - data
+    ChannelAccountResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ChannelAccount"
+      required:
+        - data
+    ChannelAccountListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelAccount"
+      required:
+        - data
+    ChannelMessageResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ChannelMessage"
+      required:
+        - data
+    ChannelVoiceSessionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/MeetingSession"
+      required:
+        - data
+    TenantListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TenantSummary"
+      required:
+        - data
+    RuntimeHealthResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/RuntimeHealthSummary"
+      required:
+        - data
+    PlatformRuntimeSummaryResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PlatformRuntimeSummary"
+      required:
+        - data
+    RouteLookupResponse:
+      type: object
+      properties:
+        matched:
+          type: boolean
+        route_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        target_type:
+          type: string
+        target_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        target:
+          type:
+            - object
+            - "null"
+          additionalProperties: {}
+      required:
+        - matched

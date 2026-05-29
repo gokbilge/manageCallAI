@@ -23,7 +23,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["RegisterRequest"];
+                    "application/json": components["schemas"]["RegisterBody"];
                 };
             };
             responses: {
@@ -33,7 +33,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["AuthResponse"];
+                        "application/json": components["schemas"]["AuthTokenResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -64,7 +64,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["LoginRequest"];
+                    "application/json": components["schemas"]["LoginBody"];
                 };
             };
             responses: {
@@ -74,7 +74,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["AuthResponse"];
+                        "application/json": components["schemas"]["AuthTokenResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -126,7 +126,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateExtensionRequest"];
+                    "application/json": components["schemas"]["CreateExtensionBody"];
                 };
             };
             responses: {
@@ -198,7 +198,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateExtensionRequest"];
+                    "application/json": components["schemas"]["UpdateExtensionBody"];
                 };
             };
             responses: {
@@ -297,7 +297,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateSipTrunkRequest"];
+                    "application/json": components["schemas"]["CreateSipTrunkBody"];
                 };
             };
             responses: {
@@ -369,7 +369,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateSipTrunkRequest"];
+                    "application/json": components["schemas"]["UpdateSipTrunkBody"];
                 };
             };
             responses: {
@@ -468,7 +468,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreatePhoneNumberRequest"];
+                    "application/json": components["schemas"]["CreatePhoneNumberBody"];
                 };
             };
             responses: {
@@ -540,7 +540,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdatePhoneNumberRequest"];
+                    "application/json": components["schemas"]["UpdatePhoneNumberBody"];
                 };
             };
             responses: {
@@ -639,7 +639,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreatePromptAssetRequest"];
+                    "application/json": components["schemas"]["CreatePromptAssetBody"];
                 };
             };
             responses: {
@@ -711,7 +711,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdatePromptAssetRequest"];
+                    "application/json": components["schemas"]["UpdatePromptAssetBody"];
                 };
             };
             responses: {
@@ -821,7 +821,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreatePromptGenerationRequest"];
+                    "application/json": components["schemas"]["CreatePromptGenerationBody"];
                 };
             };
             responses: {
@@ -903,7 +903,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["ClaimPromptGenerationRequest"];
+                    "application/json": components["schemas"]["ClaimWorkRequestBody"];
                 };
             };
             responses: {
@@ -950,7 +950,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CompletePromptGenerationRequest"];
+                    "application/json": components["schemas"]["CompletePromptGenerationBody"];
                 };
             };
             responses: {
@@ -1012,7 +1012,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateQueueRequest"];
+                    "application/json": components["schemas"]["CreateQueueBody"];
                 };
             };
             responses: {
@@ -1084,7 +1084,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateQueueRequest"];
+                    "application/json": components["schemas"]["UpdateQueueBody"];
                 };
             };
             responses: {
@@ -1166,7 +1166,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["AddQueueMemberRequest"];
+                    "application/json": components["schemas"]["AddQueueMemberBody"];
                 };
             };
             responses: {
@@ -1269,7 +1269,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateVoicemailBoxRequest"];
+                    "application/json": components["schemas"]["CreateVoicemailBoxBody"];
                 };
             };
             responses: {
@@ -1341,7 +1341,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateVoicemailBoxRequest"];
+                    "application/json": components["schemas"]["UpdateVoicemailBoxBody"];
                 };
             };
             responses: {
@@ -1440,7 +1440,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateInboundRouteRequest"];
+                    "application/json": components["schemas"]["CreateInboundRouteBody"];
                 };
             };
             responses: {
@@ -1512,7 +1512,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateInboundRouteRequest"];
+                    "application/json": components["schemas"]["UpdateInboundRouteBody"];
                 };
             };
             responses: {
@@ -1753,7 +1753,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateIvrFlowRequest"];
+                    "application/json": components["schemas"]["CreateIvrFlowBody"];
                 };
             };
             responses: {
@@ -1825,7 +1825,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateIvrFlowRequest"];
+                    "application/json": components["schemas"]["UpdateIvrFlowBody"];
                 };
             };
             responses: {
@@ -1889,7 +1889,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["FlowVersionDraftRequest"];
+                    "application/json": components["schemas"]["CreateFlowVersionBody"];
                 };
             };
             responses: {
@@ -1964,7 +1964,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["FlowVersionDraftRequest"];
+                    "application/json": components["schemas"]["CreateFlowVersionBody"];
                 };
             };
             responses: {
@@ -2107,7 +2107,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["IvrFlowSimulationRequest"];
+                    "application/json": components["schemas"]["SimulationScenario"];
                 };
             };
             responses: {
@@ -2163,7 +2163,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["IvrFlowSimulationRequest"];
+                    "application/json": components["schemas"]["SimulationScenario"];
                 };
             };
             responses: {
@@ -2383,7 +2383,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["StartIvrRuntimeSessionRequest"];
+                    "application/json": components["schemas"]["StartIvrRuntimeSessionBody"];
                 };
             };
             responses: {
@@ -2473,7 +2473,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["AdvanceIvrRuntimeSessionRequest"];
+                    "application/json": components["schemas"]["AdvanceIvrRuntimeSessionBody"];
                 };
             };
             responses: {
@@ -2520,7 +2520,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateIvrAiTurnRequest"];
+                    "application/json": components["schemas"]["CreateIvrAiTurnBody"];
                 };
             };
             responses: {
@@ -2605,7 +2605,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["ClaimIvrAiTurnRequest"];
+                    "application/json": components["schemas"]["ClaimWorkRequestBody"];
                 };
             };
             responses: {
@@ -2652,7 +2652,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CompleteIvrAiTurnRequest"];
+                    "application/json": components["schemas"]["CompleteIvrAiTurnBody"];
                 };
             };
             responses: {
@@ -2739,7 +2739,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["IngestCallEventRequest"];
+                    "application/json": components["schemas"]["IngestCallEventBody"];
                 };
             };
             responses: {
@@ -2954,7 +2954,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["IngestRecordingRequest"];
+                    "application/json": components["schemas"]["IngestRecordingBody"];
                 };
             };
             responses: {
@@ -3030,7 +3030,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateRecordingAnalysisRequest"];
+                    "application/json": components["schemas"]["CreateRecordingAnalysisBody"];
                 };
             };
             responses: {
@@ -3119,7 +3119,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["ClaimRecordingAnalysisRequest"];
+                    "application/json": components["schemas"]["ClaimWorkRequestBody"];
                 };
             };
             responses: {
@@ -3168,7 +3168,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CompleteRecordingAnalysisRequest"];
+                    "application/json": components["schemas"]["CompleteRecordingAnalysisBody"];
                 };
             };
             responses: {
@@ -3237,7 +3237,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateChannelAccountRequest"];
+                    "application/json": components["schemas"]["CreateChannelAccountBody"];
                 };
             };
             responses: {
@@ -3322,7 +3322,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateOutboundChannelMessageRequest"];
+                    "application/json": components["schemas"]["CreateOutboundMessageBody"];
                 };
             };
             responses: {
@@ -3363,7 +3363,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["IngestInboundChannelMessageRequest"];
+                    "application/json": components["schemas"]["IngestInboundMessageBody"];
                 };
             };
             responses: {
@@ -3409,7 +3409,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateChannelVoiceSessionRequest"];
+                    "application/json": components["schemas"]["CreateMeetingSessionBody"];
                 };
             };
             responses: {
@@ -3629,6 +3629,7 @@ export interface paths {
                         "text/xml": string;
                     };
                 };
+                default: components["responses"]["ErrorResponse"];
             };
         };
         put?: never;
@@ -3663,6 +3664,7 @@ export interface paths {
                         "text/xml": string;
                     };
                 };
+                default: components["responses"]["ErrorResponse"];
             };
         };
         delete?: never;
@@ -3809,6 +3811,7 @@ export interface paths {
                         "text/xml": string;
                     };
                 };
+                default: components["responses"]["ErrorResponse"];
             };
         };
         delete?: never;
@@ -3822,23 +3825,24 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         ErrorResponse: {
-            error: string;
+            /** @enum {string} */
+            error: "NOT_FOUND" | "INVALID_ARGUMENT" | "UNAUTHENTICATED" | "PERMISSION_DENIED" | "ALREADY_EXISTS" | "CONFLICT" | "FAILED_PRECONDITION" | "RESOURCE_EXHAUSTED" | "INTERNAL" | "UNAVAILABLE";
+            message: string;
+            request_id: string;
         };
-        RegisterRequest: {
+        RegisterBody: {
             tenant_name: string;
             tenant_slug: string;
-            /** Format: email */
             email: string;
             display_name: string;
             password: string;
         };
-        LoginRequest: {
+        LoginBody: {
             tenant_slug: string;
             email: string;
             password: string;
         };
-        AuthResponse: {
-            /** @description Signed JWT. Claims include sub, tenant_id, email, role ('tenant_admin' | 'platform_admin'). */
+        AuthTokenResponse: {
             token: string;
         };
         Extension: {
@@ -3850,81 +3854,36 @@ export interface components {
             display_name: string;
             /** @enum {string} */
             status: "active" | "inactive";
-        };
-        PromptAsset: {
+            sip_username: string;
+            /** @enum {string|null} */
+            default_destination_type: "flow" | "extension" | "user" | "queue" | null;
             /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            tenant_id: string;
-            name: string;
-            media_type: string;
-            language?: string | null;
-            storage_uri?: string | null;
-            checksum?: string | null;
-            /** @enum {string} */
-            status: "active" | "inactive";
+            default_destination_id: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
         };
-        PromptAssetResponse: {
-            data: components["schemas"]["PromptAsset"];
-        };
-        PromptAssetListResponse: {
-            data: components["schemas"]["PromptAsset"][];
-        };
-        CreatePromptAssetRequest: {
-            name: string;
-            media_type: string;
-            language?: string;
-            storage_uri: string;
-            checksum?: string;
-        };
-        UpdatePromptAssetRequest: {
-            name?: string;
-            media_type?: string;
-            language?: string | null;
-            storage_uri?: string | null;
-            checksum?: string | null;
-            /** @enum {string} */
-            status?: "active" | "inactive";
-            sip_username?: string;
-            /** @enum {string|null} */
-            default_destination_type?: "flow" | "extension" | "user" | "queue" | null;
-            /** Format: uuid */
-            default_destination_id?: string | null;
-            /** Format: date-time */
-            created_at?: string;
-            /** Format: date-time */
-            updated_at?: string;
-        };
-        ExtensionResponse: {
-            data: components["schemas"]["Extension"];
-        };
-        ExtensionListResponse: {
-            data: components["schemas"]["Extension"][];
-        };
-        CreateExtensionRequest: {
+        CreateExtensionBody: {
             extension_number: string;
             display_name: string;
-            /** @description Defaults to extension_number when omitted */
             sip_username?: string;
-            /** @description Plaintext SIP password. Encrypted with AES-256-GCM before storage. Never returned in any API response. */
             sip_password: string;
             /** @enum {string} */
             default_destination_type?: "flow" | "extension" | "user" | "queue";
             /** Format: uuid */
             default_destination_id?: string;
         };
-        UpdateExtensionRequest: {
+        UpdateExtensionBody: {
             extension_number?: string;
             display_name?: string;
             /** @enum {string} */
             status?: "active" | "inactive";
             sip_username?: string;
             sip_password?: string;
-            default_destination_type?: ("flow" | "extension" | "user" | "queue") | null;
+            /** @enum {string|null} */
+            default_destination_type?: "flow" | "extension" | "user" | "queue" | null;
+            /** Format: uuid */
             default_destination_id?: string | null;
         };
         SipTrunk: {
@@ -3934,53 +3893,46 @@ export interface components {
             tenant_id: string;
             name: string;
             /** @enum {string} */
-            status: "active" | "inactive";
-            /** @enum {string} */
             direction: "inbound" | "outbound" | "bidirectional";
+            /** @enum {string} */
+            status: "active" | "inactive";
+            username: string | null;
             realm: string;
             proxy: string;
             port: number;
             /** @enum {string} */
             transport: "udp" | "tcp" | "tls";
-            username?: string | null;
             auth_username: string;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
         };
-        SipTrunkResponse: {
-            data: components["schemas"]["SipTrunk"];
-        };
-        SipTrunkListResponse: {
-            data: components["schemas"]["SipTrunk"][];
-        };
-        CreateSipTrunkRequest: {
+        CreateSipTrunkBody: {
             name: string;
             /** @enum {string} */
             direction: "inbound" | "outbound" | "bidirectional";
+            username?: string;
             realm: string;
             proxy: string;
             port?: number;
             /** @enum {string} */
             transport?: "udp" | "tcp" | "tls";
-            username?: string;
             auth_username: string;
-            /** @description Plaintext SIP trunk auth password. Encrypted with AES-256-GCM before storage. Never returned in API responses. */
             auth_password: string;
         };
-        UpdateSipTrunkRequest: {
+        UpdateSipTrunkBody: {
             name?: string;
             /** @enum {string} */
-            status?: "active" | "inactive";
-            /** @enum {string} */
             direction?: "inbound" | "outbound" | "bidirectional";
+            /** @enum {string} */
+            status?: "active" | "inactive";
+            username?: string | null;
             realm?: string;
             proxy?: string;
-            port?: number;
+            port?: number | null;
             /** @enum {string} */
             transport?: "udp" | "tcp" | "tls";
-            username?: string | null;
             auth_username?: string;
             auth_password?: string;
         };
@@ -3989,41 +3941,123 @@ export interface components {
             id: string;
             /** Format: uuid */
             tenant_id: string;
-            /** @description E.164-formatted number, e.g. +15551234567 */
             e164_number: string;
-            display_label?: string | null;
+            display_label: string | null;
             /** @enum {string} */
             status: "active" | "inactive";
+            /** Format: uuid */
+            trunk_id: string | null;
+            /** @enum {string|null} */
+            assigned_target_type: "inbound_route" | "flow" | "extension" | null;
+            /** Format: uuid */
+            assigned_target_id: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreatePhoneNumberBody: {
+            e164_number: string;
+            display_label?: string;
+            /** Format: uuid */
+            trunk_id?: string;
+        };
+        UpdatePhoneNumberBody: {
+            display_label?: string | null;
             /** Format: uuid */
             trunk_id?: string | null;
             /** @enum {string|null} */
             assigned_target_type?: "inbound_route" | "flow" | "extension" | null;
             /** Format: uuid */
             assigned_target_id?: string | null;
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        PromptAsset: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            media_type: string;
+            language: string | null;
+            storage_uri: string | null;
+            checksum: string | null;
+            /** @enum {string} */
+            status: "active" | "inactive";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
         };
-        PhoneNumberResponse: {
-            data: components["schemas"]["PhoneNumber"];
+        CreatePromptAssetBody: {
+            name: string;
+            media_type: string;
+            language?: string;
+            storage_uri: string;
+            checksum?: string;
         };
-        PhoneNumberListResponse: {
-            data: components["schemas"]["PhoneNumber"][];
-        };
-        CreatePhoneNumberRequest: {
-            e164_number: string;
-            display_label?: string;
-            /** Format: uuid */
-            trunk_id?: string;
-        };
-        UpdatePhoneNumberRequest: {
-            display_label?: string | null;
-            trunk_id?: string | null;
-            assigned_target_type?: ("inbound_route" | "flow" | "extension") | null;
-            assigned_target_id?: string | null;
+        UpdatePromptAssetBody: {
+            name?: string;
+            media_type?: string;
+            language?: string | null;
+            storage_uri?: string | null;
+            checksum?: string | null;
             /** @enum {string} */
             status?: "active" | "inactive";
+        };
+        CallGroupMember: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            call_group_id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            extension_id: string;
+            extension_number: string;
+            display_name: string;
+            position: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CallGroup: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            strategy: "simultaneous" | "sequential";
+            /** @enum {string} */
+            status: "active" | "inactive";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CallGroupWithMembers: components["schemas"]["CallGroup"] & {
+            members: components["schemas"]["CallGroupMember"][];
+        };
+        CreateCallGroupBody: {
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            strategy?: "simultaneous" | "sequential";
+        };
+        UpdateCallGroupBody: {
+            name?: string;
+            description?: string | null;
+            /** @enum {string} */
+            strategy?: "simultaneous" | "sequential";
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        AddCallGroupMemberBody: {
+            /** Format: uuid */
+            extension_id: string;
+            position?: number;
         };
         QueueMember: {
             /** Format: uuid */
@@ -4046,35 +4080,28 @@ export interface components {
             /** Format: uuid */
             tenant_id: string;
             name: string;
-            description?: string | null;
+            description: string | null;
             /** @enum {string} */
             strategy: "simultaneous" | "sequential";
             ring_timeout_seconds: number;
             /** @enum {string} */
             status: "active" | "inactive";
-            members: components["schemas"]["QueueMember"][];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
         };
-        QueueResponse: {
-            data: components["schemas"]["Queue"];
+        QueueWithMembers: components["schemas"]["Queue"] & {
+            members: components["schemas"]["QueueMember"][];
         };
-        QueueListResponse: {
-            data: components["schemas"]["Queue"][];
-        };
-        QueueMemberResponse: {
-            data: components["schemas"]["QueueMember"];
-        };
-        CreateQueueRequest: {
+        CreateQueueBody: {
             name: string;
             description?: string;
             /** @enum {string} */
             strategy?: "simultaneous" | "sequential";
             ring_timeout_seconds?: number;
         };
-        UpdateQueueRequest: {
+        UpdateQueueBody: {
             name?: string;
             description?: string | null;
             /** @enum {string} */
@@ -4083,7 +4110,7 @@ export interface components {
             /** @enum {string} */
             status?: "active" | "inactive";
         };
-        AddQueueMemberRequest: {
+        AddQueueMemberBody: {
             /** Format: uuid */
             extension_id: string;
             position?: number;
@@ -4094,12 +4121,12 @@ export interface components {
             /** Format: uuid */
             tenant_id: string;
             name: string;
-            description?: string | null;
+            description: string | null;
             mailbox_number: string;
             /** Format: uuid */
-            greeting_prompt_id?: string | null;
-            greeting_prompt_name?: string | null;
-            greeting_prompt_uri?: string | null;
+            greeting_prompt_id: string | null;
+            greeting_prompt_name: string | null;
+            greeting_prompt_uri: string | null;
             /** @enum {string} */
             status: "active" | "inactive";
             /** Format: date-time */
@@ -4107,25 +4134,45 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        VoicemailBoxResponse: {
-            data: components["schemas"]["VoicemailBox"];
-        };
-        VoicemailBoxListResponse: {
-            data: components["schemas"]["VoicemailBox"][];
-        };
-        CreateVoicemailBoxRequest: {
+        CreateVoicemailBoxBody: {
             name: string;
             description?: string;
             mailbox_number: string;
+            /** Format: uuid */
             greeting_prompt_id?: string | null;
         };
-        UpdateVoicemailBoxRequest: {
+        UpdateVoicemailBoxBody: {
             name?: string;
             description?: string | null;
             mailbox_number?: string;
+            /** Format: uuid */
             greeting_prompt_id?: string | null;
             /** @enum {string} */
             status?: "active" | "inactive";
+        };
+        RouteVersion: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** @enum {string} */
+            route_type: "inbound";
+            /** Format: uuid */
+            route_id: string;
+            version_number: number;
+            /** @enum {string} */
+            state: "draft" | "validated" | "simulated" | "published" | "superseded" | "rolled_back";
+            definition: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            created_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            validated_at: string | null;
+            /** Format: date-time */
+            published_at: string | null;
         };
         InboundRoute: {
             /** Format: uuid */
@@ -4137,85 +4184,82 @@ export interface components {
             match_type: "did" | "trunk" | "pattern";
             match_value: string;
             /** Format: uuid */
-            phone_number_id?: string | null;
+            phone_number_id: string | null;
             /** @enum {string} */
             target_type: "flow" | "extension" | "call_group" | "queue" | "voicemail_box";
             /** Format: uuid */
-            target_id?: string | null;
+            target_id: string | null;
             /** @enum {string} */
             status: "draft" | "active" | "inactive";
             /** Format: uuid */
-            draft_version_id?: string | null;
+            draft_version_id: string | null;
             /** Format: uuid */
-            active_version_id?: string | null;
+            active_version_id: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
         };
-        InboundRouteResponse: {
-            data: components["schemas"]["InboundRoute"];
+        InboundRouteWithVersions: components["schemas"]["InboundRoute"] & {
+            versions: components["schemas"]["RouteVersion"][];
         };
-        InboundRouteListResponse: {
-            data: components["schemas"]["InboundRoute"][];
+        ValidationError: {
+            field: string;
+            message: string;
         };
-        CreateInboundRouteRequest: {
+        ValidationOutcome: {
+            /** @enum {string} */
+            status: "passed" | "failed";
+            errors: components["schemas"]["ValidationError"][];
+            warnings: components["schemas"]["ValidationError"][];
+        };
+        CreateInboundRouteBody: {
             name: string;
             /** @enum {string} */
             match_type: "did" | "trunk" | "pattern";
             match_value: string;
-            /**
-             * Format: uuid
-             * @description Optional. When supplied, match_type must be 'did' and match_value is normalized from the linked phone number's e164_number.
-             */
-            phone_number_id?: string;
+            /** Format: uuid */
+            phone_number_id?: string | null;
             /** @enum {string} */
             target_type: "flow" | "extension" | "call_group" | "queue" | "voicemail_box";
             /** Format: uuid */
             target_id?: string;
         };
-        UpdateInboundRouteRequest: {
+        UpdateInboundRouteBody: {
             name?: string;
             /** @enum {string} */
             match_type?: "did" | "trunk" | "pattern";
             match_value?: string;
+            /** Format: uuid */
             phone_number_id?: string | null;
             /** @enum {string} */
             target_type?: "flow" | "extension" | "call_group" | "queue" | "voicemail_box";
+            /** Format: uuid */
             target_id?: string | null;
         };
-        RouteVersion: {
+        FlowVersion: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            route_id: string;
+            tenant_id: string;
+            /** Format: uuid */
+            flow_id: string;
             version_number: number;
             /** @enum {string} */
-            state: "draft" | "validated" | "published" | "superseded" | "rolled_back";
-            definition?: Record<string, never>;
+            state: "draft" | "validated" | "simulated" | "published" | "superseded" | "rolled_back";
+            graph_json: {
+                [key: string]: unknown;
+            };
             /** Format: uuid */
-            created_by?: string | null;
+            created_by: string | null;
             /** Format: date-time */
             created_at: string;
-        };
-        RouteVersionResponse: {
-            data: components["schemas"]["RouteVersion"];
-        };
-        ValidationResult: {
-            outcome: components["schemas"]["ValidationOutcome"];
-        };
-        ValidationOutcome: {
-            /** @enum {string} */
-            status: "passed" | "failed";
-            errors?: {
-                [key: string]: unknown;
-            }[];
-            warnings?: {
-                [key: string]: unknown;
-            }[];
-        };
-        ValidationResultResponse: {
-            data: components["schemas"]["ValidationResult"];
+            /** Format: date-time */
+            validated_at: string | null;
+            /** Format: date-time */
+            simulated_at: string | null;
+            /** Format: date-time */
+            published_at: string | null;
         };
         IvrFlow: {
             /** Format: uuid */
@@ -4223,89 +4267,41 @@ export interface components {
             /** Format: uuid */
             tenant_id: string;
             name: string;
-            description?: string | null;
+            description: string | null;
             /** @enum {string} */
             status: "draft" | "active" | "inactive";
             /** Format: uuid */
-            draft_version_id?: string | null;
+            draft_version_id: string | null;
             /** Format: uuid */
-            active_version_id?: string | null;
+            active_version_id: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
         };
-        IvrFlowResponse: {
-            data: components["schemas"]["IvrFlow"];
-        };
         IvrFlowWithVersions: components["schemas"]["IvrFlow"] & {
             versions: components["schemas"]["FlowVersion"][];
         };
-        IvrFlowDetailResponse: {
-            data: components["schemas"]["IvrFlowWithVersions"];
+        FlowValidationError: {
+            field: string;
+            message: string;
         };
-        IvrFlowListResponse: {
-            data: components["schemas"]["IvrFlow"][];
-        };
-        CreateIvrFlowRequest: {
-            name: string;
-            description?: string;
-            /** @description Draft graph schema for the first version. */
-            graph_json?: Record<string, never>;
-            /** @description Compatibility alias for graph_json. */
-            definition?: Record<string, never>;
-        };
-        UpdateIvrFlowRequest: {
-            name?: string;
-            description?: string | null;
+        FlowValidationOutcome: {
             /** @enum {string} */
-            status?: "draft" | "active" | "inactive";
+            status: "passed" | "failed";
+            errors: components["schemas"]["FlowValidationError"][];
+            warnings: components["schemas"]["FlowValidationError"][];
         };
-        FlowVersionDraftRequest: {
-            graph_json?: Record<string, never>;
-            /** @description Compatibility alias for graph_json. */
-            definition?: Record<string, never>;
-        };
-        FlowVersion: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            flow_id: string;
-            version_number: number;
-            /** @enum {string} */
-            state: "draft" | "validated" | "simulated" | "published" | "superseded" | "rolled_back";
-            graph_json?: Record<string, never>;
-            /** Format: uuid */
-            created_by?: string | null;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            validated_at?: string | null;
-            /** Format: date-time */
-            simulated_at?: string | null;
-            /** Format: date-time */
-            published_at?: string | null;
-        };
-        FlowVersionResponse: {
-            data: components["schemas"]["FlowVersion"];
-        };
-        FlowVersionListResponse: {
-            data: components["schemas"]["FlowVersion"][];
-        };
-        IvrFlowValidationResult: {
+        FlowValidationResult: {
             version: components["schemas"]["FlowVersion"];
-            outcome: components["schemas"]["ValidationOutcome"];
+            outcome: components["schemas"]["FlowValidationOutcome"];
         };
-        IvrFlowValidationResponse: {
-            data: components["schemas"]["IvrFlowValidationResult"];
-        };
-        IvrFlowSimulationRequest: {
+        SimulationScenario: {
             digits?: string[];
             collected_digits?: {
                 [key: string]: string;
             };
             caller_number?: string;
-            /** Format: date-time */
             now?: string;
             force_timeout?: boolean;
             force_timeout_nodes?: string[];
@@ -4315,7 +4311,7 @@ export interface components {
                 [key: string]: string;
             };
         };
-        IvrFlowSimulationFinalAction: {
+        SimulationFinalAction: {
             /** @enum {string} */
             type: "transfer_extension" | "queue" | "voicemail" | "hangup";
             /** Format: uuid */
@@ -4326,32 +4322,487 @@ export interface components {
             /** Format: uuid */
             voicemail_box_id?: string;
         };
-        IvrFlowSimulationOutcome: {
+        SimulationOutcome: {
             /** @enum {string} */
             status: "passed" | "failed";
             path: string[];
-            final_action?: components["schemas"]["IvrFlowSimulationFinalAction"] | null;
-            errors: {
-                [key: string]: unknown;
-            }[];
+            final_action: components["schemas"]["SimulationFinalAction"] & (Record<string, never> | null);
+            errors: components["schemas"]["FlowValidationError"][];
         };
-        IvrFlowSimulationResult: {
+        FlowSimulationResult: {
             version: components["schemas"]["FlowVersion"];
-            scenario: components["schemas"]["IvrFlowSimulationRequest"];
-            outcome: components["schemas"]["IvrFlowSimulationOutcome"];
+            scenario: components["schemas"]["SimulationScenario"];
+            outcome: components["schemas"]["SimulationOutcome"];
         };
-        IvrFlowSimulationResponse: {
-            data: components["schemas"]["IvrFlowSimulationResult"];
-        };
-        IvrFlowPublishResult: {
+        PublishAttemptResult: {
             /** @enum {string} */
             status: "published" | "pending_approval";
             flow: components["schemas"]["IvrFlow"];
             /** Format: uuid */
-            approval_request_id?: string | null;
+            approval_request_id?: string;
         };
-        IvrFlowPublishResponse: {
-            data: components["schemas"]["IvrFlowPublishResult"];
+        FlowValidationHistoryEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            version_id: string | null;
+            validator_version: string | null;
+            /** @enum {string} */
+            status: "passed" | "failed" | "warning_only";
+            errors: components["schemas"]["FlowValidationError"][];
+            warnings: components["schemas"]["FlowValidationError"][];
+            /** Format: date-time */
+            created_at: string;
+        };
+        FlowSimulationHistoryEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            version_id: string | null;
+            scenario: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            status: "passed" | "failed" | "inconclusive";
+            result_payload: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        FlowPublishHistoryEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            version_id: string | null;
+            /** @enum {string} */
+            action_type: "publish" | "rollback";
+            /** @enum {string} */
+            triggered_by_type: "user" | "workflow" | "ai_agent" | "system";
+            /** Format: uuid */
+            triggered_by_id: string | null;
+            /** Format: uuid */
+            approval_request_id: string | null;
+            /** @enum {string|null} */
+            approval_status: "pending" | "approved" | "rejected" | "expired" | null;
+            /** Format: date-time */
+            decision_at: string | null;
+            /** @enum {string} */
+            result: "success" | "failed" | "pending_approval";
+            /** Format: date-time */
+            created_at: string;
+        };
+        FlowAuditHistoryEntry: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            actor_type: "user" | "workflow" | "ai_agent" | "system";
+            /** Format: uuid */
+            actor_id: string | null;
+            action: string;
+            metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        FlowHistory: {
+            validations: components["schemas"]["FlowValidationHistoryEntry"][];
+            simulations: components["schemas"]["FlowSimulationHistoryEntry"][];
+            publishes: components["schemas"]["FlowPublishHistoryEntry"][];
+            audits: components["schemas"]["FlowAuditHistoryEntry"][];
+        };
+        CreateIvrFlowBody: {
+            name: string;
+            description?: string;
+            graph_json: {
+                [key: string]: unknown;
+            };
+        };
+        UpdateIvrFlowBody: {
+            name?: string;
+            description?: string | null;
+            /** @enum {string} */
+            status?: "draft" | "active" | "inactive";
+        };
+        CreateFlowVersionBody: {
+            graph_json?: {
+                [key: string]: unknown;
+            };
+            definition?: {
+                [key: string]: unknown;
+            };
+        };
+        ApprovalRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            object_type: string;
+            /** Format: uuid */
+            object_id: string;
+            /** Format: uuid */
+            version_id: string | null;
+            /** Format: uuid */
+            requested_by: string | null;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "expired";
+            /** Format: date-time */
+            created_at: string;
+        };
+        ApprovalRequestWithDetails: components["schemas"]["ApprovalRequest"] & {
+            flow_name: string | null;
+            /** @enum {string|null} */
+            action_type: "publish" | "rollback" | null;
+        };
+        Policy: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            policy_type: string;
+            status: string;
+            rules: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        ApprovalDecisionResult: {
+            approval_request: components["schemas"]["ApprovalRequestWithDetails"];
+            /** @enum {string} */
+            action_type: "publish" | "rollback";
+            /** @enum {string} */
+            publish_result?: "success";
+        };
+        ApprovalDecisionBody: {
+            /** @enum {string} */
+            decision: "approved" | "rejected";
+        };
+        ApiKey: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            key_prefix: string;
+            /** Format: uuid */
+            created_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            revoked_at: string | null;
+        };
+        ApiKeyCreated: components["schemas"]["ApiKey"] & {
+            key: string;
+        };
+        AutomationWebhook: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            url: string;
+            events: string[];
+            failure_count: number;
+            /** Format: date-time */
+            disabled_at: string | null;
+            /** Format: uuid */
+            created_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            revoked_at: string | null;
+        };
+        AutomationWebhookCreated: components["schemas"]["AutomationWebhook"] & {
+            signing_secret: string;
+        };
+        WebhookDeliveryAttempt: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            webhook_id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            event: string;
+            attempt_number: number;
+            /** @enum {string} */
+            status: "success" | "failed";
+            response_code: number | null;
+            duration_ms: number | null;
+            /** Format: date-time */
+            attempted_at: string;
+        };
+        WebhookDeliveryQueueItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            webhook_id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            event: string;
+            payload_json: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            status: "pending" | "processing" | "delivered" | "failed" | "abandoned";
+            attempt_count: number;
+            max_attempts: number;
+            /** Format: date-time */
+            next_attempt_at: string;
+            /** Format: date-time */
+            claimed_at: string | null;
+            /** Format: date-time */
+            delivered_at: string | null;
+            last_response_code: number | null;
+            last_error: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateApiKeyBody: {
+            name: string;
+        };
+        CreateAutomationWebhookBody: {
+            name: string;
+            url: string;
+            events: ("ivr_flow.published" | "ivr_flow.publish_pending" | "ivr_flow.rollback_completed" | "ivr_flow.validation_failed" | "approval.requested" | "approval.approved" | "approval.rejected" | "call.completed" | "voicemail.recording_available" | "outbound_call.dispatched")[];
+        };
+        CallEvent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            call_id: string;
+            event_type: string;
+            /** Format: date-time */
+            event_time: string;
+            source: string | null;
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            ingested_at: string;
+        };
+        IngestCallEventBody: {
+            tenant_id: string;
+            call_id: string;
+            event_type: string;
+            /** Format: date-time */
+            event_time?: string;
+            source?: string;
+            payload?: {
+                [key: string]: unknown;
+            };
+        };
+        WeeklyRule: {
+            day_of_week: number;
+            open_time: string;
+            close_time: string;
+        };
+        HolidayOverride: {
+            date: string;
+            closed: boolean;
+            open_time?: string;
+            close_time?: string;
+        };
+        Schedule: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            timezone: string;
+            weekly_rules_json: components["schemas"]["WeeklyRule"][];
+            holiday_overrides_json: components["schemas"]["HolidayOverride"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateScheduleBody: {
+            name: string;
+            timezone: string;
+            weekly_rules_json?: components["schemas"]["WeeklyRule"][];
+            holiday_overrides_json?: components["schemas"]["HolidayOverride"][];
+        };
+        UpdateScheduleBody: {
+            name?: string;
+            timezone?: string;
+            weekly_rules_json?: components["schemas"]["WeeklyRule"][];
+            holiday_overrides_json?: components["schemas"]["HolidayOverride"][];
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        OutboundRoute: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            match_prefix: string;
+            priority: number;
+            /** Format: uuid */
+            sip_trunk_id: string;
+            /** Format: uuid */
+            fallback_sip_trunk_id: string | null;
+            max_calls_per_minute: number | null;
+            allowed_caller_id_numbers_json: string[] | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ResolvedOutboundRoute: {
+            /** Format: uuid */
+            route_id: string;
+            /** Format: uuid */
+            sip_trunk_id: string;
+            /** Format: uuid */
+            fallback_sip_trunk_id: string | null;
+            match_prefix: string;
+            priority: number;
+        };
+        CreateOutboundRouteBody: {
+            name: string;
+            match_prefix: string;
+            priority?: number;
+            /** Format: uuid */
+            sip_trunk_id: string;
+            /** Format: uuid */
+            fallback_sip_trunk_id?: string | null;
+            max_calls_per_minute?: number | null;
+            allowed_caller_id_numbers_json?: string[] | null;
+        };
+        UpdateOutboundRouteBody: {
+            name?: string;
+            match_prefix?: string;
+            priority?: number;
+            /** Format: uuid */
+            sip_trunk_id?: string;
+            /** Format: uuid */
+            fallback_sip_trunk_id?: string | null;
+            max_calls_per_minute?: number | null;
+            allowed_caller_id_numbers_json?: string[] | null;
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        ResolveOutboundRouteBody: {
+            tenant_id: string;
+            dial_number: string;
+        };
+        TenantUser: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            email: string;
+            display_name: string;
+            /** @enum {string} */
+            role: "tenant_admin" | "tenant_operator" | "tenant_viewer";
+            status: string;
+            /** Format: date-time */
+            last_login_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateUserBody: {
+            email: string;
+            display_name: string;
+            /** @enum {string} */
+            role: "tenant_admin" | "tenant_operator" | "tenant_viewer";
+            password: string;
+        };
+        UpdateUserBody: {
+            display_name?: string;
+            /** @enum {string} */
+            role?: "tenant_admin" | "tenant_operator" | "tenant_viewer";
+        };
+        ChangePasswordBody: {
+            current_password: string;
+            new_password: string;
+        };
+        Recording: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            call_id: string;
+            /** Format: uuid */
+            call_event_id: string | null;
+            storage_path: string;
+            duration_secs: number | null;
+            size_bytes: number | null;
+            /** @enum {string} */
+            status: "pending" | "available" | "deleted";
+            /** Format: date-time */
+            recorded_at: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        RecordingAnalysisRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            recording_id: string;
+            requested_outputs: ("transcript" | "summary")[];
+            language_hint: string | null;
+            /** @enum {string} */
+            status: "queued" | "processing" | "completed" | "failed" | "cancelled";
+            processor_id: string | null;
+            /** Format: date-time */
+            claimed_at: string | null;
+            language: string | null;
+            transcript_text: string | null;
+            summary_text: string | null;
+            error_message: string | null;
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            completed_at: string | null;
+        };
+        IngestRecordingBody: {
+            call_id: string;
+            /** Format: uuid */
+            call_event_id?: string | null;
+            storage_path: string;
+            duration_secs?: number | null;
+            size_bytes?: number | null;
+            /** Format: date-time */
+            recorded_at?: string;
+        };
+        CreateRecordingAnalysisBody: {
+            requested_outputs: ("transcript" | "summary")[];
+            language_hint?: string | null;
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        CompleteRecordingAnalysisBody: {
+            /** @enum {string} */
+            status: "completed" | "failed";
+            language?: string | null;
+            transcript_text?: string | null;
+            summary_text?: string | null;
+            error_message?: string | null;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
         };
         IvrRuntimeSession: {
             /** Format: uuid */
@@ -4365,68 +4816,122 @@ export interface components {
             call_id: string;
             /** @enum {string} */
             status: "running" | "completed" | "failed";
-            current_node_id?: string | null;
-            caller_number?: string | null;
-            destination_number?: string | null;
-            last_digits?: string | null;
-            variables_json?: {
+            current_node_id: string | null;
+            caller_number: string | null;
+            destination_number: string | null;
+            last_digits: string | null;
+            variables_json: {
                 [key: string]: string;
             };
-            last_action_json?: {
+            last_action_json: {
                 [key: string]: unknown;
             } | null;
             /** Format: date-time */
-            completed_at?: string | null;
+            completed_at: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
         };
-        IvrRuntimeAction: components["schemas"]["IvrRuntimePlayPromptAction"] | components["schemas"]["IvrRuntimePlayCollectAction"] | components["schemas"]["IvrRuntimeTransferAction"] | components["schemas"]["IvrRuntimeVoicemailAction"] | components["schemas"]["IvrRuntimeHangupAction"];
-        IvrRuntimePlayPromptAction: {
-            /** @constant */
+        IvrRuntimeSessionStep: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            session_id: string;
+            step_index: number;
+            /** @enum {string} */
+            phase: "start" | "advance";
+            node_id: string | null;
+            /** @enum {string} */
+            outcome: "start" | "completed" | "digits" | "timeout" | "invalid";
+            digits: string | null;
+            action_json: {
+                [key: string]: unknown;
+            } | null;
+            resulting_node_id: string | null;
+            /** @enum {string} */
+            resulting_status: "running" | "completed" | "failed";
+            variables_json: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        IvrRuntimeAction: {
+            /** @enum {string} */
             action: "play_prompt";
             node_id: string;
-            /** Format: uuid */
             prompt_id: string;
             prompt_uri: string;
-        };
-        IvrRuntimePlayCollectAction: {
-            /** @constant */
+        } | {
+            /** @enum {string} */
             action: "play_collect";
             node_id: string;
-            /** Format: uuid */
             prompt_id: string;
             prompt_uri: string;
             max_digits: number;
             timeout_ms: number;
             retries: number;
-        };
-        IvrRuntimeTransferAction: {
-            /** @constant */
+        } | {
+            /** @enum {string} */
             action: "transfer";
             node_id: string;
             /** @enum {string} */
-            target_type: "extension" | "queue";
-            target?: string | null;
-            domain?: string | null;
-            members?: {
-                [key: string]: unknown;
-            }[] | null;
-        };
-        IvrRuntimeVoicemailAction: {
-            /** @constant */
+            target_type: "extension";
+            target: string;
+            domain: string | null;
+        } | {
+            /** @enum {string} */
+            action: "transfer";
+            node_id: string;
+            /** @enum {string} */
+            target_type: "queue";
+            /** @enum {string} */
+            strategy: "simultaneous" | "sequential";
+            ring_timeout_seconds: number;
+            members: {
+                extension_number: string;
+                domain: string | null;
+            }[];
+        } | {
+            /** @enum {string} */
             action: "voicemail";
             node_id: string;
             mailbox_number: string;
-            greeting_prompt_uri?: string | null;
-        };
-        IvrRuntimeHangupAction: {
-            /** @constant */
+            domain: string | null;
+            greeting_prompt_uri: string | null;
+        } | {
+            /** @enum {string} */
             action: "hangup";
             node_id: string;
+        } | null;
+        IvrRuntimeSessionResult: {
+            session: components["schemas"]["IvrRuntimeSession"];
+            action: components["schemas"]["IvrRuntimeAction"];
         };
-        StartIvrRuntimeSessionRequest: {
+        OutboundCallRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            extension_id: string;
+            dial_number: string;
+            /** Format: uuid */
+            route_id: string | null;
+            /** Format: uuid */
+            sip_trunk_id: string | null;
+            /** @enum {string} */
+            status: "pending" | "dispatched" | "answered" | "completed" | "failed" | "expired";
+            failure_reason: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        StartIvrRuntimeSessionBody: {
             call_id: string;
             /** Format: uuid */
             flow_id: string;
@@ -4436,7 +4941,7 @@ export interface components {
                 [key: string]: string;
             };
         };
-        AdvanceIvrRuntimeSessionRequest: {
+        AdvanceIvrRuntimeSessionBody: {
             node_id: string;
             /** @enum {string} */
             outcome: "completed" | "digits" | "timeout" | "invalid";
@@ -4445,355 +4950,25 @@ export interface components {
                 [key: string]: string;
             };
         };
-        IvrRuntimeSessionResult: {
-            session: components["schemas"]["IvrRuntimeSession"];
-            action?: components["schemas"]["IvrRuntimeAction"] | null;
-        };
-        IvrRuntimeSessionResponse: {
-            data: components["schemas"]["IvrRuntimeSessionResult"];
-        };
-        IvrRuntimeSessionListResponse: {
-            data: components["schemas"]["IvrRuntimeSession"][];
-        };
-        IvrRuntimeSessionStep: {
+        CreateOutboundCallBody: {
             /** Format: uuid */
-            id: string;
+            extension_id: string;
+            dial_number: string;
             /** Format: uuid */
-            session_id: string;
-            step_index: number;
-            /** @enum {string} */
-            phase: "start" | "advance";
-            node_id?: string | null;
-            /** @enum {string} */
-            outcome: "start" | "completed" | "digits" | "timeout" | "invalid";
-            digits?: string | null;
-            action_json?: {
-                [key: string]: unknown;
-            } | null;
-            resulting_node_id?: string | null;
-            /** @enum {string} */
-            resulting_status: "running" | "completed" | "failed";
-            variables_json: {
-                [key: string]: string;
-            };
-            /** Format: date-time */
-            created_at: string;
+            route_id?: string;
         };
-        IvrRuntimeSessionReplay: {
-            session: components["schemas"]["IvrRuntimeSession"];
-            steps: components["schemas"]["IvrRuntimeSessionStep"][];
-            call_events: components["schemas"]["CallEvent"][];
-        };
-        IvrRuntimeSessionReplayResponse: {
-            data: components["schemas"]["IvrRuntimeSessionReplay"];
-        };
-        CallEvent: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            tenant_id: string;
-            call_id: string;
-            event_type: string;
-            /** Format: date-time */
-            event_time: string;
-            source?: string | null;
-            payload: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            ingested_at: string;
-        };
-        CallEventResponse: {
-            data: components["schemas"]["CallEvent"];
-        };
-        CallEventListResponse: {
-            data: components["schemas"]["CallEvent"][];
-        };
-        IngestCallEventRequest: {
-            /** Format: uuid */
-            tenant_id: string;
-            call_id: string;
-            event_type: string;
-            /** Format: date-time */
-            event_time?: string;
-            source?: string;
-            payload?: {
-                [key: string]: unknown;
-            };
-        };
-        Recording: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            tenant_id: string;
-            call_id: string;
-            call_event_id: string | null;
-            /** @description Backend storage reference. Public media access should use a safe playback/download endpoint. */
-            storage_path: string;
-            duration_secs: number | null;
-            size_bytes: number | null;
-            /** @enum {string} */
-            status: "pending" | "available" | "deleted";
-            /** Format: date-time */
-            recorded_at: string;
-            /** Format: date-time */
-            created_at: string;
-        };
-        RecordingResponse: {
-            data: components["schemas"]["Recording"];
-        };
-        RecordingListResponse: {
-            data: components["schemas"]["Recording"][];
-        };
-        IngestRecordingRequest: {
-            /** Format: uuid */
-            tenant_id: string;
-            call_id: string;
-            call_event_id?: string | null;
-            storage_path: string;
-            duration_secs?: number | null;
-            size_bytes?: number | null;
-            recorded_at?: string | null;
-        };
-        /**
-         * @description Optional provider hint or reported provider. Values such as openai, elevenlabs, and whisper are examples for user-installed integrations; the core platform does not require any specific provider.
-         * @enum {string}
-         */
-        IntegrationProvider: "auto" | "openai" | "elevenlabs" | "whisper" | "external" | "custom";
-        /** @enum {string} */
-        WorkRequestStatus: "queued" | "processing" | "completed" | "failed" | "cancelled";
-        /** @enum {string} */
-        WebhookDeliveryStatus: "pending" | "processing" | "delivered" | "failed" | "abandoned";
-        WebhookDeliveryQueueItem: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            webhook_id: string;
-            /** Format: uuid */
-            tenant_id: string;
-            event: string;
-            payload_json: {
-                [key: string]: unknown;
-            };
-            status: components["schemas"]["WebhookDeliveryStatus"];
-            attempt_count: number;
-            max_attempts: number;
-            /** Format: date-time */
-            next_attempt_at: string;
-            claimed_at?: string | null;
-            delivered_at?: string | null;
-            last_response_code?: number | null;
-            last_error?: string | null;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        WebhookDeliveryQueueListResponse: {
-            data: components["schemas"]["WebhookDeliveryQueueItem"][];
-        };
-        /** @enum {string} */
-        RecordingAnalysisOutput: "transcript" | "summary";
-        CreateRecordingAnalysisRequest: {
-            requested_outputs: components["schemas"]["RecordingAnalysisOutput"][];
-            language_hint?: string | null;
-            metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        ClaimRecordingAnalysisRequest: {
-            processor_id?: string;
-        };
-        CompleteRecordingAnalysisRequest: {
-            /** @enum {string} */
-            status: "completed" | "failed";
-            language?: string | null;
-            transcript_text?: string | null;
-            summary_text?: string | null;
-            error_message?: string | null;
-            provider_metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        RecordingAnalysisRequest: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            tenant_id: string;
-            /** Format: uuid */
-            recording_id: string;
-            status: components["schemas"]["WorkRequestStatus"];
-            requested_outputs: components["schemas"]["RecordingAnalysisOutput"][];
-            language_hint: string | null;
-            language: string | null;
-            processor_id: string | null;
-            claimed_at: string | null;
-            transcript_text: string | null;
-            summary_text: string | null;
-            error_message: string | null;
-            metadata: {
-                [key: string]: unknown;
-            };
-            provider_metadata: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            created_at: string;
-            completed_at: string | null;
-        };
-        RecordingAnalysisRequestResponse: {
-            data: components["schemas"]["RecordingAnalysisRequest"];
-        };
-        RecordingAnalysisRequestListResponse: {
-            data: components["schemas"]["RecordingAnalysisRequest"][];
-        };
-        /** @enum {string} */
-        PromptGenerationOutput: "prompt_text" | "audio";
-        CreatePromptGenerationRequest: {
-            prompt_asset_id?: string | null;
-            requested_outputs: components["schemas"]["PromptGenerationOutput"][];
-            /** @description Source text for TTS or refinement. */
-            input_text: string;
-            language_hint?: string | null;
-            voice_hint?: string | null;
-            provider_hint?: components["schemas"]["IntegrationProvider"] | null;
-            metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        ClaimPromptGenerationRequest: {
-            processor_id?: string;
-        };
-        CompletePromptGenerationRequest: {
-            /** @enum {string} */
-            status: "completed" | "failed";
-            generated_prompt_asset_id?: string | null;
-            media_reference?: string | null;
-            error_message?: string | null;
-            provider_metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        PromptGenerationRequest: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            tenant_id: string;
-            status: components["schemas"]["WorkRequestStatus"];
-            prompt_asset_id: string | null;
-            requested_outputs: components["schemas"]["PromptGenerationOutput"][];
-            input_text: string;
-            language_hint: string | null;
-            voice_hint: string | null;
-            provider_hint: components["schemas"]["IntegrationProvider"];
-            processor_id: string | null;
-            claimed_at: string | null;
-            generated_prompt_asset_id: string | null;
-            media_reference: string | null;
-            error_message: string | null;
-            metadata: {
-                [key: string]: unknown;
-            };
-            provider_metadata: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            created_at: string;
-            completed_at: string | null;
-        };
-        PromptGenerationRequestResponse: {
-            data: components["schemas"]["PromptGenerationRequest"];
-        };
-        PromptGenerationRequestListResponse: {
-            data: components["schemas"]["PromptGenerationRequest"][];
-        };
-        /** @enum {string} */
-        IvrAiTurnOutput: "answer_text" | "spoken_audio" | "intent" | "next_action";
-        CreateIvrAiTurnRequest: {
-            /** Format: uuid */
-            tenant_id: string;
-            runtime_session_id?: string | null;
-            call_id: string;
-            flow_id?: string | null;
-            node_id: string;
-            /** @enum {string} */
-            input_mode: "text" | "transcript" | "dtmf" | "metadata";
-            input_text?: string | null;
-            requested_outputs: components["schemas"]["IvrAiTurnOutput"][];
-            provider_hint?: components["schemas"]["IntegrationProvider"] | null;
-            metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        ClaimIvrAiTurnRequest: {
-            processor_id?: string;
-        };
-        CompleteIvrAiTurnRequest: {
-            /** @enum {string} */
-            status: "completed" | "failed";
-            answer_text?: string | null;
-            /** @description Constrained business-level action for the runtime resolver to interpret. */
-            next_action?: {
-                [key: string]: unknown;
-            };
-            confidence?: number | null;
-            error_message?: string | null;
-            provider_metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        IvrAiTurnRequest: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            tenant_id: string;
-            runtime_session_id: string | null;
-            call_id: string;
-            flow_id: string | null;
-            node_id: string;
-            /** @enum {string} */
-            input_mode: "text" | "transcript" | "dtmf" | "metadata";
-            input_text: string | null;
-            status: components["schemas"]["WorkRequestStatus"];
-            requested_outputs: components["schemas"]["IvrAiTurnOutput"][];
-            provider_hint: components["schemas"]["IntegrationProvider"];
-            processor_id: string | null;
-            claimed_at: string | null;
-            answer_text: string | null;
-            next_action: {
-                [key: string]: unknown;
-            };
-            confidence: number | null;
-            error_message: string | null;
-            metadata: {
-                [key: string]: unknown;
-            };
-            provider_metadata: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            created_at: string;
-            completed_at: string | null;
-        };
-        IvrAiTurnRequestResponse: {
-            data: components["schemas"]["IvrAiTurnRequest"];
-        };
-        /** @enum {string} */
-        ChannelProvider: "whatsapp" | "telegram" | "google_meet" | "custom";
-        /** @enum {string} */
-        ChannelCapability: "message_inbound" | "message_outbound" | "voice_message" | "native_call" | "meeting" | "sip_bridge" | "transcript_artifacts" | "recording_artifacts";
         ChannelAccount: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             tenant_id: string;
-            provider: components["schemas"]["ChannelProvider"];
-            display_name: string;
             /** @enum {string} */
-            status: "active" | "inactive" | "error";
-            capabilities: components["schemas"]["ChannelCapability"][];
-            /** @description Provider account metadata safe for operators. Must not include secrets. */
-            provider_metadata: {
+            provider_type: "whatsapp" | "telegram" | "google_meet" | "custom";
+            name: string;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            capabilities: string[];
+            provider_config: {
                 [key: string]: unknown;
             };
             /** Format: date-time */
@@ -4801,28 +4976,22 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        CreateChannelAccountRequest: {
-            provider: components["schemas"]["ChannelProvider"];
-            display_name: string;
-            capabilities: components["schemas"]["ChannelCapability"][];
-            /** @description Provider credentials or token references. Never returned in API responses. */
-            credentials?: {
-                [key: string]: unknown;
-            };
-            provider_metadata?: {
+        CreateChannelAccountBody: {
+            /** @enum {string} */
+            provider_type: "whatsapp" | "telegram" | "google_meet" | "custom";
+            name: string;
+            capabilities?: string[];
+            provider_config?: {
                 [key: string]: unknown;
             };
         };
-        ChannelAccountResponse: {
-            data: components["schemas"]["ChannelAccount"];
+        UpdateChannelAccountBody: {
+            name?: string;
+            capabilities?: string[];
+            provider_config?: {
+                [key: string]: unknown;
+            };
         };
-        ChannelAccountListResponse: {
-            data: components["schemas"]["ChannelAccount"][];
-        };
-        /** @enum {string} */
-        ChannelMessageDirection: "inbound" | "outbound";
-        /** @enum {string} */
-        ChannelMessageKind: "text" | "audio" | "image" | "document" | "interactive" | "system";
         ChannelMessage: {
             /** Format: uuid */
             id: string;
@@ -4830,68 +4999,38 @@ export interface components {
             tenant_id: string;
             /** Format: uuid */
             channel_account_id: string;
-            provider: components["schemas"]["ChannelProvider"];
-            direction: components["schemas"]["ChannelMessageDirection"];
-            kind: components["schemas"]["ChannelMessageKind"];
-            external_conversation_id: string | null;
-            external_message_id: string | null;
-            from_handle: string | null;
-            to_handle: string | null;
-            text: string | null;
-            media_uri: string | null;
             /** @enum {string} */
-            status: "queued" | "sent" | "delivered" | "read" | "received" | "failed";
+            direction: "inbound" | "outbound";
+            /** @enum {string} */
+            message_type: "text" | "voice_message" | "meeting" | "image" | "document";
+            external_id: string | null;
+            sender_id: string | null;
+            recipient_id: string | null;
+            body: string | null;
+            media_reference: string | null;
             provider_metadata: {
                 [key: string]: unknown;
             };
             /** Format: date-time */
+            received_at: string;
+            /** Format: date-time */
             created_at: string;
         };
-        CreateOutboundChannelMessageRequest: {
-            /** Format: uuid */
-            channel_account_id: string;
-            kind: components["schemas"]["ChannelMessageKind"];
-            to_handle: string;
-            text?: string;
-            media_uri?: string;
-            provider_metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        IngestInboundChannelMessageRequest: {
-            /** Format: uuid */
-            channel_account_id: string;
-            provider: components["schemas"]["ChannelProvider"];
-            kind: components["schemas"]["ChannelMessageKind"];
-            external_conversation_id?: string;
-            external_message_id?: string;
-            from_handle?: string;
-            to_handle?: string;
-            text?: string;
-            media_uri?: string;
-            provider_metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        ChannelMessageResponse: {
-            data: components["schemas"]["ChannelMessage"];
-        };
-        ChannelVoiceSession: {
+        ChannelMessageRequest: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             tenant_id: string;
             /** Format: uuid */
             channel_account_id: string;
-            provider: components["schemas"]["ChannelProvider"];
-            capability: components["schemas"]["ChannelCapability"];
+            recipient_id: string;
             /** @enum {string} */
-            status: "requested" | "active" | "completed" | "failed" | "cancelled";
-            external_session_id: string | null;
-            join_uri: string | null;
-            sip_uri: string | null;
-            recording_uri: string | null;
-            transcript_uri: string | null;
+            message_type: "text" | "voice_message" | "meeting" | "image" | "document";
+            body: string | null;
+            media_reference: string | null;
+            /** @enum {string} */
+            status: "queued" | "sent" | "failed";
+            failure_reason: string | null;
             provider_metadata: {
                 [key: string]: unknown;
             };
@@ -4899,22 +5038,213 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
-            ended_at: string | null;
         };
-        CreateChannelVoiceSessionRequest: {
+        IngestInboundMessageBody: {
             /** Format: uuid */
             channel_account_id: string;
             /** @enum {string} */
-            capability: "voice_message" | "native_call" | "meeting" | "sip_bridge";
-            participant_handle?: string;
-            subject?: string;
-            initial_message?: string;
+            message_type: "text" | "voice_message" | "meeting" | "image" | "document";
+            external_id?: string;
+            sender_id?: string;
+            recipient_id?: string;
+            body?: string;
+            media_reference?: string;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            received_at?: string;
+        };
+        CreateOutboundMessageBody: {
+            /** Format: uuid */
+            channel_account_id: string;
+            recipient_id: string;
+            /** @enum {string} */
+            message_type: "text" | "voice_message" | "meeting" | "image" | "document";
+            body?: string;
+            media_reference?: string;
             provider_metadata?: {
                 [key: string]: unknown;
             };
         };
-        ChannelVoiceSessionResponse: {
-            data: components["schemas"]["ChannelVoiceSession"];
+        MeetingSession: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            channel_account_id: string;
+            meeting_code: string | null;
+            meeting_url: string | null;
+            /** @enum {string} */
+            status: "scheduled" | "active" | "completed" | "failed";
+            participant_count: number;
+            recording_reference: string | null;
+            transcript_reference: string | null;
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            ended_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateMeetingSessionBody: {
+            /** Format: uuid */
+            channel_account_id: string;
+            meeting_code?: string;
+            meeting_url?: string;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        UpdateMeetingSessionBody: {
+            /** @enum {string} */
+            status?: "scheduled" | "active" | "completed" | "failed";
+            meeting_url?: string;
+            participant_count?: number;
+            recording_reference?: string;
+            transcript_reference?: string;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            started_at?: string;
+            /** Format: date-time */
+            ended_at?: string;
+        };
+        PromptGenerationRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            prompt_asset_id: string | null;
+            requested_outputs: string[];
+            input_text: string;
+            language_hint: string | null;
+            voice_hint: string | null;
+            /** @enum {string} */
+            provider_hint: "auto" | "openai" | "elevenlabs" | "whisper" | "external" | "custom";
+            /** @enum {string} */
+            status: "queued" | "processing" | "completed" | "failed" | "cancelled";
+            processor_id: string | null;
+            /** Format: date-time */
+            claimed_at: string | null;
+            /** Format: uuid */
+            generated_prompt_asset_id: string | null;
+            media_reference: string | null;
+            error_message: string | null;
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            completed_at: string | null;
+        };
+        IvrAiTurnRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            runtime_session_id: string | null;
+            call_id: string;
+            /** Format: uuid */
+            flow_id: string | null;
+            node_id: string;
+            /** @enum {string} */
+            input_mode: "text" | "transcript" | "dtmf" | "metadata";
+            input_text: string | null;
+            requested_outputs: string[];
+            /** @enum {string} */
+            provider_hint: "auto" | "openai" | "elevenlabs" | "whisper" | "external" | "custom";
+            /** @enum {string} */
+            status: "queued" | "processing" | "completed" | "failed" | "cancelled";
+            processor_id: string | null;
+            /** Format: date-time */
+            claimed_at: string | null;
+            answer_text: string | null;
+            next_action: {
+                [key: string]: unknown;
+            } | null;
+            confidence: number | null;
+            error_message: string | null;
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            completed_at: string | null;
+        };
+        CreatePromptGenerationBody: {
+            /** Format: uuid */
+            prompt_asset_id?: string | null;
+            requested_outputs: string[];
+            input_text: string;
+            language_hint?: string | null;
+            voice_hint?: string | null;
+            /** @enum {string} */
+            provider_hint?: "auto" | "openai" | "elevenlabs" | "whisper" | "external" | "custom";
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        CompletePromptGenerationBody: {
+            /** @enum {string} */
+            status: "completed" | "failed";
+            /** Format: uuid */
+            generated_prompt_asset_id?: string | null;
+            media_reference?: string | null;
+            error_message?: string | null;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        CreateIvrAiTurnBody: {
+            /** Format: uuid */
+            runtime_session_id?: string | null;
+            call_id: string;
+            /** Format: uuid */
+            flow_id?: string | null;
+            node_id: string;
+            /** @enum {string} */
+            input_mode: "text" | "transcript" | "dtmf" | "metadata";
+            input_text?: string | null;
+            requested_outputs: string[];
+            /** @enum {string} */
+            provider_hint?: "auto" | "openai" | "elevenlabs" | "whisper" | "external" | "custom";
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        CompleteIvrAiTurnBody: {
+            /** @enum {string} */
+            status: "completed" | "failed";
+            answer_text?: string | null;
+            next_action?: {
+                [key: string]: unknown;
+            } | null;
+            confidence?: number | null;
+            error_message?: string | null;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        ClaimWorkRequestBody: {
+            processor_id?: string | null;
         };
         TenantSummary: {
             /** Format: uuid */
@@ -4928,20 +5258,15 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        TenantListResponse: {
-            data: components["schemas"]["TenantSummary"][];
-        };
         ServiceHealth: {
             name: string;
-            url?: string | null;
+            url: string;
             /** @enum {string} */
             status: "healthy" | "degraded" | "unreachable";
-            detail?: string | null;
+            detail: string;
         };
-        RuntimeHealthResponse: {
-            data: {
-                services: components["schemas"]["ServiceHealth"][];
-            };
+        RuntimeHealthSummary: {
+            services: components["schemas"]["ServiceHealth"][];
         };
         PlatformRuntimeSummary: {
             active_sessions: number;
@@ -4951,108 +5276,158 @@ export interface components {
             failed_runtime_ingestions_24h: number;
             pending_approvals: number;
         };
+        HealthResponse: {
+            status: string;
+            /** Format: date-time */
+            timestamp: string;
+        };
+        ExtensionResponse: {
+            data: components["schemas"]["Extension"];
+        };
+        ExtensionListResponse: {
+            data: components["schemas"]["Extension"][];
+        };
+        SipTrunkResponse: {
+            data: components["schemas"]["SipTrunk"];
+        };
+        SipTrunkListResponse: {
+            data: components["schemas"]["SipTrunk"][];
+        };
+        PhoneNumberResponse: {
+            data: components["schemas"]["PhoneNumber"];
+        };
+        PhoneNumberListResponse: {
+            data: components["schemas"]["PhoneNumber"][];
+        };
+        PromptAssetResponse: {
+            data: components["schemas"]["PromptAsset"];
+        };
+        PromptAssetListResponse: {
+            data: components["schemas"]["PromptAsset"][];
+        };
+        QueueResponse: {
+            data: components["schemas"]["QueueWithMembers"];
+        };
+        QueueListResponse: {
+            data: components["schemas"]["Queue"][];
+        };
+        QueueMemberResponse: {
+            data: components["schemas"]["QueueMember"];
+        };
+        VoicemailBoxResponse: {
+            data: components["schemas"]["VoicemailBox"];
+        };
+        VoicemailBoxListResponse: {
+            data: components["schemas"]["VoicemailBox"][];
+        };
+        InboundRouteResponse: {
+            data: components["schemas"]["InboundRouteWithVersions"];
+        };
+        InboundRouteListResponse: {
+            data: components["schemas"]["InboundRoute"][];
+        };
+        RouteVersionResponse: {
+            data: components["schemas"]["RouteVersion"];
+        };
+        ValidationResultResponse: {
+            data: components["schemas"]["ValidationOutcome"];
+        };
+        IvrFlowResponse: {
+            data: components["schemas"]["IvrFlow"];
+        };
+        IvrFlowDetailResponse: {
+            data: components["schemas"]["IvrFlowWithVersions"];
+        };
+        IvrFlowListResponse: {
+            data: components["schemas"]["IvrFlow"][];
+        };
+        FlowVersionResponse: {
+            data: components["schemas"]["FlowVersion"];
+        };
+        FlowVersionListResponse: {
+            data: components["schemas"]["FlowVersion"][];
+        };
+        IvrFlowValidationResponse: {
+            data: components["schemas"]["FlowValidationResult"];
+        };
+        IvrFlowSimulationResponse: {
+            data: components["schemas"]["FlowSimulationResult"];
+        };
+        IvrFlowPublishResponse: {
+            data: components["schemas"]["PublishAttemptResult"];
+        };
+        IvrFlowHistoryResponse: {
+            data: components["schemas"]["FlowHistory"];
+        };
+        IvrRuntimeSessionResponse: {
+            data: components["schemas"]["IvrRuntimeSessionResult"];
+        };
+        IvrRuntimeSessionListResponse: {
+            data: components["schemas"]["IvrRuntimeSession"][];
+        };
+        IvrRuntimeSessionReplayResponse: {
+            data: components["schemas"]["IvrRuntimeSessionResult"];
+        };
+        PromptGenerationRequestResponse: {
+            data: components["schemas"]["PromptGenerationRequest"];
+        };
+        PromptGenerationRequestListResponse: {
+            data: components["schemas"]["PromptGenerationRequest"][];
+        };
+        IvrAiTurnRequestResponse: {
+            data: components["schemas"]["IvrAiTurnRequest"];
+        };
+        CallEventResponse: {
+            data: components["schemas"]["CallEvent"];
+        };
+        CallEventListResponse: {
+            data: components["schemas"]["CallEvent"][];
+        };
+        RecordingResponse: {
+            data: components["schemas"]["Recording"];
+        };
+        RecordingListResponse: {
+            data: components["schemas"]["Recording"][];
+        };
+        RecordingAnalysisRequestResponse: {
+            data: components["schemas"]["RecordingAnalysisRequest"];
+        };
+        RecordingAnalysisRequestListResponse: {
+            data: components["schemas"]["RecordingAnalysisRequest"][];
+        };
+        WebhookDeliveryQueueListResponse: {
+            data: components["schemas"]["WebhookDeliveryQueueItem"][];
+        };
+        ChannelAccountResponse: {
+            data: components["schemas"]["ChannelAccount"];
+        };
+        ChannelAccountListResponse: {
+            data: components["schemas"]["ChannelAccount"][];
+        };
+        ChannelMessageResponse: {
+            data: components["schemas"]["ChannelMessage"];
+        };
+        ChannelVoiceSessionResponse: {
+            data: components["schemas"]["MeetingSession"];
+        };
+        TenantListResponse: {
+            data: components["schemas"]["TenantSummary"][];
+        };
+        RuntimeHealthResponse: {
+            data: components["schemas"]["RuntimeHealthSummary"];
+        };
         PlatformRuntimeSummaryResponse: {
             data: components["schemas"]["PlatformRuntimeSummary"];
         };
-        IvrFlowHistoryEntryValidation: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            version_id?: string | null;
-            validator_version?: string | null;
-            /** @enum {string} */
-            status: "passed" | "failed" | "warning_only";
-            errors: {
-                [key: string]: unknown;
-            }[];
-            warnings: {
-                [key: string]: unknown;
-            }[];
-            /** Format: date-time */
-            created_at: string;
-        };
-        IvrFlowHistoryEntrySimulation: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            version_id?: string | null;
-            scenario: {
-                [key: string]: unknown;
-            };
-            /** @enum {string} */
-            status: "passed" | "failed" | "inconclusive";
-            result_payload: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            created_at: string;
-        };
-        IvrFlowHistoryEntryPublish: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            version_id?: string | null;
-            /** @enum {string} */
-            action_type: "publish" | "rollback";
-            /** @enum {string} */
-            triggered_by_type: "user" | "workflow" | "ai_agent" | "system";
-            triggered_by_id?: string | null;
-            /** Format: uuid */
-            approval_request_id?: string | null;
-            /** @enum {string|null} */
-            approval_status?: "pending" | "approved" | "rejected" | "expired" | null;
-            /** Format: date-time */
-            decision_at?: string | null;
-            /** @enum {string} */
-            result: "success" | "failed" | "pending_approval";
-            /** Format: date-time */
-            created_at: string;
-        };
-        IvrFlowHistoryEntryAudit: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            actor_type: "user" | "workflow" | "ai_agent" | "system";
-            actor_id?: string | null;
-            action: string;
-            metadata: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            created_at: string;
-        };
-        IvrFlowHistory: {
-            validations: components["schemas"]["IvrFlowHistoryEntryValidation"][];
-            simulations: components["schemas"]["IvrFlowHistoryEntrySimulation"][];
-            publishes: components["schemas"]["IvrFlowHistoryEntryPublish"][];
-            audits: components["schemas"]["IvrFlowHistoryEntryAudit"][];
-        };
-        IvrFlowHistoryResponse: {
-            data: components["schemas"]["IvrFlowHistory"];
-        };
         RouteLookupResponse: {
             matched: boolean;
-            /**
-             * Format: uuid
-             * @description Present when matched is true
-             */
+            /** Format: uuid */
             route_id?: string;
-            /**
-             * Format: uuid
-             * @description Present when matched is true
-             */
+            /** Format: uuid */
             tenant_id?: string;
-            /**
-             * @description Present when matched is true
-             * @enum {string}
-             */
-            target_type?: "extension" | "flow" | "call_group" | "queue" | "voicemail_box";
-            /**
-             * Format: uuid
-             * @description Present when matched is true
-             */
+            target_type?: string;
+            /** Format: uuid */
             target_id?: string | null;
-            /** @description Resolved target details. For extension: { extension_number, directory_domain }. For flow: { flow_id }. Queue and voicemail targets return backend-resolved business-level details. null when target not resolved. */
             target?: {
                 [key: string]: unknown;
             } | null;

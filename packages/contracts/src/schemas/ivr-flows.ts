@@ -178,3 +178,9 @@ export const UpdateIvrFlowBodySchema = z.object({
   status: IvrFlowStatusSchema.optional(),
 }).openapi('UpdateIvrFlowBody');
 export type UpdateIvrFlowBody = z.infer<typeof UpdateIvrFlowBodySchema>;
+
+export const CreateFlowVersionBodySchema = z.object({
+  graph_json: z.record(z.unknown()).optional(),
+  definition: z.record(z.unknown()).optional(),
+}).openapi('CreateFlowVersionBody');
+export type CreateFlowVersionBody = z.infer<typeof CreateFlowVersionBodySchema>;

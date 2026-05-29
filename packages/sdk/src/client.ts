@@ -1,15 +1,15 @@
 import createClient from 'openapi-fetch';
 import type { paths, components } from './generated/schema.js';
 
-export type AuthResponse = components['schemas']['AuthResponse'];
+export type AuthResponse = components['schemas']['AuthTokenResponse'];
 export type Extension = components['schemas']['Extension'];
 export type CallEvent = components['schemas']['CallEvent'];
 export type TenantSummary = components['schemas']['TenantSummary'];
 export type RuntimeHealthSummary = components['schemas']['RuntimeHealthResponse']['data'];
 export type ServiceHealth = components['schemas']['ServiceHealth'];
-export type CreateExtensionRequest = components['schemas']['CreateExtensionRequest'];
-export type RegisterRequest = components['schemas']['RegisterRequest'];
-export type LoginRequest = components['schemas']['LoginRequest'];
+export type CreateExtensionRequest = components['schemas']['CreateExtensionBody'];
+export type RegisterRequest = components['schemas']['RegisterBody'];
+export type LoginRequest = components['schemas']['LoginBody'];
 
 export class ManageCallApiError extends Error {
   constructor(

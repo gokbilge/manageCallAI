@@ -26,3 +26,4 @@ export * from './schemas/channel-messages.js';
 export * from './schemas/meeting-sessions.js';
 export * from './schemas/provider-work.js';
 export * from './schemas/platform.js';
+export * from './schemas/responses.js';

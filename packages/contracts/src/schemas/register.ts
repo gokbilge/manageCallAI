@@ -28,6 +28,7 @@ import * as channelMessages from './channel-messages.js';
 import * as meetingSessions from './meeting-sessions.js';
 import * as providerWork from './provider-work.js';
 import * as platform from './platform.js';
+import * as responses from './responses.js';
 
 // common
 registry.register('ErrorResponse', common.ErrorResponseSchema);
@@ -106,6 +107,7 @@ registry.register('FlowAuditHistoryEntry', ivrFlows.FlowAuditHistoryEntrySchema)
 registry.register('FlowHistory', ivrFlows.FlowHistorySchema);
 registry.register('CreateIvrFlowBody', ivrFlows.CreateIvrFlowBodySchema);
 registry.register('UpdateIvrFlowBody', ivrFlows.UpdateIvrFlowBodySchema);
+registry.register('CreateFlowVersionBody', ivrFlows.CreateFlowVersionBodySchema);
 
 // approvals
 registry.register('ApprovalRequest', approvals.ApprovalRequestSchema);
@@ -195,3 +197,52 @@ registry.register('ServiceHealth', platform.ServiceHealthSchema);
 registry.register('RuntimeHealthSummary', platform.RuntimeHealthSummarySchema);
 registry.register('PlatformRuntimeSummary', platform.PlatformRuntimeSummarySchema);
 registry.register('HealthResponse', platform.HealthResponseSchema);
+
+// responses — data envelope wrappers
+registry.register('ExtensionResponse', responses.ExtensionResponseSchema);
+registry.register('ExtensionListResponse', responses.ExtensionListResponseSchema);
+registry.register('SipTrunkResponse', responses.SipTrunkResponseSchema);
+registry.register('SipTrunkListResponse', responses.SipTrunkListResponseSchema);
+registry.register('PhoneNumberResponse', responses.PhoneNumberResponseSchema);
+registry.register('PhoneNumberListResponse', responses.PhoneNumberListResponseSchema);
+registry.register('PromptAssetResponse', responses.PromptAssetResponseSchema);
+registry.register('PromptAssetListResponse', responses.PromptAssetListResponseSchema);
+registry.register('QueueResponse', responses.QueueResponseSchema);
+registry.register('QueueListResponse', responses.QueueListResponseSchema);
+registry.register('QueueMemberResponse', responses.QueueMemberResponseSchema);
+registry.register('VoicemailBoxResponse', responses.VoicemailBoxResponseSchema);
+registry.register('VoicemailBoxListResponse', responses.VoicemailBoxListResponseSchema);
+registry.register('InboundRouteResponse', responses.InboundRouteResponseSchema);
+registry.register('InboundRouteListResponse', responses.InboundRouteListResponseSchema);
+registry.register('RouteVersionResponse', responses.RouteVersionResponseSchema);
+registry.register('ValidationResultResponse', responses.ValidationResultResponseSchema);
+registry.register('IvrFlowResponse', responses.IvrFlowResponseSchema);
+registry.register('IvrFlowDetailResponse', responses.IvrFlowDetailResponseSchema);
+registry.register('IvrFlowListResponse', responses.IvrFlowListResponseSchema);
+registry.register('FlowVersionResponse', responses.FlowVersionResponseSchema);
+registry.register('FlowVersionListResponse', responses.FlowVersionListResponseSchema);
+registry.register('IvrFlowValidationResponse', responses.IvrFlowValidationResponseSchema);
+registry.register('IvrFlowSimulationResponse', responses.IvrFlowSimulationResponseSchema);
+registry.register('IvrFlowPublishResponse', responses.IvrFlowPublishResponseSchema);
+registry.register('IvrFlowHistoryResponse', responses.IvrFlowHistoryResponseSchema);
+registry.register('IvrRuntimeSessionResponse', responses.IvrRuntimeSessionResponseSchema);
+registry.register('IvrRuntimeSessionListResponse', responses.IvrRuntimeSessionListResponseSchema);
+registry.register('IvrRuntimeSessionReplayResponse', responses.IvrRuntimeSessionReplayResponseSchema);
+registry.register('PromptGenerationRequestResponse', responses.PromptGenerationRequestResponseSchema);
+registry.register('PromptGenerationRequestListResponse', responses.PromptGenerationRequestListResponseSchema);
+registry.register('IvrAiTurnRequestResponse', responses.IvrAiTurnRequestResponseSchema);
+registry.register('CallEventResponse', responses.CallEventResponseSchema);
+registry.register('CallEventListResponse', responses.CallEventListResponseSchema);
+registry.register('RecordingResponse', responses.RecordingResponseSchema);
+registry.register('RecordingListResponse', responses.RecordingListResponseSchema);
+registry.register('RecordingAnalysisRequestResponse', responses.RecordingAnalysisRequestResponseSchema);
+registry.register('RecordingAnalysisRequestListResponse', responses.RecordingAnalysisRequestListResponseSchema);
+registry.register('WebhookDeliveryQueueListResponse', responses.WebhookDeliveryQueueListResponseSchema);
+registry.register('ChannelAccountResponse', responses.ChannelAccountResponseSchema);
+registry.register('ChannelAccountListResponse', responses.ChannelAccountListResponseSchema);
+registry.register('ChannelMessageResponse', responses.ChannelMessageResponseSchema);
+registry.register('ChannelVoiceSessionResponse', responses.ChannelVoiceSessionResponseSchema);
+registry.register('TenantListResponse', responses.TenantListResponseSchema);
+registry.register('RuntimeHealthResponse', responses.RuntimeHealthResponseSchema);
+registry.register('PlatformRuntimeSummaryResponse', responses.PlatformRuntimeSummaryResponseSchema);
+registry.register('RouteLookupResponse', responses.RouteLookupResponseSchema);
