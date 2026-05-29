@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -6,14 +6,15 @@ import { requireCapability } from '../auth/require-capability.js';
 import { PhoneNumberRepository } from './phone-number.repository.js';
 import { PhoneNumberNotFoundError, PhoneNumberService } from './phone-number.service.js';
 import type { CreatePhoneNumberBody, UpdatePhoneNumberInput } from './phone-number.types.js';
+import { sendNotFound } from '../../errors/index.js';
 
 const TARGET_TYPES = ['inbound_route', 'flow', 'extension'] as const;
 
 const service = new PhoneNumberService(new PhoneNumberRepository(db));
 
-function replyNotFound(err: unknown, reply: FastifyReply): FastifyReply {
+function replyNotFound(err: unknown, reply: FastifyReply): void {
   if (err instanceof PhoneNumberNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   throw err;
 }

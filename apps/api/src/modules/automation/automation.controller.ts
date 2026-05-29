@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -6,12 +6,13 @@ import { requireCapability } from '../auth/require-capability.js';
 import { AutomationRepository } from './automation.repository.js';
 import { ApiKeyNotFoundError, AutomationService, WebhookNotFoundError } from './automation.service.js';
 import { WEBHOOK_EVENTS } from './automation.types.js';
+import { sendNotFound } from '../../errors/index.js';
 
 const service = new AutomationService(new AutomationRepository(db));
 
-function replyError(err: unknown, reply: FastifyReply): FastifyReply {
+function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof ApiKeyNotFoundError || err instanceof WebhookNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   throw err;
 }

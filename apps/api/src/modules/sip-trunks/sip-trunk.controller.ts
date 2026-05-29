@@ -1,19 +1,20 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { authenticate } from '../auth/authenticate.js';
 import { SipTrunkRepository } from './sip-trunk.repository.js';
 import { SipTrunkNotFoundError, SipTrunkService } from './sip-trunk.service.js';
 import type { CreateSipTrunkBody, UpdateSipTrunkInput } from './sip-trunk.types.js';
+import { sendNotFound } from '../../errors/index.js';
 
 const DIRECTIONS = ['inbound', 'outbound', 'bidirectional'] as const;
 const TRANSPORTS = ['udp', 'tcp', 'tls'] as const;
 
 const service = new SipTrunkService(new SipTrunkRepository(db));
 
-function replyNotFound(err: unknown, reply: FastifyReply): FastifyReply {
+function replyNotFound(err: unknown, reply: FastifyReply): void {
   if (err instanceof SipTrunkNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   throw err;
 }

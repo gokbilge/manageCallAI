@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -9,12 +9,13 @@ import type {
   CreatePromptAssetInput,
   UpdatePromptAssetInput,
 } from './prompt-asset.types.js';
+import { sendNotFound } from '../../errors/index.js';
 
 const service = new PromptAssetService(new PromptAssetRepository(db));
 
-function replyNotFound(err: unknown, reply: FastifyReply): FastifyReply {
+function replyNotFound(err: unknown, reply: FastifyReply): void {
   if (err instanceof PromptAssetNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   throw err;
 }

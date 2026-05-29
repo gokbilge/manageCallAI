@@ -32,10 +32,13 @@ import { ivrAiController, promptGenerationController } from './modules/provider-
 import { channelAccountController } from './modules/channel-accounts/channel-account.controller.js';
 import { channelMessageController } from './modules/channel-messages/channel-message.controller.js';
 import { meetingSessionController } from './modules/meeting-sessions/meeting-session.controller.js';
+import { registerErrorHandler } from './errors/index.js';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
   const jwtPlugin = jwt as unknown as FastifyPluginCallback<FastifyJWTOptions>;
+
+  registerErrorHandler(app);
 
   app.addContentTypeParser('text/plain', { parseAs: 'string' }, (_req, body, done) => {
     done(null, body);

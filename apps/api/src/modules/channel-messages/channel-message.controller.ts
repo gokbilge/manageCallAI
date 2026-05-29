@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -7,14 +7,15 @@ import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { ChannelMessageRepository } from './channel-message.repository.js';
 import { ChannelAccountInvalidError, ChannelMessageService } from './channel-message.service.js';
 import type { CreateOutboundMessageInput, IngestInboundMessageInput, MessageType } from './channel-message.types.js';
+import { sendInvalidArgument } from '../../errors/index.js';
 
 const service = new ChannelMessageService(new ChannelMessageRepository(db));
 
 const MESSAGE_TYPES: MessageType[] = ['text', 'voice_message', 'meeting', 'image', 'document'];
 
-function replyError(err: unknown, reply: FastifyReply): FastifyReply {
+function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof ChannelAccountInvalidError) {
-    return reply.code(422).send({ error: err.message });
+    return sendInvalidArgument(reply, err.message);
   }
   throw err;
 }

@@ -6,6 +6,7 @@ import { requireCapability } from '../auth/require-capability.js';
 import { AutomationRepository } from '../automation/automation.repository.js';
 import { AutomationService, WebhookNotFoundError } from '../automation/automation.service.js';
 import { WEBHOOK_EVENTS } from '../automation/automation.types.js';
+import { sendNotFound } from '../../errors/index.js';
 
 const service = new AutomationService(new AutomationRepository(db));
 
@@ -61,7 +62,7 @@ export async function webhooksController(app: FastifyInstance): Promise<void> {
         return { data: await service.getDeliveryHistory(req.params.id, user.tenant_id) };
       } catch (err) {
         if (err instanceof WebhookNotFoundError) {
-          return reply.code(404).send({ error: (err as Error).message });
+          return sendNotFound(reply, (err as Error).message);
         }
         throw err;
       }
@@ -80,7 +81,7 @@ export async function webhooksController(app: FastifyInstance): Promise<void> {
         return { data: await service.getDeliveryQueue(req.params.id, user.tenant_id) };
       } catch (err) {
         if (err instanceof WebhookNotFoundError) {
-          return reply.code(404).send({ error: (err as Error).message });
+          return sendNotFound(reply, (err as Error).message);
         }
         throw err;
       }
@@ -100,7 +101,7 @@ export async function webhooksController(app: FastifyInstance): Promise<void> {
         return reply.code(204).send();
       } catch (err) {
         if (err instanceof WebhookNotFoundError) {
-          return reply.code(404).send({ error: (err as Error).message });
+          return sendNotFound(reply, (err as Error).message);
         }
         throw err;
       }

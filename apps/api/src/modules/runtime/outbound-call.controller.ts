@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -11,15 +11,16 @@ import {
   OutboundCallValidationError,
 } from './outbound-call.service.js';
 import type { CreateOutboundCallInput, OutboundCallStatus } from './outbound-call.types.js';
+import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new OutboundCallService(new OutboundCallRepository(db));
 
-function replyOutboundError(err: unknown, reply: FastifyReply): FastifyReply {
+function replyOutboundError(err: unknown, reply: FastifyReply): void {
   if (err instanceof OutboundCallNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   if (err instanceof OutboundCallValidationError) {
-    return reply.code(422).send({ error: err.message });
+    return sendInvalidArgument(reply, err.message);
   }
   throw err;
 }

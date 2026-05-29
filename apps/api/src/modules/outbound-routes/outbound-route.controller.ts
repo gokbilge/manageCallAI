@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -11,12 +11,13 @@ import {
   OutboundRouteValidationError,
 } from './outbound-route.service.js';
 import type { CreateOutboundRouteInput, UpdateOutboundRouteInput } from './outbound-route.types.js';
+import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new OutboundRouteService(new OutboundRouteRepository(db));
 
-function replyError(err: unknown, reply: FastifyReply): FastifyReply {
-  if (err instanceof OutboundRouteNotFoundError) return reply.code(404).send({ error: err.message });
-  if (err instanceof OutboundRouteValidationError) return reply.code(422).send({ error: err.message });
+function replyError(err: unknown, reply: FastifyReply): void {
+  if (err instanceof OutboundRouteNotFoundError) return sendNotFound(reply, err.message);
+  if (err instanceof OutboundRouteValidationError) return sendInvalidArgument(reply, err.message);
   throw err;
 }
 
@@ -146,7 +147,7 @@ export async function outboundRouteController(app: FastifyInstance): Promise<voi
     },
     async (req, reply) => {
       const resolved = await service.resolveRouteForNumber(req.body.tenant_id, req.body.dial_number);
-      if (!resolved) return reply.code(404).send({ error: 'No active outbound route matches the dial number' });
+      if (!resolved) return sendNotFound(reply, 'No active outbound route matches the dial number');
       return { data: resolved };
     },
   );

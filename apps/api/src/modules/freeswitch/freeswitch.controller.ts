@@ -4,6 +4,7 @@ import { decryptSipPassword } from '../../crypto/sip-secret.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { ExtensionRepository } from '../extensions/extension.repository.js';
 import { RouteLookupRepository } from './route-lookup.repository.js';
+import { sendInvalidArgument } from '../../errors/index.js';
 
 type DirectoryLookup = {
   section?: string;
@@ -265,7 +266,7 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     async (req, reply) => {
       const { did, trunk } = req.query as { did?: string; trunk?: string };
       if (!did?.trim()) {
-        return reply.code(400).send({ error: 'did query parameter is required' });
+        return sendInvalidArgument(reply, 'did query parameter is required');
       }
 
       const route = await routeLookupRepo.findRouteForCall(did.trim(), trunk?.trim());

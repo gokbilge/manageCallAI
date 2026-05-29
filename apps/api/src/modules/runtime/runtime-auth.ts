@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { config } from '../../config/env.js';
+import { sendUnauthenticated } from '../../errors/index.js';
 
 const RUNTIME_TOKEN_QUERY_KEY = 'runtime_token';
 const RUNTIME_TOKEN_HEADER_KEY = 'x-managecallai-runtime-token';
@@ -11,7 +12,7 @@ export async function authenticateRuntime(
   const token = extractRuntimeToken(req);
 
   if (token !== config.runtimeApiToken) {
-    return reply.code(401).send({ error: 'Unauthorized' });
+    return sendUnauthenticated(reply);
   }
 }
 

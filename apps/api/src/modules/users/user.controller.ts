@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -12,18 +12,19 @@ import {
   UserService,
 } from './user.service.js';
 import type { TenantRole } from './user.types.js';
+import { sendNotFound, sendConflict, sendPermissionDenied } from '../../errors/index.js';
 
 const service = new UserService(new UserRepository(db));
 
-function replyError(err: unknown, reply: FastifyReply): FastifyReply {
+function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof UserNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   if (err instanceof UserConflictError) {
-    return reply.code(409).send({ error: err.message });
+    return sendConflict(reply, err.message);
   }
   if (err instanceof UserOperationForbiddenError) {
-    return reply.code(403).send({ error: err.message });
+    return sendPermissionDenied(reply, err.message);
   }
   throw err;
 }

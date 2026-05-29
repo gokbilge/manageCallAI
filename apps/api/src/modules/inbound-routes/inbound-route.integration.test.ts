@@ -133,7 +133,7 @@ describe('Inbound Routes API integration', () => {
       },
     });
 
-    expect(res.statusCode).toBe(422);
+    expect(res.statusCode).toBe(400);
   });
 
   it('validate → 422 when target flow is not active', async () => {

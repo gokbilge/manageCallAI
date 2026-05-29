@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import { authenticate } from '../auth/authenticate.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
@@ -7,14 +7,15 @@ import { requireCapability } from '../auth/require-capability.js';
 import { ExtensionRepository } from './extension.repository.js';
 import { ExtensionNotFoundError, ExtensionService } from './extension.service.js';
 import type { CreateExtensionBody, UpdateExtensionInput } from './extension.types.js';
+import { sendNotFound } from '../../errors/index.js';
 
 const DESTINATION_TYPES = ['flow', 'extension', 'user', 'queue'] as const;
 
 const service = new ExtensionService(new ExtensionRepository(db));
 
-function replyNotFound(err: unknown, reply: FastifyReply): FastifyReply {
+function replyNotFound(err: unknown, reply: FastifyReply): void {
   if (err instanceof ExtensionNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   throw err;
 }

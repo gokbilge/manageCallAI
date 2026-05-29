@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { resolveApiKey } from '../automation/api-key-auth.js';
 import type { AuthClaims } from './auth-claims.js';
 import { type Capability, hasCapability } from './capabilities.js';
+import { sendPermissionDenied, sendUnauthenticated } from '../../errors/index.js';
 
 export function requireCapability(capability: Capability) {
   return async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
@@ -10,19 +11,19 @@ export function requireCapability(capability: Capability) {
 
     if (token?.startsWith('mcak_')) {
       const claims = await resolveApiKey(token);
-      if (!claims) return reply.code(401).send({ error: 'Unauthorized' });
+      if (!claims) return sendUnauthenticated(reply);
       req.user = claims;
     } else {
       try {
         await req.jwtVerify();
       } catch {
-        return reply.code(401).send({ error: 'Unauthorized' });
+        return sendUnauthenticated(reply);
       }
     }
 
     const user = req.user as AuthClaims;
     if (!hasCapability(user.role, capability)) {
-      return reply.code(403).send({ error: 'Forbidden' });
+      return sendPermissionDenied(reply);
     }
   };
 }

@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -13,12 +13,13 @@ import type {
   CreateIvrAiTurnInput,
   CreatePromptGenerationInput,
 } from './provider-work.types.js';
+import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new ProviderWorkService(new ProviderWorkRepository(db));
 
-function replyNotFound(err: unknown, reply: FastifyReply): FastifyReply {
+function replyNotFound(err: unknown, reply: FastifyReply): void {
   if (err instanceof ProviderWorkRequestNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   throw err;
 }
@@ -154,7 +155,7 @@ export async function ivrAiController(app: FastifyInstance): Promise<void> {
     },
     async (req, reply) => {
       const tenantId = req.body.tenant_id ?? '';
-      if (!tenantId) return reply.code(400).send({ error: 'tenant_id is required for runtime IVR AI turns' });
+      if (!tenantId) return sendInvalidArgument(reply, 'tenant_id is required for runtime IVR AI turns');
       const request = await service.createIvrAiTurn(tenantId, req.body);
       return reply.code(201).send({ data: request });
     },

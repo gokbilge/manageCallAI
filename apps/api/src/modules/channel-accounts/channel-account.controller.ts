@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -6,12 +6,13 @@ import { requireCapability } from '../auth/require-capability.js';
 import { ChannelAccountRepository } from './channel-account.repository.js';
 import { ChannelAccountNotFoundError, ChannelAccountService } from './channel-account.service.js';
 import type { CreateChannelAccountInput, UpdateChannelAccountInput } from './channel-account.types.js';
+import { sendNotFound } from '../../errors/index.js';
 
 const service = new ChannelAccountService(new ChannelAccountRepository(db));
 
-function replyNotFound(err: unknown, reply: FastifyReply): FastifyReply {
+function replyNotFound(err: unknown, reply: FastifyReply): void {
   if (err instanceof ChannelAccountNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   throw err;
 }

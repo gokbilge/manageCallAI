@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -6,12 +6,13 @@ import { requireCapability } from '../auth/require-capability.js';
 import { ScheduleRepository } from './schedule.repository.js';
 import { ScheduleNotFoundError, ScheduleService, ScheduleValidationError } from './schedule.service.js';
 import type { CreateScheduleInput, UpdateScheduleInput } from './schedule.types.js';
+import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new ScheduleService(new ScheduleRepository(db));
 
-function replyError(err: unknown, reply: FastifyReply): FastifyReply {
-  if (err instanceof ScheduleNotFoundError) return reply.code(404).send({ error: err.message });
-  if (err instanceof ScheduleValidationError) return reply.code(422).send({ error: err.message });
+function replyError(err: unknown, reply: FastifyReply): void {
+  if (err instanceof ScheduleNotFoundError) return sendNotFound(reply, err.message);
+  if (err instanceof ScheduleValidationError) return sendInvalidArgument(reply, err.message);
   throw err;
 }
 

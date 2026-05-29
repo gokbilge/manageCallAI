@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -10,15 +10,16 @@ import {
   VoicemailBoxService,
 } from './voicemail-box.service.js';
 import type { CreateVoicemailBoxInput, UpdateVoicemailBoxInput } from './voicemail-box.types.js';
+import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new VoicemailBoxService(new VoicemailBoxRepository(db));
 
-function replyError(err: unknown, reply: FastifyReply): FastifyReply {
+function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof VoicemailBoxNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   if (err instanceof VoicemailBoxInputError) {
-    return reply.code(422).send({ error: err.message });
+    return sendInvalidArgument(reply, err.message);
   }
   throw err;
 }

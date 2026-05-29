@@ -10,6 +10,7 @@ import { fireWebhooks } from '../automation/webhook-delivery.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { RecordingRepository } from './recording.repository.js';
 import { RecordingNotFoundError, RecordingPlaybackPathError, RecordingService } from './recording.service.js';
+import { sendNotFound, sendConflict } from '../../errors/index.js';
 import type {
   ClaimRecordingAnalysisInput,
   CompleteRecordingAnalysisInput,
@@ -54,7 +55,7 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
         return { data: await service.getById(req.params.id, user.tenant_id) };
       } catch (err) {
         if (err instanceof RecordingNotFoundError) {
-          return (reply as FastifyReply).code(404).send({ error: err.message });
+          return sendNotFound(reply, err.message);
         }
         throw err;
       }
@@ -80,13 +81,13 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
           .send(createReadStream(playback.file_path));
       } catch (err) {
         if (err instanceof RecordingNotFoundError) {
-          return (reply as FastifyReply).code(404).send({ error: err.message });
+          return sendNotFound(reply, err.message);
         }
         if (err instanceof RecordingPlaybackPathError) {
-          return (reply as FastifyReply).code(409).send({ error: err.message });
+          return sendConflict(reply, err.message);
         }
         if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
-          return (reply as FastifyReply).code(404).send({ error: 'Recording media file not found' });
+          return sendNotFound(reply, 'Recording media file not found');
         }
         throw err;
       }
@@ -122,7 +123,7 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
         const request = await service.createAnalysisRequest(req.params.id, user.tenant_id, req.body);
         return reply.code(201).send({ data: request });
       } catch (err) {
-        if (err instanceof RecordingNotFoundError) return (reply as FastifyReply).code(404).send({ error: err.message });
+        if (err instanceof RecordingNotFoundError) return sendNotFound(reply, err.message);
         throw err;
       }
     },
@@ -139,7 +140,7 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
       try {
         return { data: await service.listAnalysisRequests(req.params.id, user.tenant_id) };
       } catch (err) {
-        if (err instanceof RecordingNotFoundError) return (reply as FastifyReply).code(404).send({ error: err.message });
+        if (err instanceof RecordingNotFoundError) return sendNotFound(reply, err.message);
         throw err;
       }
     },
@@ -162,11 +163,11 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
       try {
         const request = await service.getAnalysisRequest(req.params.requestId, user.tenant_id);
         if (request.recording_id !== req.params.id) {
-          return (reply as FastifyReply).code(404).send({ error: 'Recording analysis request not found' });
+          return sendNotFound(reply, 'Recording analysis request not found');
         }
         return { data: request };
       } catch (err) {
-        if (err instanceof RecordingNotFoundError) return (reply as FastifyReply).code(404).send({ error: err.message });
+        if (err instanceof RecordingNotFoundError) return sendNotFound(reply, err.message);
         throw err;
       }
     },
@@ -224,7 +225,7 @@ export async function recordingAnalysisController(app: FastifyInstance): Promise
       try {
         return { data: await service.claimAnalysisRequest(req.params.requestId, req.body) };
       } catch (err) {
-        if (err instanceof RecordingNotFoundError) return reply.code(404).send({ error: err.message });
+        if (err instanceof RecordingNotFoundError) return sendNotFound(reply, err.message);
         throw err;
       }
     },
@@ -255,7 +256,7 @@ export async function recordingAnalysisController(app: FastifyInstance): Promise
       try {
         return { data: await service.completeAnalysisRequest(req.params.requestId, req.body) };
       } catch (err) {
-        if (err instanceof RecordingNotFoundError) return reply.code(404).send({ error: err.message });
+        if (err instanceof RecordingNotFoundError) return sendNotFound(reply, err.message);
         throw err;
       }
     },

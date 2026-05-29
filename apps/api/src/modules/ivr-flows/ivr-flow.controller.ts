@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -14,15 +14,16 @@ import {
   RollbackNotAvailableError,
 } from './ivr-flow.service.js';
 import { defaultIvrGraph } from './ivr-flow.validation.js';
+import { sendNotFound, sendConflict } from '../../errors/index.js';
 
 const service = new IvrFlowService(new IvrFlowRepository(db));
 
-function replyError(err: unknown, reply: FastifyReply): FastifyReply {
+function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof IvrFlowNotFoundError || err instanceof FlowVersionNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   if (err instanceof FlowVersionStateError || err instanceof RollbackNotAvailableError) {
-    return reply.code(409).send({ error: err.message });
+    return sendConflict(reply, err.message);
   }
   throw err;
 }

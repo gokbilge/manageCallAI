@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -13,18 +13,19 @@ import {
   ApprovalPublishRecordMissingError,
   ApprovalService,
 } from './approval.service.js';
+import { sendNotFound, sendConflict } from '../../errors/index.js';
 
 const service = new ApprovalService(
   new ApprovalRepository(db),
   new IvrFlowRepository(db),
 );
 
-function replyError(err: unknown, reply: FastifyReply): FastifyReply {
+function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof ApprovalNotFoundError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   if (err instanceof ApprovalAlreadyDecidedError || err instanceof ApprovalPublishRecordMissingError) {
-    return reply.code(409).send({ error: err.message });
+    return sendConflict(reply, err.message);
   }
   throw err;
 }

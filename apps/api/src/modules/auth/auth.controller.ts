@@ -5,6 +5,7 @@ import { AuthRepository } from './auth.repository.js';
 import { AuthError, AuthService } from './auth.service.js';
 import type { LoginInput, RegisterInput } from './auth.types.js';
 import type { Role } from './capabilities.js';
+import { sendConflict, sendUnauthenticated } from '../../errors/index.js';
 
 const service = new AuthService(new AuthRepository(db));
 
@@ -51,7 +52,7 @@ export async function authController(app: FastifyInstance): Promise<void> {
         return reply.code(201).send({ token });
       } catch (err) {
         if ((err as { code?: string }).code === '23505') {
-          return reply.code(409).send({ error: 'Tenant slug or email already exists' });
+          return sendConflict(reply, 'Tenant slug or email already exists');
         }
         throw err;
       }
@@ -89,7 +90,7 @@ export async function authController(app: FastifyInstance): Promise<void> {
         return { token };
       } catch (err) {
         if (err instanceof AuthError) {
-          return reply.code(401).send({ error: err.message });
+          return sendUnauthenticated(reply, err.message);
         }
         throw err;
       }

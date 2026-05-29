@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+﻿import type { FastifyInstance, FastifyReply } from 'fastify';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -16,18 +16,19 @@ import type {
   AdvanceIvrRuntimeSessionInput,
   StartIvrRuntimeSessionInput,
 } from './ivr-runtime.types.js';
+import { sendNotFound, sendConflict, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new IvrRuntimeService(new IvrRuntimeRepository(db));
 
-function replyRuntimeError(err: unknown, reply: FastifyReply): FastifyReply {
+function replyRuntimeError(err: unknown, reply: FastifyReply): void {
   if (err instanceof IvrRuntimeSessionNotFoundError || err instanceof IvrRuntimeFlowNotPublishedError) {
-    return reply.code(404).send({ error: err.message });
+    return sendNotFound(reply, err.message);
   }
   if (err instanceof IvrRuntimeSessionStateError) {
-    return reply.code(409).send({ error: err.message });
+    return sendConflict(reply, err.message);
   }
   if (err instanceof IvrRuntimeResolutionError) {
-    return reply.code(422).send({ error: err.message });
+    return sendInvalidArgument(reply, err.message);
   }
   throw err;
 }

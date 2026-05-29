@@ -8,7 +8,10 @@ info:
 
     **MVP response envelope**: all implemented endpoints return `{ "data": ... }` for
     both single-resource and list responses. Pagination will be introduced later
-    where required. Error responses return `{ "error": "<message>" }`.
+    where required. Error responses return `{ "error": "<CODE>", "message": "<human text>",
+    "request_id": "<id>" }` where `error` is a machine-readable RPC code (NOT_FOUND,
+    INVALID_ARGUMENT, UNAUTHENTICATED, PERMISSION_DENIED, ALREADY_EXISTS,
+    RESOURCE_EXHAUSTED, INTERNAL, UNAVAILABLE).
 
     **Auth model**:
     - Human-facing endpoints: `Authorization: Bearer <JWT>` (issued by `/auth/login`
@@ -1874,6 +1877,8 @@ paths:
             text/xml:
               schema:
                 type: string
+        default:
+          $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [FreeSWITCH]
       summary: FreeSWITCH XML directory lookup (POST form)
@@ -1903,6 +1908,8 @@ paths:
             text/xml:
               schema:
                 type: string
+        default:
+          $ref: '#/components/responses/ErrorResponse'
 
   /freeswitch/route-lookup:
     get:
@@ -2025,6 +2032,8 @@ paths:
             text/xml:
               schema:
                 type: string
+        default:
+          $ref: '#/components/responses/ErrorResponse'
 
 components:
   securitySchemes:
@@ -2175,10 +2184,26 @@ components:
   schemas:
     ErrorResponse:
       type: object
-      required: [error]
+      required: [error, message, request_id]
       properties:
         error:
           type: string
+          enum:
+            - NOT_FOUND
+            - INVALID_ARGUMENT
+            - UNAUTHENTICATED
+            - PERMISSION_DENIED
+            - ALREADY_EXISTS
+            - RESOURCE_EXHAUSTED
+            - INTERNAL
+            - UNAVAILABLE
+          description: Machine-readable RPC error code
+        message:
+          type: string
+          description: Human-readable description safe for operators
+        request_id:
+          type: string
+          description: Echoed from X-Request-ID response header for log correlation
 
     # ── Auth ──────────────────────────────────────────────────────────────────
 

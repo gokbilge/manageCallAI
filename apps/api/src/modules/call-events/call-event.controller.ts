@@ -7,6 +7,7 @@ import { CallEventRepository } from './call-event.repository.js';
 import { CallEventService } from './call-event.service.js';
 import type { IngestCallEventInput } from './call-event.types.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
+import { sendPermissionDenied } from '../../errors/index.js';
 const service = new CallEventService(new CallEventRepository(db));
 
 export async function callEventController(app: FastifyInstance): Promise<void> {
@@ -28,7 +29,7 @@ export async function callEventController(app: FastifyInstance): Promise<void> {
       const user = req.user as AuthClaims;
       const tenantId = req.query.tenant_id ?? user.tenant_id;
       if (tenantId !== user.tenant_id) {
-        return reply.code(403).send({ error: 'Forbidden' });
+        return sendPermissionDenied(reply, 'Forbidden');
       }
       return { data: await service.listByTenant(tenantId) };
     },

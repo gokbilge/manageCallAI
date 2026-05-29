@@ -73,6 +73,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: OpenAPI coverage check
+        run: node scripts/check-openapi-coverage.mjs
+
       - name: Tests
         run: pnpm test
 
