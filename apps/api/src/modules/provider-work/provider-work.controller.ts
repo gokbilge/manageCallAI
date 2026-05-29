@@ -1,4 +1,13 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
+import {
+  CreatePromptGenerationBodySchema,
+  CompletePromptGenerationBodySchema,
+  ClaimWorkRequestBodySchema,
+  CreateIvrAiTurnBodySchema,
+  CompleteIvrAiTurnBodySchema,
+} from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -6,13 +15,6 @@ import { requireCapability } from '../auth/require-capability.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { ProviderWorkRepository } from './provider-work.repository.js';
 import { ProviderWorkRequestNotFoundError, ProviderWorkService } from './provider-work.service.js';
-import type {
-  ClaimWorkRequestInput,
-  CompleteIvrAiTurnInput,
-  CompletePromptGenerationInput,
-  CreateIvrAiTurnInput,
-  CreatePromptGenerationInput,
-} from './provider-work.types.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new ProviderWorkService(new ProviderWorkRepository(db));
@@ -24,9 +26,7 @@ function replyNotFound(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-const providerEnum = ['auto', 'openai', 'elevenlabs', 'whisper', 'external', 'custom'];
-
-export async function promptGenerationController(app: FastifyInstance): Promise<void> {
+export const promptGenerationController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/requests',
     { preHandler: requireCapability(CAPABILITIES.TENANT_PROMPTS_VIEW) },
@@ -36,25 +36,12 @@ export async function promptGenerationController(app: FastifyInstance): Promise<
     },
   );
 
-  app.post<{ Body: CreatePromptGenerationInput }>(
+  app.post(
     '/requests',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PROMPTS_CREATE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['requested_outputs', 'input_text'],
-          additionalProperties: false,
-          properties: {
-            prompt_asset_id: { type: 'string' },
-            requested_outputs: { type: 'array', minItems: 1, items: { type: 'string', minLength: 1 } },
-            input_text: { type: 'string', minLength: 1, maxLength: 20000 },
-            language_hint: { type: 'string', maxLength: 32 },
-            voice_hint: { type: 'string', maxLength: 255 },
-            provider_hint: { type: 'string', enum: providerEnum },
-            metadata: { type: 'object', additionalProperties: true },
-          },
-        },
+        body: CreatePromptGenerationBodySchema,
       },
     },
     async (req, reply) => {
@@ -64,11 +51,13 @@ export async function promptGenerationController(app: FastifyInstance): Promise<
     },
   );
 
-  app.get<{ Params: { requestId: string } }>(
+  app.get(
     '/requests/:requestId',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PROMPTS_VIEW),
-      schema: { params: { type: 'object', required: ['requestId'], properties: { requestId: { type: 'string' } } } },
+      schema: {
+        params: z.object({ requestId: z.string() }),
+      },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -80,13 +69,13 @@ export async function promptGenerationController(app: FastifyInstance): Promise<
     },
   );
 
-  app.post<{ Params: { requestId: string }; Body: ClaimWorkRequestInput }>(
+  app.post(
     '/internal/:requestId/claim',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: { type: 'object', required: ['requestId'], properties: { requestId: { type: 'string' } } },
-        body: { type: 'object', additionalProperties: false, properties: { processor_id: { type: 'string', maxLength: 255 } } },
+        params: z.object({ requestId: z.string() }),
+        body: ClaimWorkRequestBodySchema,
       },
     },
     async (req, reply) => {
@@ -98,24 +87,13 @@ export async function promptGenerationController(app: FastifyInstance): Promise<
     },
   );
 
-  app.post<{ Params: { requestId: string }; Body: CompletePromptGenerationInput }>(
+  app.post(
     '/internal/:requestId/result',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: { type: 'object', required: ['requestId'], properties: { requestId: { type: 'string' } } },
-        body: {
-          type: 'object',
-          required: ['status'],
-          additionalProperties: false,
-          properties: {
-            status: { type: 'string', enum: ['completed', 'failed'] },
-            generated_prompt_asset_id: { type: 'string' },
-            media_reference: { type: 'string', maxLength: 2048 },
-            error_message: { type: 'string', maxLength: 500 },
-            provider_metadata: { type: 'object', additionalProperties: true },
-          },
-        },
+        params: z.object({ requestId: z.string() }),
+        body: CompletePromptGenerationBodySchema,
       },
     },
     async (req, reply) => {
@@ -126,31 +104,15 @@ export async function promptGenerationController(app: FastifyInstance): Promise<
       }
     },
   );
-}
+};
 
-export async function ivrAiController(app: FastifyInstance): Promise<void> {
-  app.post<{ Body: CreateIvrAiTurnInput }>(
+export const ivrAiController: FastifyPluginAsyncZod = async (app) => {
+  app.post(
     '/runtime/ivr-ai/turns',
     {
       preHandler: authenticateRuntime,
       schema: {
-        body: {
-          type: 'object',
-          required: ['call_id', 'node_id', 'input_mode', 'requested_outputs'],
-          additionalProperties: false,
-          properties: {
-            tenant_id: { type: 'string', minLength: 1 },
-            runtime_session_id: { type: 'string' },
-            call_id: { type: 'string', minLength: 1, maxLength: 255 },
-            flow_id: { type: 'string' },
-            node_id: { type: 'string', minLength: 1, maxLength: 255 },
-            input_mode: { type: 'string', enum: ['text', 'transcript', 'dtmf', 'metadata'] },
-            input_text: { type: 'string', maxLength: 20000 },
-            requested_outputs: { type: 'array', minItems: 1, items: { type: 'string', minLength: 1 } },
-            provider_hint: { type: 'string', enum: providerEnum },
-            metadata: { type: 'object', additionalProperties: true },
-          },
-        },
+        body: CreateIvrAiTurnBodySchema.extend({ tenant_id: z.string().min(1).optional() }),
       },
     },
     async (req, reply) => {
@@ -161,11 +123,13 @@ export async function ivrAiController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { requestId: string } }>(
+  app.get(
     '/runtime/ivr-ai/turns/:requestId',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
-      schema: { params: { type: 'object', required: ['requestId'], properties: { requestId: { type: 'string' } } } },
+      schema: {
+        params: z.object({ requestId: z.string() }),
+      },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -177,13 +141,13 @@ export async function ivrAiController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { requestId: string }; Body: ClaimWorkRequestInput }>(
+  app.post(
     '/ivr-ai/internal/:requestId/claim',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: { type: 'object', required: ['requestId'], properties: { requestId: { type: 'string' } } },
-        body: { type: 'object', additionalProperties: false, properties: { processor_id: { type: 'string', maxLength: 255 } } },
+        params: z.object({ requestId: z.string() }),
+        body: ClaimWorkRequestBodySchema,
       },
     },
     async (req, reply) => {
@@ -195,25 +159,13 @@ export async function ivrAiController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { requestId: string }; Body: CompleteIvrAiTurnInput }>(
+  app.post(
     '/ivr-ai/internal/:requestId/result',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: { type: 'object', required: ['requestId'], properties: { requestId: { type: 'string' } } },
-        body: {
-          type: 'object',
-          required: ['status'],
-          additionalProperties: false,
-          properties: {
-            status: { type: 'string', enum: ['completed', 'failed'] },
-            answer_text: { type: 'string', maxLength: 20000 },
-            next_action: { type: 'object', additionalProperties: true },
-            confidence: { type: 'number', minimum: 0, maximum: 1 },
-            error_message: { type: 'string', maxLength: 500 },
-            provider_metadata: { type: 'object', additionalProperties: true },
-          },
-        },
+        params: z.object({ requestId: z.string() }),
+        body: CompleteIvrAiTurnBodySchema,
       },
     },
     async (req, reply) => {
@@ -224,4 +176,4 @@ export async function ivrAiController(app: FastifyInstance): Promise<void> {
       }
     },
   );
-}
+};

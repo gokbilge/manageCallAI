@@ -73,6 +73,12 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: OpenAPI generate and verify
+        run: |
+          pnpm --filter @managecallai/contracts build
+          node scripts/generate-openapi.mjs
+          git diff --exit-code docs/api/openapi.yaml || (echo "docs/api/openapi.yaml is stale — run 'node scripts/generate-openapi.mjs' and commit the result" && exit 1)
+
       - name: OpenAPI coverage check
         run: node scripts/check-openapi-coverage.mjs
 

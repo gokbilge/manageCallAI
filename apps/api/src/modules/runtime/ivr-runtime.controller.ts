@@ -1,4 +1,10 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
+import {
+  StartIvrRuntimeSessionBodySchema,
+  AdvanceIvrRuntimeSessionBodySchema,
+} from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -12,10 +18,6 @@ import {
   IvrRuntimeSessionNotFoundError,
   IvrRuntimeSessionStateError,
 } from './ivr-runtime.service.js';
-import type {
-  AdvanceIvrRuntimeSessionInput,
-  StartIvrRuntimeSessionInput,
-} from './ivr-runtime.types.js';
 import { sendNotFound, sendConflict, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new IvrRuntimeService(new IvrRuntimeRepository(db));
@@ -33,8 +35,8 @@ function replyRuntimeError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function ivrRuntimeController(app: FastifyInstance): Promise<void> {
-  app.get<{ Querystring: { status?: string } }>(
+export const ivrRuntimeController: FastifyPluginAsyncZod = async (app) => {
+  app.get(
     '/sessions',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
@@ -49,23 +51,17 @@ export async function ivrRuntimeController(app: FastifyInstance): Promise<void> 
     },
     async (req) => {
       const user = req.user as AuthClaims;
-      const status = req.query.status as 'running' | 'completed' | 'failed' | undefined;
+      const status = (req.query as { status?: string }).status as 'running' | 'completed' | 'failed' | undefined;
       return { data: await service.listSessions(user.tenant_id, status) };
     },
   );
 
-  app.get<{ Params: { sessionId: string } }>(
+  app.get(
     '/sessions/:sessionId',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
       schema: {
-        params: {
-          type: 'object',
-          required: ['sessionId'],
-          properties: {
-            sessionId: { type: 'string', format: 'uuid' },
-          },
-        },
+        params: z.object({ sessionId: z.string().uuid() }),
       },
     },
     async (req, reply) => {
@@ -78,26 +74,12 @@ export async function ivrRuntimeController(app: FastifyInstance): Promise<void> 
     },
   );
 
-  app.post<{ Body: StartIvrRuntimeSessionInput }>(
+  app.post(
     '/sessions',
     {
       preHandler: authenticateRuntime,
       schema: {
-        body: {
-          type: 'object',
-          required: ['call_id', 'flow_id'],
-          additionalProperties: false,
-          properties: {
-            call_id: { type: 'string', minLength: 1, maxLength: 255 },
-            flow_id: { type: 'string', format: 'uuid' },
-            caller_number: { type: 'string', maxLength: 255 },
-            destination_number: { type: 'string', maxLength: 255 },
-            variables: {
-              type: 'object',
-              additionalProperties: { type: 'string', maxLength: 255 },
-            },
-          },
-        },
+        body: StartIvrRuntimeSessionBodySchema,
       },
     },
     async (req, reply) => {
@@ -110,32 +92,13 @@ export async function ivrRuntimeController(app: FastifyInstance): Promise<void> 
     },
   );
 
-  app.post<{ Params: { sessionId: string }; Body: AdvanceIvrRuntimeSessionInput }>(
+  app.post(
     '/sessions/:sessionId/advance',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: {
-          type: 'object',
-          required: ['sessionId'],
-          properties: {
-            sessionId: { type: 'string', format: 'uuid' },
-          },
-        },
-        body: {
-          type: 'object',
-          required: ['node_id', 'outcome'],
-          additionalProperties: false,
-          properties: {
-            node_id: { type: 'string', minLength: 1, maxLength: 255 },
-            outcome: { type: 'string', enum: ['completed', 'digits', 'timeout', 'invalid'] },
-            digits: { type: 'string', minLength: 1, maxLength: 64 },
-            variables: {
-              type: 'object',
-              additionalProperties: { type: 'string', maxLength: 255 },
-            },
-          },
-        },
+        params: z.object({ sessionId: z.string().uuid() }),
+        body: AdvanceIvrRuntimeSessionBodySchema,
       },
     },
     async (req, reply) => {
@@ -146,4 +109,4 @@ export async function ivrRuntimeController(app: FastifyInstance): Promise<void> 
       }
     },
   );
-}
+};

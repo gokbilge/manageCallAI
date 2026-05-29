@@ -1,11 +1,12 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { UuidParamsSchema, CreateApiKeyBodySchema, CreateAutomationWebhookBodySchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { AutomationRepository } from './automation.repository.js';
 import { ApiKeyNotFoundError, AutomationService, WebhookNotFoundError } from './automation.service.js';
-import { WEBHOOK_EVENTS } from './automation.types.js';
 import { sendNotFound } from '../../errors/index.js';
 
 const service = new AutomationService(new AutomationRepository(db));
@@ -17,20 +18,15 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function automationController(app: FastifyInstance): Promise<void> {
+export const automationController: FastifyPluginAsyncZod = async (app) => {
   // --- API Keys ---
 
-  app.post<{ Body: { name: string } }>(
+  app.post(
     '/keys',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_AUTOMATION_KEYS_MANAGE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['name'],
-          additionalProperties: false,
-          properties: { name: { type: 'string', minLength: 1, maxLength: 255 } },
-        },
+        body: CreateApiKeyBodySchema,
       },
     },
     async (req, reply) => {
@@ -49,11 +45,11 @@ export async function automationController(app: FastifyInstance): Promise<void> 
     },
   );
 
-  app.delete<{ Params: { id: string } }>(
+  app.delete(
     '/keys/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_AUTOMATION_KEYS_MANAGE),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -68,21 +64,12 @@ export async function automationController(app: FastifyInstance): Promise<void> 
 
   // --- Webhooks ---
 
-  app.post<{ Body: { name: string; url: string; events: string[] } }>(
+  app.post(
     '/webhooks',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_MANAGE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['name', 'url', 'events'],
-          additionalProperties: false,
-          properties: {
-            name:   { type: 'string', minLength: 1, maxLength: 255 },
-            url:    { type: 'string', minLength: 1, maxLength: 2048 },
-            events: { type: 'array', minItems: 1, items: { type: 'string', enum: [...WEBHOOK_EVENTS] } },
-          },
-        },
+        body: CreateAutomationWebhookBodySchema,
       },
     },
     async (req, reply) => {
@@ -107,11 +94,11 @@ export async function automationController(app: FastifyInstance): Promise<void> 
     },
   );
 
-  app.delete<{ Params: { id: string } }>(
+  app.delete(
     '/webhooks/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_MANAGE),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -123,4 +110,4 @@ export async function automationController(app: FastifyInstance): Promise<void> 
       }
     },
   );
-}
+};

@@ -60,17 +60,40 @@ manageCallAI replaces low-level telecom administration with safe business-level 
 
 ## Current Status
 
-The core runtime slice is implemented and passing CI:
+All core API domains are implemented and passing CI (327 tests, 97 OpenAPI operations).
 
-- Multi-tenant auth (register / login, JWT with role claim)
-- Extension CRUD with AES-256-GCM encrypted SIP credentials
-- FreeSWITCH `mod_xml_curl` directory endpoint
-- Inbound route lookup endpoint
-- Call-event ingestion from the Go ESL agent
-- Role-based capability model (`tenant_admin` / `platform_admin`)
-- React admin panel with tenant and platform workspaces
-- Go FreeSWITCH adapter (ESL connection, event normalization)
-- Docker Compose profiles separating core services from FreeSWITCH runtime
+### Implemented
+
+- **Auth**: multi-tenant register / login, JWT with role claim, platform admin support
+- **Extensions**: CRUD + AES-256-GCM encrypted SIP credentials
+- **SIP Trunks, Phone Numbers, Schedules, Outbound Routes**: full CRUD
+- **Call Groups, Queues**: CRUD + member management (simultaneous / sequential ring strategies)
+- **Voicemail Boxes**: CRUD + greeting prompt assignment
+- **Prompt Assets**: metadata CRUD; provider-neutral TTS generation contract (provider-work)
+- **IVR Flows**: draft → validate → simulate → publish → rollback, approval gating, full history
+- **Inbound Routes**: draft → publish lifecycle with version control
+- **Runtime (IVR)**: live session start/advance; FreeSWITCH Lua executor closes the loop
+- **Outbound Calls**: dispatch via outbound route resolution
+- **Call Events**: ingestion from Go ESL agent + tenant query
+- **Recordings**: metadata ingestion + analysis request contract (transcript / summary)
+- **Automation**: API key management + webhook subscriptions + durable delivery queue
+- **Users**: tenant user CRUD + role management
+- **Approvals**: approval-gating for IVR publish/rollback
+- **Audit, Export**: read access + tenant data export
+- **Channels**: account, message, and meeting-session adapters (WhatsApp / Telegram / Google Meet)
+- **IVR AI**: provider-neutral AI turn contract
+- **Platform ops**: tenant list, runtime health, session summary (platform_admin)
+- **FreeSWITCH integration**: `mod_xml_curl` directory + dialplan endpoints; Go ESL adapter
+- **MCP server**: 30+ read/write tools for AI agents
+- **n8n connector**: webhook trigger + API action patterns
+- **Schema contracts**: Zod schemas as single source of truth; OpenAPI spec generated from code
+- **Error standard**: gRPC-inspired RPC codes, global error handler, CI coverage gate
+
+### Planned / In Progress
+
+- Visual IVR builder (React drag-and-drop flow editor)
+- SLICE-34: Fastify Zod type provider (controller validation migrated to contracts schemas)
+- SDK generation and npm publish
 
 **Run the full demo loop in one sitting:**
 
@@ -131,52 +154,26 @@ My recommendation:
 - Optional call-session helper: Lua
 - Runtime event/control agent: Go or Node
 
-## Priority Implementation Order
+## Quick Start
 
-1. PostgreSQL migration runnable
-2. Node.js API health + extensions CRUD
-3. FreeSWITCH `mod_xml_curl` directory endpoint
-4. Go adapter connects to ESL and logs events
-5. Lua helper only for `play_prompt` / `play_collect`
-6. OpenAPI generated client
-7. MCP read-only tools
-8. Flow draft / validate / simulate
-9. Publish active version
-10. n8n webhook examples
+```sh
+# Start core services
+pnpm db:up
+pnpm db:migrate
+pnpm --filter @managecallai/api dev
 
-Step 1 is now defined as:
-
-- start PostgreSQL with `pnpm db:up`
-- apply migrations with `pnpm db:migrate`
-- verify status with `pnpm db:status`
-
-The current local MVP smoke path can also be exercised with:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mvp-smoke.ps1
+# With FreeSWITCH runtime
+pnpm runtime:up
 ```
 
-The full live runtime proof is now documented here:
+Runbooks:
+- **Demo loop**: `docs/development/demo-loop.md`
+- **Live IVR proof**: `docs/development/live-freeswitch-ivr-loop.md`
+- **IVR architecture**: `docs/ivr/IVR_ARCHITECTURE.md`
+- **Node support matrix**: `docs/ivr/NODE_SUPPORT_MATRIX.md`
 
-```text
-docs/development/live-freeswitch-registration.md
-```
+## FreeSWITCH Strategy
 
-That runbook covers:
+manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSWITCH through supported extension interfaces: `mod_xml_curl`, ESL / `mod_event_socket`, and Lua helpers.
 
-1. API container startup
-2. stock FreeSWITCH startup
-3. containerized `freeswitch-agent`
-4. real SIP `REGISTER`
-5. persisted `registration_seen` event through the API
-
-For MVP, use Lua only for:
-
-- `play_collect`
-- `play_prompt`
-- `transfer`
-- `hangup`
-- `set_variable`
-- call API for next step
-
-Do not put business logic in Lua.
+**Lua helpers are thin executors only** — they carry out runtime actions (play, collect, transfer, hangup) and call back to the API. All business logic lives in the Node.js control plane.

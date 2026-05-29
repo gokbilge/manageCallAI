@@ -30,6 +30,9 @@ importers:
       '@fastify/jwt':
         specifier: ^10.1.0
         version: 10.1.0
+      '@managecallai/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -39,9 +42,15 @@ importers:
       fastify:
         specifier: ^5.2.0
         version: 5.8.5
+      fastify-type-provider-zod:
+        specifier: ^4.0.0
+        version: 4.0.2(fastify@5.8.5)(zod@3.25.76)
       pg:
         specifier: ^8.13.0
         version: 8.21.0
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@eslint/js':
         specifier: ^9.0.0
@@ -1831,6 +1840,12 @@ packages:
 
   fastify-plugin@5.1.0:
     resolution: {integrity: sha512-FAIDA8eovSt5qcDgcBvDuX/v0Cjz0ohGhENZ/wpc3y+oZCY2afZ9Baqql3g/lC+OHRnciQol4ww7tuthOb9idw==}
+
+  fastify-type-provider-zod@4.0.2:
+    resolution: {integrity: sha512-FDRzSL3ZuoZ+4YDevR1YOinmDKkxOdy3QB9dDR845sK+bQvDroPKhHAXLEAOObDxL7SMA0OZN/A4osrNBTdDTQ==}
+    peerDependencies:
+      fastify: ^5.0.0
+      zod: ^3.14.2
 
   fastify@5.8.5:
     resolution: {integrity: sha512-Yqptv59pQzPgQUSIm87hMqHJmdkb1+GPxdE6vW6FRyVE9G86mt7rOghitiU4JHRaTyDUk9pfeKmDeu70lAwM4Q==}
@@ -4529,6 +4544,13 @@ snapshots:
       reusify: 1.1.0
 
   fastify-plugin@5.1.0: {}
+
+  fastify-type-provider-zod@4.0.2(fastify@5.8.5)(zod@3.25.76):
+    dependencies:
+      '@fastify/error': 4.2.0
+      fastify: 5.8.5
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.2(zod@3.25.76)
 
   fastify@5.8.5:
     dependencies:

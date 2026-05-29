@@ -1,14 +1,12 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { CreateSipTrunkBodySchema, UpdateSipTrunkBodySchema, UuidParamsSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { authenticate } from '../auth/authenticate.js';
 import { SipTrunkRepository } from './sip-trunk.repository.js';
 import { SipTrunkNotFoundError, SipTrunkService } from './sip-trunk.service.js';
-import type { CreateSipTrunkBody, UpdateSipTrunkInput } from './sip-trunk.types.js';
 import { sendNotFound } from '../../errors/index.js';
-
-const DIRECTIONS = ['inbound', 'outbound', 'bidirectional'] as const;
-const TRANSPORTS = ['udp', 'tcp', 'tls'] as const;
 
 const service = new SipTrunkService(new SipTrunkRepository(db));
 
@@ -19,7 +17,7 @@ function replyNotFound(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function sipTrunkController(app: FastifyInstance): Promise<void> {
+export const sipTrunkController: FastifyPluginAsyncZod = async (app) => {
   app.addHook('preHandler', authenticate);
 
   app.get('/', async (req) => {
@@ -27,27 +25,10 @@ export async function sipTrunkController(app: FastifyInstance): Promise<void> {
     return { data: await service.listByTenant(user.tenant_id) };
   });
 
-  app.post<{ Body: CreateSipTrunkBody }>(
+  app.post(
     '/',
     {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['name', 'direction', 'realm', 'proxy', 'auth_username', 'auth_password'],
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            direction: { type: 'string', enum: [...DIRECTIONS] },
-            realm: { type: 'string', minLength: 1, maxLength: 255 },
-            proxy: { type: 'string', minLength: 1, maxLength: 255 },
-            port: { type: 'integer', minimum: 1, maximum: 65535 },
-            transport: { type: 'string', enum: [...TRANSPORTS] },
-            username: { type: 'string', minLength: 1, maxLength: 255 },
-            auth_username: { type: 'string', minLength: 1, maxLength: 255 },
-            auth_password: { type: 'string', minLength: 8, maxLength: 255 },
-          },
-        },
-      },
+      schema: { body: CreateSipTrunkBodySchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -59,16 +40,10 @@ export async function sipTrunkController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
-      schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-      },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -80,31 +55,12 @@ export async function sipTrunkController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdateSipTrunkInput }>(
+  app.patch(
     '/:id',
     {
       schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            status: { type: 'string', enum: ['active', 'inactive'] },
-            direction: { type: 'string', enum: [...DIRECTIONS] },
-            realm: { type: 'string', minLength: 1, maxLength: 255 },
-            proxy: { type: 'string', minLength: 1, maxLength: 255 },
-            port: { type: 'integer', minimum: 1, maximum: 65535 },
-            transport: { type: 'string', enum: [...TRANSPORTS] },
-            username: { anyOf: [{ type: 'string', minLength: 1, maxLength: 255 }, { type: 'null' }] },
-            auth_username: { type: 'string', minLength: 1, maxLength: 255 },
-            auth_password: { type: 'string', minLength: 8, maxLength: 255 },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateSipTrunkBodySchema,
       },
     },
     async (req, reply) => {
@@ -117,16 +73,10 @@ export async function sipTrunkController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
     {
-      schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-      },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -137,4 +87,4 @@ export async function sipTrunkController(app: FastifyInstance): Promise<void> {
       }
     },
   );
-}
+};

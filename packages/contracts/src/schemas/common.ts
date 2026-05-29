@@ -25,3 +25,14 @@ export const DataResponseSchema = z.object({
   data: z.unknown(),
 }).openapi('DataResponse');
 export type DataResponse = z.infer<typeof DataResponseSchema>;
+
+// ── Common route param/query schemas ──────────────────────────────────────────
+export const UuidParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+export type UuidParams = z.infer<typeof UuidParamsSchema>;
+
+export const IdParamsSchema = z.object({
+  id: z.string(),
+});
+export type IdParams = z.infer<typeof IdParamsSchema>;

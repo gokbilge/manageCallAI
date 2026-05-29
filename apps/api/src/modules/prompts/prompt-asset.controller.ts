@@ -1,14 +1,12 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { CreatePromptAssetBodySchema, UpdatePromptAssetBodySchema, UuidParamsSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { PromptAssetRepository } from './prompt-asset.repository.js';
 import { PromptAssetNotFoundError, PromptAssetService } from './prompt-asset.service.js';
-import type {
-  CreatePromptAssetInput,
-  UpdatePromptAssetInput,
-} from './prompt-asset.types.js';
 import { sendNotFound } from '../../errors/index.js';
 
 const service = new PromptAssetService(new PromptAssetRepository(db));
@@ -20,7 +18,7 @@ function replyNotFound(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function promptAssetController(app: FastifyInstance): Promise<void> {
+export const promptAssetController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_PROMPTS_VIEW) },
@@ -30,24 +28,11 @@ export async function promptAssetController(app: FastifyInstance): Promise<void>
     },
   );
 
-  app.post<{ Body: Omit<CreatePromptAssetInput, 'tenant_id'> }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PROMPTS_CREATE),
-      schema: {
-        body: {
-          type: 'object',
-          required: ['name', 'media_type', 'storage_uri'],
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            media_type: { type: 'string', minLength: 1, maxLength: 255 },
-            language: { type: 'string', minLength: 1, maxLength: 32 },
-            storage_uri: { type: 'string', minLength: 1, maxLength: 2048 },
-            checksum: { type: 'string', minLength: 1, maxLength: 255 },
-          },
-        },
-      },
+      schema: { body: CreatePromptAssetBodySchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -63,17 +48,11 @@ export async function promptAssetController(app: FastifyInstance): Promise<void>
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PROMPTS_VIEW),
-      schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-      },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -85,28 +64,13 @@ export async function promptAssetController(app: FastifyInstance): Promise<void>
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdatePromptAssetInput }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PROMPTS_UPDATE),
       schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            media_type: { type: 'string', minLength: 1, maxLength: 255 },
-            language: { anyOf: [{ type: 'string', minLength: 1, maxLength: 32 }, { type: 'null' }] },
-            storage_uri: { anyOf: [{ type: 'string', minLength: 1, maxLength: 2048 }, { type: 'null' }] },
-            checksum: { anyOf: [{ type: 'string', minLength: 1, maxLength: 255 }, { type: 'null' }] },
-            status: { type: 'string', enum: ['active', 'inactive'] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdatePromptAssetBodySchema,
       },
     },
     async (req, reply) => {
@@ -119,17 +83,11 @@ export async function promptAssetController(app: FastifyInstance): Promise<void>
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PROMPTS_DEACTIVATE),
-      schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-      },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -140,4 +98,4 @@ export async function promptAssetController(app: FastifyInstance): Promise<void>
       }
     },
   );
-}
+};

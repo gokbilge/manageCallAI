@@ -13,10 +13,13 @@
   "dependencies": {
     "@fastify/formbody": "^8.0.2",
     "@fastify/jwt": "^10.1.0",
+    "fastify-type-provider-zod": "^4.0.0",
+    "@managecallai/contracts": "workspace:*",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.6.1",
     "fastify": "^5.2.0",
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

@@ -1,28 +1,26 @@
-import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { CallEventRepository } from './call-event.repository.js';
 import { CallEventService } from './call-event.service.js';
-import type { IngestCallEventInput } from './call-event.types.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { sendPermissionDenied } from '../../errors/index.js';
+import { IngestCallEventBodySchema } from '@managecallai/contracts';
+
 const service = new CallEventService(new CallEventRepository(db));
 
-export async function callEventController(app: FastifyInstance): Promise<void> {
-  app.get<{ Querystring: { tenant_id?: string } }>(
+export const callEventController: FastifyPluginAsyncZod = async (app) => {
+  app.get(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CALLS_VIEW),
       schema: {
-        querystring: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            tenant_id: { type: 'string' },
-          },
-        },
+        querystring: z.object({
+          tenant_id: z.string().optional(),
+        }),
       },
     },
     async (req, reply) => {
@@ -35,24 +33,12 @@ export async function callEventController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: IngestCallEventInput }>(
+  app.post(
     '/internal/ingest',
     {
       preHandler: authenticateRuntime,
       schema: {
-        body: {
-          type: 'object',
-          required: ['tenant_id', 'call_id', 'event_type'],
-          additionalProperties: false,
-          properties: {
-            tenant_id: { type: 'string', minLength: 1 },
-            call_id: { type: 'string', minLength: 1 },
-            event_type: { type: 'string', minLength: 1 },
-            event_time: { type: 'string' },
-            source: { type: 'string' },
-            payload: { type: 'object', additionalProperties: true },
-          },
-        },
+        body: IngestCallEventBodySchema,
       },
     },
     async (req, reply) => {
@@ -60,4 +46,4 @@ export async function callEventController(app: FastifyInstance): Promise<void> {
       return reply.code(201).send({ data: event });
     },
   );
-}
+};

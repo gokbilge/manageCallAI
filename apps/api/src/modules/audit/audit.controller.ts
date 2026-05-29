@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -8,7 +8,7 @@ import { AuditService } from './audit.service.js';
 
 const service = new AuditService(new AuditRepository(db));
 
-export async function auditController(app: FastifyInstance): Promise<void> {
+export const auditController: FastifyPluginAsyncZod = async (app) => {
   app.get<{
     Querystring: { action?: string; resource_type?: string; since?: string; limit?: string };
   }>(
@@ -41,4 +41,4 @@ export async function auditController(app: FastifyInstance): Promise<void> {
       return { data: entries };
     },
   );
-}
+};

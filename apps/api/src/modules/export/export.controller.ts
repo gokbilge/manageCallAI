@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -20,7 +20,7 @@ const EXPORT_QUERY_SCHEMA = {
 
 type ExportQuery = { since?: string; until?: string; limit?: string };
 
-export async function exportController(app: FastifyInstance): Promise<void> {
+export const exportController: FastifyPluginAsyncZod = async (app) => {
   app.get<{ Querystring: ExportQuery }>(
     '/call-events',
     {
@@ -58,4 +58,4 @@ export async function exportController(app: FastifyInstance): Promise<void> {
       return { data: rows, count: rows.length };
     },
   );
-}
+};

@@ -1,41 +1,19 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { RegisterBodySchema, LoginBodySchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import { config } from '../../config/env.js';
 import { AuthRepository } from './auth.repository.js';
 import { AuthError, AuthService } from './auth.service.js';
-import type { LoginInput, RegisterInput } from './auth.types.js';
 import type { Role } from './capabilities.js';
 import { sendConflict, sendUnauthenticated } from '../../errors/index.js';
 
 const service = new AuthService(new AuthRepository(db));
 
-export async function authController(app: FastifyInstance): Promise<void> {
-  app.post<{ Body: RegisterInput }>(
+export const authController: FastifyPluginAsyncZod = async (app) => {
+  app.post(
     '/register',
     {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['tenant_name', 'tenant_slug', 'email', 'display_name', 'password'],
-          additionalProperties: false,
-          properties: {
-            tenant_name: { type: 'string', minLength: 1, maxLength: 100 },
-            tenant_slug: {
-              type: 'string',
-              minLength: 1,
-              maxLength: 50,
-              pattern: '^[a-z0-9][a-z0-9-]*[a-z0-9]$',
-            },
-            email: {
-              type: 'string',
-              pattern: '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$',
-              maxLength: 254,
-            },
-            display_name: { type: 'string', minLength: 1, maxLength: 255 },
-            password: { type: 'string', minLength: 8, maxLength: 128 },
-          },
-        },
-      },
+      schema: { body: RegisterBodySchema },
     },
     async (req, reply) => {
       try {
@@ -59,21 +37,10 @@ export async function authController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: LoginInput }>(
+  app.post(
     '/login',
     {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['tenant_slug', 'email', 'password'],
-          additionalProperties: false,
-          properties: {
-            tenant_slug: { type: 'string', minLength: 1 },
-            email: { type: 'string', minLength: 1 },
-            password: { type: 'string', minLength: 1 },
-          },
-        },
-      },
+      schema: { body: LoginBodySchema },
     },
     async (req, reply) => {
       try {
@@ -96,4 +63,4 @@ export async function authController(app: FastifyInstance): Promise<void> {
       }
     },
   );
-}
+};

@@ -1,4 +1,6 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { CreateVoicemailBoxBodySchema, UpdateVoicemailBoxBodySchema, UuidParamsSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -9,7 +11,6 @@ import {
   VoicemailBoxNotFoundError,
   VoicemailBoxService,
 } from './voicemail-box.service.js';
-import type { CreateVoicemailBoxInput, UpdateVoicemailBoxInput } from './voicemail-box.types.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new VoicemailBoxService(new VoicemailBoxRepository(db));
@@ -24,7 +25,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function voicemailBoxController(app: FastifyInstance): Promise<void> {
+export const voicemailBoxController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_VOICEMAIL_BOXES_VIEW) },
@@ -34,23 +35,11 @@ export async function voicemailBoxController(app: FastifyInstance): Promise<void
     },
   );
 
-  app.post<{ Body: Omit<CreateVoicemailBoxInput, 'tenant_id'> }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_VOICEMAIL_BOXES_CREATE),
-      schema: {
-        body: {
-          type: 'object',
-          required: ['name', 'mailbox_number'],
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { type: 'string', maxLength: 1000 },
-            mailbox_number: { type: 'string', pattern: '^[0-9]{2,12}$' },
-            greeting_prompt_id: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
-          },
-        },
-      },
+      schema: { body: CreateVoicemailBoxBodySchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -63,11 +52,11 @@ export async function voicemailBoxController(app: FastifyInstance): Promise<void
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_VOICEMAIL_BOXES_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -79,23 +68,13 @@ export async function voicemailBoxController(app: FastifyInstance): Promise<void
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdateVoicemailBoxInput }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_VOICEMAIL_BOXES_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] },
-            mailbox_number: { type: 'string', pattern: '^[0-9]{2,12}$' },
-            greeting_prompt_id: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
-            status: { type: 'string', enum: ['active', 'inactive'] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateVoicemailBoxBodySchema,
       },
     },
     async (req, reply) => {
@@ -108,11 +87,11 @@ export async function voicemailBoxController(app: FastifyInstance): Promise<void
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_VOICEMAIL_BOXES_DEACTIVATE),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -123,4 +102,4 @@ export async function voicemailBoxController(app: FastifyInstance): Promise<void
       }
     },
   );
-}
+};

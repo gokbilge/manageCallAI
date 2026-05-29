@@ -1,4 +1,6 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { UuidParamsSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -30,7 +32,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function approvalController(app: FastifyInstance): Promise<void> {
+export const approvalController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_APPROVALS_VIEW) },
@@ -40,12 +42,12 @@ export async function approvalController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/approve',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_APPROVALS_DECIDE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        params: UuidParamsSchema,
       },
     },
     async (req, reply) => {
@@ -61,12 +63,12 @@ export async function approvalController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/reject',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_APPROVALS_DECIDE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        params: UuidParamsSchema,
       },
     },
     async (req, reply) => {
@@ -81,9 +83,9 @@ export async function approvalController(app: FastifyInstance): Promise<void> {
       }
     },
   );
-}
+};
 
-export async function policiesController(app: FastifyInstance): Promise<void> {
+export const policiesController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_APPROVALS_VIEW) },
@@ -92,4 +94,4 @@ export async function policiesController(app: FastifyInstance): Promise<void> {
       return { data: await service.listPolicies(user.tenant_id) };
     },
   );
-}
+};

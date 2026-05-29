@@ -1,6 +1,9 @@
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
-import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
+import { UuidParamsSchema, CreateRecordingAnalysisBodySchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import { config } from '../../config/env.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
@@ -11,28 +14,18 @@ import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { RecordingRepository } from './recording.repository.js';
 import { RecordingNotFoundError, RecordingPlaybackPathError, RecordingService } from './recording.service.js';
 import { sendNotFound, sendConflict } from '../../errors/index.js';
-import type {
-  ClaimRecordingAnalysisInput,
-  CompleteRecordingAnalysisInput,
-  CreateRecordingAnalysisInput,
-  IngestRecordingInput,
-} from './recording.types.js';
 
 const service = new RecordingService(new RecordingRepository(db), config.recordingStorageRoot);
 
-export async function recordingController(app: FastifyInstance): Promise<void> {
-  app.get<{ Querystring: { call_id?: string } }>(
+export const recordingController: FastifyPluginAsyncZod = async (app) => {
+  app.get(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_RECORDINGS_VIEW),
       schema: {
-        querystring: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            call_id: { type: 'string', minLength: 1, maxLength: 255 },
-          },
-        },
+        querystring: z.object({
+          call_id: z.string().min(1).max(255).optional(),
+        }),
       },
     },
     async (req) => {
@@ -41,12 +34,12 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_RECORDINGS_VIEW),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        params: UuidParamsSchema,
       },
     },
     async (req, reply) => {
@@ -62,12 +55,12 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id/playback',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_RECORDINGS_VIEW),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        params: UuidParamsSchema,
       },
     },
     async (req, reply) => {
@@ -94,27 +87,13 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string }; Body: CreateRecordingAnalysisInput }>(
+  app.post(
     '/:id/analysis-requests',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_RECORDINGS_VIEW),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          required: ['requested_outputs'],
-          additionalProperties: false,
-          properties: {
-            requested_outputs: {
-              type: 'array',
-              minItems: 1,
-              uniqueItems: true,
-              items: { type: 'string', enum: ['transcript', 'summary'] },
-            },
-            language_hint: { type: 'string', minLength: 2, maxLength: 32 },
-            metadata: { type: 'object', additionalProperties: true },
-          },
-        },
+        params: UuidParamsSchema,
+        body: CreateRecordingAnalysisBodySchema,
       },
     },
     async (req, reply) => {
@@ -129,11 +108,11 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id/analysis-requests',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_RECORDINGS_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -146,16 +125,15 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string; requestId: string } }>(
+  app.get(
     '/:id/analysis-requests/:requestId',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_RECORDINGS_VIEW),
       schema: {
-        params: {
-          type: 'object',
-          required: ['id', 'requestId'],
-          properties: { id: { type: 'string' }, requestId: { type: 'string' } },
-        },
+        params: z.object({
+          id: z.string().uuid(),
+          requestId: z.string().uuid(),
+        }),
       },
     },
     async (req, reply) => {
@@ -173,25 +151,20 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: IngestRecordingInput }>(
+  app.post(
     '/internal/ingest',
     {
       preHandler: authenticateRuntime,
       schema: {
-        body: {
-          type: 'object',
-          required: ['tenant_id', 'call_id', 'storage_path'],
-          additionalProperties: false,
-          properties: {
-            tenant_id: { type: 'string', minLength: 1 },
-            call_id: { type: 'string', minLength: 1 },
-            call_event_id: { type: 'string' },
-            storage_path: { type: 'string', minLength: 1, maxLength: 2048 },
-            duration_secs: { type: 'integer', minimum: 0 },
-            size_bytes: { type: 'integer', minimum: 0 },
-            recorded_at: { type: 'string', format: 'date-time' },
-          },
-        },
+        body: z.object({
+          tenant_id: z.string().min(1),
+          call_id: z.string().min(1),
+          call_event_id: z.string().uuid().optional(),
+          storage_path: z.string().min(1).max(2048),
+          duration_secs: z.number().int().min(0).optional(),
+          size_bytes: z.number().int().min(0).optional(),
+          recorded_at: z.string().datetime().optional(),
+        }),
       },
     },
     async (req, reply) => {
@@ -205,20 +178,18 @@ export async function recordingController(app: FastifyInstance): Promise<void> {
       return reply.code(201).send({ data: recording });
     },
   );
-}
+};
 
-export async function recordingAnalysisController(app: FastifyInstance): Promise<void> {
-  app.post<{ Params: { requestId: string }; Body: ClaimRecordingAnalysisInput }>(
+export const recordingAnalysisController: FastifyPluginAsyncZod = async (app) => {
+  app.post(
     '/internal/:requestId/claim',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: { type: 'object', required: ['requestId'], properties: { requestId: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: { processor_id: { type: 'string', maxLength: 255 } },
-        },
+        params: z.object({ requestId: z.string().uuid() }),
+        body: z.object({
+          processor_id: z.string().max(255).optional(),
+        }),
       },
     },
     async (req, reply) => {
@@ -231,25 +202,20 @@ export async function recordingAnalysisController(app: FastifyInstance): Promise
     },
   );
 
-  app.post<{ Params: { requestId: string }; Body: CompleteRecordingAnalysisInput }>(
+  app.post(
     '/internal/:requestId/result',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: { type: 'object', required: ['requestId'], properties: { requestId: { type: 'string' } } },
-        body: {
-          type: 'object',
-          required: ['status'],
-          additionalProperties: false,
-          properties: {
-            status: { type: 'string', enum: ['completed', 'failed'] },
-            language: { type: 'string', maxLength: 32 },
-            transcript_text: { type: 'string', maxLength: 100000 },
-            summary_text: { type: 'string', maxLength: 10000 },
-            error_message: { type: 'string', maxLength: 500 },
-            provider_metadata: { type: 'object', additionalProperties: true },
-          },
-        },
+        params: z.object({ requestId: z.string().uuid() }),
+        body: z.object({
+          status: z.enum(['completed', 'failed']),
+          language: z.string().max(32).optional(),
+          transcript_text: z.string().max(100000).optional(),
+          summary_text: z.string().max(10000).optional(),
+          error_message: z.string().max(500).optional(),
+          provider_metadata: z.record(z.unknown()).optional(),
+        }),
       },
     },
     async (req, reply) => {
@@ -261,4 +227,4 @@ export async function recordingAnalysisController(app: FastifyInstance): Promise
       }
     },
   );
-}
+};

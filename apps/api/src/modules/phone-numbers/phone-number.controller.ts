@@ -1,14 +1,13 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { CreatePhoneNumberBodySchema, UpdatePhoneNumberBodySchema, UuidParamsSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { PhoneNumberRepository } from './phone-number.repository.js';
 import { PhoneNumberNotFoundError, PhoneNumberService } from './phone-number.service.js';
-import type { CreatePhoneNumberBody, UpdatePhoneNumberInput } from './phone-number.types.js';
 import { sendNotFound } from '../../errors/index.js';
-
-const TARGET_TYPES = ['inbound_route', 'flow', 'extension'] as const;
 
 const service = new PhoneNumberService(new PhoneNumberRepository(db));
 
@@ -19,7 +18,7 @@ function replyNotFound(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function phoneNumberController(app: FastifyInstance): Promise<void> {
+export const phoneNumberController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW) },
@@ -29,22 +28,11 @@ export async function phoneNumberController(app: FastifyInstance): Promise<void>
     },
   );
 
-  app.post<{ Body: CreatePhoneNumberBody }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PHONE_NUMBERS_CREATE),
-      schema: {
-        body: {
-          type: 'object',
-          required: ['e164_number'],
-          additionalProperties: false,
-          properties: {
-            e164_number:   { type: 'string', minLength: 2, maxLength: 32 },
-            display_label: { type: 'string', minLength: 1, maxLength: 255 },
-            trunk_id:      { type: 'string', format: 'uuid' },
-          },
-        },
-      },
+      schema: { body: CreatePhoneNumberBodySchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -53,17 +41,11 @@ export async function phoneNumberController(app: FastifyInstance): Promise<void>
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW),
-      schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-      },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -75,27 +57,13 @@ export async function phoneNumberController(app: FastifyInstance): Promise<void>
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdatePhoneNumberInput }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PHONE_NUMBERS_UPDATE),
       schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            display_label:        { anyOf: [{ type: 'string', minLength: 1, maxLength: 255 }, { type: 'null' }] },
-            trunk_id:             { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
-            assigned_target_type: { anyOf: [{ type: 'string', enum: [...TARGET_TYPES] }, { type: 'null' }] },
-            assigned_target_id:   { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
-            status:               { type: 'string', enum: ['active', 'inactive'] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdatePhoneNumberBodySchema,
       },
     },
     async (req, reply) => {
@@ -108,17 +76,11 @@ export async function phoneNumberController(app: FastifyInstance): Promise<void>
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_PHONE_NUMBERS_DEACTIVATE),
-      schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-      },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -129,4 +91,4 @@ export async function phoneNumberController(app: FastifyInstance): Promise<void>
       }
     },
   );
-}
+};

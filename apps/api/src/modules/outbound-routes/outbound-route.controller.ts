@@ -1,4 +1,5 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -10,8 +11,13 @@ import {
   OutboundRouteService,
   OutboundRouteValidationError,
 } from './outbound-route.service.js';
-import type { CreateOutboundRouteInput, UpdateOutboundRouteInput } from './outbound-route.types.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
+import {
+  UuidParamsSchema,
+  CreateOutboundRouteBodySchema,
+  UpdateOutboundRouteBodySchema,
+  ResolveOutboundRouteBodySchema,
+} from '@managecallai/contracts';
 
 const service = new OutboundRouteService(new OutboundRouteRepository(db));
 
@@ -21,7 +27,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function outboundRouteController(app: FastifyInstance): Promise<void> {
+export const outboundRouteController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_ROUTES_VIEW) },
@@ -31,25 +37,12 @@ export async function outboundRouteController(app: FastifyInstance): Promise<voi
     },
   );
 
-  app.post<{ Body: Omit<CreateOutboundRouteInput, 'tenant_id'> }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_ROUTES_CREATE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['name', 'match_prefix', 'sip_trunk_id'],
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            match_prefix: { type: 'string', minLength: 1, maxLength: 30 },
-            priority: { type: 'integer', minimum: 1, maximum: 9999 },
-            sip_trunk_id: { type: 'string', format: 'uuid' },
-            fallback_sip_trunk_id: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
-            max_calls_per_minute: { anyOf: [{ type: 'integer', minimum: 1, maximum: 10000 }, { type: 'null' }] },
-            allowed_caller_id_numbers_json: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] },
-          },
-        },
+        body: CreateOutboundRouteBodySchema,
       },
     },
     async (req, reply) => {
@@ -63,11 +56,11 @@ export async function outboundRouteController(app: FastifyInstance): Promise<voi
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_ROUTES_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -79,26 +72,13 @@ export async function outboundRouteController(app: FastifyInstance): Promise<voi
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdateOutboundRouteInput }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_ROUTES_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            match_prefix: { type: 'string', minLength: 1, maxLength: 30 },
-            priority: { type: 'integer', minimum: 1, maximum: 9999 },
-            sip_trunk_id: { type: 'string', format: 'uuid' },
-            fallback_sip_trunk_id: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
-            max_calls_per_minute: { anyOf: [{ type: 'integer', minimum: 1, maximum: 10000 }, { type: 'null' }] },
-            allowed_caller_id_numbers_json: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] },
-            status: { type: 'string', enum: ['active', 'inactive'] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateOutboundRouteBodySchema,
       },
     },
     async (req, reply) => {
@@ -111,11 +91,11 @@ export async function outboundRouteController(app: FastifyInstance): Promise<voi
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_ROUTES_UPDATE),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -129,20 +109,12 @@ export async function outboundRouteController(app: FastifyInstance): Promise<voi
 
   // Internal resolution endpoint — runtime token auth only, not exposed publicly as a user-facing API.
   // FreeSWITCH ESL agent calls this to select a trunk for an outbound dial.
-  app.post<{ Body: { tenant_id: string; dial_number: string } }>(
+  app.post(
     '/resolve',
     {
       preHandler: authenticateRuntime,
       schema: {
-        body: {
-          type: 'object',
-          required: ['tenant_id', 'dial_number'],
-          additionalProperties: false,
-          properties: {
-            tenant_id: { type: 'string', format: 'uuid' },
-            dial_number: { type: 'string', minLength: 1 },
-          },
-        },
+        body: ResolveOutboundRouteBodySchema,
       },
     },
     async (req, reply) => {
@@ -151,4 +123,4 @@ export async function outboundRouteController(app: FastifyInstance): Promise<voi
       return { data: resolved };
     },
   );
-}
+};

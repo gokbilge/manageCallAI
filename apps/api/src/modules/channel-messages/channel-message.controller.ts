@@ -1,4 +1,9 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
+import {
+  CreateOutboundMessageBodySchema,
+} from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -6,12 +11,9 @@ import { requireCapability } from '../auth/require-capability.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { ChannelMessageRepository } from './channel-message.repository.js';
 import { ChannelAccountInvalidError, ChannelMessageService } from './channel-message.service.js';
-import type { CreateOutboundMessageInput, IngestInboundMessageInput, MessageType } from './channel-message.types.js';
 import { sendInvalidArgument } from '../../errors/index.js';
 
 const service = new ChannelMessageService(new ChannelMessageRepository(db));
-
-const MESSAGE_TYPES: MessageType[] = ['text', 'voice_message', 'meeting', 'image', 'document'];
 
 function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof ChannelAccountInvalidError) {
@@ -20,28 +22,23 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function channelMessageController(app: FastifyInstance): Promise<void> {
-  app.post<{ Params: { accountId: string }; Body: Omit<IngestInboundMessageInput, 'tenant_id' | 'channel_account_id'> }>(
+export const channelMessageController: FastifyPluginAsyncZod = async (app) => {
+  app.post(
     '/accounts/:accountId/webhook',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: { type: 'object', required: ['accountId'], properties: { accountId: { type: 'string' } } },
-        body: {
-          type: 'object',
-          required: ['message_type'],
-          additionalProperties: false,
-          properties: {
-            message_type: { type: 'string', enum: MESSAGE_TYPES },
-            external_id: { type: 'string', maxLength: 512 },
-            sender_id: { type: 'string', maxLength: 255 },
-            recipient_id: { type: 'string', maxLength: 255 },
-            body: { type: 'string', maxLength: 10000 },
-            media_reference: { type: 'string', maxLength: 2048 },
-            provider_metadata: { type: 'object', additionalProperties: true },
-            received_at: { type: 'string', format: 'date-time' },
-          },
-        },
+        params: z.object({ accountId: z.string() }),
+        body: z.object({
+          message_type: z.enum(['text', 'voice_message', 'meeting', 'image', 'document']),
+          external_id: z.string().max(512).optional(),
+          sender_id: z.string().max(255).optional(),
+          recipient_id: z.string().max(255).optional(),
+          body: z.string().max(10000).optional(),
+          media_reference: z.string().max(2048).optional(),
+          provider_metadata: z.record(z.unknown()).optional(),
+          received_at: z.string().datetime().optional(),
+        }),
       },
     },
     async (req, reply) => {
@@ -59,11 +56,11 @@ export async function channelMessageController(app: FastifyInstance): Promise<vo
     },
   );
 
-  app.get<{ Params: { accountId: string } }>(
+  app.get(
     '/accounts/:accountId/messages',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CHANNEL_MESSAGES_VIEW),
-      schema: { params: { type: 'object', required: ['accountId'], properties: { accountId: { type: 'string' } } } },
+      schema: { params: z.object({ accountId: z.string() }) },
     },
     async (req) => {
       const user = req.user as AuthClaims;
@@ -71,24 +68,12 @@ export async function channelMessageController(app: FastifyInstance): Promise<vo
     },
   );
 
-  app.post<{ Body: Omit<CreateOutboundMessageInput, 'tenant_id'> }>(
+  app.post(
     '/requests',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CHANNEL_MESSAGES_SEND),
       schema: {
-        body: {
-          type: 'object',
-          required: ['channel_account_id', 'recipient_id', 'message_type'],
-          additionalProperties: false,
-          properties: {
-            channel_account_id: { type: 'string' },
-            recipient_id: { type: 'string', minLength: 1, maxLength: 255 },
-            message_type: { type: 'string', enum: MESSAGE_TYPES },
-            body: { type: 'string', maxLength: 10000 },
-            media_reference: { type: 'string', maxLength: 2048 },
-            provider_metadata: { type: 'object', additionalProperties: true },
-          },
-        },
+        body: CreateOutboundMessageBodySchema,
       },
     },
     async (req, reply) => {
@@ -105,15 +90,15 @@ export async function channelMessageController(app: FastifyInstance): Promise<vo
     },
   );
 
-  app.get<{ Params: { accountId: string } }>(
+  app.get(
     '/accounts/:accountId/requests',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CHANNEL_MESSAGES_VIEW),
-      schema: { params: { type: 'object', required: ['accountId'], properties: { accountId: { type: 'string' } } } },
+      schema: { params: z.object({ accountId: z.string() }) },
     },
     async (req) => {
       const user = req.user as AuthClaims;
       return { data: await service.listRequests(user.tenant_id, req.params.accountId) };
     },
   );
-}
+};

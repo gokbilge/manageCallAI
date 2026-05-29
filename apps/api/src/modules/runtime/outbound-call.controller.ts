@@ -1,4 +1,10 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import {
+  CreateOutboundCallBodySchema,
+  UuidParamsSchema,
+} from '@managecallai/contracts';
+import { z } from 'zod';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -10,7 +16,7 @@ import {
   OutboundCallService,
   OutboundCallValidationError,
 } from './outbound-call.service.js';
-import type { CreateOutboundCallInput, OutboundCallStatus } from './outbound-call.types.js';
+import type { OutboundCallStatus } from './outbound-call.types.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new OutboundCallService(new OutboundCallRepository(db));
@@ -27,22 +33,13 @@ function replyOutboundError(err: unknown, reply: FastifyReply): void {
 
 const TERMINAL_STATUSES = ['dispatched', 'answered', 'completed', 'failed', 'expired'] as const;
 
-export async function outboundCallController(app: FastifyInstance): Promise<void> {
-  app.post<{ Body: Omit<CreateOutboundCallInput, 'tenant_id'> }>(
+export const outboundCallController: FastifyPluginAsyncZod = async (app) => {
+  app.post(
     '/outbound',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_CALLS_CREATE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['extension_id', 'dial_number'],
-          additionalProperties: false,
-          properties: {
-            extension_id: { type: 'string', format: 'uuid' },
-            dial_number: { type: 'string', minLength: 3, maxLength: 30 },
-            route_id: { type: 'string', format: 'uuid' },
-          },
-        },
+        body: CreateOutboundCallBodySchema,
       },
     },
     async (req, reply) => {
@@ -61,7 +58,7 @@ export async function outboundCallController(app: FastifyInstance): Promise<void
     },
   );
 
-  app.get<{ Querystring: { status?: string } }>(
+  app.get(
     '/outbound',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_CALLS_VIEW),
@@ -77,16 +74,16 @@ export async function outboundCallController(app: FastifyInstance): Promise<void
     },
     async (req) => {
       const user = req.user as AuthClaims;
-      return { data: await service.listByTenant(user.tenant_id, req.query.status as OutboundCallStatus | undefined) };
+      return { data: await service.listByTenant(user.tenant_id, (req.query as { status?: string }).status as OutboundCallStatus | undefined) };
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/outbound/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_CALLS_VIEW),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string', format: 'uuid' } } },
+        params: UuidParamsSchema,
       },
     },
     async (req, reply) => {
@@ -108,12 +105,12 @@ export async function outboundCallController(app: FastifyInstance): Promise<void
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/outbound/:id/claim',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string', format: 'uuid' } } },
+        params: UuidParamsSchema,
       },
     },
     async (req, reply) => {
@@ -126,25 +123,16 @@ export async function outboundCallController(app: FastifyInstance): Promise<void
     },
   );
 
-  app.post<{ Params: { id: string }; Body: { status: typeof TERMINAL_STATUSES[number]; failure_reason?: string } }>(
+  app.post(
     '/outbound/:id/status',
     {
       preHandler: authenticateRuntime,
       schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string', format: 'uuid' } },
-        },
-        body: {
-          type: 'object',
-          required: ['status'],
-          additionalProperties: false,
-          properties: {
-            status: { type: 'string', enum: [...TERMINAL_STATUSES] },
-            failure_reason: { type: 'string', maxLength: 500 },
-          },
-        },
+        params: UuidParamsSchema,
+        body: z.object({
+          status: z.enum(TERMINAL_STATUSES),
+          failure_reason: z.string().max(500).optional(),
+        }),
       },
     },
     async (req, reply) => {
@@ -163,4 +151,4 @@ export async function outboundCallController(app: FastifyInstance): Promise<void
       }
     },
   );
-}
+};

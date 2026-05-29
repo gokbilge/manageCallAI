@@ -1,4 +1,6 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import { z } from 'zod';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -10,8 +12,13 @@ import {
   CallGroupNotFoundError,
   CallGroupService,
 } from './call-group.service.js';
-import type { AddMemberInput, CreateCallGroupInput, UpdateCallGroupInput } from './call-group.types.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
+import {
+  UuidParamsSchema,
+  CreateCallGroupBodySchema,
+  UpdateCallGroupBodySchema,
+  AddCallGroupMemberBodySchema,
+} from '@managecallai/contracts';
 
 const service = new CallGroupService(new CallGroupRepository(db));
 
@@ -25,7 +32,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function callGroupController(app: FastifyInstance): Promise<void> {
+export const callGroupController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_CALL_GROUPS_VIEW) },
@@ -35,21 +42,12 @@ export async function callGroupController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: Omit<CreateCallGroupInput, 'tenant_id'> }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CALL_GROUPS_CREATE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['name'],
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { type: 'string', maxLength: 1000 },
-            strategy: { type: 'string', enum: ['simultaneous', 'sequential'] },
-          },
-        },
+        body: CreateCallGroupBodySchema,
       },
     },
     async (req, reply) => {
@@ -59,11 +57,11 @@ export async function callGroupController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CALL_GROUPS_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -75,22 +73,13 @@ export async function callGroupController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdateCallGroupInput }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CALL_GROUPS_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] },
-            strategy: { type: 'string', enum: ['simultaneous', 'sequential'] },
-            status: { type: 'string', enum: ['active', 'inactive'] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateCallGroupBodySchema,
       },
     },
     async (req, reply) => {
@@ -103,11 +92,11 @@ export async function callGroupController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CALL_GROUPS_DEACTIVATE),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -119,21 +108,13 @@ export async function callGroupController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string }; Body: AddMemberInput }>(
+  app.post(
     '/:id/members',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CALL_GROUPS_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          required: ['extension_id'],
-          additionalProperties: false,
-          properties: {
-            extension_id: { type: 'string', format: 'uuid' },
-            position: { type: 'integer', minimum: 0 },
-          },
-        },
+        params: UuidParamsSchema,
+        body: AddCallGroupMemberBodySchema,
       },
     },
     async (req, reply) => {
@@ -147,16 +128,12 @@ export async function callGroupController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.delete<{ Params: { id: string; extensionId: string } }>(
+  app.delete(
     '/:id/members/:extensionId',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CALL_GROUPS_UPDATE),
       schema: {
-        params: {
-          type: 'object',
-          required: ['id', 'extensionId'],
-          properties: { id: { type: 'string' }, extensionId: { type: 'string' } },
-        },
+        params: z.object({ id: z.string().uuid(), extensionId: z.string().uuid() }),
       },
     },
     async (req, reply) => {
@@ -169,4 +146,4 @@ export async function callGroupController(app: FastifyInstance): Promise<void> {
       }
     },
   );
-}
+};

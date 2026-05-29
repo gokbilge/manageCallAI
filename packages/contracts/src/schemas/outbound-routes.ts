@@ -55,6 +55,7 @@ export const UpdateOutboundRouteBodySchema = z.object({
 export type UpdateOutboundRouteBody = z.infer<typeof UpdateOutboundRouteBodySchema>;
 
 export const ResolveOutboundRouteBodySchema = z.object({
+  tenant_id: z.string().min(1),
   dial_number: z.string().min(1),
 }).openapi('ResolveOutboundRouteBody');
 export type ResolveOutboundRouteBody = z.infer<typeof ResolveOutboundRouteBodySchema>;

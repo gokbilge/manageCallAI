@@ -4185,6 +4185,9 @@ components:
     IngestCallEventBody:
       type: object
       properties:
+        tenant_id:
+          type: string
+          minLength: 1
         call_id:
           type: string
           minLength: 1
@@ -4200,6 +4203,7 @@ components:
           type: object
           additionalProperties: {}
       required:
+        - tenant_id
         - call_id
         - event_type
     WeeklyRule:
@@ -4462,10 +4466,14 @@ components:
     ResolveOutboundRouteBody:
       type: object
       properties:
+        tenant_id:
+          type: string
+          minLength: 1
         dial_number:
           type: string
           minLength: 1
       required:
+        - tenant_id
         - dial_number
     TenantUser:
       type: object

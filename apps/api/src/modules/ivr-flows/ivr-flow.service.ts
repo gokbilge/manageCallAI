@@ -156,12 +156,12 @@ function simulateGraph(
       continue;
     }
 
-    if (type === 'play' || type === 'play_prompt') {
+    if (type === 'play_prompt') {
       currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
       continue;
     }
 
-    if (type === 'menu' || type === 'play_collect') {
+    if (type === 'play_collect') {
       if (hasNodeFlag(currentId, scenario.force_timeout, scenario.force_timeout_nodes)) {
         currentId = typeof node.timeout_node_id === 'string' ? node.timeout_node_id : undefined;
         continue;
@@ -182,7 +182,7 @@ function simulateGraph(
       continue;
     }
 
-    if (type === 'switch' || type === 'condition') {
+    if (type === 'switch') {
       const cases = node.cases;
       const lookup = typeof cases === 'object' && cases !== null && !Array.isArray(cases)
         ? (cases as Record<string, unknown>)
@@ -207,7 +207,7 @@ function simulateGraph(
       continue;
     }
 
-    if (type === 'transfer_extension' || type === 'transfer') {
+    if (type === 'transfer_extension') {
       return {
         status: 'passed',
         path,

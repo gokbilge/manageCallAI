@@ -1,12 +1,17 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { ScheduleRepository } from './schedule.repository.js';
 import { ScheduleNotFoundError, ScheduleService, ScheduleValidationError } from './schedule.service.js';
-import type { CreateScheduleInput, UpdateScheduleInput } from './schedule.types.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
+import {
+  UuidParamsSchema,
+  CreateScheduleBodySchema,
+  UpdateScheduleBodySchema,
+} from '@managecallai/contracts';
 
 const service = new ScheduleService(new ScheduleRepository(db));
 
@@ -16,7 +21,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function scheduleController(app: FastifyInstance): Promise<void> {
+export const scheduleController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_VIEW) },
@@ -26,22 +31,12 @@ export async function scheduleController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: Omit<CreateScheduleInput, 'tenant_id'> }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_CREATE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['name', 'timezone'],
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            timezone: { type: 'string', minLength: 1 },
-            weekly_rules_json: { type: 'array' },
-            holiday_overrides_json: { type: 'array' },
-          },
-        },
+        body: CreateScheduleBodySchema,
       },
     },
     async (req, reply) => {
@@ -55,11 +50,11 @@ export async function scheduleController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -71,23 +66,13 @@ export async function scheduleController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdateScheduleInput }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            timezone: { type: 'string', minLength: 1 },
-            weekly_rules_json: { type: 'array' },
-            holiday_overrides_json: { type: 'array' },
-            status: { type: 'string', enum: ['active', 'inactive'] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateScheduleBodySchema,
       },
     },
     async (req, reply) => {
@@ -100,11 +85,11 @@ export async function scheduleController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -115,4 +100,4 @@ export async function scheduleController(app: FastifyInstance): Promise<void> {
       }
     },
   );
-}
+};

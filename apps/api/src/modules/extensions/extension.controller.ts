@@ -1,4 +1,6 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { CreateExtensionBodySchema, UpdateExtensionBodySchema, UuidParamsSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import { authenticate } from '../auth/authenticate.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
@@ -6,7 +8,6 @@ import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { ExtensionRepository } from './extension.repository.js';
 import { ExtensionNotFoundError, ExtensionService } from './extension.service.js';
-import type { CreateExtensionBody, UpdateExtensionInput } from './extension.types.js';
 import { sendNotFound } from '../../errors/index.js';
 
 const DESTINATION_TYPES = ['flow', 'extension', 'user', 'queue'] as const;
@@ -20,8 +21,8 @@ function replyNotFound(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function extensionController(app: FastifyInstance): Promise<void> {
-  app.get<{ Querystring: Record<string, never> }>(
+export const extensionController: FastifyPluginAsyncZod = async (app) => {
+  app.get(
     '/',
     { preHandler: authenticate },
     async (req) => {
@@ -31,25 +32,11 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: CreateExtensionBody }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_EXTENSIONS_CREATE),
-      schema: {
-        body: {
-          type: 'object',
-          required: ['extension_number', 'display_name', 'sip_password'],
-          additionalProperties: false,
-          properties: {
-            extension_number: { type: 'string', minLength: 1, maxLength: 20 },
-            display_name: { type: 'string', minLength: 1, maxLength: 255 },
-            sip_username: { type: 'string', minLength: 1, maxLength: 64 },
-            sip_password: { type: 'string', minLength: 8, maxLength: 128 },
-            default_destination_type: { type: 'string', enum: [...DESTINATION_TYPES] },
-            default_destination_id: { type: 'string', format: 'uuid' },
-          },
-        },
-      },
+      schema: { body: CreateExtensionBodySchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -61,17 +48,11 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: authenticate,
-      schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-      },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -83,31 +64,13 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdateExtensionInput }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_EXTENSIONS_UPDATE),
       schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            extension_number: { type: 'string', minLength: 1, maxLength: 20 },
-            display_name: { type: 'string', minLength: 1, maxLength: 255 },
-            status: { type: 'string', enum: ['active', 'inactive'] },
-            sip_username: { type: 'string', minLength: 1, maxLength: 64 },
-            sip_password: { type: 'string', minLength: 8, maxLength: 128 },
-            default_destination_type: {
-              anyOf: [{ type: 'string', enum: [...DESTINATION_TYPES] }, { type: 'null' }],
-            },
-            default_destination_id: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateExtensionBodySchema,
       },
     },
     async (req, reply) => {
@@ -120,17 +83,11 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_EXTENSIONS_DEACTIVATE),
-      schema: {
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: { id: { type: 'string' } },
-        },
-      },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -141,4 +98,4 @@ export async function extensionController(app: FastifyInstance): Promise<void> {
       }
     },
   );
-}
+};

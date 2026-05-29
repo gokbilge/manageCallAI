@@ -1,4 +1,11 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
+import {
+  UuidParamsSchema,
+  CreateInboundRouteBodySchema,
+  UpdateInboundRouteBodySchema,
+} from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -29,16 +36,9 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-const MATCH_TYPES = ['did', 'trunk', 'pattern'] as const;
-const TARGET_TYPES = ['flow', 'extension', 'call_group', 'queue', 'voicemail_box'] as const;
+const idVidParams = z.object({ id: z.string().uuid(), vid: z.string().uuid() });
 
-const idParams = {
-  schema: {
-    params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-  },
-} as const;
-
-export async function inboundRouteController(app: FastifyInstance): Promise<void> {
+export const inboundRouteController: FastifyPluginAsyncZod = async (app) => {
   // List routes
   app.get(
     '/',
@@ -50,33 +50,12 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Create route
-  app.post<{
-    Body: {
-      name: string;
-      match_type: 'did' | 'trunk' | 'pattern';
-      match_value: string;
-      phone_number_id?: string;
-      target_type: 'flow' | 'extension' | 'call_group' | 'queue' | 'voicemail_box';
-      target_id?: string;
-    };
-  }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_CREATE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['name', 'match_type', 'match_value', 'target_type'],
-          additionalProperties: false,
-          properties: {
-            name:            { type: 'string', minLength: 1, maxLength: 255 },
-            match_type:      { type: 'string', enum: [...MATCH_TYPES] },
-            match_value:     { type: 'string', minLength: 1, maxLength: 255 },
-            phone_number_id: { type: 'string', format: 'uuid' },
-            target_type:     { type: 'string', enum: [...TARGET_TYPES] },
-            target_id:       { type: 'string', format: 'uuid' },
-          },
-        },
+        body: CreateInboundRouteBodySchema,
       },
     },
     async (req, reply) => {
@@ -91,9 +70,12 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Get route with versions
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
-    { ...idParams, preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW) },
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW),
+      schema: { params: UuidParamsSchema },
+    },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -105,34 +87,13 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Update route metadata
-  app.patch<{
-    Params: { id: string };
-    Body: {
-      name?: string;
-      match_type?: 'did' | 'trunk' | 'pattern';
-      match_value?: string;
-      phone_number_id?: string | null;
-      target_type?: 'flow' | 'extension' | 'call_group' | 'queue' | 'voicemail_box';
-      target_id?: string | null;
-    };
-  }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            name:            { type: 'string', minLength: 1, maxLength: 255 },
-            match_type:      { type: 'string', enum: [...MATCH_TYPES] },
-            match_value:     { type: 'string', minLength: 1, maxLength: 255 },
-            phone_number_id: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
-            target_type:     { type: 'string', enum: [...TARGET_TYPES] },
-            target_id:       { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateInboundRouteBodySchema,
       },
     },
     async (req, reply) => {
@@ -146,9 +107,12 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Activate route (validates target, checks conflicts, sets status=active)
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/activate',
-    { ...idParams, preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_ACTIVATE) },
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_ACTIVATE),
+      schema: { params: UuidParamsSchema },
+    },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -160,9 +124,12 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Deactivate route
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
-    { ...idParams, preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_DEACTIVATE) },
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_DEACTIVATE),
+      schema: { params: UuidParamsSchema },
+    },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -174,18 +141,15 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Create new draft version
-  app.post<{ Params: { id: string }; Body: { definition: Record<string, unknown> } }>(
+  app.post(
     '/:id/versions',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          required: ['definition'],
-          additionalProperties: false,
-          properties: { definition: { type: 'object' } },
-        },
+        params: UuidParamsSchema,
+        body: z.object({
+          definition: z.record(z.unknown()),
+        }),
       },
     },
     async (req, reply) => {
@@ -200,16 +164,12 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Validate a version
-  app.post<{ Params: { id: string; vid: string } }>(
+  app.post(
     '/:id/versions/:vid/validate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_UPDATE),
       schema: {
-        params: {
-          type: 'object',
-          required: ['id', 'vid'],
-          properties: { id: { type: 'string' }, vid: { type: 'string' } },
-        },
+        params: idVidParams,
       },
     },
     async (req, reply) => {
@@ -224,16 +184,12 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Publish a validated version
-  app.post<{ Params: { id: string; vid: string } }>(
+  app.post(
     '/:id/versions/:vid/publish',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_ACTIVATE),
       schema: {
-        params: {
-          type: 'object',
-          required: ['id', 'vid'],
-          properties: { id: { type: 'string' }, vid: { type: 'string' } },
-        },
+        params: idVidParams,
       },
     },
     async (req, reply) => {
@@ -248,9 +204,12 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
   );
 
   // Rollback to previous published version
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/rollback',
-    { ...idParams, preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_ACTIVATE) },
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_INBOUND_ROUTES_ACTIVATE),
+      schema: { params: UuidParamsSchema },
+    },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -261,4 +220,4 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
       }
     },
   );
-}
+};

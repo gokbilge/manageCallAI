@@ -1,4 +1,6 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { CreateUserBodySchema, UpdateUserBodySchema, UuidParamsSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -29,7 +31,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function userController(app: FastifyInstance): Promise<void> {
+export const userController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_USERS_VIEW) },
@@ -39,11 +41,11 @@ export async function userController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_USERS_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -55,23 +57,11 @@ export async function userController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: { email: string; display_name: string; role: string; password: string } }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_USERS_MANAGE),
-      schema: {
-        body: {
-          type: 'object',
-          required: ['email', 'display_name', 'role', 'password'],
-          additionalProperties: false,
-          properties: {
-            email: { type: 'string', pattern: '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$', maxLength: 254 },
-            display_name: { type: 'string', minLength: 1, maxLength: 255 },
-            role: { type: 'string', enum: ['tenant_admin', 'tenant_operator', 'tenant_viewer'] },
-            password: { type: 'string', minLength: 8, maxLength: 128 },
-          },
-        },
-      },
+      schema: { body: CreateUserBodySchema },
     },
     async (req, reply) => {
       const actor = req.user as AuthClaims;
@@ -85,21 +75,13 @@ export async function userController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: { display_name?: string; role?: TenantRole } }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_USERS_MANAGE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          minProperties: 1,
-          properties: {
-            display_name: { type: 'string', minLength: 1, maxLength: 255 },
-            role: { type: 'string', enum: ['tenant_admin', 'tenant_operator', 'tenant_viewer'] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateUserBodySchema,
       },
     },
     async (req, reply) => {
@@ -116,11 +98,11 @@ export async function userController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.delete<{ Params: { id: string } }>(
+  app.delete(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_USERS_MANAGE),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const actor = req.user as AuthClaims;
@@ -133,4 +115,4 @@ export async function userController(app: FastifyInstance): Promise<void> {
       }
     },
   );
-}
+};

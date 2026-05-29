@@ -1,11 +1,16 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import {
+  CreateChannelAccountBodySchema,
+  UpdateChannelAccountBodySchema,
+  UuidParamsSchema,
+} from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { ChannelAccountRepository } from './channel-account.repository.js';
 import { ChannelAccountNotFoundError, ChannelAccountService } from './channel-account.service.js';
-import type { CreateChannelAccountInput, UpdateChannelAccountInput } from './channel-account.types.js';
 import { sendNotFound } from '../../errors/index.js';
 
 const service = new ChannelAccountService(new ChannelAccountRepository(db));
@@ -17,25 +22,13 @@ function replyNotFound(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-const PROVIDER_TYPES = ['whatsapp', 'telegram', 'google_meet', 'custom'] as const;
-
-export async function channelAccountController(app: FastifyInstance): Promise<void> {
-  app.post<{ Body: Omit<CreateChannelAccountInput, 'tenant_id'> }>(
+export const channelAccountController: FastifyPluginAsyncZod = async (app) => {
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CHANNEL_ACCOUNTS_MANAGE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['provider_type', 'name'],
-          additionalProperties: false,
-          properties: {
-            provider_type: { type: 'string', enum: [...PROVIDER_TYPES] },
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            capabilities: { type: 'array', items: { type: 'string', maxLength: 64 } },
-            provider_config: { type: 'object', additionalProperties: true },
-          },
-        },
+        body: CreateChannelAccountBodySchema,
       },
     },
     async (req, reply) => {
@@ -54,11 +47,11 @@ export async function channelAccountController(app: FastifyInstance): Promise<vo
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CHANNEL_ACCOUNTS_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -70,22 +63,13 @@ export async function channelAccountController(app: FastifyInstance): Promise<vo
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdateChannelAccountInput }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CHANNEL_ACCOUNTS_MANAGE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          minProperties: 1,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            capabilities: { type: 'array', items: { type: 'string', maxLength: 64 } },
-            provider_config: { type: 'object', additionalProperties: true },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateChannelAccountBodySchema,
       },
     },
     async (req, reply) => {
@@ -98,11 +82,11 @@ export async function channelAccountController(app: FastifyInstance): Promise<vo
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/deactivate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_CHANNEL_ACCOUNTS_MANAGE),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -113,4 +97,4 @@ export async function channelAccountController(app: FastifyInstance): Promise<vo
       }
     },
   );
-}
+};

@@ -1,5 +1,5 @@
 export type WeeklyRule = {
-  day_of_week: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  day_of_week: number;
   open_time: string;
   close_time: string;
 };

@@ -2,6 +2,7 @@ import formbody from '@fastify/formbody';
 import jwt from '@fastify/jwt';
 import type { FastifyJWTOptions } from '@fastify/jwt';
 import Fastify, { type FastifyPluginCallback } from 'fastify';
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { config } from './config/env.js';
 import { healthController } from './health/health.controller.js';
 import { authController } from './modules/auth/auth.controller.js';
@@ -36,6 +37,8 @@ import { registerErrorHandler } from './errors/index.js';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
   const jwtPlugin = jwt as unknown as FastifyPluginCallback<FastifyJWTOptions>;
 
   registerErrorHandler(app);

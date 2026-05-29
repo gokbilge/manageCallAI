@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { db } from '../../db/client.js';
 import { decryptSipPassword } from '../../crypto/sip-secret.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
@@ -33,7 +33,7 @@ type DialplanLookup = {
 const extensionRepo = new ExtensionRepository(db);
 const routeLookupRepo = new RouteLookupRepository(db);
 
-export async function freeswitchController(app: FastifyInstance): Promise<void> {
+export const freeswitchController: FastifyPluginAsyncZod = async (app) => {
   const handler = async (
     lookup: DirectoryLookup,
   ): Promise<{ body: string; statusCode: number }> => {
@@ -82,7 +82,7 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     };
   };
 
-  app.get<{ Querystring: DirectoryLookup }>(
+  app.get(
     '/directory',
     { preHandler: authenticateRuntime },
     async (req, reply) => {
@@ -94,7 +94,7 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     },
   );
 
-  app.post<{ Body: DirectoryLookup }>(
+  app.post(
     '/directory',
     { preHandler: authenticateRuntime },
     async (req, reply) => {
@@ -236,7 +236,7 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     return { statusCode: 200, body: buildNotFoundDialplan() };
   };
 
-  app.get<{ Querystring: DialplanLookup }>(
+  app.get(
     '/dialplan',
     { preHandler: authenticateRuntime },
     async (req, reply) => {
@@ -245,7 +245,7 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     },
   );
 
-  app.post<{ Body: DialplanLookup }>(
+  app.post(
     '/dialplan',
     { preHandler: authenticateRuntime },
     async (req, reply) => {
@@ -260,7 +260,7 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
     },
   );
 
-  app.get<{ Querystring: { did?: string; trunk?: string } }>(
+  app.get(
     '/route-lookup',
     { preHandler: authenticateRuntime },
     async (req, reply) => {

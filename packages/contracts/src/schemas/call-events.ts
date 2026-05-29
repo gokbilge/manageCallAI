@@ -15,6 +15,7 @@ export type CallEvent = z.infer<typeof CallEventSchema>;
 
 // ── Request schemas ───────────────────────────────────────────────────────────
 export const IngestCallEventBodySchema = z.object({
+  tenant_id: z.string().min(1),
   call_id: z.string().min(1),
   event_type: z.string().min(1),
   event_time: z.string().datetime().optional(),

@@ -1,37 +1,55 @@
 # @managecallai/api
 
 Node.js + TypeScript REST API — the control plane for manageCallAI.
-Exposes business-level endpoints for telecom configuration management.
-FreeSWITCH integration, auth, and additional domain modules are out of scope for step 2.
 
-## Framework and library choices
+## Stack
 
 | Choice | Reason |
 |--------|--------|
-| **Fastify v5** | TypeScript-generic route definitions, built-in ajv schema validation, plugin-based registration, faster than Express |
-| **pg (node-postgres)** | Raw SQL with a connection pool. No ORM — business logic stays in TypeScript service classes |
-| **tsx** | Fast TypeScript runner with `--watch`, no build step in development |
-| **vitest** | ESM-native, matches the module format of the project |
+| **Fastify v5** | Plugin-based, schema-validated routes, fast |
+| **fastify-type-provider-zod** | Zod schemas from `@managecallai/contracts` as validators |
+| **pg (node-postgres)** | Raw SQL + connection pool; no ORM |
+| **tsx** | Fast TS runner with `--watch` |
+| **vitest** | ESM-native test runner |
 
 ## Structure
 
 ```
 src/
-  config/
-    env.ts                  Reads and validates environment variables at startup
-  db/
-    client.ts               Shared pg Pool singleton
+  config/env.ts               Environment variable validation
+  db/client.ts                pg Pool singleton
+  errors/                     Global error handler + RPC error helpers
   modules/
-    extensions/
-      extension.types.ts          Domain types and input interfaces
-      extension.repository.ts     Raw SQL queries, no business logic
-      extension.service.ts        Business logic and domain errors
-      extension.controller.ts     Fastify plugin — registers all extension routes
-      extension.service.test.ts   Unit tests (no DB required)
-  health/
-    health.controller.ts    GET /health with live DB connectivity check
-  app.ts                    Fastify factory — registers plugins and route prefixes
-  server.ts                 Entry point — binds server to configured port
+    auth/                     Register / login, JWT signing
+    extensions/               SIP extension CRUD
+    sip-trunks/               SIP trunk CRUD
+    phone-numbers/            Phone number management
+    prompts/                  Prompt asset metadata
+    call-groups/              Call group + member management
+    queues/                   Queue + member management
+    voicemail-boxes/          Voicemail box management
+    schedules/                Business hours schedule management
+    outbound-routes/          Outbound route + resolution
+    inbound-routes/           Inbound route lifecycle (draft → publish)
+    ivr-flows/                IVR flow lifecycle (draft → simulate → publish)
+    runtime/                  IVR session start/advance; outbound call dispatch
+    approvals/                Approval gating for publish operations
+    automation/               API keys + webhook subscriptions
+    webhooks/                 Webhook delivery history/queue status
+    call-events/              Call event ingestion + tenant query
+    recordings/               Recording metadata + analysis requests
+    users/                    Tenant user management
+    audit/                    Audit log read access
+    export/                   Tenant data export
+    provider-work/            TTS generation + IVR AI turn contracts
+    channel-accounts/         Messaging/meeting channel accounts
+    channel-messages/         Inbound/outbound message handling
+    meeting-sessions/         Meeting session lifecycle
+    platform/                 Platform operator endpoints
+    freeswitch/               mod_xml_curl directory + dialplan endpoints
+  health/health.controller.ts GET /health
+  app.ts                      Fastify factory — plugins, type provider, route prefixes
+  server.ts                   Entry point — binds to API_PORT
 ```
 
 ## Prerequisites
@@ -40,127 +58,65 @@ src/
 - pnpm 10+
 - PostgreSQL 17
 
-Start PostgreSQL with Docker:
-
 ```sh
 # from repo root
 cp .env.example .env
 docker compose up postgres -d
+pnpm db:migrate
 ```
-
-## Environment variables
-
-| Variable       | Default in `.env.example`                                           | Description                   |
-|----------------|----------------------------------------------------------------------|-------------------------------|
-| `DATABASE_URL` | `postgres://managecallai:managecallai@localhost:5432/managecallai`  | PostgreSQL connection string   |
-| `API_PORT`     | `3000`                                                               | HTTP listen port              |
-
-## Database setup
-
-The schema is managed by the repo-wide migration runner in `db/`. Apply all migrations before starting the API:
-
-```sh
-# from repo root — runs db/migrations/ in order
-pnpm --filter @managecallai/db migrate
-```
-
-The `extensions` table is created by `db/migrations/0001_initial_schema.sql`.
 
 ## Running locally
 
 ```sh
-# from repo root
-pnpm install
-pnpm --filter @managecallai/api dev
+pnpm install                          # from repo root
+pnpm --filter @managecallai/api dev   # starts on API_PORT (default 3000)
 ```
 
-Or directly from this package:
+## Environment variables
 
-```sh
-cd apps/api
-pnpm dev
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `postgres://managecallai:managecallai@localhost:5432/managecallai` | PostgreSQL connection string |
+| `API_PORT` | `3000` | HTTP listen port |
+| `JWT_SECRET` | — | Required; used to sign/verify JWTs |
+| `RUNTIME_API_TOKEN` | — | Bearer token for FreeSWITCH runtime endpoints |
+| `SIP_SECRET_MASTER_KEY` | — | 64-char hex; AES-256-GCM key for SIP password encryption |
+| `SIP_SECRET_KEY_ID` | — | Key version label (e.g. `v1`) |
+
+## Auth model
+
+- **Tenant endpoints**: `Authorization: Bearer <JWT>` (issued by `/api/v1/auth/login`)
+- **Runtime/FreeSWITCH endpoints**: `Authorization: Bearer <RUNTIME_API_TOKEN>` or `x-managecallai-runtime-token: <token>`
+
+## Error responses
+
+All errors follow the RPC error standard:
+
+```json
+{ "error": "NOT_FOUND", "message": "Extension not found", "request_id": "abc123" }
 ```
 
-The API starts on `API_PORT` (default `3000`).
+Error codes: `NOT_FOUND`, `INVALID_ARGUMENT`, `UNAUTHENTICATED`, `PERMISSION_DENIED`, `ALREADY_EXISTS`, `RESOURCE_EXHAUSTED`, `INTERNAL`, `UNAVAILABLE`.
+
+Every response includes `x-request-id` header.
 
 ## Scripts
 
-| Script  | Command              | Description                           |
-|---------|----------------------|---------------------------------------|
-| `dev`   | `tsx watch src/server.ts` | Auto-restart on file change      |
-| `build` | `tsc`                | Compile TypeScript to `dist/`         |
-| `start` | `node dist/server.js`| Run compiled output (production)      |
-| `lint`  | `eslint src`         | Static analysis                       |
-| `test`  | `vitest run`         | Unit tests — no database required     |
+| Script | Command | Description |
+|--------|---------|-------------|
+| `dev` | `tsx watch src/server.ts` | Auto-restart on file change |
+| `build` | `tsc` | Compile to `dist/` |
+| `start` | `node dist/server.js` | Run compiled output |
+| `lint` | `eslint src` | Static analysis |
+| `test` | `vitest run` | Unit tests (no DB required) |
 
-## API reference
+## OpenAPI
 
-All success responses wrap data in `{ "data": ... }`.
-Error responses return `{ "error": "..." }` with an appropriate HTTP status.
+The spec lives at `docs/api/openapi.yaml` and is generated from the Zod schemas in `packages/contracts`:
 
-`tenant_id` must be passed explicitly on every request until auth is implemented.
-
-### Health
-
-```
-GET /health
-→ 200  { "status": "ok", "db": "ok" }
-→ 503  { "status": "error", "db": "unreachable" }
+```sh
+pnpm --filter @managecallai/contracts build
+node scripts/generate-openapi.mjs
 ```
 
-### Extensions
-
-| Method | Path                              | Status | Description                        |
-|--------|-----------------------------------|--------|------------------------------------|
-| GET    | `/api/v1/extensions?tenant_id=`   | 200    | List extensions for a tenant       |
-| POST   | `/api/v1/extensions`              | 201    | Create a new extension             |
-| GET    | `/api/v1/extensions/:id`          | 200    | Get extension by id                |
-| PATCH  | `/api/v1/extensions/:id`          | 200    | Update one or more fields          |
-| POST   | `/api/v1/extensions/:id/deactivate` | 200  | Set status to `inactive`          |
-
-#### Extension fields
-
-| Field                    | Type                                     | Notes                          |
-|--------------------------|------------------------------------------|--------------------------------|
-| `id`                     | UUID                                     | Generated by the database      |
-| `tenant_id`              | UUID                                     | Required on create             |
-| `extension_number`       | string (max 20)                          | Unique per tenant              |
-| `display_name`           | string (max 255)                         |                                |
-| `status`                 | `"active"` \| `"inactive"`              | Default: `"active"`            |
-| `default_destination_type` | `"flow"` \| `"extension"` \| `"user"` \| `"queue"` \| null | Optional |
-| `default_destination_id` | UUID \| null                             | Optional                       |
-| `created_at`             | ISO 8601 timestamp                       |                                |
-| `updated_at`             | ISO 8601 timestamp                       |                                |
-
-#### Create — example
-
-```json
-POST /api/v1/extensions
-{
-  "tenant_id": "00000000-0000-0000-0000-000000000001",
-  "extension_number": "100",
-  "display_name": "Reception",
-  "default_destination_type": "flow",
-  "default_destination_id": "00000000-0000-0000-0000-000000000099"
-}
-```
-
-#### PATCH — all fields optional
-
-```json
-PATCH /api/v1/extensions/:id
-{
-  "display_name": "Front Desk",
-  "default_destination_type": null,
-  "default_destination_id": null
-}
-```
-
-## Intentionally out of scope (step 2)
-
-- Auth / JWT middleware
-- FreeSWITCH ESL / event socket / dialplan generation
-- SIP trunk, phone number, IVR flow, routing endpoints
-- MCP server
-- n8n webhook handlers
-- Go adapter service
+CI fails if the committed spec is stale.

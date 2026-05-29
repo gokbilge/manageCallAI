@@ -1,4 +1,11 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
+import {
+  UuidParamsSchema,
+  UpdateIvrFlowBodySchema,
+  SimulationScenarioSchema,
+} from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -28,7 +35,14 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-export async function ivrFlowController(app: FastifyInstance): Promise<void> {
+const idVidParams = z.object({ id: z.string().uuid(), vid: z.string().uuid() });
+
+const graphBodySchema = z.object({
+  graph_json: z.record(z.unknown()).optional(),
+  definition: z.record(z.unknown()).optional(),
+});
+
+export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
     { preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW) },
@@ -38,22 +52,17 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: { name: string; description?: string; graph_json?: Record<string, unknown>; definition?: Record<string, unknown> } }>(
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_CREATE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['name'],
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { type: 'string', maxLength: 1000 },
-            graph_json: { type: 'object' },
-            definition: { type: 'object' },
-          },
-        },
+        body: z.object({
+          name: z.string().min(1).max(255),
+          description: z.string().max(1000).optional(),
+          graph_json: z.record(z.unknown()).optional(),
+          definition: z.record(z.unknown()).optional(),
+        }),
       },
     },
     async (req, reply) => {
@@ -69,11 +78,11 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -85,21 +94,13 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: { name?: string; description?: string | null; status?: 'draft' | 'active' | 'inactive' } }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] },
-            status: { type: 'string', enum: ['draft', 'active', 'inactive'] },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateIvrFlowBodySchema,
       },
     },
     async (req, reply) => {
@@ -112,11 +113,11 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id/versions',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -128,12 +129,12 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id/history',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        params: UuidParamsSchema,
       },
     },
     async (req, reply) => {
@@ -146,20 +147,13 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string }; Body: { graph_json?: Record<string, unknown>; definition?: Record<string, unknown> } }>(
+  app.post(
     '/:id/versions',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            graph_json: { type: 'object' },
-            definition: { type: 'object' },
-          },
-        },
+        params: UuidParamsSchema,
+        body: graphBodySchema,
       },
     },
     async (req, reply) => {
@@ -173,12 +167,12 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.get<{ Params: { id: string; vid: string } }>(
+  app.get(
     '/:id/versions/:vid',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
       schema: {
-        params: { type: 'object', required: ['id', 'vid'], properties: { id: { type: 'string' }, vid: { type: 'string' } } },
+        params: idVidParams,
       },
     },
     async (req, reply) => {
@@ -191,21 +185,13 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.patch<{ Params: { id: string; vid: string }; Body: { graph_json?: Record<string, unknown>; definition?: Record<string, unknown> } }>(
+  app.patch(
     '/:id/versions/:vid',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_UPDATE),
       schema: {
-        params: { type: 'object', required: ['id', 'vid'], properties: { id: { type: 'string' }, vid: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            graph_json: { type: 'object' },
-            definition: { type: 'object' },
-          },
-          anyOf: [{ required: ['graph_json'] }, { required: ['definition'] }],
-        },
+        params: idVidParams,
+        body: graphBodySchema,
       },
     },
     async (req, reply) => {
@@ -225,12 +211,12 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/validate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VALIDATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        params: UuidParamsSchema,
       },
     },
     async (req, reply) => {
@@ -251,12 +237,12 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string; vid: string } }>(
+  app.post(
     '/:id/versions/:vid/validate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VALIDATE),
       schema: {
-        params: { type: 'object', required: ['id', 'vid'], properties: { id: { type: 'string' }, vid: { type: 'string' } } },
+        params: idVidParams,
       },
     },
     async (req, reply) => {
@@ -271,33 +257,13 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string; vid: string } }>(
+  app.post(
     '/:id/simulate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            digits: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 8 } },
-            collected_digits: {
-              type: 'object',
-              additionalProperties: { type: 'string', minLength: 1, maxLength: 32 },
-            },
-            caller_number: { type: 'string', maxLength: 64 },
-            now: { type: 'string', format: 'date-time' },
-            force_timeout: { type: 'boolean' },
-            force_timeout_nodes: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 255 } },
-            force_invalid: { type: 'boolean' },
-            force_invalid_nodes: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 255 } },
-            variables: {
-              type: 'object',
-              additionalProperties: { type: 'string', maxLength: 255 },
-            },
-          },
-        },
+        params: UuidParamsSchema,
+        body: SimulationScenarioSchema,
       },
     },
     async (req, reply) => {
@@ -312,33 +278,13 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string; vid: string } }>(
+  app.post(
     '/:id/versions/:vid/simulate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE),
       schema: {
-        params: { type: 'object', required: ['id', 'vid'], properties: { id: { type: 'string' }, vid: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            digits: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 8 } },
-            collected_digits: {
-              type: 'object',
-              additionalProperties: { type: 'string', minLength: 1, maxLength: 32 },
-            },
-            caller_number: { type: 'string', maxLength: 64 },
-            now: { type: 'string', format: 'date-time' },
-            force_timeout: { type: 'boolean' },
-            force_timeout_nodes: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 255 } },
-            force_invalid: { type: 'boolean' },
-            force_invalid_nodes: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 255 } },
-            variables: {
-              type: 'object',
-              additionalProperties: { type: 'string', maxLength: 255 },
-            },
-          },
-        },
+        params: idVidParams,
+        body: SimulationScenarioSchema,
       },
     },
     async (req, reply) => {
@@ -353,12 +299,12 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string; vid: string } }>(
+  app.post(
     '/:id/versions/:vid/publish',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH),
       schema: {
-        params: { type: 'object', required: ['id', 'vid'], properties: { id: { type: 'string' }, vid: { type: 'string' } } },
+        params: idVidParams,
       },
     },
     async (req, reply) => {
@@ -376,12 +322,12 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/rollback',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_ROLLBACK),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        params: UuidParamsSchema,
       },
     },
     async (req, reply) => {
@@ -397,4 +343,4 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
       }
     },
   );
-}
+};

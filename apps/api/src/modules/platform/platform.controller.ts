@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { db } from '../../db/client.js';
 import { authenticatePlatform } from './authenticate-platform.js';
 import { PlatformRepository } from './platform.repository.js';
@@ -6,7 +6,7 @@ import { PlatformService } from './platform.service.js';
 
 const service = new PlatformService(new PlatformRepository(db));
 
-export async function platformController(app: FastifyInstance): Promise<void> {
+export const platformController: FastifyPluginAsyncZod = async (app) => {
   app.addHook('preHandler', authenticatePlatform);
 
   app.get('/tenants', async () => {
@@ -23,4 +23,4 @@ export async function platformController(app: FastifyInstance): Promise<void> {
     const summary = await service.runtimeSummary();
     return { data: summary };
   });
-}
+};

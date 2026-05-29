@@ -1,4 +1,10 @@
-﻿import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import {
+  CreateMeetingSessionBodySchema,
+  UpdateMeetingSessionBodySchema,
+  UuidParamsSchema,
+} from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -9,7 +15,6 @@ import {
   MeetingSessionNotFoundError,
   MeetingSessionService,
 } from './meeting-session.service.js';
-import type { CreateMeetingSessionInput, UpdateMeetingSessionInput } from './meeting-session.types.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new MeetingSessionService(new MeetingSessionRepository(db));
@@ -24,25 +29,13 @@ function replyError(err: unknown, reply: FastifyReply): void {
   throw err;
 }
 
-const SESSION_STATUSES = ['scheduled', 'active', 'completed', 'failed'] as const;
-
-export async function meetingSessionController(app: FastifyInstance): Promise<void> {
-  app.post<{ Body: Omit<CreateMeetingSessionInput, 'tenant_id'> }>(
+export const meetingSessionController: FastifyPluginAsyncZod = async (app) => {
+  app.post(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_MEETING_SESSIONS_MANAGE),
       schema: {
-        body: {
-          type: 'object',
-          required: ['channel_account_id'],
-          additionalProperties: false,
-          properties: {
-            channel_account_id: { type: 'string' },
-            meeting_code: { type: 'string', maxLength: 255 },
-            meeting_url: { type: 'string', maxLength: 2048 },
-            provider_metadata: { type: 'object', additionalProperties: true },
-          },
-        },
+        body: CreateMeetingSessionBodySchema,
       },
     },
     async (req, reply) => {
@@ -65,11 +58,11 @@ export async function meetingSessionController(app: FastifyInstance): Promise<vo
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_MEETING_SESSIONS_VIEW),
-      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+      schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -81,27 +74,13 @@ export async function meetingSessionController(app: FastifyInstance): Promise<vo
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: UpdateMeetingSessionInput }>(
+  app.patch(
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_MEETING_SESSIONS_MANAGE),
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          minProperties: 1,
-          properties: {
-            status: { type: 'string', enum: [...SESSION_STATUSES] },
-            meeting_url: { type: 'string', maxLength: 2048 },
-            participant_count: { type: 'integer', minimum: 0 },
-            recording_reference: { type: 'string', maxLength: 2048 },
-            transcript_reference: { type: 'string', maxLength: 2048 },
-            provider_metadata: { type: 'object', additionalProperties: true },
-            started_at: { type: 'string', format: 'date-time' },
-            ended_at: { type: 'string', format: 'date-time' },
-          },
-        },
+        params: UuidParamsSchema,
+        body: UpdateMeetingSessionBodySchema,
       },
     },
     async (req, reply) => {
@@ -113,4 +92,4 @@ export async function meetingSessionController(app: FastifyInstance): Promise<vo
       }
     },
   );
-}
+};
