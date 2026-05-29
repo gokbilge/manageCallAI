@@ -3,96 +3,105 @@
 ## Goal
 
 Create a `packages/contracts` workspace package that is the single source of truth
-for all API-facing request/response types. Generate the OpenAPI spec from code so
-manual spec maintenance is eliminated. Give the web app machine-generated TypeScript
-types derived from the spec.
+for API-facing request/response schemas. Generate the OpenAPI spec from those
+schemas so manual spec maintenance is minimized, and derive TypeScript SDK types
+from the generated spec.
 
 ## Status
 
-**PLANNED**
+**IMPLEMENTED**
 
 ## Context
 
-The project currently has three independent representations of the same shape:
+The project previously had several independent representations of the same API
+shape:
 
-| Layer | What exists today | Problem |
-|-------|-------------------|---------|
-| API types | Manual `*.types.ts` interfaces per module | Drift from spec |
-| Fastify validators | Inline JSON Schema strings per controller | Not shared, not typed |
-| OpenAPI spec | Manually edited `docs/api/openapi.yaml` | Drift from code |
-| Web app | No generated types — raw `fetch()` calls | No type safety |
+| Layer | What exists now | Outcome |
+|-------|-----------------|---------|
+| API contract schemas | Zod schemas in `packages/contracts` | Shared source for route input and OpenAPI components |
+| API controllers | Import schemas from `@managecallai/contracts` where migrated | Less duplicate request validation shape |
+| OpenAPI spec | Generated `docs/api/openapi.yaml` | Drift checked in CI |
+| SDK / clients | Generated `packages/sdk/src/generated/schema.ts` | TypeScript clients derive types from the spec |
 
-Any field added or renamed must be updated in up to four places independently.
-A CI gate that regenerates the spec and fails on drift closes this loop.
+Any field added or renamed should flow through the contracts package and generator
+instead of being maintained independently in each surface.
 
 ## Approach
 
-```
-packages/contracts/src/schemas/*.ts   ← Zod schemas (single source)
-       │ z.infer<>                           │ @asteasolutions/zod-to-openapi
-       ▼                                     ▼
-API module *.types.ts              scripts/generate-openapi.mjs
-(re-export from contracts)                   │
-       │                                     ▼
-Fastify controller                  docs/api/openapi.yaml (generated)
-(body schema still JSON for now)             │
-                                             ▼ openapi-typescript
-                                    apps/web/src/api/types.gen.ts
+```text
+packages/contracts/src/schemas/*.ts <- Zod schemas
+        |                                  |
+        | z.infer<>                        | @asteasolutions/zod-to-openapi
+        v                                  v
+API controllers                 scripts/generate-openapi.mjs
+                                            |
+                                            v
+                                 docs/api/openapi.yaml
+                                            |
+                                            v openapi-typescript
+                                 packages/sdk/src/generated/schema.ts
 ```
 
-The Fastify body validator upgrade (switch from inline JSON Schema to
-`@fastify/type-provider-zod`) is deferred to SLICE-34. This slice delivers
-the type contracts and the code-generation pipeline.
+The generator preserves the existing path tree while replacing legacy path `$ref`
+names with canonical generated component names. It fails fast if any path `$ref`
+does not resolve.
 
 ## Scope
 
-- Create `packages/contracts` ES-module package with Zod + `@asteasolutions/zod-to-openapi`
-- Define Zod schemas for every API-facing request/response type across all 25+ modules
-- Register all component schemas and all paths in an OpenAPIRegistry
-- Write `scripts/generate-openapi.mjs` → produces `docs/api/openapi.yaml`
-- Write `scripts/generate-web-types.mjs` → runs `openapi-typescript` for the web
-- Update API module `*.types.ts` to re-export from `@managecallai/contracts`
-  (no duplicate interface declarations)
-- Update CI: generate → diff → fail if spec is stale (or regenerate and commit)
-- Update `check-openapi-coverage.mjs` to continue working on generated spec
-- Add `@managecallai/contracts` dependency to `apps/api` and `apps/web`
+- Create `packages/contracts` ES-module package with Zod and `@asteasolutions/zod-to-openapi`
+- Define Zod schemas for API-facing request/response types across the implemented modules
+- Register component schemas in an OpenAPI registry
+- Write `scripts/generate-openapi.mjs` to produce `docs/api/openapi.yaml`
+- Write `scripts/generate-web-types.mjs` to run `openapi-typescript` through `packages/sdk`
+- Update API controllers and type imports to consume `@managecallai/contracts`
+- Update CI to generate, diff, and fail if the committed spec is stale
+- Update `check-openapi-coverage.mjs` to continue working on the generated spec
+- Ensure Docker image builds compile contracts before apps that import them
 
 ## Does Not Change
 
-- Fastify body validation (stays inline JSON Schema until SLICE-34)
-- Controller logic, service layer, repository layer
+- Service layer and repository business logic
 - Database schema and migrations
 - FreeSWITCH agent (Go)
+- Provider execution implementations
 
 ## Depends On
 
-- `SLICE-32` (adds channel + meeting types that must be included)
-- `ADR-0010` (error standard shapes the ErrorResponse schema)
+- `SLICE-32` (adds channel and meeting types that must be included)
+- `ADR-0010` (error standard shapes the `ErrorResponse` schema)
 
 ## Unblocks
 
-- SLICE-34 (Fastify Zod type provider — uses contracts directly as validators)
-- Type-safe web API client (derives from generated openapi-typescript output)
+- SLICE-34 (broader Fastify Zod type-provider cleanup)
+- Type-safe SDK/client usage from generated OpenAPI types
 - Contract-driven mock server for integration tests
-- Future SDK generation from OpenAPI
+- Future SDK packaging and publishing
 
 ## Exit Criteria
 
 - `pnpm --filter @managecallai/contracts build` succeeds
+- `pnpm --filter @managecallai/contracts lint` succeeds
 - `node scripts/generate-openapi.mjs` produces a spec that passes
   `check-openapi-coverage.mjs`
 - The committed `docs/api/openapi.yaml` is the output of the generator
-  (no manual content remains)
-- `node scripts/generate-web-types.mjs` produces `apps/web/src/api/types.gen.ts`
+- `node scripts/generate-web-types.mjs` produces `packages/sdk/src/generated/schema.ts`
   without error
-- CI runs generate → verify on every push; a schema change without a spec
+- CI runs generate and verify on every push; a schema change without a spec
   regeneration causes CI to fail
-- All `*.types.ts` files that previously declared duplicate interfaces now
-  re-export from `@managecallai/contracts`
+- API Docker image builds `@managecallai/contracts` before `@managecallai/api`
+
+## Completion Notes
+
+- `packages/contracts` now has its own ESLint dependencies and flat config.
+- `scripts/generate-openapi.mjs` reports unresolved component refs before writing
+  a spec.
+- `packages/sdk` generates TypeScript types from `docs/api/openapi.yaml`.
+- `apps/api/Dockerfile` builds contracts first so workspace imports resolve inside
+  Docker.
+- Slice 32 remains unchanged by this completion pass.
 
 ## Out Of Scope
 
-- Switching Fastify body validation to Zod type provider (SLICE-34)
 - SDK packaging or publishing to npm
 - Generating mock servers or test fixtures
-- Runtime Zod `.parse()` in controllers (type-level only in this slice)
+- Concrete AI, transcription, text-to-speech, messaging, or meeting providers

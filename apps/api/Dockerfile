@@ -10,6 +10,7 @@ WORKDIR /workspace
 COPY . .
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @managecallai/contracts build
 RUN pnpm --filter @managecallai/api build
 
 FROM node:22-alpine AS runtime

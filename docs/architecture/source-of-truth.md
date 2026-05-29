@@ -205,6 +205,11 @@ Responsibilities:
 
 The API should be treated as the authoritative backend contract for first-party and third-party clients.
 
+API-facing request and response schemas live in `packages/contracts` as Zod
+schemas. `docs/api/openapi.yaml` and `packages/sdk/src/generated/schema.ts` are
+generated from those contracts, and CI must fail when the committed OpenAPI
+document drifts from generator output.
+
 ### 8.3 MCP Server
 
 The MCP server exposes safe tools for AI agents.

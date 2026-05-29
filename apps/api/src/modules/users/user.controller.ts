@@ -13,7 +13,6 @@ import {
   UserOperationForbiddenError,
   UserService,
 } from './user.service.js';
-import type { TenantRole } from './user.types.js';
 import { sendNotFound, sendAlreadyExists, sendPermissionDenied } from '../../errors/index.js';
 
 const service = new UserService(new UserRepository(db));

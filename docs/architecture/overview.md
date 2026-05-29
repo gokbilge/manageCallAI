@@ -62,6 +62,7 @@ manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSW
 - REST endpoints for application and integration clients
 - Authentication and authorization enforcement
 - Domain orchestration entry point
+- Shared API-facing schemas from `packages/contracts`
 
 ### 5.3 MCP Layer
 
@@ -92,6 +93,14 @@ manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSW
 - Validation engine
 - Simulation engine
 - Publish and rollback orchestration
+
+### 5.6.1 Contract Generation
+
+- `packages/contracts` owns API-facing Zod schemas and OpenAPI component registration.
+- `scripts/generate-openapi.mjs` emits `docs/api/openapi.yaml` and verifies all
+  path `$ref`s resolve to generated components.
+- `packages/sdk` derives TypeScript client types from the generated OpenAPI document.
+- CI treats generated OpenAPI drift as a failure.
 
 ### 5.7 Persistence Layer
 

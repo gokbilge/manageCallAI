@@ -8,10 +8,9 @@ Current files:
 - [examples.md](examples.md)
 - [rest-api.md](rest-api.md)
 
-Suggested future contents:
+Contract generation:
 
-- OpenAPI specification
-- Endpoint-by-endpoint request and response schemas
-- Authentication and authorization details
-- Webhook event schemas
-- Example integration guides
+- `packages/contracts/src/schemas/*.ts` defines API-facing Zod schemas.
+- `pnpm generate:openapi` regenerates `docs/api/openapi.yaml`.
+- `pnpm generate:web-types` regenerates `packages/sdk/src/generated/schema.ts`.
+- CI fails when the generated OpenAPI document is stale.

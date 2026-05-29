@@ -10,8 +10,6 @@ import { ExtensionRepository } from './extension.repository.js';
 import { ExtensionNotFoundError, ExtensionService } from './extension.service.js';
 import { sendNotFound } from '../../errors/index.js';
 
-const DESTINATION_TYPES = ['flow', 'extension', 'user', 'queue'] as const;
-
 const service = new ExtensionService(new ExtensionRepository(db));
 
 function replyNotFound(err: unknown, reply: FastifyReply): void {
