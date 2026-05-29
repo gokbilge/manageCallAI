@@ -4,6 +4,7 @@ import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { fireWebhooks } from '../automation/webhook-delivery.js';
+import { fireAuditEvent } from '../audit/fire-audit.js';
 import { IvrFlowRepository } from './ivr-flow.repository.js';
 import {
   FlowVersionNotFoundError,
@@ -365,6 +366,7 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
         const result = await service.publish(req.params.id, req.params.vid, user.tenant_id, user.sub, user.role);
         const event = result.status === 'pending_approval' ? 'ivr_flow.publish_pending' : 'ivr_flow.published';
         fireWebhooks(user.tenant_id, event, { flow_id: req.params.id, version_id: req.params.vid });
+        fireAuditEvent({ tenant_id: user.tenant_id, actor_id: user.sub, actor_role: user.role, action: event, resource_type: 'ivr_flow', resource_id: req.params.id, metadata: { version_id: req.params.vid } });
         const statusCode = result.status === 'pending_approval' ? 202 : 200;
         return reply.code(statusCode).send({ data: result });
       } catch (err) {
@@ -386,6 +388,7 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
       try {
         const result = await service.rollback(req.params.id, user.tenant_id, user.sub, user.role);
         fireWebhooks(user.tenant_id, 'ivr_flow.rollback_completed', { flow_id: req.params.id });
+        fireAuditEvent({ tenant_id: user.tenant_id, actor_id: user.sub, actor_role: user.role, action: 'ivr_flow.rollback_completed', resource_type: 'ivr_flow', resource_id: req.params.id });
         const statusCode = result.status === 'pending_approval' ? 202 : 200;
         return reply.code(statusCode).send({ data: result });
       } catch (err) {

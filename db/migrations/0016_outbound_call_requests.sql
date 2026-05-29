@@ -1,0 +1,7 @@
+-- Compatibility shim.
+--
+-- This file was originally numbered 0016 but conflicted with
+-- 0016_add_queues_and_voicemail.sql. The content has been moved to
+-- 0022_outbound_call_requests.sql. This file remains as a no-op so that
+-- existing databases that have already recorded this filename in
+-- schema_migrations are not affected.

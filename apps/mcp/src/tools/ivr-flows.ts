@@ -87,6 +87,31 @@ export const IVR_FLOW_TOOLS = [
       },
     },
   },
+  {
+    name: 'run_simulation_suite',
+    description:
+      'Run multiple simulation scenarios against the current draft of a flow in one call. Returns pass/fail and execution path for each scenario. Use this for regression checks before requesting publish.',
+    inputSchema: {
+      type: 'object' as const,
+      required: ['flow_id', 'scenarios'],
+      properties: {
+        flow_id: { type: 'string', description: 'UUID of the IVR flow' },
+        scenarios: {
+          type: 'array',
+          description: 'Array of simulation scenarios to run',
+          items: {
+            type: 'object',
+            properties: {
+              label: { type: 'string', description: 'Human-readable name for this scenario' },
+              caller_number: { type: 'string' },
+              digits: { type: 'array', items: { type: 'string' } },
+              now: { type: 'string', description: 'ISO 8601 datetime override' },
+            },
+          },
+        },
+      },
+    },
+  },
 ] as const;
 
 type Args = Record<string, unknown>;
@@ -155,6 +180,37 @@ export async function handleTool(name: string, args: Args): Promise<{ text: stri
       );
       if (!r.ok) return { text: err(r.status, r.data), isError: true };
       return { text: ok(r.data) };
+    }
+
+    case 'run_simulation_suite': {
+      const scenarios = Array.isArray(args.scenarios) ? args.scenarios as Args[] : [];
+      const results: Array<{ label: string; status: string; path: unknown[]; final_action: unknown; errors: unknown[] }> = [];
+      for (const scenario of scenarios) {
+        const body: Record<string, unknown> = {};
+        if (scenario.caller_number !== undefined) body.caller_number = scenario.caller_number;
+        if (scenario.digits !== undefined)        body.digits = scenario.digits;
+        if (scenario.now !== undefined)           body.now = scenario.now;
+        const r = await apiCall<{ data: { outcome?: { status: string; path: unknown[]; final_action: unknown; errors: unknown[] } } }>(
+          'POST',
+          `/api/v1/ivr-flows/${args.flow_id}/simulate`,
+          body,
+        );
+        const label = typeof scenario.label === 'string' ? scenario.label : `scenario_${results.length + 1}`;
+        if (!r.ok && r.status !== 422) {
+          results.push({ label, status: 'error', path: [], final_action: null, errors: [r.data] });
+        } else {
+          const outcome = (r.data as Record<string, unknown>)?.outcome as { status: string; path: unknown[]; final_action: unknown; errors: unknown[] } | undefined;
+          results.push({
+            label,
+            status: outcome?.status ?? (r.ok ? 'passed' : 'failed'),
+            path: outcome?.path ?? [],
+            final_action: outcome?.final_action ?? null,
+            errors: outcome?.errors ?? [],
+          });
+        }
+      }
+      const allPassed = results.every((r) => r.status === 'passed');
+      return { text: ok({ suite_status: allPassed ? 'passed' : 'failed', results }), isError: !allPassed };
     }
 
     default:

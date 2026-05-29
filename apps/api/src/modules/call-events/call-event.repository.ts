@@ -9,7 +9,8 @@ export class CallEventRepository {
       `SELECT id, tenant_id, call_id, event_type, event_time, source, payload, ingested_at
        FROM call_events
        WHERE tenant_id = $1
-       ORDER BY event_time DESC, ingested_at DESC`,
+       ORDER BY event_time DESC, ingested_at DESC
+       LIMIT 500`,
       [tenantId],
     );
 

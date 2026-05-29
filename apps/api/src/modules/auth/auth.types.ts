@@ -16,4 +16,5 @@ export interface AuthResult {
   id: string;
   tenant_id: string;
   email: string;
+  role: string;
 }

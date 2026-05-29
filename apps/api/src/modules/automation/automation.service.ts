@@ -1,6 +1,6 @@
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { AutomationRepository } from './automation.repository.js';
-import type { ApiKey, ApiKeyCreated, AutomationWebhook, AutomationWebhookCreated, WebhookEvent } from './automation.types.js';
+import type { ApiKey, ApiKeyCreated, AutomationWebhook, AutomationWebhookCreated, WebhookDeliveryAttempt, WebhookEvent } from './automation.types.js';
 
 export class ApiKeyNotFoundError extends Error {
   constructor() { super('API key not found or already revoked'); this.name = 'ApiKeyNotFoundError'; }
@@ -69,6 +69,12 @@ export class AutomationService {
     if (!ok) throw new WebhookNotFoundError();
   }
 
+  async getDeliveryHistory(webhookId: string, tenantId: string): Promise<WebhookDeliveryAttempt[]> {
+    const webhook = await this.repo.findWebhookById(webhookId, tenantId);
+    if (!webhook) throw new WebhookNotFoundError();
+    return this.repo.findDeliveryLog(webhookId);
+  }
+
   fireWebhooks(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): void {
     void this._deliver(tenantId, event, data);
   }
@@ -82,8 +88,24 @@ export class AutomationService {
     }
     const payload = JSON.stringify({ event, tenant_id: tenantId, data, timestamp: new Date().toISOString() });
     for (const target of targets) {
-      const sig = AutomationRepository.signPayload(target.signing_secret, payload);
-      fetch(target.url, {
+      void this._deliverWithRetry(target, tenantId, event, payload, 1);
+    }
+  }
+
+  private async _deliverWithRetry(
+    target: { id: string; url: string; signing_secret: string },
+    tenantId: string,
+    event: string,
+    payload: string,
+    attempt: number,
+  ): Promise<void> {
+    const sig = AutomationRepository.signPayload(target.signing_secret, payload);
+    const start = Date.now();
+    let status: 'success' | 'failed' = 'failed';
+    let responseCode: number | null = null;
+
+    try {
+      const res = await fetch(target.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,15 +114,34 @@ export class AutomationService {
         },
         body: payload,
         signal: AbortSignal.timeout(10_000),
-      }).then(async (res) => {
-        if (res.ok) {
-          await this.repo.resetDeliveryFailure(target.id).catch(() => {});
-        } else {
-          await this.repo.recordDeliveryFailure(target.id).catch(() => {});
-        }
-      }).catch(async () => {
-        await this.repo.recordDeliveryFailure(target.id).catch(() => {});
       });
+      responseCode = res.status;
+      if (res.ok) {
+        status = 'success';
+        await this.repo.resetDeliveryFailure(target.id).catch(() => {});
+      } else {
+        await this.repo.recordDeliveryFailure(target.id).catch(() => {});
+      }
+    } catch {
+      await this.repo.recordDeliveryFailure(target.id).catch(() => {});
+    }
+
+    const durationMs = Date.now() - start;
+    await this.repo.logDeliveryAttempt({
+      webhook_id: target.id,
+      tenant_id: tenantId,
+      event,
+      attempt_number: attempt,
+      status,
+      response_code: responseCode,
+      duration_ms: durationMs,
+    }).catch(() => {});
+
+    if (status === 'failed' && attempt < 3) {
+      const delayMs = attempt === 1 ? 2_000 : 10_000;
+      setTimeout(() => {
+        void this._deliverWithRetry(target, tenantId, event, payload, attempt + 1);
+      }, delayMs);
     }
   }
 }

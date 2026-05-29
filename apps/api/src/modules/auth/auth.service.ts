@@ -23,7 +23,7 @@ export class AuthService {
       display_name: input.display_name,
       password_hash,
     });
-    return { id: user.id, tenant_id: user.tenant_id, email: user.email };
+    return { id: user.id, tenant_id: user.tenant_id, email: user.email, role: 'tenant_admin' };
   }
 
   async login(input: LoginInput): Promise<AuthResult> {
@@ -39,6 +39,6 @@ export class AuthService {
     }
 
     await this.repo.touchLastLogin(user.id);
-    return { id: user.id, tenant_id: user.tenant_id, email: user.email };
+    return { id: user.id, tenant_id: user.tenant_id, email: user.email, role: user.role };
   }
 }

@@ -49,6 +49,25 @@ export async function webhooksController(app: FastifyInstance): Promise<void> {
     },
   );
 
+  app.get<{ Params: { id: string } }>(
+    '/:id/deliveries',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW),
+      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+    },
+    async (req, reply: FastifyReply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.getDeliveryHistory(req.params.id, user.tenant_id) };
+      } catch (err) {
+        if (err instanceof WebhookNotFoundError) {
+          return reply.code(404).send({ error: (err as Error).message });
+        }
+        throw err;
+      }
+    },
+  );
+
   app.delete<{ Params: { id: string } }>(
     '/:id',
     {

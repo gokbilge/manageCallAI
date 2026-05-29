@@ -77,6 +77,58 @@ describe('hasCapability', () => {
     });
   });
 
+  describe('tenant_operator', () => {
+    it('grants view and create/update capabilities', () => {
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_DASHBOARD_VIEW)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_EXTENSIONS_CREATE)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_EXTENSIONS_UPDATE)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_VALIDATE)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_OUTBOUND_CALLS_CREATE)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_AUDIT_LOG_VIEW)).toBe(true);
+    });
+
+    it('denies publish, rollback, approve-decide, and manage capabilities', () => {
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH)).toBe(false);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_ROLLBACK)).toBe(false);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_APPROVALS_DECIDE)).toBe(false);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_EXTENSIONS_DEACTIVATE)).toBe(false);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_AUTOMATION_KEYS_MANAGE)).toBe(false);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_MANAGE)).toBe(false);
+    });
+
+    it('denies all platform capabilities', () => {
+      expect(hasCapability('tenant_operator', CAPABILITIES.PLATFORM_TENANTS_VIEW)).toBe(false);
+      expect(hasCapability('tenant_operator', CAPABILITIES.PLATFORM_AUDIT_VIEW)).toBe(false);
+    });
+  });
+
+  describe('tenant_viewer', () => {
+    it('grants all view capabilities', () => {
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_DASHBOARD_VIEW)).toBe(true);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(true);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_IVR_FLOWS_VIEW)).toBe(true);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_APPROVALS_VIEW)).toBe(true);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_CALLS_VIEW)).toBe(true);
+    });
+
+    it('denies all create/update/mutate capabilities', () => {
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_EXTENSIONS_CREATE)).toBe(false);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_EXTENSIONS_UPDATE)).toBe(false);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_EXTENSIONS_DEACTIVATE)).toBe(false);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_IVR_FLOWS_CREATE)).toBe(false);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH)).toBe(false);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_APPROVALS_DECIDE)).toBe(false);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_OUTBOUND_CALLS_CREATE)).toBe(false);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_AUDIT_LOG_VIEW)).toBe(false);
+    });
+
+    it('denies all platform capabilities', () => {
+      expect(hasCapability('tenant_viewer', CAPABILITIES.PLATFORM_TENANTS_VIEW)).toBe(false);
+    });
+  });
+
   describe('undefined role', () => {
     it('defaults to tenant_admin capabilities', () => {
       expect(hasCapability(undefined, CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(true);

@@ -34,8 +34,23 @@ export const WEBHOOK_EVENTS = [
   'ivr_flow.publish_pending',
   'ivr_flow.rollback_completed',
   'ivr_flow.validation_failed',
+  'approval.requested',
   'approval.approved',
   'approval.rejected',
+  'call.completed',
+  'outbound_call.dispatched',
 ] as const;
+
+export interface WebhookDeliveryAttempt {
+  id: string;
+  webhook_id: string;
+  tenant_id: string;
+  event: string;
+  attempt_number: number;
+  status: 'success' | 'failed';
+  response_code: number | null;
+  duration_ms: number | null;
+  attempted_at: Date;
+}
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];

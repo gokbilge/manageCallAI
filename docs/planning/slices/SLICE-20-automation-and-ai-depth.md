@@ -7,7 +7,21 @@ production-safe automation surfaces.
 
 ## Status
 
-**PLANNED**
+**COMPLETED** — 2026-05-29
+
+### Shipped
+
+- New webhook events: `approval.requested`, `call.completed`, `outbound_call.dispatched` added to `WEBHOOK_EVENTS`
+- Webhook delivery log: `webhook_delivery_log` table (migration `0017_webhook_delivery_log.sql`) records every attempt with status, response code, and duration
+- Delivery retry: up to 3 attempts per target with 2s then 10s delays; each attempt logged to DB
+- Delivery history endpoint: `GET /api/v1/webhooks/:id/deliveries` returns recent delivery attempts for operator observability
+- `AutomationService.getDeliveryHistory()` with tenant ownership check
+- MCP approvals tools (`list_approvals`, `get_approval`, `decide_approval`) in `apps/mcp/src/tools/approvals.ts`
+- MCP prompts tools (`list_prompts`, `get_prompt`) in `apps/mcp/src/tools/prompts.ts`
+- MCP runtime tools (`list_sessions`, `get_session`) in `apps/mcp/src/tools/runtime.ts`
+- MCP schedules tool (`list_schedules`) in `apps/mcp/src/tools/schedules.ts`
+- `run_simulation_suite` MCP tool: runs multiple named scenarios against a flow draft and returns aggregated pass/fail results — usable as a pre-publish regression gate by AI agents
+- MCP server version bumped to 0.2.0; index wires all new tools; 25/25 MCP tests pass
 
 ## Scope
 

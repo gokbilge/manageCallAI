@@ -1,6 +1,6 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import type { Pool } from 'pg';
-import type { ApiKey, AutomationWebhook } from './automation.types.js';
+import type { ApiKey, AutomationWebhook, WebhookDeliveryAttempt } from './automation.types.js';
 
 export class AutomationRepository {
   constructor(private readonly db: Pool) {}
@@ -127,5 +127,51 @@ export class AutomationRepository {
       `UPDATE automation_webhooks SET failure_count = 0 WHERE id = $1`,
       [id],
     );
+  }
+
+  async logDeliveryAttempt(input: {
+    webhook_id: string;
+    tenant_id: string;
+    event: string;
+    attempt_number: number;
+    status: 'success' | 'failed';
+    response_code: number | null;
+    duration_ms: number | null;
+  }): Promise<void> {
+    await this.db.query(
+      `INSERT INTO webhook_delivery_log
+         (webhook_id, tenant_id, event, attempt_number, status, response_code, duration_ms)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        input.webhook_id,
+        input.tenant_id,
+        input.event,
+        input.attempt_number,
+        input.status,
+        input.response_code,
+        input.duration_ms,
+      ],
+    );
+  }
+
+  async findDeliveryLog(webhookId: string, limit = 50): Promise<WebhookDeliveryAttempt[]> {
+    const r = await this.db.query<WebhookDeliveryAttempt>(
+      `SELECT id, webhook_id, tenant_id, event, attempt_number, status, response_code, duration_ms, attempted_at
+       FROM webhook_delivery_log
+       WHERE webhook_id = $1
+       ORDER BY attempted_at DESC
+       LIMIT $2`,
+      [webhookId, limit],
+    );
+    return r.rows;
+  }
+
+  async findWebhookById(id: string, tenantId: string): Promise<AutomationWebhook | null> {
+    const r = await this.db.query<AutomationWebhook>(
+      `SELECT id, tenant_id, name, url, events, failure_count, disabled_at, created_by, created_at, revoked_at
+       FROM automation_webhooks WHERE id = $1 AND tenant_id = $2`,
+      [id, tenantId],
+    );
+    return r.rows[0] ?? null;
   }
 }

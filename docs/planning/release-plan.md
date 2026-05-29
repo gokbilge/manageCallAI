@@ -60,8 +60,9 @@ Reference:
 | `SLICE-19` | completed |
 | `SLICE-20` | completed |
 | `SLICE-21` | completed |
-| `SLICE-22` | planned |
+| `SLICE-22` | completed |
 | `SLICE-23` | completed |
+| `SLICE-24` | completed |
 
 The original v1 release-plan slices are closed. The new post-release slices are now
 explicit and ready for future sequencing.
@@ -238,3 +239,4 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-21](slices/SLICE-21-enterprise-and-multi-tenant-hardening.md)
 - [SLICE-22](slices/SLICE-22-recorded-media-and-export-operations.md)
 - [SLICE-23](slices/SLICE-23-caller-routing-and-outbound-runtime.md)
+- [SLICE-24](slices/SLICE-24-tenant-user-management.md)

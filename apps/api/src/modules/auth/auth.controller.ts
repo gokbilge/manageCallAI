@@ -79,7 +79,7 @@ export async function authController(app: FastifyInstance): Promise<void> {
         const result = await service.login(req.body);
         const role: Role = config.platformOperatorEmails.includes(result.email)
           ? 'platform_admin'
-          : 'tenant_admin';
+          : (result.role as Role);
         const token = app.jwt.sign({
           sub: result.id,
           tenant_id: result.tenant_id,

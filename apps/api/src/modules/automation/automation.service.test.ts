@@ -47,9 +47,12 @@ function makeMockRepo(): AutomationRepository {
     createWebhook: vi.fn(),
     listWebhooks: vi.fn(),
     revokeWebhook: vi.fn(),
+    findWebhookById: vi.fn(),
     findActiveWebhooksForEvent: vi.fn(),
     recordDeliveryFailure: vi.fn(),
     resetDeliveryFailure: vi.fn(),
+    logDeliveryAttempt: vi.fn().mockResolvedValue(undefined),
+    findDeliveryLog: vi.fn().mockResolvedValue([]),
   } as unknown as AutomationRepository;
 }
 
@@ -140,6 +143,21 @@ describe('AutomationService', () => {
     it('throws WebhookNotFoundError when webhook does not exist', async () => {
       vi.mocked(repo.revokeWebhook).mockResolvedValue(false);
       await expect(service.revokeWebhook(HOOK_ID, TENANT_ID)).rejects.toThrow(WebhookNotFoundError);
+    });
+  });
+
+  describe('getDeliveryHistory', () => {
+    it('returns delivery log for owned webhook', async () => {
+      vi.mocked(repo.findWebhookById).mockResolvedValue(makeWebhook());
+      vi.mocked(repo.findDeliveryLog).mockResolvedValue([]);
+      const result = await service.getDeliveryHistory(HOOK_ID, TENANT_ID);
+      expect(Array.isArray(result)).toBe(true);
+      expect(repo.findWebhookById).toHaveBeenCalledWith(HOOK_ID, TENANT_ID);
+    });
+
+    it('throws WebhookNotFoundError for unknown webhook', async () => {
+      vi.mocked(repo.findWebhookById).mockResolvedValue(null);
+      await expect(service.getDeliveryHistory('bad-id', TENANT_ID)).rejects.toThrow(WebhookNotFoundError);
     });
   });
 

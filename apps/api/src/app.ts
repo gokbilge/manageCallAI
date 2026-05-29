@@ -25,6 +25,9 @@ import { scheduleController } from './modules/schedules/schedule.controller.js';
 import { outboundRouteController } from './modules/outbound-routes/outbound-route.controller.js';
 import { voicemailBoxController } from './modules/voicemail-boxes/voicemail-box.controller.js';
 import { auditController } from './modules/audit/audit.controller.js';
+import { recordingController } from './modules/recordings/recording.controller.js';
+import { exportController } from './modules/export/export.controller.js';
+import { userController } from './modules/users/user.controller.js';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -64,6 +67,9 @@ export function buildApp() {
   app.register(scheduleController, { prefix: '/api/v1/schedules' });
   app.register(outboundRouteController, { prefix: '/api/v1/outbound-routes' });
   app.register(auditController, { prefix: '/api/v1/audit' });
+  app.register(recordingController, { prefix: '/api/v1/recordings' });
+  app.register(exportController, { prefix: '/api/v1/export' });
+  app.register(userController, { prefix: '/api/v1/users' });
 
   return app;
 }

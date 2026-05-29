@@ -7,6 +7,7 @@ interface UserRow {
   display_name: string;
   status: string;
   password_hash: string;
+  role: string;
 }
 
 interface CreateTenantAndUserInput {
@@ -28,7 +29,7 @@ export class AuthRepository {
 
   async findUserByEmailAndSlug(email: string, tenantSlug: string): Promise<UserRow | null> {
     const result = await this.db.query<UserRow>(
-      `SELECT u.id, u.tenant_id, u.email, u.display_name, u.status, u.password_hash
+      `SELECT u.id, u.tenant_id, u.email, u.display_name, u.status, u.password_hash, u.role
        FROM users u
        JOIN tenants t ON t.id = u.tenant_id
        WHERE u.email = $1 AND t.slug = $2`,
