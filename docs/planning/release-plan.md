@@ -43,16 +43,16 @@ Reference:
 | `SLICE-02` | completed |
 | `SLICE-03` | completed |
 | `SLICE-04` | completed |
-| `SLICE-05` | implemented, live proof should be rerun if runtime packaging changes |
+| `SLICE-05` | completed |
 | `SLICE-06` | completed |
-| `SLICE-07` | implemented, pending explicit live close-out proof |
+| `SLICE-07` | completed |
 | `SLICE-08` | completed |
-| `SLICE-09` | next |
-| `SLICE-10` | pending |
-| `SLICE-11` | pending |
-| `SLICE-12` | pending |
-| `SLICE-13` | post-release |
-| `SLICE-14` | pending |
+| `SLICE-09` | completed |
+| `SLICE-10` | completed |
+| `SLICE-11` | completed |
+| `SLICE-12` | completed |
+| `SLICE-13` | completed |
+| `SLICE-14` | completed |
 
 ## 3. Release Thesis
 

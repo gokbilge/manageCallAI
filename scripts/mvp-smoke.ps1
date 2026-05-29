@@ -153,6 +153,41 @@ if (-not ($events.data | Where-Object { $_.call_id -eq "smoke-call-1" })) {
   throw "Call event list did not include the ingested event"
 }
 
+# ── IVR lifecycle smoke ────────────────────────────────────────────────────────
+
+Write-Step "Create IVR flow"
+$flow = Invoke-Json -Method POST -Url "$ApiBaseUrl/ivr-flows" -Headers $authHeaders -Body @{
+  name = "Smoke IVR Flow"
+  description = "Automated smoke test flow"
+}
+$flowId = $flow.data.id
+if (-not $flowId) { throw "IVR flow create did not return an id" }
+
+$draftVersionId = $flow.data.draft_version_id
+if (-not $draftVersionId) { throw "IVR flow create did not return a draft_version_id" }
+
+Write-Step "Validate IVR flow draft"
+$validation = Invoke-Json -Method POST -Url "$ApiBaseUrl/ivr-flows/$flowId/validate" -Headers $authHeaders
+if ($validation.data.outcome.status -ne "passed") {
+  throw "Smoke IVR flow validation did not pass: $($validation.data.outcome.errors | ConvertTo-Json)"
+}
+
+Write-Step "Simulate IVR flow"
+$simulation = Invoke-Json -Method POST -Url "$ApiBaseUrl/ivr-flows/$flowId/simulate" -Headers $authHeaders -Body @{
+  caller_number = "+15005550006"
+}
+if (-not $simulation.data.path) {
+  throw "Simulation did not return a path"
+}
+
+Write-Step "Request publish"
+$publish = Invoke-Json -Method POST -Url "$ApiBaseUrl/ivr-flows/$flowId/versions/$draftVersionId/publish" -Headers $authHeaders
+$publishStatus = $publish.data.status
+if ($publishStatus -notin @("published", "pending_approval")) {
+  throw "Unexpected publish status: $publishStatus"
+}
+Write-Host "  Publish status: $publishStatus" -ForegroundColor Gray
+
 Write-Host ""
 Write-Host "Smoke test passed." -ForegroundColor Green
 Write-Host "Tenant slug: $TenantSlug"

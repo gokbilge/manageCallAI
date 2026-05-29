@@ -11,4 +11,3 @@ dist/
 # Local AI context files - not for version control
 CLAUDE.md
 AGENTS.md
-docs/audit/
