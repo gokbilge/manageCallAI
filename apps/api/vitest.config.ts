@@ -6,6 +6,7 @@ export default defineConfig({
     // Integration tests share a live PostgreSQL database and TRUNCATE in beforeEach.
     // Running files concurrently causes cross-file interference; serialize them.
     fileParallelism: false,
+    hookTimeout: 30_000,
     poolOptions: {
       forks: { singleFork: true },
     },

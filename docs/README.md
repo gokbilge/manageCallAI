@@ -43,6 +43,10 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [development/live-freeswitch-ivr-loop.md](development/live-freeswitch-ivr-loop.md)
   Live inbound-call proof for the thin Lua IVR runtime loop: DID -> flow target -> runtime session -> transfer.
 
+- `pnpm runtime:smoke`
+  Release smoke command for the local runtime stack. It checks API health, runs the
+  control-plane IVR smoke, and verifies SIP registration unless skipped.
+
 - [development/ivr-flow-foundation-proof.md](development/ivr-flow-foundation-proof.md)
   Command-driven proof of the first IVR desired-state slice: create flow, inspect versions, validate a draft, simulate it, and attempt publish safely.
 

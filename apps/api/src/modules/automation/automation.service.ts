@@ -1,6 +1,14 @@
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { AutomationRepository } from './automation.repository.js';
-import type { ApiKey, ApiKeyCreated, AutomationWebhook, AutomationWebhookCreated, WebhookDeliveryAttempt, WebhookEvent } from './automation.types.js';
+import type {
+  ApiKey,
+  ApiKeyCreated,
+  AutomationWebhook,
+  AutomationWebhookCreated,
+  WebhookDeliveryAttempt,
+  WebhookDeliveryQueueItem,
+  WebhookEvent,
+} from './automation.types.js';
 
 export class ApiKeyNotFoundError extends Error {
   constructor() { super('API key not found or already revoked'); this.name = 'ApiKeyNotFoundError'; }
@@ -75,42 +83,63 @@ export class AutomationService {
     return this.repo.findDeliveryLog(webhookId);
   }
 
+  async getDeliveryQueue(webhookId: string, tenantId: string): Promise<WebhookDeliveryQueueItem[]> {
+    const webhook = await this.repo.findWebhookById(webhookId, tenantId);
+    if (!webhook) throw new WebhookNotFoundError();
+    return this.repo.findDeliveryQueueForWebhook(webhookId, tenantId);
+  }
+
   fireWebhooks(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): void {
-    void this._deliver(tenantId, event, data);
+    void this.enqueueWebhooks(tenantId, event, data);
   }
 
-  private async _deliver(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): Promise<void> {
-    let targets: Array<{ id: string; url: string; signing_secret: string }>;
+  async enqueueWebhooks(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): Promise<WebhookDeliveryQueueItem[]> {
+    const payload = { event, tenant_id: tenantId, data, timestamp: new Date().toISOString() };
     try {
-      targets = await this.repo.findActiveWebhooksForEvent(tenantId, event);
+      return await this.repo.enqueueWebhookDeliveries({ tenant_id: tenantId, event, payload_json: payload });
     } catch {
-      return;
-    }
-    const payload = JSON.stringify({ event, tenant_id: tenantId, data, timestamp: new Date().toISOString() });
-    for (const target of targets) {
-      void this._deliverWithRetry(target, tenantId, event, payload, 1);
+      return [];
     }
   }
 
-  private async _deliverWithRetry(
-    target: { id: string; url: string; signing_secret: string },
-    tenantId: string,
-    event: string,
-    payload: string,
-    attempt: number,
-  ): Promise<void> {
-    const sig = AutomationRepository.signPayload(target.signing_secret, payload);
+  async processDueWebhookDeliveries(limit = 25): Promise<{ claimed: number; delivered: number; failed: number }> {
+    const deliveries = await this.repo.claimDueWebhookDeliveries(limit);
+    let delivered = 0;
+    let failed = 0;
+
+    for (const delivery of deliveries) {
+      const ok = await this.deliverClaimedWebhook(delivery);
+      if (ok) delivered += 1;
+      else failed += 1;
+    }
+
+    return { claimed: deliveries.length, delivered, failed };
+  }
+
+  private async deliverClaimedWebhook(delivery: {
+    id: string;
+    webhook_id: string;
+    tenant_id: string;
+    event: string;
+    payload_json: Record<string, unknown>;
+    attempt_count: number;
+    signing_secret: string;
+    url: string;
+  }): Promise<boolean> {
+    const payload = JSON.stringify(delivery.payload_json);
+    const sig = AutomationRepository.signPayload(delivery.signing_secret, payload);
     const start = Date.now();
     let status: 'success' | 'failed' = 'failed';
     let responseCode: number | null = null;
+    let errorMessage: string | null = null;
 
     try {
-      const res = await fetch(target.url, {
+      const res = await fetch(delivery.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-ManageCall-Signature': `sha256=${sig}`,
-          'X-ManageCall-Event': event,
+          'X-ManageCall-Event': delivery.event,
         },
         body: payload,
         signal: AbortSignal.timeout(10_000),
@@ -118,33 +147,48 @@ export class AutomationService {
       responseCode = res.status;
       if (res.ok) {
         status = 'success';
-        await this.ignoreDeliveryError(this.repo.resetDeliveryFailure(target.id));
+        await this.ignoreDeliveryError(this.repo.resetDeliveryFailure(delivery.webhook_id));
       } else {
-        await this.ignoreDeliveryError(this.repo.recordDeliveryFailure(target.id));
+        errorMessage = `Webhook returned HTTP ${res.status}`;
+        await this.ignoreDeliveryError(this.repo.recordDeliveryFailure(delivery.webhook_id));
       }
-    } catch {
-      await this.ignoreDeliveryError(this.repo.recordDeliveryFailure(target.id));
+    } catch (err) {
+      errorMessage = err instanceof Error ? err.message : 'Webhook delivery failed';
+      await this.ignoreDeliveryError(this.repo.recordDeliveryFailure(delivery.webhook_id));
     }
 
     const durationMs = Date.now() - start;
     await this.ignoreDeliveryError(
       this.repo.logDeliveryAttempt({
-        webhook_id: target.id,
-        tenant_id: tenantId,
-        event,
-        attempt_number: attempt,
+        webhook_id: delivery.webhook_id,
+        tenant_id: delivery.tenant_id,
+        event: delivery.event,
+        attempt_number: delivery.attempt_count,
         status,
         response_code: responseCode,
         duration_ms: durationMs,
       }),
     );
 
-    if (status === 'failed' && attempt < 3) {
-      const delayMs = attempt === 1 ? 2_000 : 10_000;
-      setTimeout(() => {
-        void this._deliverWithRetry(target, tenantId, event, payload, attempt + 1);
-      }, delayMs);
+    if (status === 'success') {
+      await this.ignoreDeliveryError(
+        this.repo.markWebhookDeliveryDelivered({
+          delivery_id: delivery.id,
+          response_code: responseCode,
+        }),
+      );
+      return true;
     }
+
+    await this.ignoreDeliveryError(
+      this.repo.markWebhookDeliveryFailed({
+        delivery_id: delivery.id,
+        response_code: responseCode,
+        error_message: errorMessage,
+        retry_delay_seconds: delivery.attempt_count <= 1 ? 2 : 10,
+      }),
+    );
+    return false;
   }
 
   private async ignoreDeliveryError(action: Promise<void> | void): Promise<void> {

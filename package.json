@@ -19,6 +19,7 @@
     "lint": "pnpm -r lint",
     "runtime:up": "docker compose --profile freeswitch up -d",
     "runtime:down": "docker compose --profile freeswitch down",
+    "runtime:smoke": "powershell -ExecutionPolicy Bypass -File ./scripts/live-runtime-smoke.ps1",
     "test": "pnpm -r test"
   }
 }

@@ -770,6 +770,208 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/prompt-generation/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List prompt generation requests
+         * @description Lists tenant-scoped generated prompt and text-to-speech requests. These
+         *     requests can be fulfilled by user-installed providers such as ElevenLabs,
+         *     OpenAI, a Whisper-compatible service for speech-related workflows, or a
+         *     custom plugin. No provider is required by the core platform.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Prompt generation request list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PromptGenerationRequestListResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /**
+         * Request generated prompt text and/or audio
+         * @description Creates a provider-neutral generation request. `provider_hint` is a
+         *     routing hint only; implementations may ignore it or map it to a tenant-owned
+         *     plugin/service.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreatePromptGenerationRequest"];
+                };
+            };
+            responses: {
+                /** @description Prompt generation request created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PromptGenerationRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prompt-generation/requests/{promptGenerationRequestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get prompt generation request status and result */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    promptGenerationRequestId: components["parameters"]["PromptGenerationRequestIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Prompt generation request */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PromptGenerationRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prompt-generation/internal/{promptGenerationRequestId}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim prompt generation work for a trusted processor */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    promptGenerationRequestId: components["parameters"]["PromptGenerationRequestIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ClaimPromptGenerationRequest"];
+                };
+            };
+            responses: {
+                /** @description Prompt generation request claimed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PromptGenerationRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prompt-generation/internal/{promptGenerationRequestId}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit generated prompt result from a trusted processor
+         * @description Trusted callback for generated prompt text, generated audio metadata, or both.
+         *     Provider metadata is observability-only and must not include secrets.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    promptGenerationRequestId: components["parameters"]["PromptGenerationRequestIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CompletePromptGenerationRequest"];
+                };
+            };
+            responses: {
+                /** @description Prompt generation result accepted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PromptGenerationRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/queues": {
         parameters: {
             query?: never;
@@ -2293,6 +2495,185 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runtime/ivr-ai/turns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an AI-assisted IVR turn request
+         * @description Runtime-internal contract for IVR nodes that ask an external AI service to
+         *     answer a caller question, classify intent, or generate a spoken/text response.
+         *     Provider execution is external to the core platform. OpenAI-compatible,
+         *     custom, or tenant-installed providers can implement this contract.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateIvrAiTurnRequest"];
+                };
+            };
+            responses: {
+                /** @description IVR AI turn request created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrAiTurnRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runtime/ivr-ai/turns/{ivrAiTurnRequestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get IVR AI turn request status and result
+         * @description Tenant-facing status read for a pending or completed AI turn.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ivrAiTurnRequestId: components["parameters"]["IvrAiTurnRequestIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description IVR AI turn request */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrAiTurnRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ivr-ai/internal/{ivrAiTurnRequestId}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim an IVR AI turn request for processing */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ivrAiTurnRequestId: components["parameters"]["IvrAiTurnRequestIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ClaimIvrAiTurnRequest"];
+                };
+            };
+            responses: {
+                /** @description IVR AI turn request claimed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrAiTurnRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ivr-ai/internal/{ivrAiTurnRequestId}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit IVR AI turn result from a trusted processor
+         * @description Trusted callback for AI-generated caller response, intent classification, or
+         *     selected next action. Public tenant users cannot call this endpoint.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ivrAiTurnRequestId: components["parameters"]["IvrAiTurnRequestIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CompleteIvrAiTurnRequest"];
+                };
+            };
+            responses: {
+                /** @description IVR AI turn result accepted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IvrAiTurnRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/call-events": {
         parameters: {
             query?: never;
@@ -2374,6 +2755,715 @@ export interface paths {
                 default: components["responses"]["ErrorResponse"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List recordings for the authenticated tenant
+         * @description Lists tenant-owned call and voicemail recording metadata. Public responses
+         *     intentionally expose storage-safe metadata only; raw storage internals and
+         *     temporary media URLs are not part of this contract.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    call_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Recording list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecordingListResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/{webhookId}/delivery-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List durable delivery queue entries for a webhook
+         * @description Tenant-scoped operational view of pending, processing, delivered, failed,
+         *     and abandoned webhook deliveries.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    webhookId: components["parameters"]["WebhookIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Webhook delivery queue entries */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WebhookDeliveryQueueListResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recordingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a recording for the authenticated tenant */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recordingId: components["parameters"]["RecordingIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Recording */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecordingResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recordingId}/playback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream tenant-owned recording media
+         * @description Streams recording media only when the resolved file is under the configured
+         *     recording storage root. The endpoint is tenant-scoped and does not expose
+         *     raw filesystem paths in its response.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recordingId: components["parameters"]["RecordingIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Recording media stream */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "audio/wav": string;
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/internal/ingest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ingest completed recording metadata from the runtime agent
+         * @description Runtime-internal endpoint used by the FreeSWITCH agent or another trusted
+         *     runtime component after a call recording or voicemail recording is available.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["IngestRecordingRequest"];
+                };
+            };
+            responses: {
+                /** @description Recording metadata created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecordingResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recordingId}/analysis-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List analysis requests for a recording
+         * @description Lists transcription and summarization requests for a tenant-owned recording.
+         *     Results may be produced by an external plugin, worker, or AI service.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recordingId: components["parameters"]["RecordingIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Recording analysis request list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecordingAnalysisRequestListResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /**
+         * Request transcription and/or summary for a recording
+         * @description Creates a provider-neutral analysis request for a tenant-owned recording.
+         *     `preferred_provider` is only a hint; implementations may ignore it or route
+         *     it to a user-installed plugin. `whisper` is documented as an example provider
+         *     value, not as a required platform dependency.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recordingId: components["parameters"]["RecordingIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateRecordingAnalysisRequest"];
+                };
+            };
+            responses: {
+                /** @description Analysis request created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecordingAnalysisRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recordingId}/analysis-requests/{analysisRequestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get analysis request status and result */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recordingId: components["parameters"]["RecordingIdParam"];
+                    analysisRequestId: components["parameters"]["AnalysisRequestIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Recording analysis request */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecordingAnalysisRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recording-analysis/internal/{analysisRequestId}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim an analysis request for processing
+         * @description Trusted processor endpoint. A plugin or service claims a queued request before
+         *     downloading media through its private integration path and producing results.
+         *     The API remains provider-neutral; `provider` may be `whisper`, `external`,
+         *     or another user-configured value.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    analysisRequestId: components["parameters"]["AnalysisRequestIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ClaimRecordingAnalysisRequest"];
+                };
+            };
+            responses: {
+                /** @description Analysis request claimed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecordingAnalysisRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recording-analysis/internal/{analysisRequestId}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit analysis result from a trusted processor
+         * @description Trusted processor callback for completed or failed transcription/summary jobs.
+         *     Public tenant users cannot call this endpoint. The result payload stores
+         *     provider metadata only for observability; provider-specific fields must not
+         *     become required business logic.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    analysisRequestId: components["parameters"]["AnalysisRequestIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CompleteRecordingAnalysisRequest"];
+                };
+            };
+            responses: {
+                /** @description Analysis result accepted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecordingAnalysisRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List channel adapter accounts
+         * @description Lists configured WhatsApp, Telegram, Google Meet, or custom channel adapters for the tenant.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Channel account list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChannelAccountListResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /**
+         * Create channel adapter account
+         * @description Registers provider metadata and declared capabilities for a channel adapter.
+         *     Provider credentials are write-only and must never be returned by public APIs.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateChannelAccountRequest"];
+                };
+            };
+            responses: {
+                /** @description Channel account created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChannelAccountResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/accounts/{channelAccountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get channel adapter account */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    channelAccountId: components["parameters"]["ChannelAccountIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Channel account */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChannelAccountResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/messages/outbound": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Queue outbound channel message
+         * @description Sends or queues a normalized message through a configured channel adapter.
+         *     WhatsApp template rules, Telegram bot constraints, and provider-specific
+         *     restrictions are adapter concerns represented in provider_metadata.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateOutboundChannelMessageRequest"];
+                };
+            };
+            responses: {
+                /** @description Outbound channel message accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChannelMessageResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/messages/inbound/internal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ingest inbound channel message from provider adapter */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["IngestInboundChannelMessageRequest"];
+                };
+            };
+            responses: {
+                /** @description Inbound channel message ingested */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChannelMessageResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/voice-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create channel voice or meeting session request
+         * @description Creates a voice-capable interaction through a channel adapter when supported.
+         *     Capability values distinguish async voice messages, native calls, SIP bridges,
+         *     and meeting-style sessions such as Google Meet.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateChannelVoiceSessionRequest"];
+                };
+            };
+            responses: {
+                /** @description Channel voice or meeting session accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChannelVoiceSessionResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/voice-sessions/{channelVoiceSessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get channel voice or meeting session status */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    channelVoiceSessionId: components["parameters"]["ChannelVoiceSessionIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Channel voice or meeting session */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChannelVoiceSessionResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3431,6 +4521,401 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        Recording: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            call_id: string;
+            call_event_id: string | null;
+            /** @description Backend storage reference. Public media access should use a safe playback/download endpoint. */
+            storage_path: string;
+            duration_secs: number | null;
+            size_bytes: number | null;
+            /** @enum {string} */
+            status: "pending" | "available" | "deleted";
+            /** Format: date-time */
+            recorded_at: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        RecordingResponse: {
+            data: components["schemas"]["Recording"];
+        };
+        RecordingListResponse: {
+            data: components["schemas"]["Recording"][];
+        };
+        IngestRecordingRequest: {
+            /** Format: uuid */
+            tenant_id: string;
+            call_id: string;
+            call_event_id?: string | null;
+            storage_path: string;
+            duration_secs?: number | null;
+            size_bytes?: number | null;
+            recorded_at?: string | null;
+        };
+        /**
+         * @description Optional provider hint or reported provider. Values such as openai, elevenlabs, and whisper are examples for user-installed integrations; the core platform does not require any specific provider.
+         * @enum {string}
+         */
+        IntegrationProvider: "auto" | "openai" | "elevenlabs" | "whisper" | "external" | "custom";
+        /** @enum {string} */
+        WorkRequestStatus: "queued" | "processing" | "completed" | "failed" | "cancelled";
+        /** @enum {string} */
+        WebhookDeliveryStatus: "pending" | "processing" | "delivered" | "failed" | "abandoned";
+        WebhookDeliveryQueueItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            webhook_id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            event: string;
+            payload_json: {
+                [key: string]: unknown;
+            };
+            status: components["schemas"]["WebhookDeliveryStatus"];
+            attempt_count: number;
+            max_attempts: number;
+            /** Format: date-time */
+            next_attempt_at: string;
+            claimed_at?: string | null;
+            delivered_at?: string | null;
+            last_response_code?: number | null;
+            last_error?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        WebhookDeliveryQueueListResponse: {
+            data: components["schemas"]["WebhookDeliveryQueueItem"][];
+        };
+        /** @enum {string} */
+        RecordingAnalysisOutput: "transcript" | "summary";
+        CreateRecordingAnalysisRequest: {
+            requested_outputs: components["schemas"]["RecordingAnalysisOutput"][];
+            language_hint?: string | null;
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        ClaimRecordingAnalysisRequest: {
+            processor_id?: string;
+        };
+        CompleteRecordingAnalysisRequest: {
+            /** @enum {string} */
+            status: "completed" | "failed";
+            language?: string | null;
+            transcript_text?: string | null;
+            summary_text?: string | null;
+            error_message?: string | null;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        RecordingAnalysisRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            recording_id: string;
+            status: components["schemas"]["WorkRequestStatus"];
+            requested_outputs: components["schemas"]["RecordingAnalysisOutput"][];
+            language_hint: string | null;
+            language: string | null;
+            processor_id: string | null;
+            claimed_at: string | null;
+            transcript_text: string | null;
+            summary_text: string | null;
+            error_message: string | null;
+            metadata: {
+                [key: string]: unknown;
+            };
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            completed_at: string | null;
+        };
+        RecordingAnalysisRequestResponse: {
+            data: components["schemas"]["RecordingAnalysisRequest"];
+        };
+        RecordingAnalysisRequestListResponse: {
+            data: components["schemas"]["RecordingAnalysisRequest"][];
+        };
+        /** @enum {string} */
+        PromptGenerationOutput: "prompt_text" | "audio";
+        CreatePromptGenerationRequest: {
+            prompt_asset_id?: string | null;
+            requested_outputs: components["schemas"]["PromptGenerationOutput"][];
+            /** @description Source text for TTS or refinement. */
+            input_text: string;
+            language_hint?: string | null;
+            voice_hint?: string | null;
+            provider_hint?: components["schemas"]["IntegrationProvider"] | null;
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        ClaimPromptGenerationRequest: {
+            processor_id?: string;
+        };
+        CompletePromptGenerationRequest: {
+            /** @enum {string} */
+            status: "completed" | "failed";
+            generated_prompt_asset_id?: string | null;
+            media_reference?: string | null;
+            error_message?: string | null;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        PromptGenerationRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            status: components["schemas"]["WorkRequestStatus"];
+            prompt_asset_id: string | null;
+            requested_outputs: components["schemas"]["PromptGenerationOutput"][];
+            input_text: string;
+            language_hint: string | null;
+            voice_hint: string | null;
+            provider_hint: components["schemas"]["IntegrationProvider"];
+            processor_id: string | null;
+            claimed_at: string | null;
+            generated_prompt_asset_id: string | null;
+            media_reference: string | null;
+            error_message: string | null;
+            metadata: {
+                [key: string]: unknown;
+            };
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            completed_at: string | null;
+        };
+        PromptGenerationRequestResponse: {
+            data: components["schemas"]["PromptGenerationRequest"];
+        };
+        PromptGenerationRequestListResponse: {
+            data: components["schemas"]["PromptGenerationRequest"][];
+        };
+        /** @enum {string} */
+        IvrAiTurnOutput: "answer_text" | "spoken_audio" | "intent" | "next_action";
+        CreateIvrAiTurnRequest: {
+            /** Format: uuid */
+            tenant_id: string;
+            runtime_session_id?: string | null;
+            call_id: string;
+            flow_id?: string | null;
+            node_id: string;
+            /** @enum {string} */
+            input_mode: "text" | "transcript" | "dtmf" | "metadata";
+            input_text?: string | null;
+            requested_outputs: components["schemas"]["IvrAiTurnOutput"][];
+            provider_hint?: components["schemas"]["IntegrationProvider"] | null;
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        ClaimIvrAiTurnRequest: {
+            processor_id?: string;
+        };
+        CompleteIvrAiTurnRequest: {
+            /** @enum {string} */
+            status: "completed" | "failed";
+            answer_text?: string | null;
+            /** @description Constrained business-level action for the runtime resolver to interpret. */
+            next_action?: {
+                [key: string]: unknown;
+            };
+            confidence?: number | null;
+            error_message?: string | null;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        IvrAiTurnRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            runtime_session_id: string | null;
+            call_id: string;
+            flow_id: string | null;
+            node_id: string;
+            /** @enum {string} */
+            input_mode: "text" | "transcript" | "dtmf" | "metadata";
+            input_text: string | null;
+            status: components["schemas"]["WorkRequestStatus"];
+            requested_outputs: components["schemas"]["IvrAiTurnOutput"][];
+            provider_hint: components["schemas"]["IntegrationProvider"];
+            processor_id: string | null;
+            claimed_at: string | null;
+            answer_text: string | null;
+            next_action: {
+                [key: string]: unknown;
+            };
+            confidence: number | null;
+            error_message: string | null;
+            metadata: {
+                [key: string]: unknown;
+            };
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            completed_at: string | null;
+        };
+        IvrAiTurnRequestResponse: {
+            data: components["schemas"]["IvrAiTurnRequest"];
+        };
+        /** @enum {string} */
+        ChannelProvider: "whatsapp" | "telegram" | "google_meet" | "custom";
+        /** @enum {string} */
+        ChannelCapability: "message_inbound" | "message_outbound" | "voice_message" | "native_call" | "meeting" | "sip_bridge" | "transcript_artifacts" | "recording_artifacts";
+        ChannelAccount: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            provider: components["schemas"]["ChannelProvider"];
+            display_name: string;
+            /** @enum {string} */
+            status: "active" | "inactive" | "error";
+            capabilities: components["schemas"]["ChannelCapability"][];
+            /** @description Provider account metadata safe for operators. Must not include secrets. */
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateChannelAccountRequest: {
+            provider: components["schemas"]["ChannelProvider"];
+            display_name: string;
+            capabilities: components["schemas"]["ChannelCapability"][];
+            /** @description Provider credentials or token references. Never returned in API responses. */
+            credentials?: {
+                [key: string]: unknown;
+            };
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        ChannelAccountResponse: {
+            data: components["schemas"]["ChannelAccount"];
+        };
+        ChannelAccountListResponse: {
+            data: components["schemas"]["ChannelAccount"][];
+        };
+        /** @enum {string} */
+        ChannelMessageDirection: "inbound" | "outbound";
+        /** @enum {string} */
+        ChannelMessageKind: "text" | "audio" | "image" | "document" | "interactive" | "system";
+        ChannelMessage: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            channel_account_id: string;
+            provider: components["schemas"]["ChannelProvider"];
+            direction: components["schemas"]["ChannelMessageDirection"];
+            kind: components["schemas"]["ChannelMessageKind"];
+            external_conversation_id: string | null;
+            external_message_id: string | null;
+            from_handle: string | null;
+            to_handle: string | null;
+            text: string | null;
+            media_uri: string | null;
+            /** @enum {string} */
+            status: "queued" | "sent" | "delivered" | "read" | "received" | "failed";
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        CreateOutboundChannelMessageRequest: {
+            /** Format: uuid */
+            channel_account_id: string;
+            kind: components["schemas"]["ChannelMessageKind"];
+            to_handle: string;
+            text?: string;
+            media_uri?: string;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        IngestInboundChannelMessageRequest: {
+            /** Format: uuid */
+            channel_account_id: string;
+            provider: components["schemas"]["ChannelProvider"];
+            kind: components["schemas"]["ChannelMessageKind"];
+            external_conversation_id?: string;
+            external_message_id?: string;
+            from_handle?: string;
+            to_handle?: string;
+            text?: string;
+            media_uri?: string;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        ChannelMessageResponse: {
+            data: components["schemas"]["ChannelMessage"];
+        };
+        ChannelVoiceSession: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            channel_account_id: string;
+            provider: components["schemas"]["ChannelProvider"];
+            capability: components["schemas"]["ChannelCapability"];
+            /** @enum {string} */
+            status: "requested" | "active" | "completed" | "failed" | "cancelled";
+            external_session_id: string | null;
+            join_uri: string | null;
+            sip_uri: string | null;
+            recording_uri: string | null;
+            transcript_uri: string | null;
+            provider_metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            ended_at: string | null;
+        };
+        CreateChannelVoiceSessionRequest: {
+            /** Format: uuid */
+            channel_account_id: string;
+            /** @enum {string} */
+            capability: "voice_message" | "native_call" | "meeting" | "sip_bridge";
+            participant_handle?: string;
+            subject?: string;
+            initial_message?: string;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        ChannelVoiceSessionResponse: {
+            data: components["schemas"]["ChannelVoiceSession"];
+        };
         TenantSummary: {
             /** Format: uuid */
             id: string;
@@ -3595,6 +5080,13 @@ export interface components {
         FlowIdParam: string;
         VersionIdParam: string;
         SessionIdParam: string;
+        RecordingIdParam: string;
+        WebhookIdParam: string;
+        AnalysisRequestIdParam: string;
+        PromptGenerationRequestIdParam: string;
+        IvrAiTurnRequestIdParam: string;
+        ChannelAccountIdParam: string;
+        ChannelVoiceSessionIdParam: string;
     };
     requestBodies: never;
     headers: never;

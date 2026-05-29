@@ -38,6 +38,7 @@ export const WEBHOOK_EVENTS = [
   'approval.approved',
   'approval.rejected',
   'call.completed',
+  'voicemail.recording_available',
   'outbound_call.dispatched',
 ] as const;
 
@@ -51,6 +52,31 @@ export interface WebhookDeliveryAttempt {
   response_code: number | null;
   duration_ms: number | null;
   attempted_at: Date;
+}
+
+export type WebhookDeliveryStatus = 'pending' | 'processing' | 'delivered' | 'failed' | 'abandoned';
+
+export interface WebhookDeliveryQueueItem {
+  id: string;
+  webhook_id: string;
+  tenant_id: string;
+  event: string;
+  payload_json: Record<string, unknown>;
+  status: WebhookDeliveryStatus;
+  attempt_count: number;
+  max_attempts: number;
+  next_attempt_at: Date;
+  claimed_at: Date | null;
+  delivered_at: Date | null;
+  last_response_code: number | null;
+  last_error: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ClaimedWebhookDelivery extends WebhookDeliveryQueueItem {
+  url: string;
+  signing_secret: string;
 }
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];

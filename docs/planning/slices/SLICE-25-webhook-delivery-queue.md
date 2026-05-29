@@ -7,7 +7,7 @@ and external automation consumers.
 
 ## Status
 
-**PLANNED**
+**IMPLEMENTED**
 
 ## Context
 

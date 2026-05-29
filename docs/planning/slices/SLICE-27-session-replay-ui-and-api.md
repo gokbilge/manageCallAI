@@ -7,7 +7,7 @@ on a call without reading raw events or database rows.
 
 ## Status
 
-**PLANNED**
+**IMPLEMENTED**
 
 ## Context
 

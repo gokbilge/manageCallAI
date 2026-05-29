@@ -56,6 +56,8 @@ tags:
     description: Call event query (tenant-facing) and ingestion (runtime-internal)
   - name: Recordings
     description: Recorded call and voicemail media metadata plus analysis request contract
+  - name: Webhooks
+    description: Webhook subscription delivery history and durable queue status
   - name: Platform
     description: Platform operator endpoints (require platform_admin role)
   - name: FreeSWITCH
@@ -455,7 +457,7 @@ paths:
       tags: [PromptGeneration]
       summary: Request generated prompt text and/or audio
       description: |
-        Creates a provider-neutral generation request. `preferred_provider` is a
+        Creates a provider-neutral generation request. `provider_hint` is a
         routing hint only; implementations may ignore it or map it to a tenant-owned
         plugin/service.
       requestBody:
@@ -465,8 +467,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreatePromptGenerationRequest'
       responses:
-        '202':
-          description: Prompt generation request accepted
+        '201':
+          description: Prompt generation request created
           content:
             application/json:
               schema:
@@ -1295,8 +1297,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateIvrAiTurnRequest'
       responses:
-        '202':
-          description: IVR AI turn request accepted
+        '201':
+          description: IVR AI turn request created
           content:
             application/json:
               schema:
@@ -1308,10 +1310,7 @@ paths:
     get:
       tags: [IvrAI]
       summary: Get IVR AI turn request status and result
-      description: Runtime-internal status read for a pending or completed AI turn.
-      security:
-        - runtimeTokenHeader: []
-        - runtimeTokenBearer: []
+      description: Tenant-facing status read for a pending or completed AI turn.
       parameters:
         - $ref: '#/components/parameters/IvrAiTurnRequestIdParam'
       responses:
@@ -1450,6 +1449,25 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /webhooks/{webhookId}/delivery-queue:
+    get:
+      tags: [Webhooks]
+      summary: List durable delivery queue entries for a webhook
+      description: |
+        Tenant-scoped operational view of pending, processing, delivered, failed,
+        and abandoned webhook deliveries.
+      parameters:
+        - $ref: '#/components/parameters/WebhookIdParam'
+      responses:
+        '200':
+          description: Webhook delivery queue entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookDeliveryQueueListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
   /recordings/{recordingId}:
     get:
       tags: [Recordings]
@@ -1463,6 +1481,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RecordingResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /recordings/{recordingId}/playback:
+    get:
+      tags: [Recordings]
+      summary: Stream tenant-owned recording media
+      description: |
+        Streams recording media only when the resolved file is under the configured
+        recording storage root. The endpoint is tenant-scoped and does not expose
+        raw filesystem paths in its response.
+      parameters:
+        - $ref: '#/components/parameters/RecordingIdParam'
+      responses:
+        '200':
+          description: Recording media stream
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -1527,8 +1566,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateRecordingAnalysisRequest'
       responses:
-        '202':
-          description: Analysis request accepted
+        '201':
+          description: Analysis request created
           content:
             application/json:
               schema:
@@ -2077,6 +2116,13 @@ components:
         format: uuid
     RecordingIdParam:
       name: recordingId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    WebhookIdParam:
+      name: webhookId
       in: path
       required: true
       schema:
@@ -3799,6 +3845,73 @@ components:
       type: string
       enum: [queued, processing, completed, failed, cancelled]
 
+    WebhookDeliveryStatus:
+      type: string
+      enum: [pending, processing, delivered, failed, abandoned]
+
+    WebhookDeliveryQueueItem:
+      type: object
+      required: [id, webhook_id, tenant_id, event, payload_json, status, attempt_count, max_attempts, next_attempt_at, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        webhook_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        event:
+          type: string
+        payload_json:
+          type: object
+          additionalProperties: true
+        status:
+          $ref: '#/components/schemas/WebhookDeliveryStatus'
+        attempt_count:
+          type: integer
+          minimum: 0
+        max_attempts:
+          type: integer
+          minimum: 1
+        next_attempt_at:
+          type: string
+          format: date-time
+        claimed_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        delivered_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        last_response_code:
+          oneOf:
+            - type: integer
+            - type: 'null'
+        last_error:
+          oneOf:
+            - type: string
+            - type: 'null'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WebhookDeliveryQueueListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookDeliveryQueueItem'
+
     RecordingAnalysisOutput:
       type: string
       enum: [transcript, summary]
@@ -3820,10 +3933,6 @@ components:
               minLength: 2
               maxLength: 32
             - type: 'null'
-        preferred_provider:
-          oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
-            - type: 'null'
         metadata:
           type: object
           additionalProperties: true
@@ -3832,17 +3941,10 @@ components:
       type: object
       additionalProperties: false
       properties:
-        provider:
-          $ref: '#/components/schemas/IntegrationProvider'
         processor_id:
           type: string
           minLength: 1
           maxLength: 255
-        lease_seconds:
-          type: integer
-          minimum: 30
-          maximum: 3600
-          default: 300
 
     CompleteRecordingAnalysisRequest:
       type: object
@@ -3871,11 +3973,7 @@ components:
         error_message:
           oneOf:
             - type: string
-              maxLength: 2000
-            - type: 'null'
-        provider:
-          oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
+              maxLength: 500
             - type: 'null'
         provider_metadata:
           type: object
@@ -3883,7 +3981,7 @@ components:
 
     RecordingAnalysisRequest:
       type: object
-      required: [id, tenant_id, recording_id, status, requested_outputs, language_hint, language, preferred_provider, provider, transcript_text, summary_text, error_message, metadata, provider_metadata, created_at, updated_at, completed_at]
+      required: [id, tenant_id, recording_id, status, requested_outputs, language_hint, processor_id, claimed_at, language, transcript_text, summary_text, error_message, metadata, provider_metadata, created_at, completed_at]
       properties:
         id:
           type: string
@@ -3908,13 +4006,14 @@ components:
           oneOf:
             - type: string
             - type: 'null'
-        preferred_provider:
+        processor_id:
           oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: string
             - type: 'null'
-        provider:
+        claimed_at:
           oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: string
+              format: date-time
             - type: 'null'
         transcript_text:
           oneOf:
@@ -3935,9 +4034,6 @@ components:
           type: object
           additionalProperties: true
         created_at:
-          type: string
-          format: date-time
-        updated_at:
           type: string
           format: date-time
         completed_at:
@@ -3968,9 +4064,14 @@ components:
 
     CreatePromptGenerationRequest:
       type: object
-      required: [requested_outputs]
+      required: [requested_outputs, input_text]
       additionalProperties: false
       properties:
+        prompt_asset_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
         requested_outputs:
           type: array
           minItems: 1
@@ -3979,12 +4080,9 @@ components:
             $ref: '#/components/schemas/PromptGenerationOutput'
         input_text:
           type: string
+          minLength: 1
           maxLength: 20000
           description: Source text for TTS or refinement.
-        prompt_brief:
-          type: string
-          maxLength: 4000
-          description: Brief for generated IVR prompt copy.
         language_hint:
           oneOf:
             - type: string
@@ -3996,16 +4094,7 @@ components:
             - type: string
               maxLength: 255
             - type: 'null'
-        output_media_type:
-          type: string
-          enum: [audio/wav, audio/mpeg]
-          default: audio/wav
-        target_prompt_id:
-          oneOf:
-            - type: string
-              format: uuid
-            - type: 'null'
-        preferred_provider:
+        provider_hint:
           oneOf:
             - $ref: '#/components/schemas/IntegrationProvider'
             - type: 'null'
@@ -4017,17 +4106,10 @@ components:
       type: object
       additionalProperties: false
       properties:
-        provider:
-          $ref: '#/components/schemas/IntegrationProvider'
         processor_id:
           type: string
           minLength: 1
           maxLength: 255
-        lease_seconds:
-          type: integer
-          minimum: 30
-          maximum: 3600
-          default: 300
 
     CompletePromptGenerationRequest:
       type: object
@@ -4037,39 +4119,20 @@ components:
         status:
           type: string
           enum: [completed, failed]
-        generated_text:
-          oneOf:
-            - type: string
-              maxLength: 20000
-            - type: 'null'
-        storage_uri:
-          oneOf:
-            - type: string
-              maxLength: 2048
-            - type: 'null'
-        media_type:
-          oneOf:
-            - type: string
-              enum: [audio/wav, audio/mpeg]
-            - type: 'null'
-        checksum:
-          oneOf:
-            - type: string
-              maxLength: 255
-            - type: 'null'
-        prompt_id:
+        generated_prompt_asset_id:
           oneOf:
             - type: string
               format: uuid
             - type: 'null'
+        media_reference:
+          oneOf:
+            - type: string
+              maxLength: 2048
+            - type: 'null'
         error_message:
           oneOf:
             - type: string
-              maxLength: 2000
-            - type: 'null'
-        provider:
-          oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
+              maxLength: 500
             - type: 'null'
         provider_metadata:
           type: object
@@ -4077,7 +4140,7 @@ components:
 
     PromptGenerationRequest:
       type: object
-      required: [id, tenant_id, status, requested_outputs, preferred_provider, provider, generated_text, storage_uri, media_type, checksum, prompt_id, error_message, metadata, provider_metadata, created_at, updated_at, completed_at]
+      required: [id, tenant_id, prompt_asset_id, requested_outputs, input_text, language_hint, voice_hint, provider_hint, status, processor_id, claimed_at, generated_prompt_asset_id, media_reference, error_message, metadata, provider_metadata, created_at, completed_at]
       properties:
         id:
           type: string
@@ -4087,38 +4150,44 @@ components:
           format: uuid
         status:
           $ref: '#/components/schemas/WorkRequestStatus'
+        prompt_asset_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
         requested_outputs:
           type: array
           items:
             $ref: '#/components/schemas/PromptGenerationOutput'
-        preferred_provider:
-          oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
-            - type: 'null'
-        provider:
-          oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
-            - type: 'null'
-        generated_text:
+        input_text:
+          type: string
+        language_hint:
           oneOf:
             - type: string
             - type: 'null'
-        storage_uri:
+        voice_hint:
           oneOf:
             - type: string
             - type: 'null'
-        media_type:
+        provider_hint:
+          $ref: '#/components/schemas/IntegrationProvider'
+        processor_id:
           oneOf:
             - type: string
             - type: 'null'
-        checksum:
+        claimed_at:
           oneOf:
             - type: string
+              format: date-time
             - type: 'null'
-        prompt_id:
+        generated_prompt_asset_id:
           oneOf:
             - type: string
               format: uuid
+            - type: 'null'
+        media_reference:
+          oneOf:
+            - type: string
             - type: 'null'
         error_message:
           oneOf:
@@ -4131,9 +4200,6 @@ components:
           type: object
           additionalProperties: true
         created_at:
-          type: string
-          format: date-time
-        updated_at:
           type: string
           format: date-time
         completed_at:
@@ -4164,13 +4230,13 @@ components:
 
     CreateIvrAiTurnRequest:
       type: object
-      required: [tenant_id, call_id, requested_outputs]
+      required: [tenant_id, call_id, node_id, input_mode, requested_outputs]
       additionalProperties: false
       properties:
         tenant_id:
           type: string
           format: uuid
-        session_id:
+        runtime_session_id:
           oneOf:
             - type: string
               format: uuid
@@ -4179,12 +4245,19 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-        caller_utterance:
+        flow_id:
           oneOf:
             - type: string
-              maxLength: 20000
+              format: uuid
             - type: 'null'
-        system_prompt:
+        node_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        input_mode:
+          type: string
+          enum: [text, transcript, dtmf, metadata]
+        input_text:
           oneOf:
             - type: string
               maxLength: 20000
@@ -4195,17 +4268,11 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/IvrAiTurnOutput'
-        language_hint:
-          oneOf:
-            - type: string
-              minLength: 2
-              maxLength: 32
-            - type: 'null'
-        preferred_provider:
+        provider_hint:
           oneOf:
             - $ref: '#/components/schemas/IntegrationProvider'
             - type: 'null'
-        context:
+        metadata:
           type: object
           additionalProperties: true
 
@@ -4213,17 +4280,10 @@ components:
       type: object
       additionalProperties: false
       properties:
-        provider:
-          $ref: '#/components/schemas/IntegrationProvider'
         processor_id:
           type: string
           minLength: 1
           maxLength: 255
-        lease_seconds:
-          type: integer
-          minimum: 5
-          maximum: 300
-          default: 30
 
     CompleteIvrAiTurnRequest:
       type: object
@@ -4238,28 +4298,20 @@ components:
             - type: string
               maxLength: 20000
             - type: 'null'
-        spoken_audio_uri:
-          oneOf:
-            - type: string
-              maxLength: 2048
-            - type: 'null'
-        intent:
-          oneOf:
-            - type: string
-              maxLength: 255
-            - type: 'null'
         next_action:
           type: object
           additionalProperties: true
           description: Constrained business-level action for the runtime resolver to interpret.
+        confidence:
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: 'null'
         error_message:
           oneOf:
             - type: string
-              maxLength: 2000
-            - type: 'null'
-        provider:
-          oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
+              maxLength: 500
             - type: 'null'
         provider_metadata:
           type: object
@@ -4267,7 +4319,7 @@ components:
 
     IvrAiTurnRequest:
       type: object
-      required: [id, tenant_id, session_id, call_id, status, requested_outputs, preferred_provider, provider, answer_text, spoken_audio_uri, intent, next_action, error_message, context, provider_metadata, created_at, updated_at, completed_at]
+      required: [id, tenant_id, runtime_session_id, call_id, flow_id, node_id, input_mode, input_text, requested_outputs, provider_hint, status, processor_id, claimed_at, answer_text, next_action, confidence, error_message, metadata, provider_metadata, created_at, completed_at]
       properties:
         id:
           type: string
@@ -4275,56 +4327,66 @@ components:
         tenant_id:
           type: string
           format: uuid
-        session_id:
+        runtime_session_id:
           oneOf:
             - type: string
               format: uuid
             - type: 'null'
         call_id:
           type: string
+        flow_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        node_id:
+          type: string
+        input_mode:
+          type: string
+          enum: [text, transcript, dtmf, metadata]
+        input_text:
+          oneOf:
+            - type: string
+            - type: 'null'
         status:
           $ref: '#/components/schemas/WorkRequestStatus'
         requested_outputs:
           type: array
           items:
             $ref: '#/components/schemas/IvrAiTurnOutput'
-        preferred_provider:
+        provider_hint:
+          $ref: '#/components/schemas/IntegrationProvider'
+        processor_id:
           oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: string
             - type: 'null'
-        provider:
+        claimed_at:
           oneOf:
-            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: string
+              format: date-time
             - type: 'null'
         answer_text:
-          oneOf:
-            - type: string
-            - type: 'null'
-        spoken_audio_uri:
-          oneOf:
-            - type: string
-            - type: 'null'
-        intent:
           oneOf:
             - type: string
             - type: 'null'
         next_action:
           type: object
           additionalProperties: true
+        confidence:
+          oneOf:
+            - type: number
+            - type: 'null'
         error_message:
           oneOf:
             - type: string
             - type: 'null'
-        context:
+        metadata:
           type: object
           additionalProperties: true
         provider_metadata:
           type: object
           additionalProperties: true
         created_at:
-          type: string
-          format: date-time
-        updated_at:
           type: string
           format: date-time
         completed_at:

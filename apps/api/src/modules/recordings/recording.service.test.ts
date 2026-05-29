@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RecordingRepository } from './recording.repository.js';
-import { RecordingNotFoundError, RecordingService } from './recording.service.js';
+import { RecordingNotFoundError, RecordingPlaybackPathError, RecordingService } from './recording.service.js';
 
 const baseRecording = {
   id: 'rec-1',
@@ -20,6 +20,28 @@ function makeMockRepo(): RecordingRepository {
     create: vi.fn().mockResolvedValue(baseRecording),
     listByTenant: vi.fn().mockResolvedValue([baseRecording]),
     findById: vi.fn().mockResolvedValue(baseRecording),
+    createAnalysisRequest: vi.fn().mockResolvedValue({
+      id: 'analysis-1',
+      tenant_id: 'tenant-1',
+      recording_id: 'rec-1',
+      requested_outputs: ['transcript', 'summary'],
+      language_hint: 'en-US',
+      status: 'queued',
+      processor_id: null,
+      claimed_at: null,
+      language: null,
+      transcript_text: null,
+      summary_text: null,
+      error_message: null,
+      provider_metadata: {},
+      metadata: {},
+      created_at: '2026-05-29T10:00:02Z',
+      completed_at: null,
+    }),
+    listAnalysisRequests: vi.fn().mockResolvedValue([]),
+    findAnalysisRequest: vi.fn().mockResolvedValue(null),
+    claimAnalysisRequest: vi.fn().mockResolvedValue(null),
+    completeAnalysisRequest: vi.fn().mockResolvedValue(null),
   } as unknown as RecordingRepository;
 }
 
@@ -69,6 +91,54 @@ describe('RecordingService', () => {
       vi.mocked(repo.findById).mockResolvedValueOnce(null);
       const service = new RecordingService(repo);
       await expect(service.getById('missing', 'tenant-1')).rejects.toBeInstanceOf(RecordingNotFoundError);
+    });
+  });
+
+  describe('getPlaybackPath', () => {
+    it('resolves recording media under the configured storage root', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.findById).mockResolvedValueOnce({ ...baseRecording, storage_path: 'tenant-1/call-abc.wav' });
+      const service = new RecordingService(repo, 'recordings');
+
+      const playback = await service.getPlaybackPath('rec-1', 'tenant-1');
+
+      expect(playback.file_path).toContain('tenant-1');
+      expect(playback.recording.id).toBe('rec-1');
+    });
+
+    it('rejects storage paths outside the configured root', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.findById).mockResolvedValueOnce({ ...baseRecording, storage_path: '../secret.wav' });
+      const service = new RecordingService(repo, 'recordings');
+
+      await expect(service.getPlaybackPath('rec-1', 'tenant-1')).rejects.toBeInstanceOf(RecordingPlaybackPathError);
+    });
+  });
+
+  describe('recording analysis requests', () => {
+    it('creates a provider-neutral analysis request for a tenant-owned recording', async () => {
+      const repo = makeMockRepo();
+      const service = new RecordingService(repo);
+
+      const result = await service.createAnalysisRequest('rec-1', 'tenant-1', {
+        requested_outputs: ['transcript', 'summary'],
+        language_hint: 'en-US',
+      });
+
+      expect(result.status).toBe('queued');
+      expect(repo.createAnalysisRequest).toHaveBeenCalledWith('rec-1', 'tenant-1', expect.objectContaining({
+        requested_outputs: ['transcript', 'summary'],
+      }));
+    });
+
+    it('checks the parent recording before listing analysis requests', async () => {
+      const repo = makeMockRepo();
+      const service = new RecordingService(repo);
+
+      await service.listAnalysisRequests('rec-1', 'tenant-1');
+
+      expect(repo.findById).toHaveBeenCalledWith('rec-1', 'tenant-1');
+      expect(repo.listAnalysisRequests).toHaveBeenCalledWith('rec-1', 'tenant-1');
     });
   });
 });

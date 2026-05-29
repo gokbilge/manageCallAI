@@ -7,7 +7,7 @@ recording reference, and operators can review it safely.
 
 ## Status
 
-**PLANNED**
+**IMPLEMENTED**
 
 ## Context
 

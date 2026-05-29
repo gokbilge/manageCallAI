@@ -7,7 +7,7 @@ the release runtime path end to end.
 
 ## Status
 
-**PLANNED**
+**IMPLEMENTED**
 
 ## Context
 
@@ -52,6 +52,18 @@ loop is healthy in a clean environment.
 - the smoke script fails non-zero on missing runtime, auth, route, or event-ingest issues
 - generated output includes enough IDs to debug failures
 - release runbook references the smoke command
+
+## Implementation
+
+Run the release smoke with:
+
+```powershell
+pnpm runtime:smoke
+```
+
+The command loads `.env`, checks API health, runs `scripts/mvp-smoke.ps1`, and then
+runs `scripts/sip-register-smoke.mjs` unless `-SkipSipRegister` is passed directly
+to `scripts/live-runtime-smoke.ps1`.
 
 ## Out Of Scope
 

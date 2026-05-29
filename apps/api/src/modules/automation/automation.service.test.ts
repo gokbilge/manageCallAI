@@ -53,6 +53,11 @@ function makeMockRepo(): AutomationRepository {
     resetDeliveryFailure: vi.fn(),
     logDeliveryAttempt: vi.fn().mockResolvedValue(undefined),
     findDeliveryLog: vi.fn().mockResolvedValue([]),
+    enqueueWebhookDeliveries: vi.fn().mockResolvedValue([]),
+    claimDueWebhookDeliveries: vi.fn().mockResolvedValue([]),
+    markWebhookDeliveryDelivered: vi.fn().mockResolvedValue(undefined),
+    markWebhookDeliveryFailed: vi.fn().mockResolvedValue(undefined),
+    findDeliveryQueueForWebhook: vi.fn().mockResolvedValue([]),
   } as unknown as AutomationRepository;
 }
 
@@ -161,44 +166,86 @@ describe('AutomationService', () => {
     });
   });
 
-  describe('fireWebhooks delivery failure tracking', () => {
-    it('calls recordDeliveryFailure when fetch rejects', async () => {
-      const target = { id: HOOK_ID, url: 'https://example.com/hook', signing_secret: 'sec' };
-      vi.mocked(repo.findActiveWebhooksForEvent).mockResolvedValue([target]);
-      vi.mocked(repo.recordDeliveryFailure).mockResolvedValue(undefined);
+  describe('webhook delivery queue', () => {
+    it('enqueues webhook events without calling fetch inline', async () => {
+      global.fetch = vi.fn();
 
+      const queued = await service.enqueueWebhooks(TENANT_ID, 'ivr_flow.published', { flow_id: 'flow-1' });
+
+      expect(queued).toEqual([]);
+      expect(repo.enqueueWebhookDeliveries).toHaveBeenCalledWith(expect.objectContaining({
+        tenant_id: TENANT_ID,
+        event: 'ivr_flow.published',
+        payload_json: expect.objectContaining({ event: 'ivr_flow.published', tenant_id: TENANT_ID }),
+      }));
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('marks claimed delivery as failed when fetch rejects', async () => {
+      vi.mocked(repo.claimDueWebhookDeliveries).mockResolvedValue([{
+        id: 'delivery-1',
+        webhook_id: HOOK_ID,
+        tenant_id: TENANT_ID,
+        event: 'ivr_flow.published',
+        payload_json: { event: 'ivr_flow.published', tenant_id: TENANT_ID, data: {}, timestamp: now.toISOString() },
+        status: 'processing',
+        attempt_count: 1,
+        max_attempts: 3,
+        next_attempt_at: now,
+        claimed_at: now,
+        delivered_at: null,
+        last_response_code: null,
+        last_error: null,
+        created_at: now,
+        updated_at: now,
+        url: 'https://example.com/hook',
+        signing_secret: 'sec',
+      }]);
+      vi.mocked(repo.recordDeliveryFailure).mockResolvedValue(undefined);
       global.fetch = vi.fn().mockRejectedValue(new Error('network error'));
 
-      service.fireWebhooks(TENANT_ID, 'ivr_flow.published', {});
-      await new Promise((r) => setTimeout(r, 20));
+      const result = await service.processDueWebhookDeliveries();
 
       expect(repo.recordDeliveryFailure).toHaveBeenCalledWith(HOOK_ID);
+      expect(repo.markWebhookDeliveryFailed).toHaveBeenCalledWith(expect.objectContaining({
+        delivery_id: 'delivery-1',
+        error_message: 'network error',
+      }));
+      expect(result).toEqual({ claimed: 1, delivered: 0, failed: 1 });
     });
 
-    it('calls resetDeliveryFailure when fetch succeeds', async () => {
-      const target = { id: HOOK_ID, url: 'https://example.com/hook', signing_secret: 'sec' };
-      vi.mocked(repo.findActiveWebhooksForEvent).mockResolvedValue([target]);
+    it('marks claimed delivery as delivered when fetch succeeds', async () => {
+      vi.mocked(repo.claimDueWebhookDeliveries).mockResolvedValue([{
+        id: 'delivery-2',
+        webhook_id: HOOK_ID,
+        tenant_id: TENANT_ID,
+        event: 'ivr_flow.published',
+        payload_json: { event: 'ivr_flow.published', tenant_id: TENANT_ID, data: {}, timestamp: now.toISOString() },
+        status: 'processing',
+        attempt_count: 1,
+        max_attempts: 3,
+        next_attempt_at: now,
+        claimed_at: now,
+        delivered_at: null,
+        last_response_code: null,
+        last_error: null,
+        created_at: now,
+        updated_at: now,
+        url: 'https://example.com/hook',
+        signing_secret: 'sec',
+      }]);
       vi.mocked(repo.resetDeliveryFailure).mockResolvedValue(undefined);
 
-      global.fetch = vi.fn().mockResolvedValue({ ok: true });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 204 });
 
-      service.fireWebhooks(TENANT_ID, 'ivr_flow.published', {});
-      await new Promise((r) => setTimeout(r, 20));
+      const result = await service.processDueWebhookDeliveries();
 
       expect(repo.resetDeliveryFailure).toHaveBeenCalledWith(HOOK_ID);
-    });
-
-    it('calls recordDeliveryFailure when fetch returns non-ok status', async () => {
-      const target = { id: HOOK_ID, url: 'https://example.com/hook', signing_secret: 'sec' };
-      vi.mocked(repo.findActiveWebhooksForEvent).mockResolvedValue([target]);
-      vi.mocked(repo.recordDeliveryFailure).mockResolvedValue(undefined);
-
-      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
-
-      service.fireWebhooks(TENANT_ID, 'ivr_flow.published', {});
-      await new Promise((r) => setTimeout(r, 20));
-
-      expect(repo.recordDeliveryFailure).toHaveBeenCalledWith(HOOK_ID);
+      expect(repo.markWebhookDeliveryDelivered).toHaveBeenCalledWith(expect.objectContaining({
+        delivery_id: 'delivery-2',
+        response_code: 204,
+      }));
+      expect(result).toEqual({ claimed: 1, delivered: 1, failed: 0 });
     });
   });
 

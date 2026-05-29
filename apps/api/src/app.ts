@@ -25,9 +25,10 @@ import { scheduleController } from './modules/schedules/schedule.controller.js';
 import { outboundRouteController } from './modules/outbound-routes/outbound-route.controller.js';
 import { voicemailBoxController } from './modules/voicemail-boxes/voicemail-box.controller.js';
 import { auditController } from './modules/audit/audit.controller.js';
-import { recordingController } from './modules/recordings/recording.controller.js';
+import { recordingAnalysisController, recordingController } from './modules/recordings/recording.controller.js';
 import { exportController } from './modules/export/export.controller.js';
 import { userController } from './modules/users/user.controller.js';
+import { ivrAiController, promptGenerationController } from './modules/provider-work/provider-work.controller.js';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -68,6 +69,9 @@ export function buildApp() {
   app.register(outboundRouteController, { prefix: '/api/v1/outbound-routes' });
   app.register(auditController, { prefix: '/api/v1/audit' });
   app.register(recordingController, { prefix: '/api/v1/recordings' });
+  app.register(recordingAnalysisController, { prefix: '/api/v1/recording-analysis' });
+  app.register(promptGenerationController, { prefix: '/api/v1/prompt-generation' });
+  app.register(ivrAiController, { prefix: '/api/v1' });
   app.register(exportController, { prefix: '/api/v1/export' });
   app.register(userController, { prefix: '/api/v1/users' });
 

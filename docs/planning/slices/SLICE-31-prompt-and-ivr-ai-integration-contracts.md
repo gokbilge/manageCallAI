@@ -8,7 +8,7 @@ AI provider a hard dependency of the core platform.
 
 ## Status
 
-**PLANNED**
+**IMPLEMENTED**
 
 ## Context
 
