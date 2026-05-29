@@ -2222,6 +2222,8 @@ components:
             - UNAUTHENTICATED
             - PERMISSION_DENIED
             - ALREADY_EXISTS
+            - CONFLICT
+            - FAILED_PRECONDITION
             - RESOURCE_EXHAUSTED
             - INTERNAL
             - UNAVAILABLE

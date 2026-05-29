@@ -19,7 +19,7 @@ import {
   RouteVersionNotFoundError,
   RouteVersionStateError,
 } from './inbound-route.service.js';
-import { sendNotFound, sendInvalidArgument, sendConflict } from '../../errors/index.js';
+import { sendNotFound, sendInvalidArgument, sendFailedPrecondition } from '../../errors/index.js';
 
 const service = new InboundRouteService(new InboundRouteRepository(db));
 
@@ -31,7 +31,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
     return sendInvalidArgument(reply, err.message);
   }
   if (err instanceof RouteVersionStateError || err instanceof RollbackNotAvailableError) {
-    return sendConflict(reply, err.message);
+    return sendFailedPrecondition(reply, err.message);
   }
   throw err;
 }

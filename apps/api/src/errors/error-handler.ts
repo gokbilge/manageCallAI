@@ -7,13 +7,8 @@ interface ErrorBody {
   request_id: string;
 }
 
-function requestId(reply: FastifyReply): string {
-  const id = reply.getHeader('x-request-id');
-  return typeof id === 'string' ? id : String(id ?? '');
-}
-
-function buildBody(code: ErrorCode, message: string, reply: FastifyReply): ErrorBody {
-  return { error: code, message, request_id: requestId(reply) };
+function buildBody(code: ErrorCode, message: string, req: FastifyRequest): ErrorBody {
+  return { error: code, message, request_id: req.id };
 }
 
 export function registerErrorHandler(app: FastifyInstance): void {
@@ -28,7 +23,7 @@ export function registerErrorHandler(app: FastifyInstance): void {
         const msg = error.validation.map((v) => v.message ?? 'Invalid field').join('; ');
         return reply
           .code(400)
-          .send(buildBody(ErrorCode.INVALID_ARGUMENT, msg, reply));
+          .send(buildBody(ErrorCode.INVALID_ARGUMENT, msg, req));
       }
 
       const status = error.statusCode ?? 500;
@@ -36,43 +31,43 @@ export function registerErrorHandler(app: FastifyInstance): void {
       if (status === 401) {
         return reply
           .code(401)
-          .send(buildBody(ErrorCode.UNAUTHENTICATED, 'Unauthenticated', reply));
+          .send(buildBody(ErrorCode.UNAUTHENTICATED, 'Unauthenticated', req));
       }
 
       if (status === 403) {
         return reply
           .code(403)
-          .send(buildBody(ErrorCode.PERMISSION_DENIED, 'Permission denied', reply));
+          .send(buildBody(ErrorCode.PERMISSION_DENIED, 'Permission denied', req));
       }
 
       if (status === 404) {
         return reply
           .code(404)
-          .send(buildBody(ErrorCode.NOT_FOUND, error.message || 'Not found', reply));
+          .send(buildBody(ErrorCode.NOT_FOUND, error.message || 'Not found', req));
       }
 
       if (status === 409) {
         return reply
           .code(409)
-          .send(buildBody(ErrorCode.ALREADY_EXISTS, error.message || 'Already exists', reply));
+          .send(buildBody(ErrorCode.CONFLICT, error.message || 'Conflict', req));
       }
 
       if (status === 429) {
         return reply
           .code(429)
-          .send(buildBody(ErrorCode.RESOURCE_EXHAUSTED, 'Too many requests', reply));
+          .send(buildBody(ErrorCode.RESOURCE_EXHAUSTED, 'Too many requests', req));
       }
 
       if (status >= 400 && status < 500) {
         return reply
           .code(status)
-          .send(buildBody(ErrorCode.INVALID_ARGUMENT, error.message || 'Bad request', reply));
+          .send(buildBody(ErrorCode.INVALID_ARGUMENT, error.message || 'Bad request', req));
       }
 
       if (status === 503) {
         return reply
           .code(503)
-          .send(buildBody(ErrorCode.UNAVAILABLE, 'Service unavailable', reply));
+          .send(buildBody(ErrorCode.UNAVAILABLE, 'Service unavailable', req));
       }
 
       req.log.error(
@@ -87,7 +82,7 @@ export function registerErrorHandler(app: FastifyInstance): void {
 
       return reply
         .code(500)
-        .send(buildBody(ErrorCode.INTERNAL, 'Internal server error', reply));
+        .send(buildBody(ErrorCode.INTERNAL, 'Internal server error', req));
     },
   );
 }

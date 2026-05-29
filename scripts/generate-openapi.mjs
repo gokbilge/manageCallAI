@@ -31,6 +31,39 @@ const specPath = join(__dir, '..', 'docs', 'api', 'openapi.yaml');
 const existing = parse(readFileSync(specPath, 'utf8'));
 
 // ── 2. Generate components from Zod registry ──────────────────────────────────
+const description = [
+  'REST API for the manageCallAI telecom control plane.',
+  '',
+  'Only implemented or intentionally exposed contract endpoints are documented here.',
+  'Some foundational endpoints are early-availability but ready for integration testing.',
+  'Runtime/internal endpoints are explicitly marked and require runtime-token authentication',
+  '(`Authorization: Bearer <RUNTIME_API_TOKEN>` or `x-managecallai-runtime-token: <token>`).',
+  '',
+  '## Error responses',
+  '',
+  'All errors follow the RPC error standard:',
+  '',
+  '```json',
+  '{ "error": "FAILED_PRECONDITION", "message": "Session is not running: completed", "request_id": "req-abc123" }',
+  '```',
+  '',
+  'Clients must branch on `error` (machine-readable), never on `message` (may change).',
+  '`request_id` is stable and matches the `x-request-id` response header for log correlation.',
+  '',
+  '| Code | HTTP | Meaning |',
+  '|------|------|---------|',
+  '| `NOT_FOUND` | 404 | Resource does not exist |',
+  '| `INVALID_ARGUMENT` | 400 | Malformed request or validation failure |',
+  '| `UNAUTHENTICATED` | 401 | Missing or invalid credential |',
+  '| `PERMISSION_DENIED` | 403 | Credential valid but lacks permission |',
+  '| `ALREADY_EXISTS` | 409 | Duplicate resource / unique-constraint violation |',
+  '| `CONFLICT` | 409 | Generic conflict with no more precise cause |',
+  '| `FAILED_PRECONDITION` | 409 | Resource exists but is in the wrong state for the action |',
+  '| `RESOURCE_EXHAUSTED` | 429 | Rate limit exceeded |',
+  '| `INTERNAL` | 500 | Unexpected server error |',
+  '| `UNAVAILABLE` | 503 | Service temporarily unavailable |',
+].join('\n');
+
 const generator = new OpenApiGeneratorV31(registry.definitions);
 const generated = generator.generateDocument({
   openapi: '3.1.0',
@@ -38,7 +71,7 @@ const generated = generator.generateDocument({
     title: 'manageCallAI API',
     version: '0.1.0',
     summary: 'Business-level telecom control plane API over FreeSWITCH',
-    description: existing.info?.description ?? '',
+    description,
   },
 });
 

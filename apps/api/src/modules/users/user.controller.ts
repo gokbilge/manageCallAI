@@ -14,7 +14,7 @@ import {
   UserService,
 } from './user.service.js';
 import type { TenantRole } from './user.types.js';
-import { sendNotFound, sendConflict, sendPermissionDenied } from '../../errors/index.js';
+import { sendNotFound, sendAlreadyExists, sendPermissionDenied } from '../../errors/index.js';
 
 const service = new UserService(new UserRepository(db));
 
@@ -23,7 +23,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
     return sendNotFound(reply, err.message);
   }
   if (err instanceof UserConflictError) {
-    return sendConflict(reply, err.message);
+    return sendAlreadyExists(reply, err.message);
   }
   if (err instanceof UserOperationForbiddenError) {
     return sendPermissionDenied(reply, err.message);

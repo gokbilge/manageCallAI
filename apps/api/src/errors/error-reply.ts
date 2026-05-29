@@ -1,9 +1,10 @@
 import type { FastifyReply } from 'fastify';
 import { ErrorCode } from './error-codes.js';
 
+// Use reply.request.id — set at request creation time, always non-empty.
+// Avoids relying on the x-request-id header which is set later in onSend.
 function requestId(reply: FastifyReply): string {
-  const id = reply.getHeader('x-request-id');
-  return typeof id === 'string' ? id : String(id ?? '');
+  return reply.request.id;
 }
 
 function send(reply: FastifyReply, httpStatus: number, code: ErrorCode, message: string): void {
@@ -26,8 +27,19 @@ export function sendPermissionDenied(reply: FastifyReply, message = 'Permission 
   send(reply, 403, ErrorCode.PERMISSION_DENIED, message);
 }
 
-export function sendConflict(reply: FastifyReply, message = 'Resource already exists'): void {
+/** Duplicate resource / unique-constraint violation. */
+export function sendAlreadyExists(reply: FastifyReply, message = 'Resource already exists'): void {
   send(reply, 409, ErrorCode.ALREADY_EXISTS, message);
+}
+
+/** Generic conflict — use when neither duplicate nor invalid state is the precise cause. */
+export function sendConflict(reply: FastifyReply, message = 'Conflict'): void {
+  send(reply, 409, ErrorCode.CONFLICT, message);
+}
+
+/** Invalid state transition — the request is well-formed but the resource is in the wrong state. */
+export function sendFailedPrecondition(reply: FastifyReply, message = 'Failed precondition'): void {
+  send(reply, 409, ErrorCode.FAILED_PRECONDITION, message);
 }
 
 export function sendResourceExhausted(reply: FastifyReply, message = 'Resource exhausted'): void {

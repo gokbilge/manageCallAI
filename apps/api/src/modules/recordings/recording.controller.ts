@@ -13,7 +13,7 @@ import { fireWebhooks } from '../automation/webhook-delivery.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { RecordingRepository } from './recording.repository.js';
 import { RecordingNotFoundError, RecordingPlaybackPathError, RecordingService } from './recording.service.js';
-import { sendNotFound, sendConflict } from '../../errors/index.js';
+import { sendNotFound, sendFailedPrecondition } from '../../errors/index.js';
 
 const service = new RecordingService(new RecordingRepository(db), config.recordingStorageRoot);
 
@@ -77,7 +77,7 @@ export const recordingController: FastifyPluginAsyncZod = async (app) => {
           return sendNotFound(reply, err.message);
         }
         if (err instanceof RecordingPlaybackPathError) {
-          return sendConflict(reply, err.message);
+          return sendFailedPrecondition(reply, err.message);
         }
         if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
           return sendNotFound(reply, 'Recording media file not found');

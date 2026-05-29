@@ -21,7 +21,7 @@ import {
   RollbackNotAvailableError,
 } from './ivr-flow.service.js';
 import { defaultIvrGraph } from './ivr-flow.validation.js';
-import { sendNotFound, sendConflict } from '../../errors/index.js';
+import { sendNotFound, sendFailedPrecondition } from '../../errors/index.js';
 
 const service = new IvrFlowService(new IvrFlowRepository(db));
 
@@ -30,7 +30,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
     return sendNotFound(reply, err.message);
   }
   if (err instanceof FlowVersionStateError || err instanceof RollbackNotAvailableError) {
-    return sendConflict(reply, err.message);
+    return sendFailedPrecondition(reply, err.message);
   }
   throw err;
 }

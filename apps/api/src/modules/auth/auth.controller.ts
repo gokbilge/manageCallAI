@@ -5,7 +5,7 @@ import { config } from '../../config/env.js';
 import { AuthRepository } from './auth.repository.js';
 import { AuthError, AuthService } from './auth.service.js';
 import type { Role } from './capabilities.js';
-import { sendConflict, sendUnauthenticated } from '../../errors/index.js';
+import { sendAlreadyExists, sendUnauthenticated } from '../../errors/index.js';
 
 const service = new AuthService(new AuthRepository(db));
 
@@ -30,7 +30,7 @@ export const authController: FastifyPluginAsyncZod = async (app) => {
         return reply.code(201).send({ token });
       } catch (err) {
         if ((err as { code?: string }).code === '23505') {
-          return sendConflict(reply, 'Tenant slug or email already exists');
+          return sendAlreadyExists(reply, 'Tenant slug or email already exists');
         }
         throw err;
       }

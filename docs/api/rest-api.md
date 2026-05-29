@@ -115,17 +115,59 @@ Primary resources:
 
 ## 5. Error Model
 
-Current MVP implementation returns a flat error string:
+All errors follow the RPC error standard. Every error response includes a
+machine-readable `error` code, a human-readable `message`, and a `request_id`
+that matches the `x-request-id` response header.
 
 ```json
 {
-  "error": "Extension not found"
+  "error": "FAILED_PRECONDITION",
+  "message": "Session is not running: completed",
+  "request_id": "req-abc123"
 }
 ```
 
-HTTP status codes carry the error class (401 = unauthenticated, 403 = forbidden,
-404 = not found, 409 = conflict, 422 = domain validation failure, 500 = server error).
-Structured error codes and detail arrays may be added in a future iteration.
+**Clients must branch on `error`, never on `message`.** Messages are
+human-readable and may change between releases.
+
+`request_id` is stable and identical in both the JSON body and the
+`x-request-id` response header. Use it to correlate logs and support
+requests.
+
+### Error codes
+
+| Code | HTTP | When to expect it |
+|------|------|-------------------|
+| `NOT_FOUND` | 404 | Resource does not exist or is not visible to this tenant |
+| `INVALID_ARGUMENT` | 400 | Malformed request body or schema validation failure |
+| `UNAUTHENTICATED` | 401 | Missing, expired, or invalid credential |
+| `PERMISSION_DENIED` | 403 | Credential is valid but the role lacks permission |
+| `ALREADY_EXISTS` | 409 | Duplicate resource — unique-constraint violation |
+| `CONFLICT` | 409 | Generic conflict with no more precise cause |
+| `FAILED_PRECONDITION` | 409 | Resource exists but is in the wrong state for the requested action |
+| `RESOURCE_EXHAUSTED` | 429 | Rate limit exceeded |
+| `INTERNAL` | 500 | Unexpected server error — check `request_id` in logs |
+| `UNAVAILABLE` | 503 | Dependency or service temporarily unavailable |
+
+### ALREADY_EXISTS vs CONFLICT vs FAILED_PRECONDITION
+
+These three codes all use HTTP 409 but have distinct recovery paths for
+AI agents, n8n workflows, and SDK consumers:
+
+- **`ALREADY_EXISTS`** — A resource with the same unique key already exists.
+  Recovery: fetch or update the existing resource instead of creating a new one.
+  Example: registering a tenant with a slug that is already taken.
+
+- **`FAILED_PRECONDITION`** — The resource exists and the action is
+  well-formed, but the resource is in the wrong state.
+  Recovery: inspect the resource state and apply the correct lifecycle step.
+  Examples: publishing a flow version that is still in `draft` state;
+  advancing an IVR session that has already `completed`;
+  attempting approval on a request that was already decided.
+
+- **`CONFLICT`** — A generic conflict where neither duplication nor
+  invalid state is the precise cause.
+  Recovery: inspect the error `message` and resource state.
 
 ## 6. Resource Contracts
 

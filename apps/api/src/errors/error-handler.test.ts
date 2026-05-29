@@ -1,6 +1,12 @@
 import Fastify from 'fastify';
 import { describe, expect, it } from 'vitest';
 import { registerErrorHandler } from './error-handler.js';
+import {
+  sendAlreadyExists,
+  sendConflict,
+  sendFailedPrecondition,
+  sendUnauthenticated,
+} from './error-reply.js';
 
 function buildTestApp() {
   const app = Fastify({ logger: false });
@@ -67,7 +73,7 @@ describe('registerErrorHandler', () => {
     expect(res.json().error).toBe('NOT_FOUND');
   });
 
-  it('returns ALREADY_EXISTS for 409 errors', async () => {
+  it('returns CONFLICT for generic 409 errors thrown through the error handler', async () => {
     const app = buildTestApp();
     app.get('/test', async () => {
       throw Object.assign(new Error('dup'), { statusCode: 409 });
@@ -75,7 +81,7 @@ describe('registerErrorHandler', () => {
 
     const res = await app.inject({ method: 'GET', url: '/test' });
     expect(res.statusCode).toBe(409);
-    expect(res.json().error).toBe('ALREADY_EXISTS');
+    expect(res.json().error).toBe('CONFLICT');
   });
 
   it('returns INTERNAL for unhandled errors', async () => {
@@ -91,7 +97,7 @@ describe('registerErrorHandler', () => {
     expect(body.message).toBe('Internal server error');
   });
 
-  it('emits X-Request-ID header on every response', async () => {
+  it('emits x-request-id header on every response', async () => {
     const app = buildTestApp();
     app.get('/test', async () => {
       throw new Error('oops');
@@ -123,4 +129,86 @@ describe('registerErrorHandler', () => {
     expect(body.message).not.toContain('secret internal detail');
     expect(body.message).toBe('Internal server error');
   });
+
+  // ── request_id correctness ────────────────────────────────────────────────────
+
+  it('error body has non-empty request_id', async () => {
+    const app = buildTestApp();
+    app.get('/test', async () => {
+      throw new Error('boom');
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/test' });
+    const body = res.json();
+    expect(body.request_id).toBeTruthy();
+  });
+
+  it('body.request_id matches x-request-id header', async () => {
+    const app = buildTestApp();
+    app.get('/test', async () => {
+      throw new Error('boom');
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/test' });
+    const body = res.json();
+    expect(body.request_id).toBe(res.headers['x-request-id']);
+  });
+
+  it('sendUnauthenticated via helper produces non-empty request_id', async () => {
+    const app = buildTestApp();
+    app.get('/test', async (_req, reply) => {
+      return sendUnauthenticated(reply, 'No token');
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/test' });
+    expect(res.statusCode).toBe(401);
+    const body = res.json();
+    expect(body.error).toBe('UNAUTHENTICATED');
+    expect(body.request_id).toBeTruthy();
+    expect(body.request_id).toBe(res.headers['x-request-id']);
+  });
+
+  // ── new error codes ───────────────────────────────────────────────────────────
+
+  it('sendAlreadyExists returns ALREADY_EXISTS with non-empty request_id', async () => {
+    const app = buildTestApp();
+    app.post('/test', async (_req, reply) => {
+      return sendAlreadyExists(reply, 'Email already exists');
+    });
+
+    const res = await app.inject({ method: 'POST', url: '/test' });
+    expect(res.statusCode).toBe(409);
+    const body = res.json();
+    expect(body.error).toBe('ALREADY_EXISTS');
+    expect(body.message).toBe('Email already exists');
+    expect(body.request_id).toBeTruthy();
+    expect(body.request_id).toBe(res.headers['x-request-id']);
+  });
+
+  it('sendFailedPrecondition returns FAILED_PRECONDITION with non-empty request_id', async () => {
+    const app = buildTestApp();
+    app.post('/test', async (_req, reply) => {
+      return sendFailedPrecondition(reply, 'Session is not running: completed');
+    });
+
+    const res = await app.inject({ method: 'POST', url: '/test' });
+    expect(res.statusCode).toBe(409);
+    const body = res.json();
+    expect(body.error).toBe('FAILED_PRECONDITION');
+    expect(body.message).toBe('Session is not running: completed');
+    expect(body.request_id).toBeTruthy();
+    expect(body.request_id).toBe(res.headers['x-request-id']);
+  });
+
+  it('sendConflict returns CONFLICT (not ALREADY_EXISTS)', async () => {
+    const app = buildTestApp();
+    app.post('/test', async (_req, reply) => {
+      return sendConflict(reply, 'Generic conflict');
+    });
+
+    const res = await app.inject({ method: 'POST', url: '/test' });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().error).toBe('CONFLICT');
+  });
 });
+

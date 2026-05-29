@@ -15,7 +15,7 @@ import {
   ApprovalPublishRecordMissingError,
   ApprovalService,
 } from './approval.service.js';
-import { sendNotFound, sendConflict } from '../../errors/index.js';
+import { sendNotFound, sendFailedPrecondition } from '../../errors/index.js';
 
 const service = new ApprovalService(
   new ApprovalRepository(db),
@@ -27,7 +27,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
     return sendNotFound(reply, err.message);
   }
   if (err instanceof ApprovalAlreadyDecidedError || err instanceof ApprovalPublishRecordMissingError) {
-    return sendConflict(reply, err.message);
+    return sendFailedPrecondition(reply, err.message);
   }
   throw err;
 }

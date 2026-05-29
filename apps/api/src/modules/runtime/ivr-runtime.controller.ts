@@ -18,7 +18,7 @@ import {
   IvrRuntimeSessionNotFoundError,
   IvrRuntimeSessionStateError,
 } from './ivr-runtime.service.js';
-import { sendNotFound, sendConflict, sendInvalidArgument } from '../../errors/index.js';
+import { sendNotFound, sendFailedPrecondition, sendInvalidArgument } from '../../errors/index.js';
 
 const service = new IvrRuntimeService(new IvrRuntimeRepository(db));
 
@@ -27,7 +27,7 @@ function replyRuntimeError(err: unknown, reply: FastifyReply): void {
     return sendNotFound(reply, err.message);
   }
   if (err instanceof IvrRuntimeSessionStateError) {
-    return sendConflict(reply, err.message);
+    return sendFailedPrecondition(reply, err.message);
   }
   if (err instanceof IvrRuntimeResolutionError) {
     return sendInvalidArgument(reply, err.message);
