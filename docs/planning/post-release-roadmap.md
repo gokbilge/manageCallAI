@@ -169,3 +169,24 @@ None of the above enters a sprint or becomes an implementation slice until:
 3. A new slice document is written with concrete exit criteria
 
 Items in this document are captured intent, not commitments.
+
+---
+
+## Release Candidate Feature Increase
+
+After `SLICE-24`, the project intentionally chose to increase release scope in areas
+that reduce operational risk or complete already-started workflows.
+
+### Feature Pack A - release confidence and operator debugging
+
+- `SLICE-25` Webhook Delivery Queue
+- `SLICE-26` Live Runtime Smoke Automation
+- `SLICE-27` Session Replay UI and API
+
+### Feature Pack B - complete practical telecom workflows
+
+- `SLICE-28` Voicemail Media Capture and Playback
+- `SLICE-29` Outbound Call Execution Hardening
+- `SLICE-30` Automation Operator Tools
+- `SLICE-31` Prompt and IVR AI Integration Contracts
+- `SLICE-32` Omnichannel Messaging and Meeting Adapters

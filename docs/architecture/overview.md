@@ -13,6 +13,7 @@ It defines the runtime topology, major components, data boundaries, integration 
 - Support for humans, workflows, and AI agents through one domain model
 - Versioned, auditable, and reversible configuration lifecycle
 - Integration-friendly architecture for FreeSWITCH, MCP, and n8n
+- Provider-neutral contracts for optional AI, media, messaging, and meeting adapters
 
 ## 3. High-Level Architecture
 
@@ -76,19 +77,29 @@ manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSW
 - Event emission for downstream automation
 - Automation intake for approved draft and validation actions
 
-### 5.5 Domain Core
+### 5.5 Provider Integration Layer
+
+- Optional adapter workers or plugins for AI, media, messaging, meeting, and channel systems
+- Claims asynchronous work from internal API endpoints and posts bounded results back
+- Supports recording analysis, prompt generation, IVR AI turns, outbound messages,
+  inbound message ingestion, and channel voice or meeting sessions
+- Uses capability flags because providers do not expose identical message and voice features
+- Keeps provider credentials and raw provider payloads outside public domain responses
+
+### 5.6 Domain Core
 
 - Domain entities and service rules
 - Validation engine
 - Simulation engine
 - Publish and rollback orchestration
 
-### 5.6 Persistence Layer
+### 5.7 Persistence Layer
 
 - PostgreSQL as source of truth
 - Stores desired state, versions, audit records, simulation outputs, and runtime event summaries
+- Stores provider-neutral request, result, channel, and recording metadata
 
-### 5.7 FreeSWITCH Adapter Layer
+### 5.8 FreeSWITCH Adapter Layer
 
 - Go adapter service coordinating FreeSWITCH integration
 - Renders active state into FreeSWITCH-consumable formats
@@ -108,7 +119,7 @@ For MVP, Lua should be limited to:
 
 Lua should not contain business logic.
 
-### 5.8 FreeSWITCH Runtime
+### 5.9 FreeSWITCH Runtime
 
 - Executes SIP and media handling
 - Executes Lua call helper scripts inside the FreeSWITCH boundary
@@ -159,6 +170,26 @@ This is the minimum slice that demonstrates control-plane state, runtime consump
 3. The control plane stores operational records.
 4. UI, API, and workflows consume summarized or business-level views.
 
+### 6.4 Provider Work Request Flow
+
+1. UI, workflow, MCP, or runtime logic creates a provider-neutral work request.
+2. The control plane stores the request with tenant scope and status `queued`.
+3. A trusted adapter worker or plugin claims the request through an internal endpoint.
+4. The worker calls its configured provider outside the domain core.
+5. The worker posts a bounded result or failure back to the control plane.
+6. UI, API, MCP, and workflows read the business result, not raw provider state.
+
+This flow applies to recording analysis, prompt generation, and IVR AI turns.
+
+### 6.5 Channel Adapter Flow
+
+1. A tenant configures a channel account with explicit capabilities.
+2. Outbound messages are submitted as business-level channel messages.
+3. Provider adapters deliver messages and report delivery state.
+4. Inbound provider events are ingested through internal endpoints and normalized.
+5. Voice-message, native-call, meeting, and SIP-bridge sessions are represented by
+   capability-specific channel voice session records.
+
 ## 7. Deployment View
 
 ### 7.1 Minimum MVP Deployment
@@ -187,6 +218,7 @@ These may run as separate services or a small number of deployable units dependi
 - Boundary C: Workflow engine to webhook or API integration entry points
 - Boundary D: Control plane to database
 - Boundary E: Control plane to FreeSWITCH and runtime event sources
+- Boundary F: Control plane to external provider adapters and provider APIs
 
 Each boundary requires authentication, authorization, input validation, and operational logging where applicable.
 
@@ -197,6 +229,9 @@ Each boundary requires authentication, authorization, input validation, and oper
 - Publish lifecycle guarded by validation and optional approvals
 - Tenant-scoped or policy-scoped data access
 - Full audit trail for state mutations and publish operations
+- Provider credentials are write-only secrets and are never exposed through public reads
+- Raw provider payloads may be retained only as bounded operational metadata, not as
+  authoritative business state
 
 ## 10. Availability and Resilience Considerations
 
@@ -229,6 +264,7 @@ Each boundary requires authentication, authorization, input validation, and oper
 - FreeSWITCH Runtime Agent: Go
 - FreeSWITCH Call Helper: Lua
 - Telecom runtime: FreeSWITCH
+- Provider adapters: external workers or plugins behind stable internal contracts
 
 ## 14. Architecture Decisions To Track
 
@@ -237,6 +273,8 @@ Each boundary requires authentication, authorization, input validation, and oper
 - Event ingestion topology
 - Approval workflow implementation
 - Prompt storage and media-serving approach
+- Provider credential and adapter installation model
+- Channel capability matrix for WhatsApp, Telegram, Google Meet, and custom adapters
 
 ## 15. Relationship to Other Documents
 

@@ -63,16 +63,24 @@ Reference:
 | `SLICE-22` | completed |
 | `SLICE-23` | completed |
 | `SLICE-24` | completed |
+| `SLICE-25` | planned |
+| `SLICE-26` | planned |
+| `SLICE-27` | planned |
+| `SLICE-28` | planned |
+| `SLICE-29` | planned |
+| `SLICE-30` | planned |
+| `SLICE-31` | planned |
+| `SLICE-32` | planned |
 
-The original v1 release-plan slices are closed. The new post-release slices are now
-explicit and ready for future sequencing.
+The original v1 release-plan slices are closed. The next release-candidate feature
+set is now explicit as `SLICE-25` through `SLICE-32`.
 
 That means:
 
 - release-critical slices have been implemented and documented
 - the slice map below preserves the historical v1 execution context
 - the next planning lane is no longer vague post-release intent
-- future work should continue through the explicit `SLICE-15` to `SLICE-21` set
+- future work should continue through the explicit `SLICE-25` to `SLICE-32` set
 
 ## 3. Release Thesis
 
@@ -120,6 +128,24 @@ SLICE-00 Current Baseline
             +--> SLICE-20 Automation and AI Depth
             +--> SLICE-21 Enterprise and Multi-Tenant Hardening
             +--> SLICE-22 Recorded Media and Export Operations
+            +--> SLICE-23 Caller Routing and Outbound Runtime
+            +--> SLICE-24 Tenant User Management
+
+  +--> SLICE-25 Webhook Delivery Queue -----------+
+  |                                               |
+  +--> SLICE-26 Live Runtime Smoke Automation ----+----> Release Candidate Feature Pack A
+  |                                               |
+  +--> SLICE-27 Session Replay UI and API --------+
+  |
+  +--> SLICE-28 Voicemail Media Capture ----------+
+  |                                               |
+  +--> SLICE-29 Outbound Call Execution ----------+----> Release Candidate Feature Pack B
+  |                                               |
+  +--> SLICE-30 Automation Operator Tools --------+
+  |
+  +--> SLICE-31 Prompt and IVR AI Contracts ------+
+  |
+  +--> SLICE-32 Omnichannel Channel Adapters -----+
 ```
 
 ## 5. Parallel Work Tracks
@@ -160,6 +186,19 @@ SLICE-00 Current Baseline
 - `SLICE-20`
 - `SLICE-21`
 - `SLICE-22`
+- `SLICE-23`
+- `SLICE-24`
+
+### Track F - Release Candidate Feature Increase
+
+- `SLICE-25`
+- `SLICE-26`
+- `SLICE-27`
+- `SLICE-28`
+- `SLICE-29`
+- `SLICE-30`
+- `SLICE-31`
+- `SLICE-32`
 
 ## 6. Recommended Execution Order
 
@@ -201,6 +240,19 @@ SLICE-00 Current Baseline
 19. `SLICE-20` Automation and AI Depth
 20. `SLICE-21` Enterprise and Multi-Tenant Hardening
 21. `SLICE-22` Recorded Media and Export Operations
+22. `SLICE-23` Caller Routing and Outbound Runtime Integration
+23. `SLICE-24` Tenant User Management
+
+### Stage 7 - Release Candidate Feature Increase
+
+24. `SLICE-25` Webhook Delivery Queue
+25. `SLICE-26` Live Runtime Smoke Automation
+26. `SLICE-27` Session Replay UI and API
+27. `SLICE-28` Voicemail Media Capture and Playback
+28. `SLICE-29` Outbound Call Execution Hardening
+29. `SLICE-30` Automation Operator Tools
+30. `SLICE-31` Prompt and IVR AI Integration Contracts
+31. `SLICE-32` Omnichannel Messaging and Meeting Adapters
 
 ## 7. Minimal Release Gate
 
@@ -240,3 +292,11 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-22](slices/SLICE-22-recorded-media-and-export-operations.md)
 - [SLICE-23](slices/SLICE-23-caller-routing-and-outbound-runtime.md)
 - [SLICE-24](slices/SLICE-24-tenant-user-management.md)
+- [SLICE-25](slices/SLICE-25-webhook-delivery-queue.md)
+- [SLICE-26](slices/SLICE-26-live-runtime-smoke-automation.md)
+- [SLICE-27](slices/SLICE-27-session-replay-ui-and-api.md)
+- [SLICE-28](slices/SLICE-28-voicemail-media-capture-and-playback.md)
+- [SLICE-29](slices/SLICE-29-outbound-call-execution-hardening.md)
+- [SLICE-30](slices/SLICE-30-automation-operator-tools.md)
+- [SLICE-31](slices/SLICE-31-prompt-and-ivr-ai-integration-contracts.md)
+- [SLICE-32](slices/SLICE-32-omnichannel-messaging-and-meeting-adapters.md)

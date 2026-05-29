@@ -93,6 +93,33 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [slices/SLICE-23-caller-routing-and-outbound-runtime.md](slices/SLICE-23-caller-routing-and-outbound-runtime.md)
   Caller-ID-aware IVR branching and outbound runtime/click-to-call integration.
 
+- [slices/SLICE-24-tenant-user-management.md](slices/SLICE-24-tenant-user-management.md)
+  Tenant-scoped user listing, creation, role updates, and deactivation.
+
+- [slices/SLICE-25-webhook-delivery-queue.md](slices/SLICE-25-webhook-delivery-queue.md)
+  Durable webhook delivery queue with retry state and tenant-visible status.
+
+- [slices/SLICE-26-live-runtime-smoke-automation.md](slices/SLICE-26-live-runtime-smoke-automation.md)
+  Repeatable live runtime smoke automation for release candidate validation.
+
+- [slices/SLICE-27-session-replay-ui-and-api.md](slices/SLICE-27-session-replay-ui-and-api.md)
+  Operator-facing IVR session replay API and web UI.
+
+- [slices/SLICE-28-voicemail-media-capture-and-playback.md](slices/SLICE-28-voicemail-media-capture-and-playback.md)
+  Runtime voicemail capture, recording metadata, and playback-safe review.
+
+- [slices/SLICE-29-outbound-call-execution-hardening.md](slices/SLICE-29-outbound-call-execution-hardening.md)
+  Release-ready click-to-call execution and outbound request status tracking.
+
+- [slices/SLICE-30-automation-operator-tools.md](slices/SLICE-30-automation-operator-tools.md)
+  MCP and n8n-oriented tools for approvals, session trace, recordings, and exports.
+
+- [slices/SLICE-31-prompt-and-ivr-ai-integration-contracts.md](slices/SLICE-31-prompt-and-ivr-ai-integration-contracts.md)
+  Provider-neutral contracts for generated prompts, TTS, STT, and AI-assisted IVR turns.
+
+- [slices/SLICE-32-omnichannel-messaging-and-meeting-adapters.md](slices/SLICE-32-omnichannel-messaging-and-meeting-adapters.md)
+  Provider-neutral contracts for WhatsApp, Telegram, Google Meet, and custom channel adapters.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)

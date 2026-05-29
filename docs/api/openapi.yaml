@@ -36,6 +36,8 @@ tags:
     description: Phone number management
   - name: Prompts
     description: Prompt asset metadata management
+  - name: PromptGeneration
+    description: Provider-neutral prompt generation and text-to-speech request contract
   - name: Queues
     description: Tenant queue management
   - name: VoicemailBoxes
@@ -46,8 +48,14 @@ tags:
     description: IVR flow lifecycle (draft → validate → publish → rollback)
   - name: Runtime
     description: Runtime-internal IVR resolver endpoints
+  - name: IvrAI
+    description: Provider-neutral runtime contract for AI-assisted IVR turns
+  - name: ChannelAdapters
+    description: Provider-neutral messaging, voice, and meeting channel adapter contracts
   - name: CallEvents
     description: Call event query (tenant-facing) and ingestion (runtime-internal)
+  - name: Recordings
+    description: Recorded call and voicemail media metadata plus analysis request contract
   - name: Platform
     description: Platform operator endpoints (require platform_admin role)
   - name: FreeSWITCH
@@ -422,6 +430,116 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PromptAssetResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /prompt-generation/requests:
+    get:
+      tags: [PromptGeneration]
+      summary: List prompt generation requests
+      description: |
+        Lists tenant-scoped generated prompt and text-to-speech requests. These
+        requests can be fulfilled by user-installed providers such as ElevenLabs,
+        OpenAI, a Whisper-compatible service for speech-related workflows, or a
+        custom plugin. No provider is required by the core platform.
+      responses:
+        '200':
+          description: Prompt generation request list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptGenerationRequestListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [PromptGeneration]
+      summary: Request generated prompt text and/or audio
+      description: |
+        Creates a provider-neutral generation request. `preferred_provider` is a
+        routing hint only; implementations may ignore it or map it to a tenant-owned
+        plugin/service.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePromptGenerationRequest'
+      responses:
+        '202':
+          description: Prompt generation request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptGenerationRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /prompt-generation/requests/{promptGenerationRequestId}:
+    get:
+      tags: [PromptGeneration]
+      summary: Get prompt generation request status and result
+      parameters:
+        - $ref: '#/components/parameters/PromptGenerationRequestIdParam'
+      responses:
+        '200':
+          description: Prompt generation request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptGenerationRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /prompt-generation/internal/{promptGenerationRequestId}/claim:
+    post:
+      tags: [PromptGeneration]
+      summary: Claim prompt generation work for a trusted processor
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - $ref: '#/components/parameters/PromptGenerationRequestIdParam'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimPromptGenerationRequest'
+      responses:
+        '200':
+          description: Prompt generation request claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptGenerationRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /prompt-generation/internal/{promptGenerationRequestId}/result:
+    post:
+      tags: [PromptGeneration]
+      summary: Submit generated prompt result from a trusted processor
+      description: |
+        Trusted callback for generated prompt text, generated audio metadata, or both.
+        Provider metadata is observability-only and must not include secrets.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - $ref: '#/components/parameters/PromptGenerationRequestIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompletePromptGenerationRequest'
+      responses:
+        '200':
+          description: Prompt generation result accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptGenerationRequestResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -1158,6 +1276,107 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /runtime/ivr-ai/turns:
+    post:
+      tags: [IvrAI]
+      summary: Create an AI-assisted IVR turn request
+      description: |
+        Runtime-internal contract for IVR nodes that ask an external AI service to
+        answer a caller question, classify intent, or generate a spoken/text response.
+        Provider execution is external to the core platform. OpenAI-compatible,
+        custom, or tenant-installed providers can implement this contract.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIvrAiTurnRequest'
+      responses:
+        '202':
+          description: IVR AI turn request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrAiTurnRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /runtime/ivr-ai/turns/{ivrAiTurnRequestId}:
+    get:
+      tags: [IvrAI]
+      summary: Get IVR AI turn request status and result
+      description: Runtime-internal status read for a pending or completed AI turn.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - $ref: '#/components/parameters/IvrAiTurnRequestIdParam'
+      responses:
+        '200':
+          description: IVR AI turn request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrAiTurnRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /ivr-ai/internal/{ivrAiTurnRequestId}/claim:
+    post:
+      tags: [IvrAI]
+      summary: Claim an IVR AI turn request for processing
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - $ref: '#/components/parameters/IvrAiTurnRequestIdParam'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimIvrAiTurnRequest'
+      responses:
+        '200':
+          description: IVR AI turn request claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrAiTurnRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /ivr-ai/internal/{ivrAiTurnRequestId}/result:
+    post:
+      tags: [IvrAI]
+      summary: Submit IVR AI turn result from a trusted processor
+      description: |
+        Trusted callback for AI-generated caller response, intent classification, or
+        selected next action. Public tenant users cannot call this endpoint.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - $ref: '#/components/parameters/IvrAiTurnRequestIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteIvrAiTurnRequest'
+      responses:
+        '200':
+          description: IVR AI turn result accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrAiTurnRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
   /call-events:
     get:
       tags: [CallEvents]
@@ -1203,6 +1422,333 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CallEventResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /recordings:
+    get:
+      tags: [Recordings]
+      summary: List recordings for the authenticated tenant
+      description: |
+        Lists tenant-owned call and voicemail recording metadata. Public responses
+        intentionally expose storage-safe metadata only; raw storage internals and
+        temporary media URLs are not part of this contract.
+      parameters:
+        - name: call_id
+          in: query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+      responses:
+        '200':
+          description: Recording list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /recordings/{recordingId}:
+    get:
+      tags: [Recordings]
+      summary: Get a recording for the authenticated tenant
+      parameters:
+        - $ref: '#/components/parameters/RecordingIdParam'
+      responses:
+        '200':
+          description: Recording
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /recordings/internal/ingest:
+    post:
+      tags: [Recordings]
+      summary: Ingest completed recording metadata from the runtime agent
+      description: |
+        Runtime-internal endpoint used by the FreeSWITCH agent or another trusted
+        runtime component after a call recording or voicemail recording is available.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestRecordingRequest'
+      responses:
+        '201':
+          description: Recording metadata created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /recordings/{recordingId}/analysis-requests:
+    get:
+      tags: [Recordings]
+      summary: List analysis requests for a recording
+      description: |
+        Lists transcription and summarization requests for a tenant-owned recording.
+        Results may be produced by an external plugin, worker, or AI service.
+      parameters:
+        - $ref: '#/components/parameters/RecordingIdParam'
+      responses:
+        '200':
+          description: Recording analysis request list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingAnalysisRequestListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Recordings]
+      summary: Request transcription and/or summary for a recording
+      description: |
+        Creates a provider-neutral analysis request for a tenant-owned recording.
+        `preferred_provider` is only a hint; implementations may ignore it or route
+        it to a user-installed plugin. `whisper` is documented as an example provider
+        value, not as a required platform dependency.
+      parameters:
+        - $ref: '#/components/parameters/RecordingIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecordingAnalysisRequest'
+      responses:
+        '202':
+          description: Analysis request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingAnalysisRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /recordings/{recordingId}/analysis-requests/{analysisRequestId}:
+    get:
+      tags: [Recordings]
+      summary: Get analysis request status and result
+      parameters:
+        - $ref: '#/components/parameters/RecordingIdParam'
+        - $ref: '#/components/parameters/AnalysisRequestIdParam'
+      responses:
+        '200':
+          description: Recording analysis request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingAnalysisRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /recording-analysis/internal/{analysisRequestId}/claim:
+    post:
+      tags: [Recordings]
+      summary: Claim an analysis request for processing
+      description: |
+        Trusted processor endpoint. A plugin or service claims a queued request before
+        downloading media through its private integration path and producing results.
+        The API remains provider-neutral; `provider` may be `whisper`, `external`,
+        or another user-configured value.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - $ref: '#/components/parameters/AnalysisRequestIdParam'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRecordingAnalysisRequest'
+      responses:
+        '200':
+          description: Analysis request claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingAnalysisRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /recording-analysis/internal/{analysisRequestId}/result:
+    post:
+      tags: [Recordings]
+      summary: Submit analysis result from a trusted processor
+      description: |
+        Trusted processor callback for completed or failed transcription/summary jobs.
+        Public tenant users cannot call this endpoint. The result payload stores
+        provider metadata only for observability; provider-specific fields must not
+        become required business logic.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - $ref: '#/components/parameters/AnalysisRequestIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteRecordingAnalysisRequest'
+      responses:
+        '200':
+          description: Analysis result accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingAnalysisRequestResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /channels/accounts:
+    get:
+      tags: [ChannelAdapters]
+      summary: List channel adapter accounts
+      description: Lists configured WhatsApp, Telegram, Google Meet, or custom channel adapters for the tenant.
+      responses:
+        '200':
+          description: Channel account list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelAccountListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [ChannelAdapters]
+      summary: Create channel adapter account
+      description: |
+        Registers provider metadata and declared capabilities for a channel adapter.
+        Provider credentials are write-only and must never be returned by public APIs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChannelAccountRequest'
+      responses:
+        '201':
+          description: Channel account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelAccountResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /channels/accounts/{channelAccountId}:
+    get:
+      tags: [ChannelAdapters]
+      summary: Get channel adapter account
+      parameters:
+        - $ref: '#/components/parameters/ChannelAccountIdParam'
+      responses:
+        '200':
+          description: Channel account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelAccountResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /channels/messages/outbound:
+    post:
+      tags: [ChannelAdapters]
+      summary: Queue outbound channel message
+      description: |
+        Sends or queues a normalized message through a configured channel adapter.
+        WhatsApp template rules, Telegram bot constraints, and provider-specific
+        restrictions are adapter concerns represented in provider_metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOutboundChannelMessageRequest'
+      responses:
+        '202':
+          description: Outbound channel message accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelMessageResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /channels/messages/inbound/internal:
+    post:
+      tags: [ChannelAdapters]
+      summary: Ingest inbound channel message from provider adapter
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestInboundChannelMessageRequest'
+      responses:
+        '201':
+          description: Inbound channel message ingested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelMessageResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /channels/voice-sessions:
+    post:
+      tags: [ChannelAdapters]
+      summary: Create channel voice or meeting session request
+      description: |
+        Creates a voice-capable interaction through a channel adapter when supported.
+        Capability values distinguish async voice messages, native calls, SIP bridges,
+        and meeting-style sessions such as Google Meet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChannelVoiceSessionRequest'
+      responses:
+        '202':
+          description: Channel voice or meeting session accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelVoiceSessionResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /channels/voice-sessions/{channelVoiceSessionId}:
+    get:
+      tags: [ChannelAdapters]
+      summary: Get channel voice or meeting session status
+      parameters:
+        - $ref: '#/components/parameters/ChannelVoiceSessionIdParam'
+      responses:
+        '200':
+          description: Channel voice or meeting session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelVoiceSessionResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -1524,6 +2070,48 @@ components:
         format: uuid
     SessionIdParam:
       name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RecordingIdParam:
+      name: recordingId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AnalysisRequestIdParam:
+      name: analysisRequestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PromptGenerationRequestIdParam:
+      name: promptGenerationRequestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IvrAiTurnRequestIdParam:
+      name: ivrAiTurnRequestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ChannelAccountIdParam:
+      name: channelAccountId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ChannelVoiceSessionIdParam:
+      name: channelVoiceSessionId
       in: path
       required: true
       schema:
@@ -3105,6 +3693,942 @@ components:
           additionalProperties: true
 
     # ── Platform ──────────────────────────────────────────────────────────────
+
+    Recording:
+      type: object
+      required: [id, tenant_id, call_id, call_event_id, storage_path, duration_secs, size_bytes, status, recorded_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        call_id:
+          type: string
+        call_event_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        storage_path:
+          type: string
+          description: Backend storage reference. Public media access should use a safe playback/download endpoint.
+        duration_secs:
+          oneOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
+        size_bytes:
+          oneOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
+        status:
+          type: string
+          enum: [pending, available, deleted]
+        recorded_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    RecordingResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Recording'
+
+    RecordingListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recording'
+
+    IngestRecordingRequest:
+      type: object
+      required: [tenant_id, call_id, storage_path]
+      additionalProperties: false
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        call_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        call_event_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        storage_path:
+          type: string
+          minLength: 1
+          maxLength: 2048
+        duration_secs:
+          oneOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
+        size_bytes:
+          oneOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
+        recorded_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    IntegrationProvider:
+      type: string
+      enum: [auto, openai, elevenlabs, whisper, external, custom]
+      description: >
+        Optional provider hint or reported provider. Values such as openai,
+        elevenlabs, and whisper are examples for user-installed integrations;
+        the core platform does not require any specific provider.
+
+    WorkRequestStatus:
+      type: string
+      enum: [queued, processing, completed, failed, cancelled]
+
+    RecordingAnalysisOutput:
+      type: string
+      enum: [transcript, summary]
+
+    CreateRecordingAnalysisRequest:
+      type: object
+      required: [requested_outputs]
+      additionalProperties: false
+      properties:
+        requested_outputs:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/RecordingAnalysisOutput'
+        language_hint:
+          oneOf:
+            - type: string
+              minLength: 2
+              maxLength: 32
+            - type: 'null'
+        preferred_provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ClaimRecordingAnalysisRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        provider:
+          $ref: '#/components/schemas/IntegrationProvider'
+        processor_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        lease_seconds:
+          type: integer
+          minimum: 30
+          maximum: 3600
+          default: 300
+
+    CompleteRecordingAnalysisRequest:
+      type: object
+      required: [status]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [completed, failed]
+        language:
+          oneOf:
+            - type: string
+              minLength: 2
+              maxLength: 32
+            - type: 'null'
+        transcript_text:
+          oneOf:
+            - type: string
+              maxLength: 200000
+            - type: 'null'
+        summary_text:
+          oneOf:
+            - type: string
+              maxLength: 20000
+            - type: 'null'
+        error_message:
+          oneOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+        provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        provider_metadata:
+          type: object
+          additionalProperties: true
+
+    RecordingAnalysisRequest:
+      type: object
+      required: [id, tenant_id, recording_id, status, requested_outputs, language_hint, language, preferred_provider, provider, transcript_text, summary_text, error_message, metadata, provider_metadata, created_at, updated_at, completed_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        recording_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/WorkRequestStatus'
+        requested_outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecordingAnalysisOutput'
+        language_hint:
+          oneOf:
+            - type: string
+            - type: 'null'
+        language:
+          oneOf:
+            - type: string
+            - type: 'null'
+        preferred_provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        transcript_text:
+          oneOf:
+            - type: string
+            - type: 'null'
+        summary_text:
+          oneOf:
+            - type: string
+            - type: 'null'
+        error_message:
+          oneOf:
+            - type: string
+            - type: 'null'
+        metadata:
+          type: object
+          additionalProperties: true
+        provider_metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    RecordingAnalysisRequestResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/RecordingAnalysisRequest'
+
+    RecordingAnalysisRequestListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecordingAnalysisRequest'
+
+    PromptGenerationOutput:
+      type: string
+      enum: [prompt_text, audio]
+
+    CreatePromptGenerationRequest:
+      type: object
+      required: [requested_outputs]
+      additionalProperties: false
+      properties:
+        requested_outputs:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/PromptGenerationOutput'
+        input_text:
+          type: string
+          maxLength: 20000
+          description: Source text for TTS or refinement.
+        prompt_brief:
+          type: string
+          maxLength: 4000
+          description: Brief for generated IVR prompt copy.
+        language_hint:
+          oneOf:
+            - type: string
+              minLength: 2
+              maxLength: 32
+            - type: 'null'
+        voice_hint:
+          oneOf:
+            - type: string
+              maxLength: 255
+            - type: 'null'
+        output_media_type:
+          type: string
+          enum: [audio/wav, audio/mpeg]
+          default: audio/wav
+        target_prompt_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        preferred_provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ClaimPromptGenerationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        provider:
+          $ref: '#/components/schemas/IntegrationProvider'
+        processor_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        lease_seconds:
+          type: integer
+          minimum: 30
+          maximum: 3600
+          default: 300
+
+    CompletePromptGenerationRequest:
+      type: object
+      required: [status]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [completed, failed]
+        generated_text:
+          oneOf:
+            - type: string
+              maxLength: 20000
+            - type: 'null'
+        storage_uri:
+          oneOf:
+            - type: string
+              maxLength: 2048
+            - type: 'null'
+        media_type:
+          oneOf:
+            - type: string
+              enum: [audio/wav, audio/mpeg]
+            - type: 'null'
+        checksum:
+          oneOf:
+            - type: string
+              maxLength: 255
+            - type: 'null'
+        prompt_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        error_message:
+          oneOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+        provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        provider_metadata:
+          type: object
+          additionalProperties: true
+
+    PromptGenerationRequest:
+      type: object
+      required: [id, tenant_id, status, requested_outputs, preferred_provider, provider, generated_text, storage_uri, media_type, checksum, prompt_id, error_message, metadata, provider_metadata, created_at, updated_at, completed_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/WorkRequestStatus'
+        requested_outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptGenerationOutput'
+        preferred_provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        generated_text:
+          oneOf:
+            - type: string
+            - type: 'null'
+        storage_uri:
+          oneOf:
+            - type: string
+            - type: 'null'
+        media_type:
+          oneOf:
+            - type: string
+            - type: 'null'
+        checksum:
+          oneOf:
+            - type: string
+            - type: 'null'
+        prompt_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        error_message:
+          oneOf:
+            - type: string
+            - type: 'null'
+        metadata:
+          type: object
+          additionalProperties: true
+        provider_metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    PromptGenerationRequestResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PromptGenerationRequest'
+
+    PromptGenerationRequestListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptGenerationRequest'
+
+    IvrAiTurnOutput:
+      type: string
+      enum: [answer_text, spoken_audio, intent, next_action]
+
+    CreateIvrAiTurnRequest:
+      type: object
+      required: [tenant_id, call_id, requested_outputs]
+      additionalProperties: false
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        session_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        call_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        caller_utterance:
+          oneOf:
+            - type: string
+              maxLength: 20000
+            - type: 'null'
+        system_prompt:
+          oneOf:
+            - type: string
+              maxLength: 20000
+            - type: 'null'
+        requested_outputs:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/IvrAiTurnOutput'
+        language_hint:
+          oneOf:
+            - type: string
+              minLength: 2
+              maxLength: 32
+            - type: 'null'
+        preferred_provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        context:
+          type: object
+          additionalProperties: true
+
+    ClaimIvrAiTurnRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        provider:
+          $ref: '#/components/schemas/IntegrationProvider'
+        processor_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        lease_seconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          default: 30
+
+    CompleteIvrAiTurnRequest:
+      type: object
+      required: [status]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [completed, failed]
+        answer_text:
+          oneOf:
+            - type: string
+              maxLength: 20000
+            - type: 'null'
+        spoken_audio_uri:
+          oneOf:
+            - type: string
+              maxLength: 2048
+            - type: 'null'
+        intent:
+          oneOf:
+            - type: string
+              maxLength: 255
+            - type: 'null'
+        next_action:
+          type: object
+          additionalProperties: true
+          description: Constrained business-level action for the runtime resolver to interpret.
+        error_message:
+          oneOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+        provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        provider_metadata:
+          type: object
+          additionalProperties: true
+
+    IvrAiTurnRequest:
+      type: object
+      required: [id, tenant_id, session_id, call_id, status, requested_outputs, preferred_provider, provider, answer_text, spoken_audio_uri, intent, next_action, error_message, context, provider_metadata, created_at, updated_at, completed_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        session_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        call_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/WorkRequestStatus'
+        requested_outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/IvrAiTurnOutput'
+        preferred_provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        provider:
+          oneOf:
+            - $ref: '#/components/schemas/IntegrationProvider'
+            - type: 'null'
+        answer_text:
+          oneOf:
+            - type: string
+            - type: 'null'
+        spoken_audio_uri:
+          oneOf:
+            - type: string
+            - type: 'null'
+        intent:
+          oneOf:
+            - type: string
+            - type: 'null'
+        next_action:
+          type: object
+          additionalProperties: true
+        error_message:
+          oneOf:
+            - type: string
+            - type: 'null'
+        context:
+          type: object
+          additionalProperties: true
+        provider_metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    IvrAiTurnRequestResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/IvrAiTurnRequest'
+
+    ChannelProvider:
+      type: string
+      enum: [whatsapp, telegram, google_meet, custom]
+
+    ChannelCapability:
+      type: string
+      enum: [message_inbound, message_outbound, voice_message, native_call, meeting, sip_bridge, transcript_artifacts, recording_artifacts]
+
+    ChannelAccount:
+      type: object
+      required: [id, tenant_id, provider, display_name, status, capabilities, provider_metadata, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        provider:
+          $ref: '#/components/schemas/ChannelProvider'
+        display_name:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, error]
+        capabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelCapability'
+        provider_metadata:
+          type: object
+          additionalProperties: true
+          description: Provider account metadata safe for operators. Must not include secrets.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateChannelAccountRequest:
+      type: object
+      required: [provider, display_name, capabilities]
+      additionalProperties: false
+      properties:
+        provider:
+          $ref: '#/components/schemas/ChannelProvider'
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        capabilities:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ChannelCapability'
+        credentials:
+          type: object
+          writeOnly: true
+          additionalProperties: true
+          description: Provider credentials or token references. Never returned in API responses.
+        provider_metadata:
+          type: object
+          additionalProperties: true
+
+    ChannelAccountResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ChannelAccount'
+
+    ChannelAccountListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelAccount'
+
+    ChannelMessageDirection:
+      type: string
+      enum: [inbound, outbound]
+
+    ChannelMessageKind:
+      type: string
+      enum: [text, audio, image, document, interactive, system]
+
+    ChannelMessage:
+      type: object
+      required: [id, tenant_id, channel_account_id, provider, direction, kind, external_conversation_id, external_message_id, from_handle, to_handle, text, media_uri, status, provider_metadata, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        channel_account_id:
+          type: string
+          format: uuid
+        provider:
+          $ref: '#/components/schemas/ChannelProvider'
+        direction:
+          $ref: '#/components/schemas/ChannelMessageDirection'
+        kind:
+          $ref: '#/components/schemas/ChannelMessageKind'
+        external_conversation_id:
+          oneOf:
+            - type: string
+            - type: 'null'
+        external_message_id:
+          oneOf:
+            - type: string
+            - type: 'null'
+        from_handle:
+          oneOf:
+            - type: string
+            - type: 'null'
+        to_handle:
+          oneOf:
+            - type: string
+            - type: 'null'
+        text:
+          oneOf:
+            - type: string
+            - type: 'null'
+        media_uri:
+          oneOf:
+            - type: string
+            - type: 'null'
+        status:
+          type: string
+          enum: [queued, sent, delivered, read, received, failed]
+        provider_metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+
+    CreateOutboundChannelMessageRequest:
+      type: object
+      required: [channel_account_id, kind, to_handle]
+      additionalProperties: false
+      properties:
+        channel_account_id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/ChannelMessageKind'
+        to_handle:
+          type: string
+          minLength: 1
+          maxLength: 255
+        text:
+          type: string
+          maxLength: 20000
+        media_uri:
+          type: string
+          maxLength: 2048
+        provider_metadata:
+          type: object
+          additionalProperties: true
+
+    IngestInboundChannelMessageRequest:
+      type: object
+      required: [channel_account_id, provider, kind]
+      additionalProperties: false
+      properties:
+        channel_account_id:
+          type: string
+          format: uuid
+        provider:
+          $ref: '#/components/schemas/ChannelProvider'
+        kind:
+          $ref: '#/components/schemas/ChannelMessageKind'
+        external_conversation_id:
+          type: string
+        external_message_id:
+          type: string
+        from_handle:
+          type: string
+        to_handle:
+          type: string
+        text:
+          type: string
+          maxLength: 20000
+        media_uri:
+          type: string
+          maxLength: 2048
+        provider_metadata:
+          type: object
+          additionalProperties: true
+
+    ChannelMessageResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ChannelMessage'
+
+    ChannelVoiceSession:
+      type: object
+      required: [id, tenant_id, channel_account_id, provider, capability, status, external_session_id, join_uri, sip_uri, recording_uri, transcript_uri, provider_metadata, created_at, updated_at, ended_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        channel_account_id:
+          type: string
+          format: uuid
+        provider:
+          $ref: '#/components/schemas/ChannelProvider'
+        capability:
+          $ref: '#/components/schemas/ChannelCapability'
+        status:
+          type: string
+          enum: [requested, active, completed, failed, cancelled]
+        external_session_id:
+          oneOf:
+            - type: string
+            - type: 'null'
+        join_uri:
+          oneOf:
+            - type: string
+            - type: 'null'
+        sip_uri:
+          oneOf:
+            - type: string
+            - type: 'null'
+        recording_uri:
+          oneOf:
+            - type: string
+            - type: 'null'
+        transcript_uri:
+          oneOf:
+            - type: string
+            - type: 'null'
+        provider_metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        ended_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    CreateChannelVoiceSessionRequest:
+      type: object
+      required: [channel_account_id, capability]
+      additionalProperties: false
+      properties:
+        channel_account_id:
+          type: string
+          format: uuid
+        capability:
+          type: string
+          enum: [voice_message, native_call, meeting, sip_bridge]
+        participant_handle:
+          type: string
+          maxLength: 255
+        subject:
+          type: string
+          maxLength: 255
+        initial_message:
+          type: string
+          maxLength: 20000
+        provider_metadata:
+          type: object
+          additionalProperties: true
+
+    ChannelVoiceSessionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ChannelVoiceSession'
 
     TenantSummary:
       type: object

@@ -132,6 +132,21 @@ Project-specific logic should live in external services and minimal integration 
 - Lua is an optional call-session helper, not a business-logic layer.
 - Runtime event and control integration belongs in an external Go or Node agent.
 
+### 6.10 Provider-Neutral Integrations
+
+External AI, transcription, text-to-speech, messaging, meeting, and channel systems
+are adapter integrations. They must not become mandatory dependencies of the core
+control plane.
+
+The public API exposes stable business contracts for work requests, capabilities,
+messages, recordings, and results. Provider names such as OpenAI, Whisper,
+ElevenLabs, WhatsApp, Telegram, or Google Meet are optional adapter hints, not
+required business logic.
+
+Provider credentials are write-only operational secrets. Public responses must not
+expose provider secrets, temporary media URLs, raw storage paths, or raw provider
+payloads as authoritative domain state.
+
 ## 7. Canonical System Model
 
 At a high level:
@@ -226,7 +241,34 @@ Responsibilities:
 - Allow approved automation to create drafts
 - Trigger downstream CRM/helpdesk/ops automations
 
-### 8.5 PostgreSQL
+### 8.5 Provider Integration Layer
+
+The provider integration layer connects the control plane to optional external AI,
+media, messaging, meeting, and channel systems.
+
+Implementation direction:
+
+- Adapter workers or plugins outside the domain core
+- Internal claim/result endpoints for asynchronous processing
+- Capability flags for provider-specific feature differences
+
+Responsibilities:
+
+- Process recording transcription and summarization requests
+- Generate IVR prompt audio through optional text-to-speech providers
+- Resolve AI-assisted IVR turns when a flow explicitly delegates a question or request
+- Send and ingest channel messages through provider adapters
+- Represent channel voice, voice-message, meeting, or SIP-bridge sessions without
+  assuming every provider supports every capability
+
+Constraints:
+
+- No provider-specific payload shape becomes the canonical business object
+- No provider integration bypasses validation, audit, tenant scoping, or policy
+- A missing provider implementation must leave the contract valid but the work
+  request unprocessed or explicitly failed
+
+### 8.6 PostgreSQL
 
 PostgreSQL stores the canonical desired state and operational metadata.
 
@@ -238,8 +280,9 @@ Responsibilities:
 - Simulation records
 - CDR ingestion results
 - Call event timeline data
+- Recording, AI work request, prompt-generation, IVR AI, and channel-adapter metadata
 
-### 8.6 FreeSWITCH Adapter Layer
+### 8.7 FreeSWITCH Adapter Layer
 
 This layer translates desired state into runtime behavior that FreeSWITCH can consume.
 
@@ -272,7 +315,7 @@ For MVP, Lua should be limited to:
 
 Do not put business logic in Lua.
 
-### 8.7 FreeSWITCH Runtime
+### 8.8 FreeSWITCH Runtime
 
 FreeSWITCH remains responsible for:
 
@@ -317,6 +360,13 @@ Initial core entities:
 - Call detail record
 - Call event
 - Audit event
+- Recording
+- Recording analysis request
+- Prompt generation request
+- IVR AI turn request
+- Channel account
+- Channel message
+- Channel voice session
 
 ### 9.1 Publishable Objects
 
@@ -433,9 +483,14 @@ Preferred API shape:
 - `routes`
 - `flows`
 - `prompts`
+- `prompt-generation`
 - `simulations`
 - `publishes`
 - `events`
+- `recordings`
+- `recording-analysis`
+- `runtime/ivr-ai`
+- `channels`
 
 Avoid API designs centered on:
 
@@ -443,6 +498,7 @@ Avoid API designs centered on:
 - Arbitrary XML payloads
 - ESL command passthrough
 - Runtime-specific switch internals as first-class public objects
+- Provider-specific AI, media, or channel payloads as canonical domain objects
 
 ## 14. MCP Design Rules
 
@@ -522,6 +578,7 @@ Suggested future supporting docs:
 - Database: PostgreSQL
 - Workflow: n8n + Webhooks
 - AI: MCP server in TypeScript
+- AI/media/channel providers: optional adapter workers or plugins
 - FreeSWITCH Runtime Agent: Go
 - FreeSWITCH Call Helper: Lua
 
@@ -584,6 +641,17 @@ Milestone 1 should begin with the first vertical slice above before broader IVR 
 - Policy engine
 - HA-ready FreeSWITCH support
 - Monitoring and alerting
+
+### Milestone 6: Provider and Omnichannel Contracts
+
+- Durable recording metadata and analysis work requests
+- Provider-neutral transcription and summarization contract
+- Provider-neutral prompt generation and text-to-speech contract
+- IVR AI turn delegation contract for customer questions or requests
+- Channel account, message, voice-message, meeting, and SIP-bridge adapter contracts
+
+This milestone defines integration contracts first. Concrete provider adapters may
+arrive later without changing the business API.
 
 ## 20. Open Questions
 

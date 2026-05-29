@@ -47,7 +47,17 @@ It describes the primary entities, their responsibilities, key relationships, li
 
 - CallDetailRecord
 - CallEvent
+- Recording
+- RecordingAnalysisRequest
 - RuntimeIngestionRecord
+
+### 3.5 Provider and Channel Integration
+
+- PromptGenerationRequest
+- IvrAiTurnRequest
+- ChannelAccount
+- ChannelMessage
+- ChannelVoiceSession
 
 ## 4. Core Entities
 
@@ -532,7 +542,245 @@ Key fields:
 - `processedAt`
 - `errorMessage`
 
-## 9. Relationship Summary
+### 8.4 Recording
+
+Represents recorded call or voicemail media metadata. The media itself may live in
+filesystem or object storage; the domain object stores only a controlled reference.
+
+Key fields:
+
+- `id`
+- `tenantId`
+- `callId`
+- `callEventId`
+- `storageReference`
+- `durationSeconds`
+- `sizeBytes`
+- `status`
+- `recordedAt`
+- `createdAt`
+
+### 8.5 RecordingAnalysisRequest
+
+Represents a provider-neutral request to transcribe or summarize a recording. The
+request is part of the core domain contract even if the processor is an external
+plugin or future AI service.
+
+Key fields:
+
+- `id`
+- `tenantId`
+- `recordingId`
+- `requestedOutputs`
+- `languageHint`
+- `status`
+- `transcriptText`
+- `summaryText`
+- `errorMessage`
+- `providerMetadata`
+- `createdAt`
+- `completedAt`
+
+Statuses:
+
+- `queued`
+- `processing`
+- `completed`
+- `failed`
+- `cancelled`
+
+Invariants:
+
+- Analysis requests must stay scoped to the same tenant as the parent recording.
+- Public APIs must not expose raw media storage paths or provider secrets.
+- Transcript and summary values are nullable until processing completes.
+
+## 9. Provider and Channel Integration Entities
+
+### 9.1 PromptGenerationRequest
+
+Represents a provider-neutral request to generate prompt media from text or SSML-like
+input. A provider such as a text-to-speech service may fulfill it later, but the
+domain contract stays independent of that provider.
+
+Key fields:
+
+- `id`
+- `tenantId`
+- `promptAssetId`
+- `requestedOutputs`
+- `inputText`
+- `languageHint`
+- `voiceHint`
+- `providerHint`
+- `status`
+- `generatedPromptAssetId`
+- `errorMessage`
+- `providerMetadata`
+- `createdAt`
+- `completedAt`
+
+Statuses:
+
+- `queued`
+- `processing`
+- `completed`
+- `failed`
+- `cancelled`
+
+Invariants:
+
+- Generated prompt assets must stay tenant-scoped to the request tenant.
+- Provider hints are optional routing preferences, not required business state.
+- Public responses must not expose provider credentials or temporary media URLs.
+
+### 9.2 IvrAiTurnRequest
+
+Represents a bounded AI-assisted turn in an IVR runtime session. It lets a flow
+delegate a customer question or request to an external AI adapter without giving
+the provider direct control over call execution.
+
+Key fields:
+
+- `id`
+- `tenantId`
+- `runtimeSessionId`
+- `callId`
+- `flowId`
+- `nodeId`
+- `inputMode`
+- `inputText`
+- `requestedOutputs`
+- `providerHint`
+- `status`
+- `answerText`
+- `nextAction`
+- `confidence`
+- `errorMessage`
+- `providerMetadata`
+- `createdAt`
+- `completedAt`
+
+Statuses:
+
+- `queued`
+- `processing`
+- `completed`
+- `failed`
+- `cancelled`
+
+Invariants:
+
+- The result may suggest a bounded next action, but core IVR execution remains in
+  the backend runtime resolver.
+- Provider output must be validated before it can route, transfer, or mutate state.
+- Failed or timed-out turns must fall back to configured flow behavior.
+
+### 9.3 ChannelAccount
+
+Represents a tenant-owned account or integration endpoint for an external channel
+such as WhatsApp, Telegram, Google Meet, or a custom adapter.
+
+Key fields:
+
+- `id`
+- `tenantId`
+- `provider`
+- `displayName`
+- `status`
+- `capabilities`
+- `externalAccountRef`
+- `credentialRef`
+- `createdAt`
+- `updatedAt`
+
+Capabilities:
+
+- `message_inbound`
+- `message_outbound`
+- `voice_message`
+- `native_call`
+- `meeting`
+- `sip_bridge`
+- `transcript_artifacts`
+- `recording_artifacts`
+
+Invariants:
+
+- Credentials are referenced only by secret handle and are never returned publicly.
+- Features must be gated by declared capability instead of provider name alone.
+
+### 9.4 ChannelMessage
+
+Represents an inbound or outbound message normalized across channel providers.
+
+Key fields:
+
+- `id`
+- `tenantId`
+- `channelAccountId`
+- `provider`
+- `direction`
+- `messageKind`
+- `externalConversationRef`
+- `externalMessageRef`
+- `fromRef`
+- `toRef`
+- `text`
+- `mediaRefs`
+- `status`
+- `providerMetadata`
+- `createdAt`
+- `deliveredAt`
+
+Directions:
+
+- `inbound`
+- `outbound`
+
+Message kinds:
+
+- `text`
+- `voice`
+- `audio`
+- `image`
+- `file`
+- `interactive`
+
+Invariants:
+
+- Raw provider event bodies are not the canonical message model.
+- Media references must be controlled storage or provider artifact references, not
+  unbounded public URLs.
+
+### 9.5 ChannelVoiceSession
+
+Represents a provider-backed voice, voice-message, meeting, or SIP-bridge
+interaction related to a channel account.
+
+Key fields:
+
+- `id`
+- `tenantId`
+- `channelAccountId`
+- `provider`
+- `capability`
+- `externalSessionRef`
+- `callId`
+- `meetingUrl`
+- `status`
+- `startedAt`
+- `endedAt`
+- `providerMetadata`
+- `createdAt`
+
+Invariants:
+
+- A session capability must be declared on the parent channel account.
+- Meeting or native-call sessions must not imply FreeSWITCH call control unless
+  explicitly bridged through a supported SIP or runtime adapter.
+
+## 10. Relationship Summary
 
 At a high level:
 
@@ -555,6 +803,13 @@ Tenant
   -> AuditEvent
   -> CallDetailRecord
   -> CallEvent
+  -> Recording
+  -> RecordingAnalysisRequest
+  -> PromptGenerationRequest
+  -> IvrAiTurnRequest
+  -> ChannelAccount
+  -> ChannelMessage
+  -> ChannelVoiceSession
 
 IVRFlow
   -> FlowVersion
@@ -567,11 +822,18 @@ FlowVersion / RouteVersion
   -> SimulationResult
   -> PublishRecord
   -> ApprovalRequest
+
+ChannelAccount
+  -> ChannelMessage
+  -> ChannelVoiceSession
+
+Recording
+  -> RecordingAnalysisRequest
 ```
 
-## 10. Lifecycle Rules
+## 11. Lifecycle Rules
 
-### 10.1 Publishable Object Lifecycle
+### 11.1 Publishable Object Lifecycle
 
 Suggested lifecycle:
 
@@ -583,40 +845,56 @@ Suggested lifecycle:
 6. Version published
 7. Prior version remains rollback-capable
 
-### 10.2 State Transition Rules
+### 11.2 State Transition Rules
 
 - A `draft` version may transition to `validated` only if validation passes
 - A `validated` version may transition to `published` directly or after simulation and approval depending on policy
 - A `published` version may transition to `superseded` when replaced by a newer active version
 - A prior `published` or `superseded` version may become active again through rollback
 
-## 11. Domain Invariants
+### 11.3 Provider Work Request Lifecycle
+
+Suggested lifecycle:
+
+1. Request created as `queued`
+2. Trusted adapter claims request as `processing`
+3. Adapter completes with bounded result or failure
+4. Completed result remains readable through business APIs
+5. Failed request remains auditable and may be retried by policy
+
+## 12. Domain Invariants
 
 - There is exactly one canonical desired-state owner for each configuration object
 - Active versions are explicit, never implicit
 - Publish actions are auditable and attributable
 - AI-facing operations must remain within the constrained business vocabulary
 - Runtime artifacts are derived outputs, not canonical domain entities
+- External provider outputs are inputs to domain workflows, not direct authority
+- Provider capabilities must be explicit before channel-specific actions are accepted
 
-## 12. Mapping Guidance
+## 13. Mapping Guidance
 
-### 12.1 API Mapping
+### 13.1 API Mapping
 
 - Public endpoints should expose these domain nouns directly
 - Public payloads should avoid leaking FreeSWITCH-specific implementation details unless operationally necessary
+- Provider-specific payloads should be represented as bounded metadata, not as the
+  primary public contract
 
-### 12.2 Database Mapping
+### 13.2 Database Mapping
 
 - Tables may be normalized differently from the conceptual model, but ownership and invariants must remain intact
 - Versioned object content may be stored in structured relational or document-like form as long as validation and auditability remain strong
 
-### 12.3 UI Mapping
+### 13.3 UI Mapping
 
 - UI terminology should mirror domain terms such as flow, route, prompt, validation, simulation, publish, and rollback
 
-## 13. Open Modeling Questions
+## 14. Open Modeling Questions
 
 - Final queue, ring group, and agent abstractions if call-center features are added
 - Whether routes share one generic versioning model or distinct inbound and outbound version types
 - Final approval policy attachment model
 - Exact representation of IVR node graphs and simulation scenarios
+- Final provider adapter installation and credential storage model
+- Exact channel capability matrix by provider and deployment environment

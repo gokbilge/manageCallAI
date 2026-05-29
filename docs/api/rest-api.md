@@ -107,6 +107,11 @@ Primary resources:
 - `audit-events`
 - `call-events`
 - `cdrs`
+- `recordings`
+- `recording-analysis`
+- `prompt-generation`
+- `runtime/ivr-ai`
+- `channels`
 
 ## 5. Error Model
 
@@ -1199,7 +1204,217 @@ Query parameters:
 GET /api/v1/call-events/{callEventId}
 ```
 
-### 6.13 Platform Runtime Summary
+### 6.13 Recording Analysis Contract
+
+Recording analysis is a planned integration contract for voicemail and recorded
+calls. It defines how an external plugin, worker, or AI endpoint can later produce
+transcripts and summaries without making a specific provider part of the core API.
+
+The release contract should expose these resources when implemented:
+
+```http
+POST /api/v1/recordings/{recordingId}/analysis-requests
+GET /api/v1/recordings/{recordingId}/analysis-requests
+GET /api/v1/recordings/{recordingId}/analysis-requests/{requestId}
+POST /api/v1/recording-analysis/internal/{requestId}/result
+```
+
+Tenant-facing endpoints require `tenant.recordings.view` plus the future analysis
+request capability. The internal result endpoint requires a trusted processor token
+or runtime token and must not be callable by ordinary tenant users.
+
+Example request:
+
+```json
+{
+  "requested_outputs": ["transcript", "summary"],
+  "language_hint": "tr-TR",
+  "metadata": {
+    "workflow": "voicemail_review"
+  }
+}
+```
+
+Example queued response:
+
+```json
+{
+  "data": {
+    "id": "analysis_001",
+    "recording_id": "rec_001",
+    "status": "queued",
+    "requested_outputs": ["transcript", "summary"],
+    "language": null,
+    "transcript_text": null,
+    "summary_text": null,
+    "error_message": null,
+    "created_at": "2026-05-29T00:00:00.000Z",
+    "completed_at": null
+  }
+}
+```
+
+Processor result callback:
+
+```json
+{
+  "status": "completed",
+  "language": "tr-TR",
+  "transcript_text": "Caller asked for a callback about billing.",
+  "summary_text": "Billing callback request.",
+  "provider_metadata": {
+    "provider": "external-plugin",
+    "model": "provider-owned"
+  }
+}
+```
+
+Allowed states:
+
+- `queued`
+- `processing`
+- `completed`
+- `failed`
+- `cancelled`
+
+Contract rules:
+
+- analysis requests are tenant-scoped through the parent recording
+- public responses never expose raw storage paths, provider secrets, or temporary
+  media URLs
+- transcript and summary fields remain nullable until completion
+- failed jobs store only bounded, operator-safe error text
+- provider metadata is optional and must not become required business logic
+
+Concrete transcription providers, AI model selection, automatic processing policy,
+and prompt engineering are future-version concerns.
+
+### 6.14 Prompt Generation Contract
+
+Prompt generation is a planned integration contract for generating prompt media
+from text. It supports future adapter workers for text-to-speech providers without
+making a provider part of the core API.
+
+The release contract should expose these resources when implemented:
+
+```http
+POST /api/v1/prompt-generation/requests
+GET /api/v1/prompt-generation/requests
+GET /api/v1/prompt-generation/requests/{requestId}
+POST /api/v1/prompt-generation/internal/{requestId}/claim
+POST /api/v1/prompt-generation/internal/{requestId}/result
+```
+
+Example request:
+
+```json
+{
+  "input_text": "Welcome to Acme. Press 1 for sales.",
+  "requested_outputs": ["audio"],
+  "language_hint": "en-US",
+  "voice_hint": "warm-female",
+  "provider_hint": "auto",
+  "metadata": {
+    "usage": "main_ivr_greeting"
+  }
+}
+```
+
+Contract rules:
+
+- provider hints are optional and may be ignored by adapter policy
+- generated media is represented as a prompt asset or controlled media reference
+- public responses do not expose provider secrets or temporary provider URLs
+- failed jobs store only bounded, operator-safe error text
+
+### 6.15 IVR AI Turn Contract
+
+IVR AI turn requests let a flow delegate a bounded customer question or request to
+an external AI adapter. The provider may produce answer text, structured intent,
+or a suggested next action, but the backend runtime resolver remains responsible
+for validating and executing call behavior.
+
+The release contract should expose these resources when implemented:
+
+```http
+POST /api/v1/runtime/ivr-ai/turns
+GET /api/v1/runtime/ivr-ai/turns/{requestId}
+POST /api/v1/ivr-ai/internal/{requestId}/claim
+POST /api/v1/ivr-ai/internal/{requestId}/result
+```
+
+Example request:
+
+```json
+{
+  "runtime_session_id": "sess_001",
+  "call_id": "call-123",
+  "flow_id": "flow_001",
+  "node_id": "ai_question",
+  "input_mode": "text",
+  "input_text": "What are your opening hours?",
+  "requested_outputs": ["answer_text", "next_action"],
+  "provider_hint": "auto"
+}
+```
+
+Contract rules:
+
+- provider output is advisory until the domain layer validates it
+- routing, transfer, or mutation actions must remain constrained by flow policy
+- failed or timed-out requests must fall back to configured IVR behavior
+- provider metadata is optional diagnostic context, not business logic
+
+### 6.16 Channel Adapter Contract
+
+Channel adapters are planned integration contracts for WhatsApp, Telegram, Google
+Meet, and custom messaging or meeting providers. The contract models capabilities
+explicitly because providers differ in their support for text messages, voice
+messages, native calling, meetings, recordings, transcripts, and SIP bridging.
+
+The release contract should expose these resources when implemented:
+
+```http
+POST /api/v1/channels/accounts
+GET /api/v1/channels/accounts
+GET /api/v1/channels/accounts/{channelAccountId}
+POST /api/v1/channels/messages/outbound
+POST /api/v1/channels/messages/inbound/internal
+POST /api/v1/channels/voice-sessions
+GET /api/v1/channels/voice-sessions/{channelVoiceSessionId}
+```
+
+Example account request:
+
+```json
+{
+  "provider": "whatsapp",
+  "display_name": "Support WhatsApp",
+  "capabilities": ["message_inbound", "message_outbound", "voice_message"],
+  "external_account_ref": "provider-account-id"
+}
+```
+
+Example outbound message request:
+
+```json
+{
+  "channel_account_id": "chan_001",
+  "to_ref": "+15551234567",
+  "message_kind": "text",
+  "text": "Your support callback is scheduled."
+}
+```
+
+Contract rules:
+
+- features are gated by channel account capabilities, not provider name alone
+- credentials are write-only and represented publicly only by secret handles or status
+- raw provider webhooks are normalized before they become channel messages
+- meeting and native-call sessions do not imply FreeSWITCH control unless a SIP or
+  runtime bridge is explicitly configured
+
+### 6.17 Platform Runtime Summary
 
 ```http
 GET /api/v1/platform/runtime/summary
@@ -1215,7 +1430,7 @@ such as:
 - `failed_runtime_ingestions_24h`
 - `pending_approvals`
 
-### 6.14 Call Detail Records
+### 6.18 Call Detail Records
 
 #### List CDRs
 

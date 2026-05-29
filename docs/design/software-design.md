@@ -13,6 +13,8 @@ It translates the product and architectural intent into implementable software s
 - Use a single domain vocabulary across UI, API, MCP, workflow, and persistence layers
 - Make risky operations explicit, auditable, and reversible
 - Keep integration adapters replaceable without rewriting core business logic
+- Define provider-neutral AI, media, messaging, and meeting contracts before binding
+  to any specific external provider
 
 ## 2.1 Responsibility Split
 
@@ -118,6 +120,29 @@ Responsibilities:
 - Accept approved automation entry points
 - Bridge external workflow systems to control-plane operations
 
+### 3.8 Provider Adapter Layer
+
+Implementation direction:
+
+- External workers or plugins
+- Internal claim/result endpoints
+- Provider capability declarations
+
+Responsibilities:
+
+- Execute recording transcription and summarization requests
+- Generate prompt media from text when a tenant configures a text-to-speech provider
+- Resolve delegated IVR AI turns when a flow needs AI-assisted answering
+- Send outbound channel messages and normalize inbound provider messages
+- Represent provider-specific voice, voice-message, meeting, or SIP-bridge sessions
+  through stable channel session records
+
+Design constraints:
+
+- Provider adapters must call domain APIs rather than writing business state directly
+- Provider credentials must be write-only and stored outside public response payloads
+- Provider metadata is diagnostic context only; it must not drive core business logic
+
 ## 4. Core Domain Concepts
 
 ### 4.1 Configuration Objects
@@ -139,6 +164,13 @@ Responsibilities:
 - Audit event
 - Call event
 - Call detail record
+- Recording
+- Recording analysis request
+- Prompt generation request
+- IVR AI turn request
+- Channel account
+- Channel message
+- Channel voice session
 
 ### 4.3 Publishable Object Pattern
 
@@ -183,6 +215,11 @@ Likely services:
 - `SimulationService`
 - `PublishService`
 - `AuditService`
+- `RecordingService`
+- `RecordingAnalysisService`
+- `PromptGenerationService`
+- `IvrAiTurnService`
+- `ChannelAdapterService`
 
 ### 5.3 Domain Rule Module
 
@@ -255,6 +292,26 @@ Key design responsibilities:
 4. The renderer updates runtime-facing outputs.
 5. The system records rollback audit data.
 
+### 6.6 Provider Work Request Workflow
+
+1. A tenant-facing or runtime-facing caller creates a provider-neutral work request.
+2. The application service validates tenant scope, capability requirements, and payload size.
+3. The request is stored as `queued`.
+4. A trusted adapter claims the request and moves it to `processing`.
+5. The adapter posts a bounded `completed` or `failed` result.
+6. The result becomes visible through API, workflow, UI, and MCP read surfaces.
+
+This workflow covers recording analysis, prompt generation, and IVR AI turns.
+
+### 6.7 Channel Message Workflow
+
+1. A tenant configures a channel account with declared capabilities.
+2. Outbound messages are created against that account and normalized into the channel message model.
+3. The adapter delivers through the provider and reports state.
+4. Inbound messages are ingested through internal endpoints and normalized.
+5. Voice or meeting interactions create channel voice session records when the account
+   capability supports that interaction type.
+
 ## 7. Interface Design Principles
 
 ### 7.1 REST API
@@ -276,6 +333,14 @@ Key design responsibilities:
 - Keep payloads stable and auditable
 - Avoid forcing workflow users to understand raw switch events
 
+### 7.4 Provider Contracts
+
+- Model provider work as explicit request, claim, and result contracts
+- Use optional provider hints rather than provider-specific required fields
+- Store capability declarations for differences between messaging, voice-message,
+  native-call, meeting, SIP-bridge, transcript, and recording support
+- Keep raw provider payloads and credentials out of public business responses
+
 ## 8. Persistence Design
 
 ### 8.1 Canonical Data Ownership
@@ -291,6 +356,8 @@ FreeSWITCH consumes generated active state and does not own business intent.
 - Validation and simulation tables
 - Audit tables
 - Runtime event and CDR tables
+- Recording and provider work request tables
+- Channel account, message, and voice session tables
 
 ### 8.3 Persistence Rules
 
@@ -318,6 +385,8 @@ FreeSWITCH consumes generated active state and does not own business intent.
 - Making the MCP surface too broad
 - Treating simulation as a shallow syntax check instead of behavioral evaluation
 - Allowing draft and publish lifecycle rules to diverge across interfaces
+- Letting optional provider adapters leak provider-specific behavior into the core
+  API vocabulary
 
 ## 12. Open Design Items
 
@@ -326,3 +395,5 @@ FreeSWITCH consumes generated active state and does not own business intent.
 - Prompt storage implementation details
 - Depth and fidelity of the simulation engine
 - Approval workflow mechanics for risky publish operations
+- Provider adapter packaging, credential storage, and capability verification model
+- Channel-specific delivery and voice support matrix
