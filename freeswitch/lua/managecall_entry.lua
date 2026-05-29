@@ -204,6 +204,51 @@ local function execute_runtime_action(runtime_result)
     return advance_runtime_session(runtime_session.id, action.node_id, "completed")
   end
 
+  if action.action == "transfer" and action.target_type == "queue" then
+    local members = action.members or {}
+    if #members == 0 then
+      log("err", "queue action missing members")
+      session:execute("hangup", "SERVICE_UNAVAILABLE")
+      return nil
+    end
+
+    local separator = action.strategy == "sequential" and "|" or ","
+    local endpoints = {}
+    for _, member in ipairs(members) do
+      local domain = trim(member.domain) or trim(session:getVariable("domain_name"))
+      if member.extension_number and domain then
+        table.insert(endpoints, string.format("sofia/internal/%s@%s", tostring(member.extension_number), domain))
+      end
+    end
+    if #endpoints == 0 then
+      log("err", "queue action resolved no valid endpoints")
+      session:execute("hangup", "SERVICE_UNAVAILABLE")
+      return nil
+    end
+    local bridge_str = table.concat(endpoints, separator)
+    log("info", "executing queue node " .. tostring(action.node_id) .. " -> " .. bridge_str)
+    session:execute("bridge", bridge_str)
+    return advance_runtime_session(runtime_session.id, action.node_id, "completed")
+  end
+
+  if action.action == "voicemail" then
+    local domain = trim(action.domain) or trim(session:getVariable("domain_name"))
+    if not domain then
+      log("err", "voicemail action missing domain")
+      session:execute("hangup", "SERVICE_UNAVAILABLE")
+      return nil
+    end
+
+    if action.greeting_prompt_uri then
+      session:streamFile(action.greeting_prompt_uri)
+    end
+
+    local voicemail_args = string.format("default %s %s", domain, tostring(action.mailbox_number))
+    log("info", "executing voicemail node " .. tostring(action.node_id) .. " -> " .. voicemail_args)
+    session:execute("voicemail", voicemail_args)
+    return advance_runtime_session(runtime_session.id, action.node_id, "completed")
+  end
+
   if action.action == "hangup" then
     log("info", "executing hangup node " .. tostring(action.node_id))
     advance_runtime_session(runtime_session.id, action.node_id, "completed")

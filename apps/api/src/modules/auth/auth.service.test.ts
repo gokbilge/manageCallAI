@@ -15,6 +15,7 @@ const activeUser = {
   tenant_id: 'tenant-1',
   email: 'alice@acme.com',
   display_name: 'Alice',
+  role: 'tenant_admin',
   status: 'active',
   // This is bcrypt('correct-password', 12) — pre-computed to avoid slow hashing in tests.
   // Use `bcryptjs.hashSync('correct-password', 12)` to regenerate.
@@ -87,6 +88,6 @@ describe('AuthService.register', () => {
       password: 'secret123',
     });
 
-    expect(result).toEqual({ id: 'user-1', tenant_id: 'tenant-1', email: 'bob@newco.com' });
+    expect(result).toEqual({ id: 'user-1', tenant_id: 'tenant-1', email: 'bob@newco.com', role: 'tenant_admin' });
   });
 });

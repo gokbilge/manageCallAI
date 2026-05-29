@@ -1,5 +1,17 @@
 import { Handle, Position, type NodeProps } from 'reactflow';
-import { ArrowRightLeft, CircleDot, CircleStop, GitBranch, PlayCircle, Volume2 } from 'lucide-react';
+import {
+  ArrowRightLeft,
+  CircleDot,
+  CircleStop,
+  Clock3,
+  Equal,
+  GitBranch,
+  Mail,
+  PlayCircle,
+  Route,
+  Tags,
+  Volume2,
+} from 'lucide-react';
 import type { BuilderNodeData, BuilderNodeType } from './ivr-flow-builder-utils';
 
 const toneClasses: Record<BuilderNodeType, string> = {
@@ -7,7 +19,12 @@ const toneClasses: Record<BuilderNodeType, string> = {
   play_prompt: 'border-[var(--color-info)]/30 bg-[var(--color-info)]/8',
   play_collect: 'border-[var(--color-primary)]/30 bg-[var(--color-primary)]/8',
   switch: 'border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10',
+  business_hours: 'border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10',
+  caller_id_match: 'border-[var(--color-platform)]/30 bg-[var(--color-platform)]/10',
+  set_variable: 'border-[var(--color-secondary)]/30 bg-[var(--color-surface-muted)]',
   transfer_extension: 'border-[var(--color-success)]/30 bg-[var(--color-success)]/10',
+  queue: 'border-[var(--color-success)]/30 bg-[var(--color-success)]/10',
+  voicemail_drop: 'border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10',
   hangup: 'border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10',
 };
 
@@ -21,8 +38,18 @@ function NodeIcon({ type }: { type: BuilderNodeType }) {
       return <CircleDot className="size-4" aria-hidden="true" />;
     case 'switch':
       return <GitBranch className="size-4" aria-hidden="true" />;
+    case 'business_hours':
+      return <Clock3 className="size-4" aria-hidden="true" />;
+    case 'caller_id_match':
+      return <Route className="size-4" aria-hidden="true" />;
+    case 'set_variable':
+      return <Tags className="size-4" aria-hidden="true" />;
     case 'transfer_extension':
       return <ArrowRightLeft className="size-4" aria-hidden="true" />;
+    case 'queue':
+      return <Equal className="size-4" aria-hidden="true" />;
+    case 'voicemail_drop':
+      return <Mail className="size-4" aria-hidden="true" />;
     case 'hangup':
       return <CircleStop className="size-4" aria-hidden="true" />;
   }

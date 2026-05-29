@@ -50,6 +50,27 @@ export type ExtensionOption = {
   status: 'active' | 'inactive';
 };
 
+export type ScheduleOption = {
+  id: string;
+  name: string;
+  timezone: string;
+  status: 'active' | 'inactive';
+};
+
+export type QueueOption = {
+  id: string;
+  name: string;
+  strategy: 'simultaneous' | 'sequential';
+  status: 'active' | 'inactive';
+};
+
+export type VoicemailBoxOption = {
+  id: string;
+  name: string;
+  mailbox_number: string;
+  status: 'active' | 'inactive';
+};
+
 export type FlowValidationResponse = {
   version: FlowVersion;
   outcome: { status: string; errors: unknown[]; warnings: unknown[] };
@@ -236,6 +257,45 @@ export function useExtensionOptions() {
     queryKey: ['extensions', 'options'],
     queryFn: async () => {
       const r = await apiRequest<{ data: ExtensionOption[] }>('/extensions', { accessToken: session?.token });
+      return r.data;
+    },
+    enabled: Boolean(session?.token),
+    retry: noRetryOnAuthError,
+  });
+}
+
+export function useScheduleOptions() {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ['schedules', 'options'],
+    queryFn: async () => {
+      const r = await apiRequest<{ data: ScheduleOption[] }>('/schedules', { accessToken: session?.token });
+      return r.data;
+    },
+    enabled: Boolean(session?.token),
+    retry: noRetryOnAuthError,
+  });
+}
+
+export function useQueueOptions() {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ['queues', 'options'],
+    queryFn: async () => {
+      const r = await apiRequest<{ data: QueueOption[] }>('/queues', { accessToken: session?.token });
+      return r.data;
+    },
+    enabled: Boolean(session?.token),
+    retry: noRetryOnAuthError,
+  });
+}
+
+export function useVoicemailBoxOptions() {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ['voicemail-boxes', 'options'],
+    queryFn: async () => {
+      const r = await apiRequest<{ data: VoicemailBoxOption[] }>('/voicemail-boxes', { accessToken: session?.token });
       return r.data;
     },
     enabled: Boolean(session?.token),

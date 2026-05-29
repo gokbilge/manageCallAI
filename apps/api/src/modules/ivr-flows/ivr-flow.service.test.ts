@@ -94,6 +94,9 @@ const mockRepo = {
   findActiveExtensionIds: vi.fn(),
   findActivePromptRefs: vi.fn(),
   findActiveScheduleRefs: vi.fn(),
+  findActiveQueueRefs: vi.fn(),
+  findActiveVoicemailBoxRefs: vi.fn(),
+  getHistory: vi.fn(),
 } as unknown as IvrFlowRepository;
 
 const service = new IvrFlowService(mockRepo);
@@ -105,6 +108,8 @@ beforeEach(() => vi.clearAllMocks());
 describe('IvrFlowService.validate', () => {
   beforeEach(() => {
     vi.mocked(mockRepo.findActiveScheduleRefs).mockResolvedValue(new Map());
+    vi.mocked(mockRepo.findActiveQueueRefs).mockResolvedValue(new Map());
+    vi.mocked(mockRepo.findActiveVoicemailBoxRefs).mockResolvedValue(new Map());
   });
 
   it('throws FlowVersionNotFoundError when version is missing', async () => {
@@ -227,6 +232,46 @@ describe('IvrFlowService.validate', () => {
 
     const result = await service.validate(FLOW_ID, 'v1', TENANT_ID);
     expect(result.outcome.status).toBe('passed');
+  });
+
+  it('fails when queue node references an inactive queue', async () => {
+    const graph = {
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'queue' },
+        { id: 'queue', type: 'queue', queue_id: 'queue-1' },
+      ],
+    };
+    const version = makeVersion('v1', 'draft', { graph_json: graph });
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
+    vi.mocked(mockRepo.storeValidationResult).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.findActiveExtensionIds).mockResolvedValue(new Set());
+    vi.mocked(mockRepo.findActivePromptRefs).mockResolvedValue(new Map());
+    vi.mocked(mockRepo.findActiveQueueRefs).mockResolvedValue(new Map());
+
+    const result = await service.validate(FLOW_ID, 'v1', TENANT_ID);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors.some((e) => e.message.includes('Queue not found'))).toBe(true);
+  });
+
+  it('fails when voicemail node references an inactive voicemail box', async () => {
+    const graph = {
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'vm' },
+        { id: 'vm', type: 'voicemail_drop', voicemail_box_id: 'vm-1' },
+      ],
+    };
+    const version = makeVersion('v1', 'draft', { graph_json: graph });
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
+    vi.mocked(mockRepo.storeValidationResult).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.findActiveExtensionIds).mockResolvedValue(new Set());
+    vi.mocked(mockRepo.findActivePromptRefs).mockResolvedValue(new Map());
+    vi.mocked(mockRepo.findActiveVoicemailBoxRefs).mockResolvedValue(new Map());
+
+    const result = await service.validate(FLOW_ID, 'v1', TENANT_ID);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors.some((e) => e.message.includes('Voicemail box not found'))).toBe(true);
   });
 });
 

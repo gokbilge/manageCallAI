@@ -129,7 +129,7 @@ CREATE TABLE inbound_routes (
     match_type text NOT NULL CHECK (match_type IN ('did', 'trunk', 'pattern')),
     match_value text NOT NULL,
     phone_number_id uuid,
-    target_type text NOT NULL CHECK (target_type IN ('flow', 'extension')),
+    target_type text NOT NULL CHECK (target_type IN ('flow', 'extension', 'call_group', 'queue', 'voicemail_box')),
     target_id uuid,
     status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'inactive')),
     draft_version_id uuid,
@@ -366,6 +366,46 @@ CREATE TABLE runtime_ingestion_records (
     error_message text
 );
 
+CREATE TABLE queues (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    name text NOT NULL,
+    description text,
+    strategy text NOT NULL DEFAULT 'simultaneous'
+        CHECK (strategy IN ('simultaneous', 'sequential')),
+    ring_timeout_seconds integer NOT NULL DEFAULT 20,
+    status text NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active', 'inactive')),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (tenant_id, name)
+);
+
+CREATE TABLE queue_members (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    queue_id uuid NOT NULL REFERENCES queues(id) ON DELETE CASCADE,
+    tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    extension_id uuid NOT NULL REFERENCES extensions(id) ON DELETE CASCADE,
+    position integer NOT NULL DEFAULT 0,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (queue_id, extension_id)
+);
+
+CREATE TABLE voicemail_boxes (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    name text NOT NULL,
+    description text,
+    mailbox_number text NOT NULL,
+    greeting_prompt_id uuid REFERENCES prompt_assets(id) ON DELETE SET NULL,
+    status text NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active', 'inactive')),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (tenant_id, name),
+    UNIQUE (tenant_id, mailbox_number)
+);
+
 CREATE INDEX idx_users_tenant_id ON users (tenant_id);
 CREATE INDEX idx_roles_tenant_id ON roles (tenant_id);
 CREATE INDEX idx_policies_tenant_id ON policies (tenant_id);
@@ -393,3 +433,6 @@ CREATE INDEX idx_call_detail_records_start_time ON call_detail_records (tenant_i
 CREATE INDEX idx_call_events_call_id ON call_events (tenant_id, call_id);
 CREATE INDEX idx_call_events_event_time ON call_events (tenant_id, event_time DESC);
 CREATE INDEX idx_runtime_ingestion_records_status ON runtime_ingestion_records (status, received_at DESC);
+CREATE INDEX idx_queues_tenant_id ON queues (tenant_id, status, created_at DESC);
+CREATE INDEX idx_queue_members_queue_id ON queue_members (queue_id, position);
+CREATE INDEX idx_voicemail_boxes_tenant_id ON voicemail_boxes (tenant_id, status, created_at DESC);

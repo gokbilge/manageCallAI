@@ -119,20 +119,23 @@ Implemented / foundational:
 4. `switch`
 5. `transfer_extension`
 6. `hangup`
+7. `business_hours`
+8. `caller_id_match`
+9. `set_variable`
+10. `queue`
+11. `voicemail_drop`
 
 ## 6. Future Node Types
 
 Documented but not implemented in this slice:
 
-- `business_hours`
-- `queue`
 - `ring_group`
-- `voicemail`
 - `webhook`
-- `set_variable`
 - `http_lookup`
 - `ai_action`
 - `language_select`
+- `transfer_external`
+- `sub_flow`
 
 ## 7. Node Expectations
 
@@ -164,6 +167,33 @@ Documented but not implemented in this slice:
   - `{{caller_number}}`
   - `{{now.hour}}`
   - `{{var.<name>}}`
+
+### business_hours
+
+- requires `schedule_id`
+- requires `in_hours_node_id`
+- requires `out_of_hours_node_id`
+
+### caller_id_match
+
+- requires at least one case mapping in `cases`
+- supports exact caller-number matching with `default_node_id`
+
+### set_variable
+
+- requires `variable_name`
+- requires `value`
+- requires `next_node_id`
+
+### queue
+
+- requires `queue_id`
+- terminal transfer-style node
+
+### voicemail_drop
+
+- requires `voicemail_box_id`
+- terminal voicemail-style node
 
 ### transfer_extension
 

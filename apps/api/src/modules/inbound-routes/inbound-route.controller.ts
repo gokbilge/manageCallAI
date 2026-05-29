@@ -29,7 +29,7 @@ function replyError(err: unknown, reply: FastifyReply): FastifyReply {
 }
 
 const MATCH_TYPES = ['did', 'trunk', 'pattern'] as const;
-const TARGET_TYPES = ['flow', 'extension', 'call_group'] as const;
+const TARGET_TYPES = ['flow', 'extension', 'call_group', 'queue', 'voicemail_box'] as const;
 
 const idParams = {
   schema: {
@@ -55,7 +55,7 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
       match_type: 'did' | 'trunk' | 'pattern';
       match_value: string;
       phone_number_id?: string;
-      target_type: 'flow' | 'extension' | 'call_group';
+      target_type: 'flow' | 'extension' | 'call_group' | 'queue' | 'voicemail_box';
       target_id?: string;
     };
   }>(
@@ -111,7 +111,7 @@ export async function inboundRouteController(app: FastifyInstance): Promise<void
       match_type?: 'did' | 'trunk' | 'pattern';
       match_value?: string;
       phone_number_id?: string | null;
-      target_type?: 'flow' | 'extension';
+      target_type?: 'flow' | 'extension' | 'call_group' | 'queue' | 'voicemail_box';
       target_id?: string | null;
     };
   }>(

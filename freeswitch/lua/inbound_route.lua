@@ -83,6 +83,46 @@ elseif target_type == "flow" then
     string.format("[manageCallAI] entering flow runtime for flow %s\n", tostring(data.target_id)))
   session:execute("lua", "managecall_entry.lua " .. tostring(data.target_id))
 
+elseif target_type == "call_group" or target_type == "queue" then
+  local target = data.target
+  local strategy = target and target.strategy or "simultaneous"
+  local members = target and target.members or nil
+  if not members or #members == 0 then
+    freeswitch.consoleLog("err", "[manageCallAI] queue/call_group target missing members\n")
+    session:execute("hangup", "DESTINATION_OUT_OF_ORDER")
+    return
+  end
+
+  local separator = strategy == "sequential" and "|" or ","
+  local endpoints = {}
+  for _, member in ipairs(members) do
+    if member.extension_number and member.directory_domain then
+      table.insert(endpoints, string.format("sofia/internal/%s@%s", member.extension_number, member.directory_domain))
+    end
+  end
+  if #endpoints == 0 then
+    freeswitch.consoleLog("err", "[manageCallAI] queue/call_group target resolved no valid endpoints\n")
+    session:execute("hangup", "DESTINATION_OUT_OF_ORDER")
+    return
+  end
+  local bridge_str = table.concat(endpoints, separator)
+  freeswitch.consoleLog("info", "[manageCallAI] queue/call_group bridge " .. bridge_str .. "\n")
+  session:execute("bridge", bridge_str)
+
+elseif target_type == "voicemail_box" then
+  local target = data.target
+  if not target or not target.mailbox_number or not target.directory_domain then
+    freeswitch.consoleLog("err", "[manageCallAI] voicemail target missing mailbox_number or directory_domain\n")
+    session:execute("hangup", "DESTINATION_OUT_OF_ORDER")
+    return
+  end
+  if target.greeting_prompt_uri then
+    session:streamFile(target.greeting_prompt_uri)
+  end
+  local voicemail_args = string.format("default %s %s", target.directory_domain, target.mailbox_number)
+  freeswitch.consoleLog("info", "[manageCallAI] entering voicemail " .. voicemail_args .. "\n")
+  session:execute("voicemail", voicemail_args)
+
 else
   freeswitch.consoleLog("warning",
     string.format("[manageCallAI] unknown target_type '%s'\n", tostring(target_type)))

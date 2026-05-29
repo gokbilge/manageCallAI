@@ -5,7 +5,7 @@ export interface RouteMatch {
   tenant_id: string;
   match_type: string;
   match_value: string;
-  target_type: 'extension' | 'flow' | 'call_group';
+  target_type: 'extension' | 'flow' | 'call_group' | 'queue' | 'voicemail_box';
   target_id: string | null;
 }
 
@@ -30,6 +30,18 @@ export interface CallGroupMemberEntry {
 export interface CallGroupTarget {
   strategy: 'simultaneous' | 'sequential';
   members: CallGroupMemberEntry[];
+}
+
+export interface QueueTarget {
+  strategy: 'simultaneous' | 'sequential';
+  ring_timeout_seconds: number;
+  members: CallGroupMemberEntry[];
+}
+
+export interface VoicemailTarget {
+  mailbox_number: string;
+  directory_domain: string | null;
+  greeting_prompt_uri: string | null;
 }
 
 export class RouteLookupRepository {
@@ -111,6 +123,43 @@ export class RouteLookupRepository {
       strategy: groupR.rows[0].strategy as 'simultaneous' | 'sequential',
       members: membersR.rows,
     };
+  }
+
+  async findQueueTarget(queueId: string): Promise<QueueTarget | null> {
+    const queueR = await this.db.query<{ strategy: string; ring_timeout_seconds: number }>(
+      `SELECT strategy, ring_timeout_seconds FROM queues WHERE id = $1 AND status = 'active'`,
+      [queueId],
+    );
+    if (!queueR.rows[0]) return null;
+
+    const membersR = await this.db.query<CallGroupMemberEntry>(
+      `SELECT e.extension_number, t.directory_domain, qm.position
+       FROM queue_members qm
+       JOIN extensions e ON e.id = qm.extension_id
+       JOIN tenants t ON t.id = qm.tenant_id
+       WHERE qm.queue_id = $1 AND e.status = 'active'
+       ORDER BY qm.position ASC, e.extension_number ASC`,
+      [queueId],
+    );
+    if (membersR.rows.length === 0) return null;
+
+    return {
+      strategy: queueR.rows[0].strategy as 'simultaneous' | 'sequential',
+      ring_timeout_seconds: queueR.rows[0].ring_timeout_seconds,
+      members: membersR.rows,
+    };
+  }
+
+  async findVoicemailTarget(boxId: string): Promise<VoicemailTarget | null> {
+    const r = await this.db.query<VoicemailTarget>(
+      `SELECT vb.mailbox_number, t.directory_domain, pa.storage_uri AS greeting_prompt_uri
+       FROM voicemail_boxes vb
+       JOIN tenants t ON t.id = vb.tenant_id
+       LEFT JOIN prompt_assets pa ON pa.id = vb.greeting_prompt_id
+       WHERE vb.id = $1 AND vb.status = 'active'`,
+      [boxId],
+    );
+    return r.rows[0] ?? null;
   }
 
   async findTenantByDomain(domain: string): Promise<{ id: string } | null> {

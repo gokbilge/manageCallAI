@@ -2,6 +2,8 @@ import type { Pool } from 'pg';
 import type {
   ExtensionTransferReference,
   PromptAssetReference,
+  QueueTransferReference,
+  VoicemailBoxReference,
 } from '../ivr-flows/ivr-flow.types.js';
 import type { IvrRuntimeSession, IvrRuntimeSessionStep } from './ivr-runtime.types.js';
 
@@ -286,5 +288,68 @@ export class IvrRuntimeRepository {
       [tenantId, scheduleId],
     );
     return result.rows[0] ?? null;
+  }
+
+  async findActiveQueueTargets(tenantId: string, ids: string[]): Promise<Map<string, QueueTransferReference>> {
+    if (ids.length === 0) return new Map();
+    const queuesR = await this.db.query<{
+      id: string;
+      name: string;
+      strategy: 'simultaneous' | 'sequential';
+      ring_timeout_seconds: number;
+    }>(
+      `SELECT id, name, strategy, ring_timeout_seconds
+       FROM queues
+       WHERE tenant_id = $1 AND id = ANY($2) AND status = 'active'`,
+      [tenantId, ids],
+    );
+    if (queuesR.rows.length === 0) return new Map();
+
+    const membersR = await this.db.query<{
+      queue_id: string;
+      extension_number: string;
+      directory_domain: string | null;
+      position: number;
+    }>(
+      `SELECT qm.queue_id, e.extension_number, t.directory_domain, qm.position
+       FROM queue_members qm
+       JOIN extensions e ON e.id = qm.extension_id
+       JOIN tenants t ON t.id = qm.tenant_id
+       WHERE qm.tenant_id = $1 AND qm.queue_id = ANY($2) AND e.status = 'active'
+       ORDER BY qm.position ASC, e.extension_number ASC`,
+      [tenantId, ids],
+    );
+
+    const membersByQueue = new Map<string, QueueTransferReference['members']>();
+    for (const row of membersR.rows) {
+      const members = membersByQueue.get(row.queue_id) ?? [];
+      members.push({
+        extension_number: row.extension_number,
+        directory_domain: row.directory_domain,
+        position: row.position,
+      });
+      membersByQueue.set(row.queue_id, members);
+    }
+
+    return new Map(queuesR.rows.map((row) => [row.id, {
+      id: row.id,
+      name: row.name,
+      strategy: row.strategy,
+      ring_timeout_seconds: row.ring_timeout_seconds,
+      members: membersByQueue.get(row.id) ?? [],
+    }]));
+  }
+
+  async findActiveVoicemailTargets(tenantId: string, ids: string[]): Promise<Map<string, VoicemailBoxReference>> {
+    if (ids.length === 0) return new Map();
+    const result = await this.db.query<VoicemailBoxReference>(
+      `SELECT vb.id, vb.name, vb.mailbox_number, t.directory_domain, pa.storage_uri AS greeting_prompt_uri
+       FROM voicemail_boxes vb
+       JOIN tenants t ON t.id = vb.tenant_id
+       LEFT JOIN prompt_assets pa ON pa.id = vb.greeting_prompt_id
+       WHERE vb.tenant_id = $1 AND vb.id = ANY($2) AND vb.status = 'active'`,
+      [tenantId, ids],
+    );
+    return new Map(result.rows.map((row) => [row.id, row]));
   }
 }

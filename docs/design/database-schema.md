@@ -31,6 +31,9 @@ It maps the conceptual domain model into relational structures suitable for MVP 
 - `sip_trunks`
 - `phone_numbers`
 - `prompt_assets`
+- `queues`
+- `queue_members`
+- `voicemail_boxes`
 - `ivr_flows`
 - `inbound_routes`
 - `outbound_routes`
@@ -125,13 +128,45 @@ Practical runtime fields:
 - `checksum` - optional integrity marker for deployment/media sync
 - `status` - active/inactive lifecycle gate
 
-### 4.7 ivr_flows and flow_versions
+### 4.7 queues, queue_members
+
+Store tenant-scoped ring targets without exposing raw FreeSWITCH queue internals.
+
+Practical fields:
+
+- `queues.name`
+- `queues.strategy` - currently `simultaneous` or `sequential`
+- `queues.ring_timeout_seconds`
+- `queues.status`
+- `queue_members.extension_id`
+- `queue_members.position`
+
+The desired-state queue resource remains business-level. Runtime translation into
+bridge strings or later queue applications happens in backend/runtime adapters,
+not through public raw dialplan editing.
+
+### 4.8 voicemail_boxes
+
+Store tenant-scoped voicemail destinations and greeting references.
+
+Practical fields:
+
+- `name`
+- `mailbox_number`
+- `greeting_prompt_id`
+- `status`
+
+The box stores business ownership and prompt linkage. FreeSWITCH execution still
+occurs through constrained runtime/dialplan projection rather than raw user-authored
+switch internals.
+
+### 4.9 ivr_flows and flow_versions
 
 `ivr_flows` stores the durable business object identity and current pointers.
 
 `flow_versions` stores versioned flow definitions and lifecycle timestamps.
 
-### 4.8 inbound_routes, outbound_routes, route_versions
+### 4.10 inbound_routes, outbound_routes, route_versions
 
 Route tables store the durable route identity and active or draft pointers.
 
@@ -140,23 +175,26 @@ Route tables store the durable route identity and active or draft pointers.
 `inbound_routes.phone_number_id` is optional and is used for DID-backed routes that
 should bind to a real tenant phone number instead of relying on free-form text only.
 
-### 4.9 validation_results and simulation_results
+`inbound_routes.target_type` now also supports `queue` and `voicemail_box` in
+addition to the earlier `flow`, `extension`, and `call_group` targets.
+
+### 4.11 validation_results and simulation_results
 
 Store execution outcomes for validation and simulation by object and version.
 
-### 4.10 approval_requests and publish_records
+### 4.12 approval_requests and publish_records
 
 Represent change governance and publish or rollback history.
 
-### 4.11 audit_events
+### 4.13 audit_events
 
 Stores actor-attributed, immutable operational audit history.
 
-### 4.12 call_detail_records, call_events, runtime_ingestion_records
+### 4.14 call_detail_records, call_events, runtime_ingestion_records
 
 Store normalized runtime and ingestion visibility from FreeSWITCH integration paths.
 
-### 4.13 ivr_flow_sessions
+### 4.15 ivr_flow_sessions
 
 Stores per-call runtime execution state for the backend IVR resolver.
 
@@ -172,7 +210,7 @@ This table is operational state, not desired state. It should be treated as
 ephemeral runtime coordination data, while `ivr_flows` and `flow_versions`
 remain the source of truth for behavior design.
 
-### 4.14 ivr_flow_session_steps
+### 4.16 ivr_flow_session_steps
 
 Stores the durable per-step execution trace for an IVR runtime session.
 

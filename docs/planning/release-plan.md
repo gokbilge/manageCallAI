@@ -53,15 +53,15 @@ Reference:
 | `SLICE-12` | completed |
 | `SLICE-13` | completed as umbrella decomposition |
 | `SLICE-14` | completed |
-| `SLICE-15` | planned |
-| `SLICE-16` | planned |
+| `SLICE-15` | completed |
+| `SLICE-16` | completed |
 | `SLICE-17` | completed |
 | `SLICE-18` | completed |
 | `SLICE-19` | completed |
-| `SLICE-20` | planned |
-| `SLICE-21` | planned |
+| `SLICE-20` | completed |
+| `SLICE-21` | completed |
 | `SLICE-22` | planned |
-| `SLICE-23` | planned |
+| `SLICE-23` | completed |
 
 The original v1 release-plan slices are closed. The new post-release slices are now
 explicit and ready for future sequencing.

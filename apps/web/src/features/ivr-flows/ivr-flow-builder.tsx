@@ -23,7 +23,14 @@ import {
   updateBuilderNode,
 } from './ivr-flow-builder-utils';
 import { IvrFlowBuilderNode } from './ivr-flow-builder-node';
-import type { ExtensionOption, FlowVersion, PromptAssetOption } from '@/lib/ivr-flows/ivr-flows-api';
+import type {
+  ExtensionOption,
+  FlowVersion,
+  PromptAssetOption,
+  QueueOption,
+  ScheduleOption,
+  VoicemailBoxOption,
+} from '@/lib/ivr-flows/ivr-flows-api';
 
 const nodeTypes = { ivrNode: IvrFlowBuilderNode };
 
@@ -31,11 +38,23 @@ type IvrFlowBuilderProps = {
   version: FlowVersion;
   prompts: PromptAssetOption[];
   extensions: ExtensionOption[];
+  schedules: ScheduleOption[];
+  queues: QueueOption[];
+  voicemailBoxes: VoicemailBoxOption[];
   onSave: (graph_json: Record<string, unknown>) => Promise<void>;
   isSaving: boolean;
 };
 
-export function IvrFlowBuilder({ version, prompts, extensions, onSave, isSaving }: IvrFlowBuilderProps) {
+export function IvrFlowBuilder({
+  version,
+  prompts,
+  extensions,
+  schedules,
+  queues,
+  voicemailBoxes,
+  onSave,
+  isSaving,
+}: IvrFlowBuilderProps) {
   const [nodes, setNodes] = useState<Node<BuilderNodeData>[]>(() => graphToBuilderNodes(sanitizeBuilderGraph(version.graph_json)));
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -67,7 +86,7 @@ export function IvrFlowBuilder({ version, prompts, extensions, onSave, isSaving 
         <div className="mb-4">
           <h2 className="text-base font-semibold">Node Palette</h2>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
-            Add only the current MVP runtime node types. The builder stays aligned to the safe backend schema.
+            Add only the node types the backend can validate, simulate, and execute safely.
           </p>
         </div>
         <div className="space-y-3">
@@ -158,6 +177,9 @@ export function IvrFlowBuilder({ version, prompts, extensions, onSave, isSaving 
             node={selectedNode}
             nodeOptions={nodeOptions}
             prompts={prompts}
+            queues={queues}
+            schedules={schedules}
+            voicemailBoxes={voicemailBoxes}
             onDelete={() => {
               setNodes((current) => removeNode(current, selectedNode.id));
               setSelectedNodeId(null);
@@ -186,6 +208,18 @@ function removeNode(nodes: Node<BuilderNodeData>[], nodeId: string): Node<Builde
       if ('next_node_id' in graphNode && graphNode.next_node_id === nodeId) {
         return updateBuilderNode(node, { next_node_id: undefined } as Partial<BuilderGraphNode>);
       }
+      if (graphNode.type === 'business_hours') {
+        const patch: { in_hours_node_id?: undefined; out_of_hours_node_id?: undefined } = {};
+        if (graphNode.in_hours_node_id === nodeId) patch.in_hours_node_id = undefined;
+        if (graphNode.out_of_hours_node_id === nodeId) patch.out_of_hours_node_id = undefined;
+        if (Object.keys(patch).length > 0) return updateBuilderNode(node, patch as Partial<BuilderGraphNode>);
+      }
+      if (graphNode.type === 'caller_id_match') {
+        const patch: { match_node_id?: undefined; no_match_node_id?: undefined } = {};
+        if (graphNode.match_node_id === nodeId) patch.match_node_id = undefined;
+        if (graphNode.no_match_node_id === nodeId) patch.no_match_node_id = undefined;
+        if (Object.keys(patch).length > 0) return updateBuilderNode(node, patch as Partial<BuilderGraphNode>);
+      }
       if (graphNode.type === 'play_collect') {
         const patch: { timeout_node_id?: undefined; invalid_node_id?: undefined } = {};
         if (graphNode.timeout_node_id === nodeId) patch.timeout_node_id = undefined;
@@ -207,6 +241,9 @@ function NodeInspector({
   node,
   prompts,
   extensions,
+  schedules,
+  queues,
+  voicemailBoxes,
   nodeOptions,
   onUpdate,
   onDelete,
@@ -214,6 +251,9 @@ function NodeInspector({
   node: Node<BuilderNodeData>;
   prompts: PromptAssetOption[];
   extensions: ExtensionOption[];
+  schedules: ScheduleOption[];
+  queues: QueueOption[];
+  voicemailBoxes: VoicemailBoxOption[];
   nodeOptions: Array<{ id: string; label: string }>;
   onUpdate: (patch: Partial<BuilderGraphNode>) => void;
   onDelete: () => void;
@@ -227,7 +267,7 @@ function NodeInspector({
         <p className="mt-1 font-mono text-xs text-[var(--color-muted-fg)]">{node.id}</p>
       </div>
 
-      {('next_node_id' in graphNode) ? (
+      {'next_node_id' in graphNode ? (
         <SelectField
           label="Next node"
           onChange={(value) => onUpdate({ next_node_id: value || undefined } as Partial<BuilderGraphNode>)}
@@ -344,15 +384,85 @@ function NodeInspector({
         </>
       ) : null}
 
+      {graphNode.type === 'business_hours' ? (
+        <>
+          <SelectField
+            label="Schedule"
+            onChange={(value) => onUpdate({ schedule_id: value || undefined })}
+            options={schedules.map((schedule) => ({ id: schedule.id, label: schedule.name }))}
+            value={graphNode.schedule_id ?? ''}
+          />
+          <SelectField
+            label="In-hours target"
+            onChange={(value) => onUpdate({ in_hours_node_id: value || undefined })}
+            options={nodeOptions}
+            value={graphNode.in_hours_node_id ?? ''}
+          />
+          <SelectField
+            label="Out-of-hours target"
+            onChange={(value) => onUpdate({ out_of_hours_node_id: value || undefined })}
+            options={nodeOptions}
+            value={graphNode.out_of_hours_node_id ?? ''}
+          />
+        </>
+      ) : null}
+
+      {graphNode.type === 'caller_id_match' ? (
+        <>
+          <TextField
+            label="Prefixes (comma separated)"
+            onChange={(value) => onUpdate({ prefixes: value.split(',').map((item) => item.trim()).filter(Boolean) })}
+            value={(graphNode.prefixes ?? []).join(', ')}
+          />
+          <SelectField
+            label="Match target"
+            onChange={(value) => onUpdate({ match_node_id: value || undefined })}
+            options={nodeOptions}
+            value={graphNode.match_node_id ?? ''}
+          />
+          <SelectField
+            label="No-match target"
+            onChange={(value) => onUpdate({ no_match_node_id: value || undefined })}
+            options={nodeOptions}
+            value={graphNode.no_match_node_id ?? ''}
+          />
+        </>
+      ) : null}
+
+      {graphNode.type === 'set_variable' ? (
+        <>
+          <TextField label="Variable name" onChange={(value) => onUpdate({ variable_name: value || undefined })} value={graphNode.variable_name ?? ''} />
+          <TextField label="Value" onChange={(value) => onUpdate({ value })} value={graphNode.value ?? ''} />
+        </>
+      ) : null}
+
       {graphNode.type === 'transfer_extension' ? (
         <SelectField
           label="Extension target"
           onChange={(value) => onUpdate({ extension_id: value || undefined })}
           options={extensions.map((extension) => ({
             id: extension.id,
-            label: `${extension.extension_number} — ${extension.display_name}`,
+            label: `${extension.extension_number} - ${extension.display_name}`,
           }))}
           value={graphNode.extension_id ?? ''}
+        />
+      ) : null}
+
+      {graphNode.type === 'queue' ? (
+        <SelectField
+          label="Queue target"
+          onChange={(value) => onUpdate({ queue_id: value || undefined })}
+          options={queues.map((queue) => ({ id: queue.id, label: queue.name }))}
+          value={graphNode.queue_id ?? ''}
+        />
+      ) : null}
+
+      {graphNode.type === 'voicemail_drop' ? (
+        <SelectField
+          label="Voicemail target"
+          onChange={(value) => onUpdate({ voicemail_box_id: value || undefined })}
+          options={voicemailBoxes.map((box) => ({ id: box.id, label: `${box.name} (${box.mailbox_number})` }))}
+          value={graphNode.voicemail_box_id ?? ''}
         />
       ) : null}
 

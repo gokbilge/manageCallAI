@@ -27,7 +27,7 @@ export interface InboundRoute {
   match_type: 'did' | 'trunk' | 'pattern';
   match_value: string;
   phone_number_id: string | null;
-  target_type: 'flow' | 'extension' | 'call_group';
+  target_type: 'flow' | 'extension' | 'call_group' | 'queue' | 'voicemail_box';
   target_id: string | null;
   status: 'draft' | 'active' | 'inactive';
   draft_version_id: string | null;
@@ -46,7 +46,7 @@ export interface CreateInboundRouteInput {
   match_type: 'did' | 'trunk' | 'pattern';
   match_value: string;
   phone_number_id?: string | null;
-  target_type: 'flow' | 'extension' | 'call_group';
+  target_type: 'flow' | 'extension' | 'call_group' | 'queue' | 'voicemail_box';
   target_id?: string;
   created_by?: string;
 }
@@ -56,7 +56,7 @@ export interface UpdateInboundRouteInput {
   match_type?: 'did' | 'trunk' | 'pattern';
   match_value?: string;
   phone_number_id?: string | null;
-  target_type?: 'flow' | 'extension' | 'call_group';
+  target_type?: 'flow' | 'extension' | 'call_group' | 'queue' | 'voicemail_box';
   target_id?: string | null;
 }
 

@@ -73,6 +73,24 @@ export type IvrRuntimeAction =
       domain: string | null;
     }
   | {
+      action: 'transfer';
+      node_id: string;
+      target_type: 'queue';
+      strategy: 'simultaneous' | 'sequential';
+      ring_timeout_seconds: number;
+      members: Array<{
+        extension_number: string;
+        domain: string | null;
+      }>;
+    }
+  | {
+      action: 'voicemail';
+      node_id: string;
+      mailbox_number: string;
+      domain: string | null;
+      greeting_prompt_uri: string | null;
+    }
+  | {
       action: 'hangup';
       node_id: string;
     };

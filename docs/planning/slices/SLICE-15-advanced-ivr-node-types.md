@@ -7,7 +7,17 @@ same desired-state, validate, simulate, publish, and runtime-execute lifecycle.
 
 ## Status
 
-**PLANNED**
+**COMPLETED**
+
+Shipped in this slice:
+
+- `caller_id_match`
+- `set_variable`
+- `queue`
+- `voicemail_drop`
+
+These now work through validation, simulation, backend runtime resolution, and
+the visual IVR builder.
 
 ## Scope
 
@@ -19,7 +29,6 @@ same desired-state, validate, simulate, publish, and runtime-execute lifecycle.
 ## Initial Candidate Nodes
 
 - `transfer_external`
-- `set_variable`
 - `http_request`
 - `sub_flow`
 - `a_b_test`

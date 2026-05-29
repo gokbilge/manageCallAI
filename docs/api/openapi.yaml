@@ -36,6 +36,10 @@ tags:
     description: Phone number management
   - name: Prompts
     description: Prompt asset metadata management
+  - name: Queues
+    description: Tenant queue management
+  - name: VoicemailBoxes
+    description: Tenant voicemail box management
   - name: InboundRoutes
     description: Inbound route lifecycle (draft → validate → publish → rollback)
   - name: IvrFlows
@@ -418,6 +422,205 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PromptAssetResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /queues:
+    get:
+      tags: [Queues]
+      summary: List queues
+      responses:
+        '200':
+          description: Queue list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Queues]
+      summary: Create queue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQueueRequest'
+      responses:
+        '201':
+          description: Queue created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /queues/{queueId}:
+    parameters:
+      - $ref: '#/components/parameters/QueueIdParam'
+    get:
+      tags: [Queues]
+      summary: Get queue
+      responses:
+        '200':
+          description: Queue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [Queues]
+      summary: Update queue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQueueRequest'
+      responses:
+        '200':
+          description: Queue updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /queues/{queueId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/QueueIdParam'
+    post:
+      tags: [Queues]
+      summary: Deactivate queue
+      responses:
+        '200':
+          description: Queue deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /queues/{queueId}/members:
+    parameters:
+      - $ref: '#/components/parameters/QueueIdParam'
+    post:
+      tags: [Queues]
+      summary: Add queue member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddQueueMemberRequest'
+      responses:
+        '201':
+          description: Queue member created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueMemberResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /queues/{queueId}/members/{extensionId}:
+    parameters:
+      - $ref: '#/components/parameters/QueueIdParam'
+      - $ref: '#/components/parameters/ExtensionIdParam'
+    delete:
+      tags: [Queues]
+      summary: Remove queue member
+      responses:
+        '204':
+          description: Queue member removed
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /voicemail-boxes:
+    get:
+      tags: [VoicemailBoxes]
+      summary: List voicemail boxes
+      responses:
+        '200':
+          description: Voicemail box list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicemailBoxListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [VoicemailBoxes]
+      summary: Create voicemail box
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVoicemailBoxRequest'
+      responses:
+        '201':
+          description: Voicemail box created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicemailBoxResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /voicemail-boxes/{boxId}:
+    parameters:
+      - $ref: '#/components/parameters/VoicemailBoxIdParam'
+    get:
+      tags: [VoicemailBoxes]
+      summary: Get voicemail box
+      responses:
+        '200':
+          description: Voicemail box
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicemailBoxResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [VoicemailBoxes]
+      summary: Update voicemail box
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVoicemailBoxRequest'
+      responses:
+        '200':
+          description: Voicemail box updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicemailBoxResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /voicemail-boxes/{boxId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/VoicemailBoxIdParam'
+    post:
+      tags: [VoicemailBoxes]
+      summary: Deactivate voicemail box
+      responses:
+        '200':
+          description: Voicemail box deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicemailBoxResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -1284,6 +1487,20 @@ components:
       schema:
         type: string
         format: uuid
+    QueueIdParam:
+      name: queueId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VoicemailBoxIdParam:
+      name: boxId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     RouteIdParam:
       name: routeId
       in: path
@@ -1830,6 +2047,239 @@ components:
 
     # ── Inbound Routes ────────────────────────────────────────────────────────
 
+    QueueMember:
+      type: object
+      required: [id, queue_id, tenant_id, extension_id, extension_number, display_name, position, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        queue_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        extension_id:
+          type: string
+          format: uuid
+        extension_number:
+          type: string
+        display_name:
+          type: string
+        position:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    Queue:
+      type: object
+      required: [id, tenant_id, name, strategy, ring_timeout_seconds, status, members, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        strategy:
+          type: string
+          enum: [simultaneous, sequential]
+        ring_timeout_seconds:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueMember'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    QueueResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Queue'
+
+    QueueListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Queue'
+
+    QueueMemberResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/QueueMember'
+
+    CreateQueueRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        strategy:
+          type: string
+          enum: [simultaneous, sequential]
+        ring_timeout_seconds:
+          type: integer
+          minimum: 5
+          maximum: 120
+
+    UpdateQueueRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          oneOf:
+            - type: string
+              maxLength: 1000
+            - type: 'null'
+        strategy:
+          type: string
+          enum: [simultaneous, sequential]
+        ring_timeout_seconds:
+          type: integer
+          minimum: 5
+          maximum: 120
+        status:
+          type: string
+          enum: [active, inactive]
+
+    AddQueueMemberRequest:
+      type: object
+      required: [extension_id]
+      properties:
+        extension_id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+          minimum: 0
+
+    VoicemailBox:
+      type: object
+      required: [id, tenant_id, name, mailbox_number, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        mailbox_number:
+          type: string
+        greeting_prompt_id:
+          type: string
+          format: uuid
+          nullable: true
+        greeting_prompt_name:
+          type: string
+          nullable: true
+        greeting_prompt_uri:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, inactive]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    VoicemailBoxResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/VoicemailBox'
+
+    VoicemailBoxListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoicemailBox'
+
+    CreateVoicemailBoxRequest:
+      type: object
+      required: [name, mailbox_number]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        mailbox_number:
+          type: string
+          pattern: '^[0-9]{2,12}$'
+        greeting_prompt_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+
+    UpdateVoicemailBoxRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          oneOf:
+            - type: string
+              maxLength: 1000
+            - type: 'null'
+        mailbox_number:
+          type: string
+          pattern: '^[0-9]{2,12}$'
+        greeting_prompt_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        status:
+          type: string
+          enum: [active, inactive]
+
     InboundRoute:
       type: object
       required: [id, tenant_id, name, match_type, match_value, target_type, status, created_at, updated_at]
@@ -1853,7 +2303,7 @@ components:
           format: uuid
         target_type:
           type: string
-          enum: [flow, extension]
+          enum: [flow, extension, call_group, queue, voicemail_box]
         target_id:
           type: string
           nullable: true
@@ -1915,7 +2365,7 @@ components:
             is normalized from the linked phone number's e164_number.
         target_type:
           type: string
-          enum: [flow, extension]
+          enum: [flow, extension, call_group, queue, voicemail_box]
         target_id:
           type: string
           format: uuid
@@ -1941,7 +2391,7 @@ components:
             - type: 'null'
         target_type:
           type: string
-          enum: [flow, extension]
+          enum: [flow, extension, call_group, queue, voicemail_box]
         target_id:
           oneOf:
             - type: string
@@ -2234,12 +2684,18 @@ components:
       properties:
         type:
           type: string
-          enum: [transfer_extension, hangup]
+          enum: [transfer_extension, queue, voicemail, hangup]
         extension_id:
           type: string
           format: uuid
         extension_number:
           type: string
+        queue_id:
+          type: string
+          format: uuid
+        voicemail_box_id:
+          type: string
+          format: uuid
 
     IvrFlowSimulationOutcome:
       type: object
@@ -2359,6 +2815,7 @@ components:
         - $ref: '#/components/schemas/IvrRuntimePlayPromptAction'
         - $ref: '#/components/schemas/IvrRuntimePlayCollectAction'
         - $ref: '#/components/schemas/IvrRuntimeTransferAction'
+        - $ref: '#/components/schemas/IvrRuntimeVoicemailAction'
         - $ref: '#/components/schemas/IvrRuntimeHangupAction'
 
     IvrRuntimePlayPromptAction:
@@ -2399,7 +2856,7 @@ components:
 
     IvrRuntimeTransferAction:
       type: object
-      required: [action, node_id, target_type, target]
+      required: [action, node_id, target_type]
       properties:
         action:
           type: string
@@ -2408,10 +2865,32 @@ components:
           type: string
         target_type:
           type: string
-          enum: [extension]
+          enum: [extension, queue]
         target:
           type: string
+          nullable: true
         domain:
+          type: string
+          nullable: true
+        members:
+          type: array
+          nullable: true
+          items:
+            type: object
+            additionalProperties: true
+
+    IvrRuntimeVoicemailAction:
+      type: object
+      required: [action, node_id, mailbox_number]
+      properties:
+        action:
+          type: string
+          const: voicemail
+        node_id:
+          type: string
+        mailbox_number:
+          type: string
+        greeting_prompt_uri:
           type: string
           nullable: true
 
@@ -2874,7 +3353,7 @@ components:
           description: Present when matched is true
         target_type:
           type: string
-          enum: [extension, flow]
+          enum: [extension, flow, call_group, queue, voicemail_box]
           description: Present when matched is true
         target_id:
           type: string
@@ -2886,5 +3365,6 @@ components:
           nullable: true
           description: >
             Resolved target details. For extension: { extension_number, directory_domain }.
-            For flow: { flow_id }. null when target not resolved.
+            For flow: { flow_id }. Queue and voicemail targets return backend-resolved
+            business-level details. null when target not resolved.
           additionalProperties: true

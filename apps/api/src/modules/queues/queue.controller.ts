@@ -1,0 +1,173 @@
+import type { FastifyInstance, FastifyReply } from 'fastify';
+import { db } from '../../db/client.js';
+import type { AuthClaims } from '../auth/auth-claims.js';
+import { CAPABILITIES } from '../auth/capabilities.js';
+import { requireCapability } from '../auth/require-capability.js';
+import { QueueRepository } from './queue.repository.js';
+import {
+  QueueMemberInvalidError,
+  QueueMemberNotFoundError,
+  QueueNotFoundError,
+  QueueService,
+} from './queue.service.js';
+import type { AddQueueMemberInput, CreateQueueInput, UpdateQueueInput } from './queue.types.js';
+
+const service = new QueueService(new QueueRepository(db));
+
+function replyError(err: unknown, reply: FastifyReply): FastifyReply {
+  if (err instanceof QueueNotFoundError || err instanceof QueueMemberNotFoundError) {
+    return reply.code(404).send({ error: err.message });
+  }
+  if (err instanceof QueueMemberInvalidError) {
+    return reply.code(422).send({ error: err.message });
+  }
+  throw err;
+}
+
+export async function queueController(app: FastifyInstance): Promise<void> {
+  app.get(
+    '/',
+    { preHandler: requireCapability(CAPABILITIES.TENANT_QUEUES_VIEW) },
+    async (req) => {
+      const user = req.user as AuthClaims;
+      return { data: await service.listByTenant(user.tenant_id) };
+    },
+  );
+
+  app.post<{ Body: Omit<CreateQueueInput, 'tenant_id'> }>(
+    '/',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_QUEUES_CREATE),
+      schema: {
+        body: {
+          type: 'object',
+          required: ['name'],
+          additionalProperties: false,
+          properties: {
+            name: { type: 'string', minLength: 1, maxLength: 255 },
+            description: { type: 'string', maxLength: 1000 },
+            strategy: { type: 'string', enum: ['simultaneous', 'sequential'] },
+            ring_timeout_seconds: { type: 'integer', minimum: 5, maximum: 120 },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      const queue = await service.create({ ...req.body, tenant_id: user.tenant_id });
+      return reply.code(201).send({ data: queue });
+    },
+  );
+
+  app.get<{ Params: { id: string } }>(
+    '/:id',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_QUEUES_VIEW),
+      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.getById(req.params.id, user.tenant_id) };
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.patch<{ Params: { id: string }; Body: UpdateQueueInput }>(
+    '/:id',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_QUEUES_UPDATE),
+      schema: {
+        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        body: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            name: { type: 'string', minLength: 1, maxLength: 255 },
+            description: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] },
+            strategy: { type: 'string', enum: ['simultaneous', 'sequential'] },
+            ring_timeout_seconds: { type: 'integer', minimum: 5, maximum: 120 },
+            status: { type: 'string', enum: ['active', 'inactive'] },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.update(req.params.id, user.tenant_id, req.body) };
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post<{ Params: { id: string } }>(
+    '/:id/deactivate',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_QUEUES_DEACTIVATE),
+      schema: { params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } } },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.deactivate(req.params.id, user.tenant_id) };
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post<{ Params: { id: string }; Body: AddQueueMemberInput }>(
+    '/:id/members',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_QUEUES_UPDATE),
+      schema: {
+        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        body: {
+          type: 'object',
+          required: ['extension_id'],
+          additionalProperties: false,
+          properties: {
+            extension_id: { type: 'string', format: 'uuid' },
+            position: { type: 'integer', minimum: 0 },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const member = await service.addMember(req.params.id, user.tenant_id, req.body);
+        return reply.code(201).send({ data: member });
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.delete<{ Params: { id: string; extensionId: string } }>(
+    '/:id/members/:extensionId',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_QUEUES_UPDATE),
+      schema: {
+        params: {
+          type: 'object',
+          required: ['id', 'extensionId'],
+          properties: { id: { type: 'string' }, extensionId: { type: 'string' } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        await service.removeMember(req.params.id, req.params.extensionId, user.tenant_id);
+        return reply.code(204).send();
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+}

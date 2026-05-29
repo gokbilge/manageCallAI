@@ -13,10 +13,13 @@ import {
   useIvrFlow,
   usePromptAssetOptions,
   usePublishFlowVersion,
+  useQueueOptions,
   useRollbackFlow,
+  useScheduleOptions,
   useSimulateCurrentDraft,
   useUpdateFlowVersion,
   useValidateCurrentDraft,
+  useVoicemailBoxOptions,
 } from '@/lib/ivr-flows/ivr-flows-api';
 import { paths } from '@/lib/routes/paths';
 import { IvrFlowBuilder } from './ivr-flow-builder';
@@ -28,6 +31,9 @@ export function IvrFlowDetailPage() {
   const historyQuery = useFlowHistory(flowId);
   const promptsQuery = usePromptAssetOptions();
   const extensionsQuery = useExtensionOptions();
+  const schedulesQuery = useScheduleOptions();
+  const queuesQuery = useQueueOptions();
+  const voicemailBoxesQuery = useVoicemailBoxOptions();
   const updateVersion = useUpdateFlowVersion(flowId);
   const validateDraft = useValidateCurrentDraft(flowId);
   const simulateDraft = useSimulateCurrentDraft(flowId);
@@ -42,7 +48,10 @@ export function IvrFlowDetailPage() {
   const builderReady = Boolean(
     draftVersion
     && promptsQuery.data
-    && extensionsQuery.data,
+    && extensionsQuery.data
+    && schedulesQuery.data
+    && queuesQuery.data
+    && voicemailBoxesQuery.data
   );
 
   return (
@@ -199,15 +208,18 @@ export function IvrFlowDetailPage() {
 
         <div className="space-y-6">
           <DataCard title="Visual Builder" description="Build the current draft version with typed nodes and edges instead of raw graph JSON.">
-            {flowQuery.isLoading || versionsQuery.isLoading || promptsQuery.isLoading || extensionsQuery.isLoading ? (
+            {flowQuery.isLoading || versionsQuery.isLoading || promptsQuery.isLoading || extensionsQuery.isLoading || schedulesQuery.isLoading || queuesQuery.isLoading || voicemailBoxesQuery.isLoading ? (
               <p className="text-sm text-[var(--color-muted-fg)]">Loading builder dependencies...</p>
-            ) : flowQuery.isError || versionsQuery.isError || promptsQuery.isError || extensionsQuery.isError ? (
+            ) : flowQuery.isError || versionsQuery.isError || promptsQuery.isError || extensionsQuery.isError || schedulesQuery.isError || queuesQuery.isError || voicemailBoxesQuery.isError ? (
               <ErrorState
                 message={
                   (flowQuery.error as Error | undefined)?.message
                   ?? (versionsQuery.error as Error | undefined)?.message
                   ?? (promptsQuery.error as Error | undefined)?.message
                   ?? (extensionsQuery.error as Error | undefined)?.message
+                  ?? (schedulesQuery.error as Error | undefined)?.message
+                  ?? (queuesQuery.error as Error | undefined)?.message
+                  ?? (voicemailBoxesQuery.error as Error | undefined)?.message
                   ?? 'Could not load the visual builder.'
                 }
               />
@@ -222,6 +234,9 @@ export function IvrFlowDetailPage() {
                   });
                 }}
                 prompts={promptsQuery.data ?? []}
+                queues={queuesQuery.data ?? []}
+                schedules={schedulesQuery.data ?? []}
+                voicemailBoxes={voicemailBoxesQuery.data ?? []}
                 version={draftVersion}
               />
             ) : (

@@ -18,7 +18,7 @@ describe('Route Lookup API integration', () => {
     ({ db } = await import('../../db/client.js'));
     app = buildApp();
     await app.ready();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await app.close();
@@ -375,6 +375,85 @@ describe('Route Lookup API integration', () => {
     expect(res.body).toContain(domain);
     expect(res.body).toContain('managecall_route_id=');
     expect(res.body).not.toContain('application="luarun"');
+  });
+
+  it('returns dialplan XML with bridge string for a DID route targeting a queue', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const token = await register(suffix);
+    const extId = await createExtension(token, '6101');
+
+    const queueRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/queues',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Support Queue', strategy: 'sequential' },
+    });
+    expect(queueRes.statusCode).toBe(201);
+    const queueId = queueRes.json<{ data: { id: string } }>().data.id;
+
+    const memberRes = await app.inject({
+      method: 'POST',
+      url: `/api/v1/queues/${queueId}/members`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { extension_id: extId },
+    });
+    expect(memberRes.statusCode).toBe(201);
+
+    await createActiveRoute(token, 'Queue Route', 'did', '+15556660003', 'queue', queueId);
+
+    const domain = `tenant-${suffix}.managecallai.local`;
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15556660003&domain=${encodeURIComponent(domain)}`,
+      headers: { 'x-managecallai-runtime-token': 'test-runtime-token' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('application="bridge"');
+    expect(res.body).toContain('sofia/internal/6101@');
+  });
+
+  it('returns dialplan XML for a DID route targeting a voicemail box', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const token = await register(suffix);
+    const promptRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/prompts',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'After Hours Greeting',
+        media_type: 'audio/wav',
+        storage_uri: '/sounds/test/after-hours.wav',
+      },
+    });
+    expect(promptRes.statusCode).toBe(201);
+    const promptId = promptRes.json<{ data: { id: string } }>().data.id;
+
+    const vmRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/voicemail-boxes',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'After Hours',
+        mailbox_number: '8003',
+        greeting_prompt_id: promptId,
+      },
+    });
+    expect(vmRes.statusCode).toBe(201);
+    const boxId = vmRes.json<{ data: { id: string } }>().data.id;
+
+    await createActiveRoute(token, 'Voicemail Route', 'did', '+15556660004', 'voicemail_box', boxId);
+
+    const domain = `tenant-${suffix}.managecallai.local`;
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15556660004&domain=${encodeURIComponent(domain)}`,
+      headers: { 'x-managecallai-runtime-token': 'test-runtime-token' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('application="voicemail"');
+    expect(res.body).toContain('8003');
   });
 
   it('returns dialplan XML for a DID route bound through phone_number_id', async () => {

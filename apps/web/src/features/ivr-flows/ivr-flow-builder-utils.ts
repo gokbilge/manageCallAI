@@ -5,7 +5,12 @@ export type BuilderNodeType =
   | 'play_prompt'
   | 'play_collect'
   | 'switch'
+  | 'business_hours'
+  | 'caller_id_match'
+  | 'set_variable'
   | 'transfer_extension'
+  | 'queue'
+  | 'voicemail_drop'
   | 'hangup';
 
 type BaseBuilderGraphNode = {
@@ -42,9 +47,40 @@ export type SwitchBuilderNode = BaseBuilderGraphNode & {
   default_node_id?: string;
 };
 
+export type BusinessHoursBuilderNode = BaseBuilderGraphNode & {
+  type: 'business_hours';
+  schedule_id?: string;
+  in_hours_node_id?: string;
+  out_of_hours_node_id?: string;
+};
+
+export type CallerIdMatchBuilderNode = BaseBuilderGraphNode & {
+  type: 'caller_id_match';
+  prefixes?: string[];
+  match_node_id?: string;
+  no_match_node_id?: string;
+};
+
+export type SetVariableBuilderNode = BaseBuilderGraphNode & {
+  type: 'set_variable';
+  variable_name?: string;
+  value?: string;
+  next_node_id?: string;
+};
+
 export type TransferBuilderNode = BaseBuilderGraphNode & {
   type: 'transfer_extension';
   extension_id?: string;
+};
+
+export type QueueBuilderNode = BaseBuilderGraphNode & {
+  type: 'queue';
+  queue_id?: string;
+};
+
+export type VoicemailDropBuilderNode = BaseBuilderGraphNode & {
+  type: 'voicemail_drop';
+  voicemail_box_id?: string;
 };
 
 export type HangupBuilderNode = BaseBuilderGraphNode & {
@@ -56,7 +92,12 @@ export type BuilderGraphNode =
   | PlayPromptBuilderNode
   | PlayCollectBuilderNode
   | SwitchBuilderNode
+  | BusinessHoursBuilderNode
+  | CallerIdMatchBuilderNode
+  | SetVariableBuilderNode
   | TransferBuilderNode
+  | QueueBuilderNode
+  | VoicemailDropBuilderNode
   | HangupBuilderNode;
 
 export type BuilderGraphJson = {
@@ -76,7 +117,12 @@ export const BUILDER_NODE_TYPES: Array<{ type: BuilderNodeType; label: string; d
   { type: 'play_prompt', label: 'Play Prompt', description: 'Play a prompt and continue.' },
   { type: 'play_collect', label: 'Play Collect', description: 'Play a prompt and collect DTMF input.' },
   { type: 'switch', label: 'Switch', description: 'Branch based on last digits or variables.' },
+  { type: 'business_hours', label: 'Business Hours', description: 'Branch based on a published schedule.' },
+  { type: 'caller_id_match', label: 'Caller ID Match', description: 'Branch when caller number matches allowed prefixes.' },
+  { type: 'set_variable', label: 'Set Variable', description: 'Write a runtime variable and continue.' },
   { type: 'transfer_extension', label: 'Transfer Extension', description: 'Bridge the caller to an extension.' },
+  { type: 'queue', label: 'Queue', description: 'Bridge the caller using a queue target.' },
+  { type: 'voicemail_drop', label: 'Voicemail', description: 'Drop the caller into a voicemail box.' },
   { type: 'hangup', label: 'Hangup', description: 'End the call.' },
 ];
 
@@ -131,8 +177,18 @@ function nodeTitle(node: BuilderGraphNode): string {
       return 'Play Collect';
     case 'switch':
       return 'Switch';
+    case 'business_hours':
+      return 'Business Hours';
+    case 'caller_id_match':
+      return 'Caller ID Match';
+    case 'set_variable':
+      return 'Set Variable';
     case 'transfer_extension':
       return 'Transfer Extension';
+    case 'queue':
+      return 'Queue';
+    case 'voicemail_drop':
+      return 'Voicemail';
     case 'hangup':
       return 'Hangup';
   }
@@ -146,8 +202,18 @@ function nodeSubtitle(node: BuilderGraphNode): string {
       return node.prompt_id ? `Collect up to ${node.max_digits ?? 1} digit(s)` : 'Prompt required';
     case 'switch':
       return Object.keys(node.cases ?? {}).length > 0 ? `${Object.keys(node.cases ?? {}).length} case(s)` : 'No cases yet';
+    case 'business_hours':
+      return node.schedule_id ? `Schedule ${node.schedule_id}` : 'No schedule selected';
+    case 'caller_id_match':
+      return node.prefixes && node.prefixes.length > 0 ? `${node.prefixes.length} prefix(es)` : 'No prefixes yet';
+    case 'set_variable':
+      return node.variable_name ? `${node.variable_name} = ${node.value ?? ''}` : 'No variable configured';
     case 'transfer_extension':
       return node.extension_id ? `Extension ${node.extension_id}` : 'No extension selected';
+    case 'queue':
+      return node.queue_id ? `Queue ${node.queue_id}` : 'No queue selected';
+    case 'voicemail_drop':
+      return node.voicemail_box_id ? `Voicemail ${node.voicemail_box_id}` : 'No voicemail box selected';
     case 'hangup':
       return 'Normal clearing';
     case 'start':
@@ -159,6 +225,7 @@ function nodeOutputs(node: BuilderGraphNode): Array<{ id: string; label: string 
   switch (node.type) {
     case 'start':
     case 'play_prompt':
+    case 'set_variable':
       return [{ id: 'next', label: 'Next' }];
     case 'play_collect':
       return [
@@ -171,7 +238,19 @@ function nodeOutputs(node: BuilderGraphNode): Array<{ id: string; label: string 
         ...Object.keys(node.cases ?? {}).map((key) => ({ id: `case:${key}`, label: key })),
         { id: 'default', label: 'Default' },
       ];
+    case 'business_hours':
+      return [
+        { id: 'in_hours', label: 'In Hours' },
+        { id: 'out_of_hours', label: 'Out of Hours' },
+      ];
+    case 'caller_id_match':
+      return [
+        { id: 'match', label: 'Match' },
+        { id: 'no_match', label: 'No Match' },
+      ];
     case 'transfer_extension':
+    case 'queue':
+    case 'voicemail_drop':
     case 'hangup':
       return [];
   }
@@ -216,6 +295,24 @@ export function graphToBuilderEdges(graph: BuilderGraphJson): Edge[] {
       }
       if (node.default_node_id) {
         edges.push({ id: `${node.id}:default:${node.default_node_id}`, source: node.id, sourceHandle: 'default', target: node.default_node_id });
+      }
+    }
+
+    if (node.type === 'business_hours') {
+      if (node.in_hours_node_id) {
+        edges.push({ id: `${node.id}:in_hours:${node.in_hours_node_id}`, source: node.id, sourceHandle: 'in_hours', target: node.in_hours_node_id });
+      }
+      if (node.out_of_hours_node_id) {
+        edges.push({ id: `${node.id}:out_of_hours:${node.out_of_hours_node_id}`, source: node.id, sourceHandle: 'out_of_hours', target: node.out_of_hours_node_id });
+      }
+    }
+
+    if (node.type === 'caller_id_match') {
+      if (node.match_node_id) {
+        edges.push({ id: `${node.id}:match:${node.match_node_id}`, source: node.id, sourceHandle: 'match', target: node.match_node_id });
+      }
+      if (node.no_match_node_id) {
+        edges.push({ id: `${node.id}:no_match:${node.no_match_node_id}`, source: node.id, sourceHandle: 'no_match', target: node.no_match_node_id });
       }
     }
   }
@@ -317,6 +414,18 @@ export function connectBuilderNodes(
       const cases = { ...(graphNode.cases ?? {}), [caseKey]: targetId };
       return updateBuilderNode(node, { cases });
     }
+    if (sourceHandle === 'in_hours' && graphNode.type === 'business_hours') {
+      return updateBuilderNode(node, { in_hours_node_id: targetId });
+    }
+    if (sourceHandle === 'out_of_hours' && graphNode.type === 'business_hours') {
+      return updateBuilderNode(node, { out_of_hours_node_id: targetId });
+    }
+    if (sourceHandle === 'match' && graphNode.type === 'caller_id_match') {
+      return updateBuilderNode(node, { match_node_id: targetId });
+    }
+    if (sourceHandle === 'no_match' && graphNode.type === 'caller_id_match') {
+      return updateBuilderNode(node, { no_match_node_id: targetId });
+    }
     return node;
   });
 }
@@ -350,6 +459,18 @@ export function disconnectBuilderEdge(
         return updateBuilderNode(node, { cases: nextCases });
       }
     }
+    if (handle === 'in_hours' && graphNode.type === 'business_hours' && graphNode.in_hours_node_id === edge.target) {
+      return updateBuilderNode(node, { in_hours_node_id: undefined });
+    }
+    if (handle === 'out_of_hours' && graphNode.type === 'business_hours' && graphNode.out_of_hours_node_id === edge.target) {
+      return updateBuilderNode(node, { out_of_hours_node_id: undefined });
+    }
+    if (handle === 'match' && graphNode.type === 'caller_id_match' && graphNode.match_node_id === edge.target) {
+      return updateBuilderNode(node, { match_node_id: undefined });
+    }
+    if (handle === 'no_match' && graphNode.type === 'caller_id_match' && graphNode.no_match_node_id === edge.target) {
+      return updateBuilderNode(node, { no_match_node_id: undefined });
+    }
     return node;
   });
 }
@@ -374,8 +495,18 @@ export function createNodeTemplate(type: BuilderNodeType, id: string): BuilderGr
       };
     case 'switch':
       return { id, type, input: DEFAULT_INPUT, cases: { '1': '' }, default_node_id: undefined };
+    case 'business_hours':
+      return { id, type, schedule_id: undefined, in_hours_node_id: undefined, out_of_hours_node_id: undefined };
+    case 'caller_id_match':
+      return { id, type, prefixes: ['+90'], match_node_id: undefined, no_match_node_id: undefined };
+    case 'set_variable':
+      return { id, type, variable_name: undefined, value: '', next_node_id: undefined };
     case 'transfer_extension':
       return { id, type, extension_id: undefined };
+    case 'queue':
+      return { id, type, queue_id: undefined };
+    case 'voicemail_drop':
+      return { id, type, voicemail_box_id: undefined };
     case 'hangup':
       return { id, type };
   }

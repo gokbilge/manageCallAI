@@ -7,7 +7,15 @@ rather than overloading the core IVR flow graph.
 
 ## Status
 
-**PLANNED**
+**COMPLETED**
+
+Shipped in this slice:
+
+- queue CRUD plus membership management
+- voicemail-box CRUD plus greeting prompt linkage
+- inbound-route target resolution for `queue` and `voicemail_box`
+- FreeSWITCH dialplan/runtime execution paths for queue and voicemail targets
+- IVR validator, simulator, and runtime resolver support for queue and voicemail nodes
 
 ## Scope
 

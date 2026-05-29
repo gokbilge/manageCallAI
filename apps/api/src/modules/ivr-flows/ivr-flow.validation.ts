@@ -11,6 +11,10 @@ const SUPPORTED_NODE_TYPES = new Set([
   'transfer_extension',
   'hangup',
   'business_hours',
+  'caller_id_match',
+  'set_variable',
+  'queue',
+  'voicemail_drop',
 ]);
 
 type GraphNode = Record<string, unknown> & {
@@ -164,6 +168,37 @@ export function validateIvrGraph(graph: unknown): ValidationOutcome {
       pushMissingReference(errors, nodeIds, `graph_json.nodes.${id}.out_of_hours_node_id`, node.out_of_hours_node_id);
       if (typeof node.in_hours_node_id === 'string' && nodeIds.has(node.in_hours_node_id)) visit(node.in_hours_node_id);
       if (typeof node.out_of_hours_node_id === 'string' && nodeIds.has(node.out_of_hours_node_id)) visit(node.out_of_hours_node_id);
+    }
+
+    if (node.type === 'caller_id_match') {
+      if (!Array.isArray(node.prefixes) || (node.prefixes as unknown[]).length === 0) {
+        errors.push({ field: `graph_json.nodes.${id}.prefixes`, message: 'caller_id_match nodes require a non-empty prefixes array' });
+      }
+      pushMissingReference(errors, nodeIds, `graph_json.nodes.${id}.match_node_id`, node.match_node_id);
+      pushMissingReference(errors, nodeIds, `graph_json.nodes.${id}.no_match_node_id`, node.no_match_node_id);
+      if (typeof node.match_node_id === 'string' && nodeIds.has(node.match_node_id)) visit(node.match_node_id);
+      if (typeof node.no_match_node_id === 'string' && nodeIds.has(node.no_match_node_id)) visit(node.no_match_node_id);
+    }
+
+    if (node.type === 'set_variable') {
+      if (typeof node.variable_name !== 'string' || node.variable_name.length === 0) {
+        errors.push({ field: `graph_json.nodes.${id}.variable_name`, message: 'set_variable nodes require a variable_name' });
+      }
+      if (typeof node.value !== 'string') {
+        errors.push({ field: `graph_json.nodes.${id}.value`, message: 'set_variable nodes require a string value' });
+      }
+    }
+
+    if (node.type === 'queue') {
+      if (typeof node.queue_id !== 'string' || node.queue_id.length === 0) {
+        errors.push({ field: `graph_json.nodes.${id}.queue_id`, message: 'queue nodes require a queue_id' });
+      }
+    }
+
+    if (node.type === 'voicemail_drop') {
+      if (typeof node.voicemail_box_id !== 'string' || node.voicemail_box_id.length === 0) {
+        errors.push({ field: `graph_json.nodes.${id}.voicemail_box_id`, message: 'voicemail_drop nodes require a voicemail_box_id' });
+      }
     }
   };
 

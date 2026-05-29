@@ -16,6 +16,8 @@ Validation must check:
 - all references are valid
 - all prompts exist and are active
 - all extension targets exist and are active
+- all queue targets exist, are active, and have members
+- all voicemail-box targets exist and are active
 - switch cases are unique
 - timeout / invalid fallback exists where needed
 - retry values are bounded
@@ -84,10 +86,10 @@ Current slice now includes:
 - approval-gated publish / rollback behavior driven by tenant policy
 - `switch` resolution from `{{last_digits}}`, `{{caller_number}}`, `{{now.hour}}`, and scenario variables
 - node-specific `collected_digits` plus per-node timeout/invalid forcing for multi-step simulations
+- semantic checks for active prompts, extensions, queues, and voicemail boxes
+- runtime-safe simulation for `set_variable`, `queue`, and `voicemail_drop`
 
 Still intentionally out of scope:
 
-- prompt existence checks during validation
-- extension existence checks during validation
-- business-hours, queue, ring-group, webhook, or AI-action node execution
+- webhook, HTTP lookup, sub-flow, external-transfer, or AI-action node execution
 - live runtime call testing through FreeSWITCH

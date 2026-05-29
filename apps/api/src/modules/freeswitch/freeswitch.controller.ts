@@ -197,6 +197,41 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
       };
     }
 
+    if (route.target_type === 'queue') {
+      const target = await routeLookupRepo.findQueueTarget(route.target_id);
+      if (!target) {
+        return { statusCode: 200, body: buildNotFoundDialplan() };
+      }
+      return {
+        statusCode: 200,
+        body: buildQueueDialplanResponse({
+          routeId: route.route_id,
+          tenantId: route.tenant_id,
+          matchValue: route.match_value,
+          strategy: target.strategy,
+          members: target.members,
+        }),
+      };
+    }
+
+    if (route.target_type === 'voicemail_box') {
+      const target = await routeLookupRepo.findVoicemailTarget(route.target_id);
+      if (!target || !target.directory_domain) {
+        return { statusCode: 200, body: buildNotFoundDialplan() };
+      }
+      return {
+        statusCode: 200,
+        body: buildVoicemailDialplanResponse({
+          routeId: route.route_id,
+          tenantId: route.tenant_id,
+          matchValue: route.match_value,
+          mailboxNumber: target.mailbox_number,
+          domain: target.directory_domain,
+          greetingPromptUri: target.greeting_prompt_uri,
+        }),
+      };
+    }
+
     return { statusCode: 200, body: buildNotFoundDialplan() };
   };
 
@@ -245,6 +280,10 @@ export async function freeswitchController(app: FastifyInstance): Promise<void> 
         target = await routeLookupRepo.findFlowTarget(route.target_id);
       } else if (route.target_type === 'call_group' && route.target_id) {
         target = await routeLookupRepo.findCallGroupTarget(route.target_id);
+      } else if (route.target_type === 'queue' && route.target_id) {
+        target = await routeLookupRepo.findQueueTarget(route.target_id);
+      } else if (route.target_type === 'voicemail_box' && route.target_id) {
+        target = await routeLookupRepo.findVoicemailTarget(route.target_id);
       }
 
       return reply.send({
@@ -435,6 +474,64 @@ export function buildCallGroupDialplanResponse(input: {
           <action application="set" data="managecall_route_id=${xmlEscape(input.routeId)}" />
           <action application="set" data="managecall_tenant_id=${xmlEscape(input.tenantId)}" />
           <action application="bridge" data="${bridge}" />
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>`;
+}
+
+export function buildQueueDialplanResponse(input: {
+  routeId: string;
+  tenantId: string;
+  matchValue: string;
+  strategy: 'simultaneous' | 'sequential';
+  members: Array<{ extension_number: string; directory_domain: string }>;
+}): string {
+  const separator = input.strategy === 'simultaneous' ? ',' : '|';
+  const bridge = input.members
+    .map(m => `sofia/internal/${xmlEscape(m.extension_number)}@${xmlEscape(m.directory_domain)}`)
+    .join(separator);
+  const destinationPattern = `^${regexEscape(input.matchValue)}$`;
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="dialplan">
+    <context name="default">
+      <extension name="managecall_inbound_${xmlEscape(input.routeId)}" continue="false">
+        <condition field="destination_number" expression="${xmlEscape(destinationPattern)}">
+          <action application="set" data="managecall_route_id=${xmlEscape(input.routeId)}" />
+          <action application="set" data="managecall_tenant_id=${xmlEscape(input.tenantId)}" />
+          <action application="bridge" data="${bridge}" />
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>`;
+}
+
+export function buildVoicemailDialplanResponse(input: {
+  routeId: string;
+  tenantId: string;
+  matchValue: string;
+  mailboxNumber: string;
+  domain: string;
+  greetingPromptUri: string | null;
+}): string {
+  const destinationPattern = `^${regexEscape(input.matchValue)}$`;
+  const greetingAction = input.greetingPromptUri
+    ? `\n          <action application="playback" data="${xmlEscape(input.greetingPromptUri)}" />`
+    : '';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="dialplan">
+    <context name="default">
+      <extension name="managecall_inbound_${xmlEscape(input.routeId)}" continue="false">
+        <condition field="destination_number" expression="${xmlEscape(destinationPattern)}">
+          <action application="set" data="managecall_route_id=${xmlEscape(input.routeId)}" />
+          <action application="set" data="managecall_tenant_id=${xmlEscape(input.tenantId)}" />${greetingAction}
+          <action application="voicemail" data="default ${xmlEscape(input.domain)} ${xmlEscape(input.mailboxNumber)}" />
         </condition>
       </extension>
     </context>

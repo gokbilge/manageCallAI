@@ -54,6 +54,33 @@ Example transfer:
 }
 ```
 
+Example queue transfer:
+
+```json
+{
+  "action": "transfer",
+  "target_type": "queue",
+  "members": [
+    {
+      "extension_number": "200"
+    },
+    {
+      "extension_number": "201"
+    }
+  ]
+}
+```
+
+Example voicemail:
+
+```json
+{
+  "action": "voicemail",
+  "mailbox_number": "8003",
+  "greeting_prompt_uri": "/sounds/tenants/acme/after_hours.wav"
+}
+```
+
 Example hangup:
 
 ```json
@@ -129,14 +156,18 @@ Current runtime rules:
 - runtime receives only constrained actions
 - `play_prompt` and `play_collect` require an active prompt with `storage_uri`
 - `transfer_extension` resolves to an active extension in the same tenant
-- `transfer` and `hangup` complete the session after the runtime reports completion
+- `set_variable` mutates only session-scoped variables and never FreeSWITCH internals
+- `queue` resolves to an active queue with extension members
+- `voicemail_drop` resolves to an active voicemail box and optional greeting prompt
+- `transfer`, `voicemail`, and `hangup` complete the session after the runtime reports completion
 
 ## 7. Future evolution
 
 - stronger session state persistence
 - richer runtime actions
 - hybrid Go/ESL assist for more advanced scenarios
-- queue and voicemail execution after the foundational IVR runtime proves stable
+- deeper queue strategies and agent-state awareness
+- richer voicemail lifecycle and media retrieval
 
 ## 8. Implemented FreeSWITCH loop
 

@@ -79,6 +79,26 @@ export interface ExtensionTransferReference {
   directory_domain: string | null;
 }
 
+export interface QueueTransferReference {
+  id: string;
+  name: string;
+  strategy: 'simultaneous' | 'sequential';
+  ring_timeout_seconds: number;
+  members: Array<{
+    extension_number: string;
+    directory_domain: string | null;
+    position: number;
+  }>;
+}
+
+export interface VoicemailBoxReference {
+  id: string;
+  name: string;
+  mailbox_number: string;
+  directory_domain: string | null;
+  greeting_prompt_uri: string | null;
+}
+
 export interface SimulationScenario {
   digits?: string[];
   collected_digits?: Record<string, string>;
@@ -92,9 +112,11 @@ export interface SimulationScenario {
 }
 
 export interface SimulationFinalAction {
-  type: 'transfer_extension' | 'hangup';
+  type: 'transfer_extension' | 'queue' | 'voicemail' | 'hangup';
   extension_id?: string;
   extension_number?: string;
+  queue_id?: string;
+  voicemail_box_id?: string;
 }
 
 export interface SimulationOutcome {

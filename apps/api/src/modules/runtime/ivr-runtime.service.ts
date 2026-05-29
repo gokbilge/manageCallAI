@@ -1,6 +1,8 @@
 import type {
   ExtensionTransferReference,
   PromptAssetReference,
+  QueueTransferReference,
+  VoicemailBoxReference,
 } from '../ivr-flows/ivr-flow.types.js';
 import { isInBusinessHours } from '../schedules/schedule.util.js';
 import type { IvrRuntimeRepository } from './ivr-runtime.repository.js';
@@ -294,7 +296,12 @@ export class IvrRuntimeService {
           variables[`node.${currentNode.id}.digits`] = digits;
           nextNodeId = typeof currentNode.next_node_id === 'string' ? currentNode.next_node_id : '';
         }
-      } else if (currentType === 'transfer_extension' || currentType === 'hangup') {
+      } else if (
+        currentType === 'transfer_extension'
+        || currentType === 'queue'
+        || currentType === 'voicemail_drop'
+        || currentType === 'hangup'
+      ) {
         return {
           action: null,
           current_node_id: null,
@@ -335,6 +342,16 @@ export class IvrRuntimeService {
           : typeof node.default_node_id === 'string'
             ? node.default_node_id
             : '';
+        continue;
+      }
+
+      if (type === 'set_variable') {
+        const variableName = typeof node.variable_name === 'string' ? node.variable_name : '';
+        const value = typeof node.value === 'string' ? node.value : '';
+        if (variableName) {
+          variables[variableName] = value;
+        }
+        nextNodeId = typeof node.next_node_id === 'string' ? node.next_node_id : '';
         continue;
       }
 
@@ -387,6 +404,42 @@ export class IvrRuntimeService {
         };
       }
 
+      if (type === 'queue') {
+        const target = await this.requireQueueTarget(input.tenant_id, node);
+        return {
+          action: {
+            action: 'transfer',
+            node_id: node.id,
+            target_type: 'queue',
+            strategy: target.strategy,
+            ring_timeout_seconds: target.ring_timeout_seconds,
+            members: target.members.map((member) => ({
+              extension_number: member.extension_number,
+              domain: member.directory_domain,
+            })),
+          },
+          current_node_id: node.id,
+          last_digits: lastDigits,
+          variables,
+        };
+      }
+
+      if (type === 'voicemail_drop') {
+        const target = await this.requireVoicemailTarget(input.tenant_id, node);
+        return {
+          action: {
+            action: 'voicemail',
+            node_id: node.id,
+            mailbox_number: target.mailbox_number,
+            domain: target.directory_domain,
+            greeting_prompt_uri: target.greeting_prompt_uri,
+          },
+          current_node_id: node.id,
+          last_digits: lastDigits,
+          variables,
+        };
+      }
+
       if (type === 'hangup') {
         return {
           action: {
@@ -397,6 +450,16 @@ export class IvrRuntimeService {
           last_digits: lastDigits,
           variables,
         };
+      }
+
+      if (type === 'caller_id_match') {
+        const prefixes = Array.isArray(node.prefixes) ? (node.prefixes as string[]) : [];
+        const callerNum = input.caller_number ?? '';
+        const matched = prefixes.some((p) => typeof p === 'string' && callerNum.startsWith(p));
+        nextNodeId = typeof (matched ? node.match_node_id : node.no_match_node_id) === 'string'
+          ? (matched ? node.match_node_id : node.no_match_node_id) as string
+          : '';
+        continue;
       }
 
       if (type === 'business_hours') {
@@ -459,6 +522,32 @@ export class IvrRuntimeService {
     const target = targets.get(extensionId);
     if (!target) {
       throw new IvrRuntimeResolutionError(`Extension target is not active in this tenant: ${extensionId}`);
+    }
+    return target;
+  }
+
+  private async requireQueueTarget(tenantId: string, node: GraphNode): Promise<QueueTransferReference> {
+    const queueId = typeof node.queue_id === 'string' ? node.queue_id : '';
+    if (!queueId) {
+      throw new IvrRuntimeResolutionError(`Queue node is missing queue_id: ${node.id}`);
+    }
+    const targets = await this.repo.findActiveQueueTargets(tenantId, [queueId]);
+    const target = targets.get(queueId);
+    if (!target || target.members.length === 0) {
+      throw new IvrRuntimeResolutionError(`Queue target is not active or has no members: ${queueId}`);
+    }
+    return target;
+  }
+
+  private async requireVoicemailTarget(tenantId: string, node: GraphNode): Promise<VoicemailBoxReference> {
+    const boxId = typeof node.voicemail_box_id === 'string' ? node.voicemail_box_id : '';
+    if (!boxId) {
+      throw new IvrRuntimeResolutionError(`Voicemail node is missing voicemail_box_id: ${node.id}`);
+    }
+    const targets = await this.repo.findActiveVoicemailTargets(tenantId, [boxId]);
+    const target = targets.get(boxId);
+    if (!target) {
+      throw new IvrRuntimeResolutionError(`Voicemail target is not active in this tenant: ${boxId}`);
     }
     return target;
   }

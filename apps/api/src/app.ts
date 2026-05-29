@@ -13,14 +13,18 @@ import { approvalController, policiesController } from './modules/approvals/appr
 import { automationController } from './modules/automation/automation.controller.js';
 import { webhooksController } from './modules/webhooks/webhooks.controller.js';
 import { callGroupController } from './modules/call-groups/call-group.controller.js';
+import { queueController } from './modules/queues/queue.controller.js';
 import { ivrFlowController } from './modules/ivr-flows/ivr-flow.controller.js';
 import { platformController } from './modules/platform/platform.controller.js';
 import { phoneNumberController } from './modules/phone-numbers/phone-number.controller.js';
 import { promptAssetController } from './modules/prompts/prompt-asset.controller.js';
 import { ivrRuntimeController } from './modules/runtime/ivr-runtime.controller.js';
+import { outboundCallController } from './modules/runtime/outbound-call.controller.js';
 import { sipTrunkController } from './modules/sip-trunks/sip-trunk.controller.js';
 import { scheduleController } from './modules/schedules/schedule.controller.js';
 import { outboundRouteController } from './modules/outbound-routes/outbound-route.controller.js';
+import { voicemailBoxController } from './modules/voicemail-boxes/voicemail-box.controller.js';
+import { auditController } from './modules/audit/audit.controller.js';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -46,9 +50,12 @@ export function buildApp() {
   app.register(callEventController, { prefix: '/api/v1/call-events' });
   app.register(freeswitchController, { prefix: '/api/v1/freeswitch' });
   app.register(ivrRuntimeController, { prefix: '/api/v1/runtime/ivr' });
+  app.register(outboundCallController, { prefix: '/api/v1/runtime' });
   app.register(ivrFlowController, { prefix: '/api/v1/ivr-flows' });
   app.register(approvalController, { prefix: '/api/v1/approvals' });
   app.register(callGroupController, { prefix: '/api/v1/call-groups' });
+  app.register(queueController, { prefix: '/api/v1/queues' });
+  app.register(voicemailBoxController, { prefix: '/api/v1/voicemail-boxes' });
   app.register(policiesController, { prefix: '/api/v1/policies' });
   app.register(inboundRouteController, { prefix: '/api/v1/inbound-routes' });
   app.register(platformController, { prefix: '/api/v1/platform' });
@@ -56,6 +63,7 @@ export function buildApp() {
   app.register(webhooksController, { prefix: '/api/v1/webhooks' });
   app.register(scheduleController, { prefix: '/api/v1/schedules' });
   app.register(outboundRouteController, { prefix: '/api/v1/outbound-routes' });
+  app.register(auditController, { prefix: '/api/v1/audit' });
 
   return app;
 }

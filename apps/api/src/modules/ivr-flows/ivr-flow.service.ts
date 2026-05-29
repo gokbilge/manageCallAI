@@ -13,6 +13,7 @@ import type {
   UpdateIvrFlowInput,
 } from './ivr-flow.types.js';
 import { defaultIvrGraph, validateIvrGraph } from './ivr-flow.validation.js';
+import type { Role } from '../auth/capabilities.js';
 import { isInBusinessHours } from '../schedules/schedule.util.js';
 
 type ScheduleRef = {
@@ -196,6 +197,16 @@ function simulateGraph(
       continue;
     }
 
+    if (type === 'set_variable') {
+      const variableName = typeof node.variable_name === 'string' ? node.variable_name : '';
+      const value = typeof node.value === 'string' ? node.value : '';
+      if (variableName) {
+        variables[variableName] = value;
+      }
+      currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
+      continue;
+    }
+
     if (type === 'transfer_extension' || type === 'transfer') {
       return {
         status: 'passed',
@@ -209,6 +220,30 @@ function simulateGraph(
       };
     }
 
+    if (type === 'queue') {
+      return {
+        status: 'passed',
+        path,
+        final_action: {
+          type: 'queue',
+          queue_id: typeof node.queue_id === 'string' ? node.queue_id : undefined,
+        },
+        errors: [],
+      };
+    }
+
+    if (type === 'voicemail_drop') {
+      return {
+        status: 'passed',
+        path,
+        final_action: {
+          type: 'voicemail',
+          voicemail_box_id: typeof node.voicemail_box_id === 'string' ? node.voicemail_box_id : undefined,
+        },
+        errors: [],
+      };
+    }
+
     if (type === 'hangup') {
       return {
         status: 'passed',
@@ -216,6 +251,16 @@ function simulateGraph(
         final_action: { type: 'hangup' },
         errors: [],
       };
+    }
+
+    if (type === 'caller_id_match') {
+      const prefixes = Array.isArray(node.prefixes) ? (node.prefixes as string[]) : [];
+      const callerNum = callerNumber ?? '';
+      const matched = prefixes.some((p) => typeof p === 'string' && callerNum.startsWith(p));
+      currentId = matched
+        ? (typeof node.match_node_id === 'string' ? node.match_node_id : undefined)
+        : (typeof node.no_match_node_id === 'string' ? node.no_match_node_id : undefined);
+      continue;
     }
 
     if (type === 'business_hours') {
@@ -373,6 +418,70 @@ export class IvrFlowService {
         }
       }
 
+      const callerIdPrefixPattern = /^\+?[0-9]{1,20}$/;
+      const callerIdMatchNodes = nodes.filter((n) => n.type === 'caller_id_match' && Array.isArray(n.prefixes));
+      for (const node of callerIdMatchNodes) {
+        const prefixes = node.prefixes as unknown[];
+        for (const prefix of prefixes) {
+          if (typeof prefix !== 'string' || !callerIdPrefixPattern.test(prefix)) {
+            outcome.errors.push({
+              field: `graph_json.nodes.${String(node.id)}.prefixes`,
+              message: `Invalid caller ID prefix format: "${String(prefix)}"`,
+            });
+          }
+        }
+      }
+
+      const setVariableNodes = nodes.filter((n) => n.type === 'set_variable');
+      for (const node of setVariableNodes) {
+        if (typeof node.variable_name !== 'string' || node.variable_name.length === 0) {
+          outcome.errors.push({
+            field: `graph_json.nodes.${String(node.id)}.variable_name`,
+            message: 'set_variable nodes require a variable_name',
+          });
+        }
+        if (typeof node.value !== 'string') {
+          outcome.errors.push({
+            field: `graph_json.nodes.${String(node.id)}.value`,
+            message: 'set_variable nodes require a string value',
+          });
+        }
+      }
+
+      const queueNodes = nodes.filter((n) => n.type === 'queue' && typeof n.queue_id === 'string');
+      const queueIds = queueNodes.map((n) => n.queue_id as string);
+      const queuesById = await this.repo.findActiveQueueRefs(tenantId, queueIds);
+      for (const node of queueNodes) {
+        const queueId = node.queue_id as string;
+        const queue = queuesById.get(queueId);
+        if (!queue) {
+          outcome.errors.push({
+            field: `graph_json.nodes.${String(node.id)}.queue_id`,
+            message: `Queue not found or not active in this tenant: ${queueId}`,
+          });
+          continue;
+        }
+        if (queue.members.length === 0) {
+          outcome.errors.push({
+            field: `graph_json.nodes.${String(node.id)}.queue_id`,
+            message: `Queue does not have any active members: ${queueId}`,
+          });
+        }
+      }
+
+      const voicemailNodes = nodes.filter((n) => n.type === 'voicemail_drop' && typeof n.voicemail_box_id === 'string');
+      const voicemailIds = voicemailNodes.map((n) => n.voicemail_box_id as string);
+      const voicemailById = await this.repo.findActiveVoicemailBoxRefs(tenantId, voicemailIds);
+      for (const node of voicemailNodes) {
+        const voicemailId = node.voicemail_box_id as string;
+        if (!voicemailById.has(voicemailId)) {
+          outcome.errors.push({
+            field: `graph_json.nodes.${String(node.id)}.voicemail_box_id`,
+            message: `Voicemail box not found or not active in this tenant: ${voicemailId}`,
+          });
+        }
+      }
+
       if (outcome.errors.length > 0) {
         outcome.status = 'failed';
       }
@@ -429,7 +538,7 @@ export class IvrFlowService {
     return this.simulate(flowId, versionId, tenantId, scenario);
   }
 
-  async publish(flowId: string, versionId: string, tenantId: string, triggeredById: string, actorRole?: 'platform_admin' | 'tenant_admin'): Promise<PublishAttemptResult> {
+  async publish(flowId: string, versionId: string, tenantId: string, triggeredById: string, actorRole?: Role): Promise<PublishAttemptResult> {
     const version = await this.repo.findVersionById(versionId, flowId, tenantId);
     if (!version) throw new FlowVersionNotFoundError(versionId);
     if (!['validated', 'simulated'].includes(version.state)) {
@@ -460,7 +569,7 @@ export class IvrFlowService {
     return { status: 'published', flow };
   }
 
-  async rollback(flowId: string, tenantId: string, triggeredById: string, actorRole?: 'platform_admin' | 'tenant_admin'): Promise<PublishAttemptResult> {
+  async rollback(flowId: string, tenantId: string, triggeredById: string, actorRole?: Role): Promise<PublishAttemptResult> {
     const flow = await this.repo.findById(flowId, tenantId);
     if (!flow) throw new IvrFlowNotFoundError(flowId);
     const rollbackTargetId = flow.versions.find((version) => version.state === 'superseded')?.id;

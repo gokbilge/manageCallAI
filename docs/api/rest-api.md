@@ -97,6 +97,8 @@ Primary resources:
 - `inbound-routes`
 - `outbound-routes`
 - `prompts`
+- `queues`
+- `voicemail-boxes`
 - `flows`
 - `validations`
 - `simulations`
@@ -467,15 +469,23 @@ GET /api/v1/freeswitch/dialplan?Caller-Destination-Number=%2B15551234567&domain=
 ```
 
 This is a runtime-internal endpoint. It requires the runtime token and returns
-FreeSWITCH XML dialplan for active inbound DID routes that currently resolve to
-an `extension` target.
+FreeSWITCH XML dialplan for active inbound DID routes that currently resolve to:
+
+- an `extension` target
+- a published `flow` target
+- a `call_group` target
+- a `queue` target
+- a `voicemail_box` target
 
 Expected behavior:
 
 - unknown domain or DID returns empty dialplan XML
 - unpublished routes are ignored
 - DID routes bound through `phone_number_id` resolve using the linked phone number's `e164_number`
-- the XML bridges to `sofia/internal/<extension_number>@<directory_domain>`
+- extension targets bridge to `sofia/internal/<extension_number>@<directory_domain>`
+- flow targets invoke `managecall_entry.lua`
+- call-group and queue targets project safe bridge strings from tenant-owned members
+- voicemail-box targets project a constrained voicemail application call
 
 Example response fragment:
 
@@ -585,7 +595,113 @@ GET /api/v1/prompts/{promptId}
 PATCH /api/v1/prompts/{promptId}
 ```
 
-### 6.7 IVR Flows
+### 6.7 Queues
+
+#### List Queues
+
+```http
+GET /api/v1/queues
+```
+
+#### Create Queue
+
+```http
+POST /api/v1/queues
+```
+
+Example request:
+
+```json
+{
+  "name": "Support Queue",
+  "description": "Tier-1 support",
+  "strategy": "sequential",
+  "ring_timeout_seconds": 20
+}
+```
+
+#### Get Queue
+
+```http
+GET /api/v1/queues/{queueId}
+```
+
+#### Update Queue
+
+```http
+PATCH /api/v1/queues/{queueId}
+```
+
+#### Deactivate Queue
+
+```http
+POST /api/v1/queues/{queueId}/deactivate
+```
+
+#### Add Queue Member
+
+```http
+POST /api/v1/queues/{queueId}/members
+```
+
+Example request:
+
+```json
+{
+  "extension_id": "ext_001",
+  "position": 0
+}
+```
+
+#### Remove Queue Member
+
+```http
+DELETE /api/v1/queues/{queueId}/members/{extensionId}
+```
+
+### 6.8 Voicemail Boxes
+
+#### List Voicemail Boxes
+
+```http
+GET /api/v1/voicemail-boxes
+```
+
+#### Create Voicemail Box
+
+```http
+POST /api/v1/voicemail-boxes
+```
+
+Example request:
+
+```json
+{
+  "name": "After Hours",
+  "mailbox_number": "8003",
+  "greeting_prompt_id": "prompt_001"
+}
+```
+
+#### Get Voicemail Box
+
+```http
+GET /api/v1/voicemail-boxes/{boxId}
+```
+
+#### Update Voicemail Box
+
+```http
+PATCH /api/v1/voicemail-boxes/{boxId}
+```
+
+#### Deactivate Voicemail Box
+
+```http
+POST /api/v1/voicemail-boxes/{boxId}/deactivate
+```
+
+### 6.9 IVR Flows
 
 Implemented IVR endpoints use the `ivr-flows` resource name and snake_case graph fields.
 
@@ -710,20 +826,18 @@ POST /api/v1/ivr-flows/{flowId}/validate
 POST /api/v1/ivr-flows/{flowId}/versions/{versionId}/validate
 ```
 
-Current MVP validation scope is structural only:
+Current validation scope includes structural and current-semantic checks:
 
 - `graph_json` must be an object
 - `entry_node_id` must exist
 - `nodes` must exist
 - node IDs must be unique
 - referenced node IDs must exist
-
-The implementation now also performs tenant-scoped semantic checks for current
-MVP runtime nodes:
-
 - `play_prompt` and `play_collect` must reference an active prompt asset
 - prompt assets used by runtime nodes must have `storage_uri`
 - `transfer_extension` must reference an active extension in the same tenant
+- `queue` must reference an active queue with at least one member
+- `voicemail_drop` must reference an active voicemail box in the same tenant
 
 Example response:
 
@@ -788,9 +902,9 @@ Example multi-step request:
 }
 ```
 
-Current MVP simulation scope:
+Current simulation scope:
 
-- supports `start`, `play_prompt`, `play_collect`, `switch`, `transfer_extension`, and `hangup`
+- supports `start`, `play_prompt`, `play_collect`, `switch`, `transfer_extension`, `business_hours`, `caller_id_match`, `set_variable`, `queue`, `voicemail_drop`, and `hangup`
 - also accepts early compatibility node types `play`, `menu`, `transfer`, and `condition`
 - resolves `switch.input` from `{{last_digits}}`, `{{caller_number}}`, `{{now.hour}}`, and `{{var.<name>}}`
 - persists the simulation scenario and result in `simulation_results`
@@ -812,8 +926,8 @@ Example response:
       "status": "passed",
       "path": ["start", "welcome", "route_digit", "sales"],
       "final_action": {
-        "type": "transfer_extension",
-        "extension_number": "200"
+        "type": "queue",
+        "queue_id": "queue_001"
       },
       "errors": []
     }
@@ -867,7 +981,7 @@ Rollback follows the same approval model:
 - `200` with `{ "data": { "status": "published", "flow": { ... } } }` when it completes immediately
 - `202` with `{ "data": { "status": "pending_approval", "approval_request_id": "...", "flow": { ... } } }` when tenant policy requires approval
 
-### 6.7.1 Runtime Resolver
+### 6.9.1 Runtime Resolver
 
 #### Start IVR Runtime Session
 
@@ -939,9 +1053,10 @@ Supported outcomes:
 - `timeout`
 - `invalid`
 
-The backend resolves `start` and `switch` internally and returns the next
-constrained runtime action (`play_prompt`, `play_collect`, `transfer`, or
-`hangup`). When a transfer or hangup action is reported complete, the session
+The backend resolves `start`, `switch`, `business_hours`, `caller_id_match`,
+and `set_variable` internally and returns the next constrained runtime action
+(`play_prompt`, `play_collect`, `transfer`, `voicemail`, or `hangup`). When a
+transfer, voicemail, or hangup action is reported complete, the session
 transitions to `completed`.
 
 #### Get IVR Runtime Session Replay
@@ -988,7 +1103,7 @@ Example response:
 }
 ```
 
-### 6.8 Flow History
+### 6.10 Flow History
 
 #### Get IVR Flow History
 
@@ -1005,7 +1120,7 @@ Returns:
 
 Each array is ordered newest first and remains tenant-scoped.
 
-### 6.9 Approvals
+### 6.11 Approvals
 
 #### List Approval Requests
 
@@ -1042,7 +1157,7 @@ POST /api/v1/approvals/{approvalId}/approve
 POST /api/v1/approvals/{approvalId}/reject
 ```
 
-### 6.10 Call Events
+### 6.12 Call Events
 
 #### List Call Events
 
@@ -1084,7 +1199,7 @@ Query parameters:
 GET /api/v1/call-events/{callEventId}
 ```
 
-### 6.11 Platform Runtime Summary
+### 6.13 Platform Runtime Summary
 
 ```http
 GET /api/v1/platform/runtime/summary
@@ -1100,7 +1215,7 @@ such as:
 - `failed_runtime_ingestions_24h`
 - `pending_approvals`
 
-### 6.12 Call Detail Records
+### 6.14 Call Detail Records
 
 #### List CDRs
 

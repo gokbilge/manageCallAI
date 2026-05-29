@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ExtensionTransferReference, PromptAssetReference } from '../ivr-flows/ivr-flow.types.js';
+import type {
+  ExtensionTransferReference,
+  PromptAssetReference,
+  QueueTransferReference,
+  VoicemailBoxReference,
+} from '../ivr-flows/ivr-flow.types.js';
 import type { IvrRuntimeRepository } from './ivr-runtime.repository.js';
 import {
   IvrRuntimeFlowNotPublishedError,
@@ -79,6 +84,24 @@ const extensionRef: ExtensionTransferReference = {
   directory_domain: 'acme.managecallai.local',
 };
 
+const queueRef: QueueTransferReference = {
+  id: 'queue-1',
+  name: 'Support',
+  strategy: 'simultaneous',
+  ring_timeout_seconds: 20,
+  members: [
+    { extension_number: '200', directory_domain: 'acme.managecallai.local', position: 0 },
+  ],
+};
+
+const voicemailRef: VoicemailBoxReference = {
+  id: 'vm-1',
+  name: 'After Hours',
+  mailbox_number: '7000',
+  directory_domain: 'acme.managecallai.local',
+  greeting_prompt_uri: '/sounds/tenants/acme/after-hours.wav',
+};
+
 const mockRepo = {
   findActiveFlowVersion: vi.fn(),
   createSession: vi.fn(),
@@ -91,6 +114,9 @@ const mockRepo = {
   recordSessionStep: vi.fn(),
   findActivePromptRefs: vi.fn(),
   findActiveExtensionTargets: vi.fn(),
+  findActiveQueueTargets: vi.fn(),
+  findActiveVoicemailTargets: vi.fn(),
+  findActiveSchedule: vi.fn(),
 } as unknown as IvrRuntimeRepository;
 
 const service = new IvrRuntimeService(mockRepo);
@@ -267,5 +293,80 @@ describe('IvrRuntimeService', () => {
     expect(replay.session.id).toBe(SESSION_ID);
     expect(replay.steps).toHaveLength(1);
     expect(replay.call_events).toHaveLength(1);
+  });
+
+  it('resolves caller_id_match through set_variable into a queue action', async () => {
+    const advancedGraph = {
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'match' },
+        { id: 'match', type: 'caller_id_match', prefixes: ['+90'], match_node_id: 'set', no_match_node_id: 'hangup' },
+        { id: 'set', type: 'set_variable', variable_name: 'language', value: 'tr', next_node_id: 'queue' },
+        { id: 'queue', type: 'queue', queue_id: 'queue-1' },
+        { id: 'hangup', type: 'hangup' },
+      ],
+    };
+    vi.mocked(mockRepo.findActiveFlowVersion).mockResolvedValue({
+      tenant_id: TENANT_ID,
+      flow_id: FLOW_ID,
+      flow_version_id: FLOW_VERSION_ID,
+      graph_json: advancedGraph,
+    });
+    vi.mocked(mockRepo.findActiveQueueTargets).mockResolvedValue(new Map([[queueRef.id, queueRef]]));
+    vi.mocked(mockRepo.createSession).mockImplementation(async (input) => makeSession({
+      current_node_id: String(input.current_node_id),
+      variables_json: input.variables_json,
+      last_action_json: input.last_action_json ?? null,
+    }));
+
+    const result = await service.startSession({
+      call_id: 'call-2',
+      flow_id: FLOW_ID,
+      caller_number: '+905551112233',
+    });
+
+    expect(result.action).toEqual({
+      action: 'transfer',
+      node_id: 'queue',
+      target_type: 'queue',
+      strategy: 'simultaneous',
+      ring_timeout_seconds: 20,
+      members: [{ extension_number: '200', domain: 'acme.managecallai.local' }],
+    });
+    expect(result.session.variables_json.language).toBe('tr');
+  });
+
+  it('resolves a voicemail_drop node into a voicemail action', async () => {
+    const voicemailGraph = {
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'vm' },
+        { id: 'vm', type: 'voicemail_drop', voicemail_box_id: 'vm-1' },
+      ],
+    };
+    vi.mocked(mockRepo.findActiveFlowVersion).mockResolvedValue({
+      tenant_id: TENANT_ID,
+      flow_id: FLOW_ID,
+      flow_version_id: FLOW_VERSION_ID,
+      graph_json: voicemailGraph,
+    });
+    vi.mocked(mockRepo.findActiveVoicemailTargets).mockResolvedValue(new Map([[voicemailRef.id, voicemailRef]]));
+    vi.mocked(mockRepo.createSession).mockImplementation(async (input) => makeSession({
+      current_node_id: String(input.current_node_id),
+      last_action_json: input.last_action_json ?? null,
+    }));
+
+    const result = await service.startSession({
+      call_id: 'call-3',
+      flow_id: FLOW_ID,
+    });
+
+    expect(result.action).toEqual({
+      action: 'voicemail',
+      node_id: 'vm',
+      mailbox_number: '7000',
+      domain: 'acme.managecallai.local',
+      greeting_prompt_uri: '/sounds/tenants/acme/after-hours.wav',
+    });
   });
 });
