@@ -6,9 +6,11 @@ Connect the runtime resolver to stock FreeSWITCH through the thin Lua boundary.
 
 ## Status
 
-Implemented and documented.
+Closed.
 
-Live proof depends on a Docker/FreeSWITCH-capable environment and should be rerun whenever the runtime container path changes materially.
+- implemented thin Lua runtime loop
+- documented live FreeSWITCH IVR flow proof
+- rerun live proof when runtime packaging changes materially
 
 ## Scope
 

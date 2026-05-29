@@ -54,6 +54,16 @@ Reference:
 | `SLICE-13` | completed |
 | `SLICE-14` | completed |
 
+All release-plan slices are now closed from a planning perspective.
+
+That means:
+
+- release-critical slices have been implemented and documented
+- the slice map below is now historical execution context
+- future work should continue either through:
+  - live regression proofs and maintenance, or
+  - the post-release roadmap captured by `SLICE-13`
+
 ## 3. Release Thesis
 
 The first release should prove:

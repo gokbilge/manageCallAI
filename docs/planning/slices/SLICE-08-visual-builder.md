@@ -4,6 +4,14 @@
 
 Replace raw `graph_json` editing with a real visual flow authoring experience.
 
+## Status
+
+Closed.
+
+- React Flow builder shipped in the tenant IVR flow detail page
+- validation, simulation, publish, and rollback visibility are integrated into the same operator surface
+- collaborative editing and richer future node families remain later product work, not open items for this slice
+
 ## Scope
 
 - React Flow canvas
@@ -39,10 +47,3 @@ Replace raw `graph_json` editing with a real visual flow authoring experience.
 ## Out Of Scope
 
 - advanced collaborative editing
-
-## Status
-
-- Implemented: first React Flow-based builder surface in the tenant IVR flow detail page
-- Still later:
-  - collaborative editing
-  - richer node families beyond the MVP runtime set
