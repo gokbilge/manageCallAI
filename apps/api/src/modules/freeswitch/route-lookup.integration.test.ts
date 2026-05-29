@@ -8,7 +8,7 @@ describe('Route Lookup API integration', () => {
   let db: Pool;
 
   beforeAll(async () => {
-    process.env.RUNTIME_API_TOKEN ??= 'test-runtime-token';
+    process.env.RUNTIME_API_TOKEN = 'test-runtime-token';
     process.env.JWT_SECRET ??= 'test-jwt-secret';
     process.env.SIP_SECRET_MASTER_KEY ??=
       '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
