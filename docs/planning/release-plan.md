@@ -51,18 +51,25 @@ Reference:
 | `SLICE-10` | completed |
 | `SLICE-11` | completed |
 | `SLICE-12` | completed |
-| `SLICE-13` | closed planning lane (post-release) |
+| `SLICE-13` | completed as umbrella decomposition |
 | `SLICE-14` | completed |
+| `SLICE-15` | planned |
+| `SLICE-16` | planned |
+| `SLICE-17` | planned |
+| `SLICE-18` | planned |
+| `SLICE-19` | planned |
+| `SLICE-20` | planned |
+| `SLICE-21` | planned |
 
-All release-plan slices are now closed from a planning perspective.
+The original v1 release-plan slices are closed. The new post-release slices are now
+explicit and ready for future sequencing.
 
 That means:
 
 - release-critical slices have been implemented and documented
-- the slice map below is now historical execution context
-- future work should continue either through:
-  - live regression proofs and maintenance, or
-  - the post-release roadmap captured by `SLICE-13`
+- the slice map below preserves the historical v1 execution context
+- the next planning lane is no longer vague post-release intent
+- future work should continue through the explicit `SLICE-15` to `SLICE-21` set
 
 ## 3. Release Thesis
 
@@ -97,10 +104,18 @@ SLICE-00 Current Baseline
   +--> SLICE-12 Outbound Event Delivery ----------> SLICE-09
   |                                                 SLICE-10
   |
-  +--> SLICE-13 Post-Release Expansion ------------> after first release
-  |
   +--> SLICE-14 Operator Surface Gaps ----+-------> SLICE-11 Release Hardening
        (nav, prompts UI, session view)
+  |
+  +--> SLICE-13 Post-Release Expansion (umbrella)
+            |
+            +--> SLICE-15 Advanced IVR Node Types
+            +--> SLICE-16 Queue and Voicemail Models
+            +--> SLICE-17 Schedule-Aware Routing
+            +--> SLICE-18 Outbound Routing and Trunk Policy
+            +--> SLICE-19 Observability and Operations Depth
+            +--> SLICE-20 Automation and AI Depth
+            +--> SLICE-21 Enterprise and Multi-Tenant Hardening
 ```
 
 ## 5. Parallel Work Tracks
@@ -133,6 +148,13 @@ SLICE-00 Current Baseline
 ### Track E - Post-Release Expansion
 
 - `SLICE-13`
+- `SLICE-15`
+- `SLICE-16`
+- `SLICE-17`
+- `SLICE-18`
+- `SLICE-19`
+- `SLICE-20`
+- `SLICE-21`
 
 ## 6. Recommended Execution Order
 
@@ -163,9 +185,16 @@ SLICE-00 Current Baseline
 
 12. `SLICE-11` Release Hardening
 
-### Stage 6 - Post Release
+### Stage 6 - Post Release Expansion
 
-13. `SLICE-13` Post-Release Expansion
+13. `SLICE-13` Post-Release Expansion (umbrella decomposition)
+14. `SLICE-15` Advanced IVR Node Types
+15. `SLICE-16` Queue and Voicemail Models
+16. `SLICE-17` Schedule-Aware Routing
+17. `SLICE-18` Outbound Routing and Trunk Policy
+18. `SLICE-19` Observability and Operations Depth
+19. `SLICE-20` Automation and AI Depth
+20. `SLICE-21` Enterprise and Multi-Tenant Hardening
 
 ## 7. Minimal Release Gate
 
@@ -195,3 +224,10 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-12](slices/SLICE-12-outbound-event-delivery.md)
 - [SLICE-13](slices/SLICE-13-post-release-expansion.md)
 - [SLICE-14](slices/SLICE-14-operator-surface-gaps.md)
+- [SLICE-15](slices/SLICE-15-advanced-ivr-node-types.md)
+- [SLICE-16](slices/SLICE-16-queue-and-voicemail-models.md)
+- [SLICE-17](slices/SLICE-17-schedule-aware-routing.md)
+- [SLICE-18](slices/SLICE-18-outbound-routing-and-trunk-policy.md)
+- [SLICE-19](slices/SLICE-19-observability-and-operations-depth.md)
+- [SLICE-20](slices/SLICE-20-automation-and-ai-depth.md)
+- [SLICE-21](slices/SLICE-21-enterprise-and-multi-tenant-hardening.md)

@@ -16,7 +16,7 @@ If a planning document conflicts with the architecture docs, architecture wins.
   Release roadmap, execution order, dependency graph, and parallel work tracks.
 
 - [post-release-roadmap.md](post-release-roadmap.md)
-  Seven post-release expansion workstreams (advanced IVR nodes, queue/voicemail, schedule routing, outbound, observability, automation depth, enterprise hardening). Nothing here enters a sprint before v1 ships.
+  Seven post-release expansion workstreams that now map to explicit follow-on slices.
 
 - [verification/slice-07-live-proof.md](verification/slice-07-live-proof.md)
   Live close-out checklist for the inbound IVR and call-group runtime proof.
@@ -61,10 +61,31 @@ If a planning document conflicts with the architecture docs, architecture wins.
   Webhook subscription management and outbound event delivery for n8n and external consumers.
 
 - [slices/SLICE-13-post-release-expansion.md](slices/SLICE-13-post-release-expansion.md)
-  Post-release parking lane for advanced telecom features and broader expansion work that should not block v1.
+  Umbrella/index for the explicit post-release slices below.
 
 - [slices/SLICE-14-operator-surface-gaps.md](slices/SLICE-14-operator-surface-gaps.md)
   Sidebar nav completeness, prompt assets web page, and runtime session observability.
+
+- [slices/SLICE-15-advanced-ivr-node-types.md](slices/SLICE-15-advanced-ivr-node-types.md)
+  Advanced IVR node types on top of the current flow/runtime foundation.
+
+- [slices/SLICE-16-queue-and-voicemail-models.md](slices/SLICE-16-queue-and-voicemail-models.md)
+  Queue and voicemail desired-state resources and target resolution.
+
+- [slices/SLICE-17-schedule-aware-routing.md](slices/SLICE-17-schedule-aware-routing.md)
+  Schedule, holiday, and conditional routing primitives.
+
+- [slices/SLICE-18-outbound-routing-and-trunk-policy.md](slices/SLICE-18-outbound-routing-and-trunk-policy.md)
+  Outbound routing rules and trunk-selection policy.
+
+- [slices/SLICE-19-observability-and-operations-depth.md](slices/SLICE-19-observability-and-operations-depth.md)
+  Session replay, deeper audit, runtime metrics, and operator debugging.
+
+- [slices/SLICE-20-automation-and-ai-depth.md](slices/SLICE-20-automation-and-ai-depth.md)
+  Stronger n8n/MCP/AI automation depth on the same safe lifecycle.
+
+- [slices/SLICE-21-enterprise-and-multi-tenant-hardening.md](slices/SLICE-21-enterprise-and-multi-tenant-hardening.md)
+  Enterprise identity, topology, and compliance-oriented hardening.
 
 ## Reading Order
 

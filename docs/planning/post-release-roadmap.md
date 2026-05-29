@@ -6,6 +6,16 @@ This document captures intentionally deferred work that was excluded from the v1
 release to protect scope. It is the authoritative parking lane for expansion tracks
 that should be planned only after the first release is stable and deployed.
 
+These workstreams are now decomposed into explicit planning slices:
+
+- Workstream A -> `SLICE-15`
+- Workstream B -> `SLICE-16`
+- Workstream C -> `SLICE-17`
+- Workstream D -> `SLICE-18`
+- Workstream E -> `SLICE-19`
+- Workstream F -> `SLICE-20`
+- Workstream G -> `SLICE-21`
+
 Nothing here should pull forward into the v1 slice sequence without explicit
 reprioritisation. Reading this document alongside the v1 boundaries makes the
 deliberate trade-offs visible.
