@@ -19,6 +19,8 @@ import { phoneNumberController } from './modules/phone-numbers/phone-number.cont
 import { promptAssetController } from './modules/prompts/prompt-asset.controller.js';
 import { ivrRuntimeController } from './modules/runtime/ivr-runtime.controller.js';
 import { sipTrunkController } from './modules/sip-trunks/sip-trunk.controller.js';
+import { scheduleController } from './modules/schedules/schedule.controller.js';
+import { outboundRouteController } from './modules/outbound-routes/outbound-route.controller.js';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -52,6 +54,8 @@ export function buildApp() {
   app.register(platformController, { prefix: '/api/v1/platform' });
   app.register(automationController, { prefix: '/api/v1/automation' });
   app.register(webhooksController, { prefix: '/api/v1/webhooks' });
+  app.register(scheduleController, { prefix: '/api/v1/schedules' });
+  app.register(outboundRouteController, { prefix: '/api/v1/outbound-routes' });
 
   return app;
 }

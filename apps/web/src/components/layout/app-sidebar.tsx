@@ -1,7 +1,9 @@
 import { NavLink, type NavLinkRenderProps } from 'react-router-dom';
 import {
   Activity,
+  ArrowUpRight,
   Building2,
+  CalendarClock,
   ClipboardCheck,
   GitBranch,
   Hash,
@@ -44,11 +46,13 @@ const tenantNav: NavItem[] = [
   { to: '/tenant/extensions', label: 'Extensions', icon: Phone },
   { to: '/tenant/numbers', label: 'Phone Numbers', icon: Hash, capability: CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW },
   { to: '/tenant/routes/inbound', label: 'Inbound Routes', icon: GitBranch, capability: CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW },
+  { to: '/tenant/routes/outbound', label: 'Outbound Routes', icon: ArrowUpRight, capability: CAPABILITIES.TENANT_OUTBOUND_ROUTES_VIEW },
   { to: '/tenant/ivr-flows', label: 'IVR Flows', icon: Workflow, capability: CAPABILITIES.TENANT_IVR_FLOWS_VIEW },
   { to: '/tenant/approvals', label: 'Approvals', icon: ClipboardCheck, capability: CAPABILITIES.TENANT_APPROVALS_VIEW },
   { to: '/tenant/prompts', label: 'Prompts', icon: Mic, capability: CAPABILITIES.TENANT_PROMPTS_VIEW },
   { to: '/tenant/runtime/sessions', label: 'Sessions', icon: MonitorPlay, capability: CAPABILITIES.TENANT_IVR_FLOWS_VIEW },
   { to: '/tenant/calls', label: 'Call Events', icon: PhoneCall },
+  { to: '/tenant/schedules', label: 'Schedules', icon: CalendarClock, capability: CAPABILITIES.TENANT_SCHEDULES_VIEW },
   { to: '/tenant/webhooks', label: 'Webhooks', icon: Zap, capability: CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW },
   { to: '/tenant/integrations/directory-smoke-test', label: 'Smoke Test', icon: TestTube2 },
 ];

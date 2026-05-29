@@ -87,6 +87,12 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [slices/SLICE-21-enterprise-and-multi-tenant-hardening.md](slices/SLICE-21-enterprise-and-multi-tenant-hardening.md)
   Enterprise identity, topology, and compliance-oriented hardening.
 
+- [slices/SLICE-22-recorded-media-and-export-operations.md](slices/SLICE-22-recorded-media-and-export-operations.md)
+  Call recording, playback, and export/reporting follow-on work after core observability.
+
+- [slices/SLICE-23-caller-routing-and-outbound-runtime.md](slices/SLICE-23-caller-routing-and-outbound-runtime.md)
+  Caller-ID-aware IVR branching and outbound runtime/click-to-call integration.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)

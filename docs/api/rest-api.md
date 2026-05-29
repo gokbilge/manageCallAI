@@ -944,69 +944,68 @@ constrained runtime action (`play_prompt`, `play_collect`, `transfer`, or
 `hangup`). When a transfer or hangup action is reported complete, the session
 transitions to `completed`.
 
-### 6.8 Validations
-
-#### List Validation Results
+#### Get IVR Runtime Session Replay
 
 ```http
-GET /api/v1/validations
+GET /api/v1/runtime/ivr/sessions/{sessionId}
 ```
 
-Query parameters:
+Tenant-authenticated operator endpoint. Returns:
 
-- `objectType`
-- `objectId`
-- `versionId`
-- `status`
+- the pinned runtime session
+- durable session step history
+- related call events correlated by `call_id`
 
-#### Get Validation Result
+Example response:
+
+```json
+{
+  "data": {
+    "session": {
+      "id": "sess_001",
+      "call_id": "call-123",
+      "status": "completed"
+    },
+    "steps": [
+      {
+        "step_index": 1,
+        "phase": "start",
+        "outcome": "start",
+        "resulting_node_id": "welcome",
+        "action_json": {
+          "action": "play_prompt",
+          "node_id": "welcome"
+        }
+      }
+    ],
+    "call_events": [
+      {
+        "event_type": "channel_create",
+        "source": "freeswitch-agent"
+      }
+    ]
+  }
+}
+```
+
+### 6.8 Flow History
+
+#### Get IVR Flow History
 
 ```http
-GET /api/v1/validations/{validationId}
+GET /api/v1/ivr-flows/{flowId}/history
 ```
 
-### 6.9 Simulations
+Returns:
 
-#### List Simulation Results
+- `validations`
+- `simulations`
+- `publishes`
+- `audits`
 
-```http
-GET /api/v1/simulations
-```
+Each array is ordered newest first and remains tenant-scoped.
 
-Query parameters:
-
-- `objectType`
-- `objectId`
-- `versionId`
-- `status`
-
-#### Get Simulation Result
-
-```http
-GET /api/v1/simulations/{simulationId}
-```
-
-### 6.10 Publishes
-
-#### List Publish Records
-
-```http
-GET /api/v1/publishes
-```
-
-Query parameters:
-
-- `objectType`
-- `objectId`
-- `actionType`
-
-#### Get Publish Record
-
-```http
-GET /api/v1/publishes/{publishId}
-```
-
-### 6.11 Approvals
+### 6.9 Approvals
 
 #### List Approval Requests
 
@@ -1043,29 +1042,7 @@ POST /api/v1/approvals/{approvalId}/approve
 POST /api/v1/approvals/{approvalId}/reject
 ```
 
-### 6.12 Audit Events
-
-#### List Audit Events
-
-```http
-GET /api/v1/audit-events
-```
-
-Query parameters:
-
-- `actorType`
-- `actorId`
-- `objectType`
-- `objectId`
-- `action`
-
-#### Get Audit Event
-
-```http
-GET /api/v1/audit-events/{auditEventId}
-```
-
-### 6.13 Call Events
+### 6.10 Call Events
 
 #### List Call Events
 
@@ -1107,7 +1084,23 @@ Query parameters:
 GET /api/v1/call-events/{callEventId}
 ```
 
-### 6.14 Call Detail Records
+### 6.11 Platform Runtime Summary
+
+```http
+GET /api/v1/platform/runtime/summary
+```
+
+Platform-authenticated operator endpoint. Returns aggregate operational counts
+such as:
+
+- `active_sessions`
+- `completed_sessions_24h`
+- `failed_sessions_24h`
+- `call_events_24h`
+- `failed_runtime_ingestions_24h`
+- `pending_approvals`
+
+### 6.12 Call Detail Records
 
 #### List CDRs
 

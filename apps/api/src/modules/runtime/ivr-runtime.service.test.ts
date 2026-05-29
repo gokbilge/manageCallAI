@@ -83,8 +83,12 @@ const mockRepo = {
   findActiveFlowVersion: vi.fn(),
   createSession: vi.fn(),
   findSessionById: vi.fn(),
+  findSessionByIdForTenant: vi.fn(),
   updateSessionState: vi.fn(),
   getFlowGraphForSession: vi.fn(),
+  listSessionSteps: vi.fn(),
+  listCallEventsByCallId: vi.fn(),
+  recordSessionStep: vi.fn(),
   findActivePromptRefs: vi.fn(),
   findActiveExtensionTargets: vi.fn(),
 } as unknown as IvrRuntimeRepository;
@@ -126,6 +130,7 @@ describe('IvrRuntimeService', () => {
       prompt_uri: promptRef.storage_uri!,
     });
     expect(result.session.current_node_id).toBe('welcome');
+    expect(vi.mocked(mockRepo.recordSessionStep)).toHaveBeenCalledTimes(1);
   });
 
   it('advances a runtime session across play_prompt, play_collect, switch, and transfer', async () => {
@@ -196,6 +201,7 @@ describe('IvrRuntimeService', () => {
     });
     expect(finalAdvance.action).toBeNull();
     expect(finalAdvance.session.status).toBe('completed');
+    expect(vi.mocked(mockRepo.recordSessionStep)).toHaveBeenCalledTimes(3);
   });
 
   it('throws when a play_collect node resolves to digits without a payload', async () => {
@@ -223,5 +229,43 @@ describe('IvrRuntimeService', () => {
     vi.mocked(mockRepo.findActivePromptRefs).mockResolvedValue(new Map());
 
     await expect(service.startSession({ call_id: 'call-1', flow_id: FLOW_ID })).rejects.toThrow(IvrRuntimeResolutionError);
+  });
+
+  it('returns a replay payload with steps and related call events', async () => {
+    vi.mocked(mockRepo.findSessionByIdForTenant).mockResolvedValue(makeSession());
+    vi.mocked(mockRepo.listSessionSteps).mockResolvedValue([
+      {
+        id: 'step-1',
+        tenant_id: TENANT_ID,
+        session_id: SESSION_ID,
+        step_index: 1,
+        phase: 'start',
+        node_id: null,
+        outcome: 'start',
+        digits: null,
+        action_json: { action: 'play_prompt', node_id: 'welcome' },
+        resulting_node_id: 'welcome',
+        resulting_status: 'running',
+        variables_json: {},
+        created_at: now,
+      },
+    ]);
+    vi.mocked(mockRepo.listCallEventsByCallId).mockResolvedValue([
+      {
+        id: 'event-1',
+        call_id: 'call-1',
+        event_type: 'channel_create',
+        event_time: now,
+        source: 'freeswitch-agent',
+        payload: {},
+        ingested_at: now,
+      },
+    ]);
+
+    const replay = await service.getSessionReplay(SESSION_ID, TENANT_ID);
+
+    expect(replay.session.id).toBe(SESSION_ID);
+    expect(replay.steps).toHaveLength(1);
+    expect(replay.call_events).toHaveLength(1);
   });
 });

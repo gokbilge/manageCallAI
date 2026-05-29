@@ -126,3 +126,51 @@ export interface PublishAttemptResult {
   flow: IvrFlow;
   approval_request_id?: string;
 }
+
+export interface FlowValidationHistoryEntry {
+  id: string;
+  version_id: string | null;
+  validator_version: string | null;
+  status: 'passed' | 'failed' | 'warning_only';
+  errors: ValidationError[];
+  warnings: ValidationError[];
+  created_at: Date;
+}
+
+export interface FlowSimulationHistoryEntry {
+  id: string;
+  version_id: string | null;
+  scenario: Record<string, unknown>;
+  status: 'passed' | 'failed' | 'inconclusive';
+  result_payload: Record<string, unknown>;
+  created_at: Date;
+}
+
+export interface FlowPublishHistoryEntry {
+  id: string;
+  version_id: string | null;
+  action_type: 'publish' | 'rollback';
+  triggered_by_type: 'user' | 'workflow' | 'ai_agent' | 'system';
+  triggered_by_id: string | null;
+  approval_request_id: string | null;
+  approval_status: 'pending' | 'approved' | 'rejected' | 'expired' | null;
+  decision_at: Date | null;
+  result: 'success' | 'failed' | 'pending_approval';
+  created_at: Date;
+}
+
+export interface FlowAuditHistoryEntry {
+  id: string;
+  actor_type: 'user' | 'workflow' | 'ai_agent' | 'system';
+  actor_id: string | null;
+  action: string;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+}
+
+export interface FlowHistory {
+  validations: FlowValidationHistoryEntry[];
+  simulations: FlowSimulationHistoryEntry[];
+  publishes: FlowPublishHistoryEntry[];
+  audits: FlowAuditHistoryEntry[];
+}

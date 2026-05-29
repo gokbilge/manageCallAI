@@ -126,6 +126,24 @@ export async function ivrFlowController(app: FastifyInstance): Promise<void> {
     },
   );
 
+  app.get<{ Params: { id: string } }>(
+    '/:id/history',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
+      schema: {
+        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.getHistory(req.params.id, user.tenant_id) };
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
   app.post<{ Params: { id: string }; Body: { graph_json?: Record<string, unknown>; definition?: Record<string, unknown> } }>(
     '/:id/versions',
     {

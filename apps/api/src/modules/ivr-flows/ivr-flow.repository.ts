@@ -2,6 +2,11 @@ import type { Pool } from 'pg';
 import type {
   ApprovalRequestRecord,
   ExtensionTransferReference,
+  FlowAuditHistoryEntry,
+  FlowHistory,
+  FlowPublishHistoryEntry,
+  FlowSimulationHistoryEntry,
+  FlowValidationHistoryEntry,
   FlowVersion,
   IvrFlow,
   IvrFlowWithVersions,
@@ -195,6 +200,61 @@ export class IvrFlowRepository {
       [flowId, tenantId],
     );
     return r.rows;
+  }
+
+  async getHistory(flowId: string, tenantId: string): Promise<FlowHistory> {
+    const [validations, simulations, publishes, audits] = await Promise.all([
+      this.db.query<FlowValidationHistoryEntry>(
+        `SELECT id, version_id, validator_version, status, errors, warnings, created_at
+         FROM validation_results
+         WHERE tenant_id = $1 AND object_type = 'ivr_flow' AND object_id = $2
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [tenantId, flowId],
+      ),
+      this.db.query<FlowSimulationHistoryEntry>(
+        `SELECT id, version_id, scenario, status, result_payload, created_at
+         FROM simulation_results
+         WHERE tenant_id = $1 AND object_type = 'ivr_flow' AND object_id = $2
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [tenantId, flowId],
+      ),
+      this.db.query<FlowPublishHistoryEntry>(
+        `SELECT
+           pr.id,
+           pr.version_id,
+           pr.action_type,
+           pr.triggered_by_type,
+           pr.triggered_by_id,
+           pr.approval_request_id,
+           ar.status AS approval_status,
+           ar.decision_at,
+           pr.result,
+           pr.created_at
+         FROM publish_records pr
+         LEFT JOIN approval_requests ar ON ar.id = pr.approval_request_id
+         WHERE pr.tenant_id = $1 AND pr.object_type = 'ivr_flow' AND pr.object_id = $2
+         ORDER BY pr.created_at DESC
+         LIMIT 50`,
+        [tenantId, flowId],
+      ),
+      this.db.query<FlowAuditHistoryEntry>(
+        `SELECT id, actor_type, actor_id, action, metadata, created_at
+         FROM audit_events
+         WHERE tenant_id = $1 AND object_type = 'ivr_flow' AND object_id = $2
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [tenantId, flowId],
+      ),
+    ]);
+
+    return {
+      validations: validations.rows,
+      simulations: simulations.rows,
+      publishes: publishes.rows,
+      audits: audits.rows,
+    };
   }
 
   async storeValidationResult(input: {
@@ -441,6 +501,16 @@ export class IvrFlowRepository {
        FROM extensions e
        JOIN tenants t ON t.id = e.tenant_id
        WHERE e.tenant_id = $1 AND e.id = ANY($2) AND e.status = 'active'`,
+      [tenantId, ids],
+    );
+    return new Map(r.rows.map((row) => [row.id, row]));
+  }
+
+  async findActiveScheduleRefs(tenantId: string, ids: string[]): Promise<Map<string, { id: string; timezone: string; weekly_rules_json: unknown; holiday_overrides_json: unknown }>> {
+    if (ids.length === 0) return new Map();
+    const r = await this.db.query<{ id: string; timezone: string; weekly_rules_json: unknown; holiday_overrides_json: unknown }>(
+      `SELECT id, timezone, weekly_rules_json, holiday_overrides_json
+       FROM schedules WHERE tenant_id = $1 AND id = ANY($2) AND status = 'active'`,
       [tenantId, ids],
     );
     return new Map(r.rows.map((row) => [row.id, row]));

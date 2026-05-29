@@ -82,6 +82,46 @@ export type FlowPublishResponse = {
   approval_request_id?: string;
 };
 
+export type FlowHistory = {
+  validations: Array<{
+    id: string;
+    version_id: string | null;
+    validator_version: string | null;
+    status: 'passed' | 'failed' | 'warning_only';
+    errors: unknown[];
+    warnings: unknown[];
+    created_at: string;
+  }>;
+  simulations: Array<{
+    id: string;
+    version_id: string | null;
+    scenario: Record<string, unknown>;
+    status: 'passed' | 'failed' | 'inconclusive';
+    result_payload: Record<string, unknown>;
+    created_at: string;
+  }>;
+  publishes: Array<{
+    id: string;
+    version_id: string | null;
+    action_type: 'publish' | 'rollback';
+    triggered_by_type: 'user' | 'workflow' | 'ai_agent' | 'system';
+    triggered_by_id: string | null;
+    approval_request_id: string | null;
+    approval_status: 'pending' | 'approved' | 'rejected' | 'expired' | null;
+    decision_at: string | null;
+    result: 'success' | 'failed' | 'pending_approval';
+    created_at: string;
+  }>;
+  audits: Array<{
+    id: string;
+    actor_type: 'user' | 'workflow' | 'ai_agent' | 'system';
+    actor_id: string | null;
+    action: string;
+    metadata: Record<string, unknown>;
+    created_at: string;
+  }>;
+};
+
 function noRetryOnAuthError(failureCount: number, error: unknown): boolean {
   if (error instanceof ApiError && (error.status === 401 || error.status === 403)) return false;
   return failureCount < 1;
@@ -135,6 +175,19 @@ export function useFlowVersions(flowId: string) {
     queryKey: ['ivr-flows', flowId, 'versions'],
     queryFn: async () => {
       const r = await apiRequest<{ data: FlowVersion[] }>(`/ivr-flows/${flowId}/versions`, { accessToken: session?.token });
+      return r.data;
+    },
+    enabled: Boolean(session?.token && flowId),
+    retry: noRetryOnAuthError,
+  });
+}
+
+export function useFlowHistory(flowId: string) {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ['ivr-flows', flowId, 'history'],
+    queryFn: async () => {
+      const r = await apiRequest<{ data: FlowHistory }>(`/ivr-flows/${flowId}/history`, { accessToken: session?.token });
       return r.data;
     },
     enabled: Boolean(session?.token && flowId),

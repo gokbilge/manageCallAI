@@ -1,6 +1,6 @@
 import { config } from '../../config/env.js';
 import type { PlatformRepository } from './platform.repository.js';
-import type { RuntimeHealthSummary, ServiceHealth, TenantSummary } from './platform.types.js';
+import type { PlatformRuntimeSummary, RuntimeHealthSummary, ServiceHealth, TenantSummary } from './platform.types.js';
 
 const HEALTH_TIMEOUT_MS = 3000;
 
@@ -9,6 +9,10 @@ export class PlatformService {
 
   listTenants(): Promise<TenantSummary[]> {
     return this.repo.listTenants();
+  }
+
+  runtimeSummary(): Promise<PlatformRuntimeSummary> {
+    return this.repo.getRuntimeSummary();
   }
 
   async runtimeHealth(): Promise<RuntimeHealthSummary> {

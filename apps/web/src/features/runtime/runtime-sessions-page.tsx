@@ -1,36 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { RefreshCcw } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { DataCard } from '@/components/data/data-card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { apiRequest } from '@/lib/api/client';
-import { useAuth } from '@/lib/auth/use-auth';
-
-type RuntimeSession = {
-  id: string;
-  call_id: string;
-  flow_id: string;
-  status: 'running' | 'completed' | 'failed';
-  current_node_id: string | null;
-  caller_number: string | null;
-  created_at: string;
-  completed_at: string | null;
-};
+import { useRuntimeSessionReplay, useRuntimeSessions } from '@/lib/runtime/runtime-api';
 
 export function RuntimeSessionsPage() {
-  const { session } = useAuth();
-
-  const sessionsQuery = useQuery({
-    queryKey: ['runtime-sessions', session?.claims.tenant_id],
-    enabled: Boolean(session?.token),
-    queryFn: async () => {
-      const result = await apiRequest<{ data: RuntimeSession[] }>('/runtime/ivr/sessions', {
-        accessToken: session!.token,
-      });
-      return result.data;
-    },
-  });
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const sessionsQuery = useRuntimeSessions();
+  const replayQuery = useRuntimeSessionReplay(selectedSessionId ?? '');
 
   return (
     <div className="space-y-6">
@@ -64,6 +43,7 @@ export function RuntimeSessionsPage() {
                   <th className="px-3 py-2 font-medium">Current node</th>
                   <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2 font-medium">Started</th>
+                  <th className="px-3 py-2 font-medium text-right">Replay</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)] bg-[var(--color-surface)]">
@@ -82,6 +62,15 @@ export function RuntimeSessionsPage() {
                     <td className="px-3 py-2 text-xs text-[var(--color-muted-fg)]">
                       {new Date(s.created_at).toLocaleString()}
                     </td>
+                    <td className="px-3 py-2 text-right">
+                      <button
+                        className="text-xs font-medium text-[var(--color-tenant)] hover:underline"
+                        onClick={() => setSelectedSessionId(s.id)}
+                        type="button"
+                      >
+                        View replay
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -94,6 +83,75 @@ export function RuntimeSessionsPage() {
           />
         )}
       </DataCard>
+
+      <DataCard title="Session Replay" description="Select a row above to inspect the durable step history and related call events.">
+        {!selectedSessionId ? (
+          <p className="text-sm text-[var(--color-muted-fg)]">Choose a session to inspect its replay trace.</p>
+        ) : replayQuery.isLoading ? (
+          <p className="text-sm text-[var(--color-muted-fg)]">Loading replay...</p>
+        ) : replayQuery.isError ? (
+          <ErrorState
+            title="Could not load replay"
+            message={replayQuery.error instanceof Error ? replayQuery.error.message : 'Unknown error'}
+          />
+        ) : replayQuery.data ? (
+          <div className="space-y-4">
+            <div className="grid gap-3 text-sm md:grid-cols-3">
+              <ReplayMeta label="Call ID" value={replayQuery.data.session.call_id} mono />
+              <ReplayMeta label="Caller" value={replayQuery.data.session.caller_number ?? 'unknown'} mono />
+              <ReplayMeta label="Status" value={replayQuery.data.session.status} />
+            </div>
+            <div className="space-y-3">
+              {replayQuery.data.steps.map((step) => (
+                <div key={step.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">Step {step.step_index}</p>
+                    <StatusBadge status={step.resulting_status === 'failed' ? 'warning' : step.resulting_status === 'running' ? 'active' : 'published'} />
+                  </div>
+                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                    {step.phase} • outcome: {step.outcome}
+                    {step.digits ? ` • digits: ${step.digits}` : ''}
+                  </p>
+                  {step.action_json ? (
+                    <pre className="mt-3 overflow-x-auto rounded-[var(--radius-md)] bg-[#0f172a] p-3 text-xs text-slate-100">
+                      <code>{JSON.stringify(step.action_json, null, 2)}</code>
+                    </pre>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.1em] text-[var(--color-muted-fg)]">Related Call Events</p>
+              {replayQuery.data.call_events.length > 0 ? (
+                replayQuery.data.call_events.map((event) => (
+                  <div key={event.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-sm font-medium">{event.event_type}</p>
+                      <p className="text-xs text-[var(--color-muted-fg)]">{new Date(event.event_time).toLocaleString()}</p>
+                    </div>
+                    <pre className="mt-3 overflow-x-auto rounded-[var(--radius-md)] bg-[#0f172a] p-3 text-xs text-slate-100">
+                      <code>{JSON.stringify(event.payload, null, 2)}</code>
+                    </pre>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-[var(--color-muted-fg)]">No related call events recorded for this session yet.</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--color-muted-fg)]">No replay data found for that session.</p>
+        )}
+      </DataCard>
+    </div>
+  );
+}
+
+function ReplayMeta({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs uppercase tracking-[0.1em] text-[var(--color-muted-fg)]">{label}</p>
+      <p className={mono ? 'font-mono text-xs text-[var(--color-fg)]' : 'text-sm text-[var(--color-fg)]'}>{value}</p>
     </div>
   );
 }

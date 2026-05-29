@@ -12,7 +12,7 @@ These workstreams are now decomposed into explicit planning slices:
 - Workstream B -> `SLICE-16`
 - Workstream C -> `SLICE-17`
 - Workstream D -> `SLICE-18`
-- Workstream E -> `SLICE-19`
+- Workstream E -> `SLICE-19` + `SLICE-22`
 - Workstream F -> `SLICE-20`
 - Workstream G -> `SLICE-21`
 

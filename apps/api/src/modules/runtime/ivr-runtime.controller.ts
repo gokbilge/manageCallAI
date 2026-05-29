@@ -53,6 +53,30 @@ export async function ivrRuntimeController(app: FastifyInstance): Promise<void> 
     },
   );
 
+  app.get<{ Params: { sessionId: string } }>(
+    '/sessions/:sessionId',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
+      schema: {
+        params: {
+          type: 'object',
+          required: ['sessionId'],
+          properties: {
+            sessionId: { type: 'string', format: 'uuid' },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.getSessionReplay(req.params.sessionId, user.tenant_id) };
+      } catch (err) {
+        return replyRuntimeError(err, reply);
+      }
+    },
+  );
+
   app.post<{ Body: StartIvrRuntimeSessionInput }>(
     '/sessions',
     {

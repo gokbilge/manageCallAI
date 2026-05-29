@@ -6,7 +6,18 @@ Introduce schedule-aware and condition-aware routing as explicit desired state.
 
 ## Status
 
-**PLANNED**
+**COMPLETED** — 2026-05-29
+
+### Shipped
+
+- DB migration `0014_schedules.sql` — `schedules` table with `timezone`, `weekly_rules_json`, `holiday_overrides_json`
+- Schedule CRUD API: `GET/POST /api/v1/schedules`, `GET/PATCH /api/v1/schedules/:id`, `POST /api/v1/schedules/:id/deactivate`
+- Capabilities: `tenant.schedules.view/create/update` added to `tenant_admin` in both API and web
+- `business_hours` IVR node type: structural validation, semantic validation (schedule active/exists), schedule-aware simulation (`now` respected), runtime resolver (live clock evaluation)
+- Timezone-aware schedule evaluation utility (`isInBusinessHours`) with holiday override priority
+- Web UI: Schedules list + create form page at `/tenant/schedules`
+- Sidebar nav entry, router route under capability guard
+- 18 tests: 10 schedule service, 8 schedule util, 4 web page
 
 ## Scope
 

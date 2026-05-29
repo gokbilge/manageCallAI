@@ -2,10 +2,12 @@ import type {
   ExtensionTransferReference,
   PromptAssetReference,
 } from '../ivr-flows/ivr-flow.types.js';
+import { isInBusinessHours } from '../schedules/schedule.util.js';
 import type { IvrRuntimeRepository } from './ivr-runtime.repository.js';
 import type {
   AdvanceIvrRuntimeSessionInput,
   IvrRuntimeAction,
+  IvrRuntimeSessionReplay,
   IvrRuntimeSession,
   IvrRuntimeSessionResult,
   StartIvrRuntimeSessionInput,
@@ -93,6 +95,24 @@ export class IvrRuntimeService {
     return this.repo.listSessionsByTenant(tenantId, status);
   }
 
+  async getSessionReplay(sessionId: string, tenantId: string): Promise<IvrRuntimeSessionReplay> {
+    const session = await this.repo.findSessionByIdForTenant(sessionId, tenantId);
+    if (!session) {
+      throw new IvrRuntimeSessionNotFoundError(sessionId);
+    }
+
+    const [steps, callEvents] = await Promise.all([
+      this.repo.listSessionSteps(session.id, tenantId),
+      this.repo.listCallEventsByCallId(session.call_id, tenantId),
+    ]);
+
+    return {
+      session,
+      steps,
+      call_events: callEvents,
+    };
+  }
+
   async startSession(input: StartIvrRuntimeSessionInput): Promise<IvrRuntimeSessionResult> {
     const active = await this.repo.findActiveFlowVersion(input.flow_id);
     if (!active) {
@@ -133,8 +153,31 @@ export class IvrRuntimeService {
         last_action_json: null,
         completed_at: new Date(),
       });
+      await this.repo.recordSessionStep({
+        tenant_id: completed.tenant_id,
+        session_id: completed.id,
+        phase: 'start',
+        node_id: null,
+        outcome: 'start',
+        action_json: null,
+        resulting_node_id: null,
+        resulting_status: completed.status,
+        variables_json: resolved.variables,
+      });
       return { session: completed, action: null };
     }
+
+    await this.repo.recordSessionStep({
+      tenant_id: session.tenant_id,
+      session_id: session.id,
+      phase: 'start',
+      node_id: null,
+      outcome: 'start',
+      action_json: { ...resolved.action },
+      resulting_node_id: session.current_node_id,
+      resulting_status: session.status,
+      variables_json: resolved.variables,
+    });
 
     return { session, action: resolved.action };
   }
@@ -176,6 +219,19 @@ export class IvrRuntimeService {
       variables_json: resolved.variables,
       last_action_json: resolved.action ? { ...resolved.action } : null,
       completed_at: resolved.action ? null : new Date(),
+    });
+
+    await this.repo.recordSessionStep({
+      tenant_id: updated.tenant_id,
+      session_id: updated.id,
+      phase: 'advance',
+      node_id: input.node_id,
+      outcome: input.outcome,
+      digits: input.digits ?? null,
+      action_json: resolved.action ? { ...resolved.action } : null,
+      resulting_node_id: updated.current_node_id,
+      resulting_status: updated.status,
+      variables_json: resolved.variables,
     });
 
     return { session: updated, action: resolved.action };
@@ -341,6 +397,29 @@ export class IvrRuntimeService {
           last_digits: lastDigits,
           variables,
         };
+      }
+
+      if (type === 'business_hours') {
+        const scheduleId = typeof node.schedule_id === 'string' ? node.schedule_id : '';
+        if (!scheduleId) {
+          throw new IvrRuntimeResolutionError(`business_hours node is missing schedule_id: ${node.id}`);
+        }
+        const schedule = await this.repo.findActiveSchedule(input.tenant_id, scheduleId);
+        if (!schedule) {
+          throw new IvrRuntimeResolutionError(`Schedule not found or inactive for business_hours node: ${scheduleId}`);
+        }
+        const inHours = isInBusinessHours(
+          {
+            timezone: schedule.timezone,
+            weekly_rules_json: Array.isArray(schedule.weekly_rules_json) ? schedule.weekly_rules_json as never : [],
+            holiday_overrides_json: Array.isArray(schedule.holiday_overrides_json) ? schedule.holiday_overrides_json as never : [],
+          },
+          new Date(),
+        );
+        nextNodeId = typeof (inHours ? node.in_hours_node_id : node.out_of_hours_node_id) === 'string'
+          ? (inHours ? node.in_hours_node_id : node.out_of_hours_node_id) as string
+          : '';
+        continue;
       }
 
       throw new IvrRuntimeResolutionError(`Unsupported runtime node type: ${type}`);

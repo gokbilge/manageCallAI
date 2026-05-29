@@ -5,12 +5,14 @@ import { DataCard } from '@/components/data/data-card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ApiError } from '@/lib/api/client';
-import { usePlatformRuntimeHealth } from '@/lib/platform/platform-api';
+import { usePlatformRuntimeHealth, usePlatformRuntimeSummary } from '@/lib/platform/platform-api';
 
 export function RuntimeHealthPage() {
   const healthQuery = usePlatformRuntimeHealth();
+  const summaryQuery = usePlatformRuntimeSummary();
   const services = healthQuery.data ?? [];
   const healthy = services.filter((s) => s.status === 'healthy').length;
+  const summary = summaryQuery.data;
 
   return (
     <div className="space-y-6">
@@ -33,16 +35,36 @@ export function RuntimeHealthPage() {
           tone="platform"
         />
         <StatCard
-          title="Worker Surface"
-          value={services.find((s) => s.name === 'worker')?.status ?? 'checking'}
+          title="Active Sessions"
+          value={summary ? String(summary.active_sessions) : '...'}
           icon={Bot}
           tone="platform"
         />
         <StatCard
-          title="API Surface"
-          value={services.find((s) => s.name === 'api')?.status ?? 'checking'}
+          title="Call Events (24h)"
+          value={summary ? String(summary.call_events_24h) : '...'}
           icon={Server}
           tone="success"
+        />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard
+          title="Completed Sessions (24h)"
+          value={summary ? String(summary.completed_sessions_24h) : '...'}
+          icon={Bot}
+          tone="success"
+        />
+        <StatCard
+          title="Failed Ingestions (24h)"
+          value={summary ? String(summary.failed_runtime_ingestions_24h) : '...'}
+          icon={ServerOff}
+          tone="info"
+        />
+        <StatCard
+          title="Pending Approvals"
+          value={summary ? String(summary.pending_approvals) : '...'}
+          icon={RadioTower}
+          tone="platform"
         />
       </div>
       <DataCard

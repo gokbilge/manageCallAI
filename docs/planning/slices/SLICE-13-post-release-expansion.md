@@ -18,6 +18,8 @@ slices without pulling them ambiguously into the closed v1 roadmap.
   - `SLICE-19` Observability and Operations Depth
   - `SLICE-20` Automation and AI Depth
   - `SLICE-21` Enterprise and Multi-Tenant Hardening
+  - `SLICE-22` Recorded Media and Export Operations
+  - `SLICE-23` Caller Routing and Outbound Runtime Integration
 
 ## Scope
 

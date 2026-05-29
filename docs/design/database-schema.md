@@ -172,6 +172,22 @@ This table is operational state, not desired state. It should be treated as
 ephemeral runtime coordination data, while `ivr_flows` and `flow_versions`
 remain the source of truth for behavior design.
 
+### 4.14 ivr_flow_session_steps
+
+Stores the durable per-step execution trace for an IVR runtime session.
+
+Core intent:
+
+- preserve the operator-visible replay path for each call session
+- record the phase (`start` or `advance`) and reported outcome
+- retain the next emitted constrained action for debugging
+- keep replay inside backend-owned abstractions instead of forcing raw FreeSWITCH inspection
+
+This table complements `ivr_flow_sessions`:
+
+- `ivr_flow_sessions` = current pinned runtime state
+- `ivr_flow_session_steps` = append-only replay history for that session
+
 ## 5. Versioning Strategy
 
 - `ivr_flows`, `inbound_routes`, and `outbound_routes` each store `draft_version_id` and `active_version_id`

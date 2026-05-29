@@ -19,6 +19,15 @@ export type PlatformServiceHealth = {
   detail: string;
 };
 
+export type PlatformRuntimeSummary = {
+  active_sessions: number;
+  completed_sessions_24h: number;
+  failed_sessions_24h: number;
+  call_events_24h: number;
+  failed_runtime_ingestions_24h: number;
+  pending_approvals: number;
+};
+
 function noRetryOnAuthError(failureCount: number, error: unknown): boolean {
   if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
     return false;
@@ -51,6 +60,22 @@ export function usePlatformRuntimeHealth() {
         { accessToken: session?.token },
       );
       return result.data.services;
+    },
+    enabled: Boolean(session?.token),
+    refetchInterval: 30_000,
+    retry: noRetryOnAuthError,
+  });
+}
+
+export function usePlatformRuntimeSummary() {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ['platform-runtime-summary'],
+    queryFn: async () => {
+      const result = await apiRequest<{ data: PlatformRuntimeSummary }>('/platform/runtime/summary', {
+        accessToken: session?.token,
+      });
+      return result.data;
     },
     enabled: Boolean(session?.token),
     refetchInterval: 30_000,

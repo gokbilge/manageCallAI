@@ -7,7 +7,13 @@ approval queue.
 
 ## Status
 
-**PLANNED**
+**COMPLETED** - 2026-05-29
+
+- session replay API added for tenant operators
+- durable `ivr_flow_session_steps` trace added for backend-owned IVR replay
+- IVR flow history endpoint added for validation, simulation, publish, and audit views
+- platform runtime summary endpoint added for operator metrics
+- tenant runtime session detail UI and flow history UI added
 
 ## Scope
 

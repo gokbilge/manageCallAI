@@ -18,4 +18,9 @@ export async function platformController(app: FastifyInstance): Promise<void> {
     const health = await service.runtimeHealth();
     return { data: health };
   });
+
+  app.get('/runtime/summary', async () => {
+    const summary = await service.runtimeSummary();
+    return { data: summary };
+  });
 }

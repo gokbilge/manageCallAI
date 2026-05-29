@@ -7,7 +7,18 @@ fraud-control policy.
 
 ## Status
 
-**PLANNED**
+**COMPLETED** — 2026-05-29
+
+### Shipped
+
+- DB migration `0015_outbound_routes.sql` — `outbound_routes` table with prefix matching, priority, trunk ref, fallback trunk, rate cap, caller ID allowlist, DB constraint preventing self-fallback
+- CRUD API: `GET/POST /api/v1/outbound-routes`, `GET/PATCH /:id`, `POST /:id/deactivate`
+- Internal runtime resolution endpoint: `POST /api/v1/outbound-routes/resolve` (runtime token auth, longest-prefix + priority selection)
+- Capabilities: `tenant.outbound_routes.view/create/update` added to `tenant_admin` in API and web
+- Policy validation: active trunk required, fallback must differ from primary and be active, prefix format validated, rate cap bounded 1–10000, caller ID list format validated
+- Web UI: outbound routes list + create form at `/tenant/routes/outbound`
+- Sidebar nav entry, router route under capability guard
+- 15 API service tests, 4 web page tests
 
 ## Scope
 

@@ -93,6 +93,7 @@ const mockRepo = {
   nextVersionNumber: vi.fn(),
   findActiveExtensionIds: vi.fn(),
   findActivePromptRefs: vi.fn(),
+  findActiveScheduleRefs: vi.fn(),
 } as unknown as IvrFlowRepository;
 
 const service = new IvrFlowService(mockRepo);
@@ -102,6 +103,10 @@ beforeEach(() => vi.clearAllMocks());
 // ── validate ────────────────────────────────────────────────────────────────
 
 describe('IvrFlowService.validate', () => {
+  beforeEach(() => {
+    vi.mocked(mockRepo.findActiveScheduleRefs).mockResolvedValue(new Map());
+  });
+
   it('throws FlowVersionNotFoundError when version is missing', async () => {
     vi.mocked(mockRepo.findVersionById).mockResolvedValue(null);
     await expect(service.validate(FLOW_ID, 'v1', TENANT_ID)).rejects.toThrow(FlowVersionNotFoundError);

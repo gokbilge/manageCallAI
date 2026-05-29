@@ -1,6 +1,7 @@
 import type { IvrFlowRepository } from './ivr-flow.repository.js';
 import type {
   CreateIvrFlowInput,
+  FlowHistory,
   FlowVersion,
   FlowSimulationResult,
   FlowValidationResult,
@@ -12,6 +13,14 @@ import type {
   UpdateIvrFlowInput,
 } from './ivr-flow.types.js';
 import { defaultIvrGraph, validateIvrGraph } from './ivr-flow.validation.js';
+import { isInBusinessHours } from '../schedules/schedule.util.js';
+
+type ScheduleRef = {
+  id: string;
+  timezone: string;
+  weekly_rules_json: unknown;
+  holiday_overrides_json: unknown;
+};
 
 export class IvrFlowNotFoundError extends Error {
   constructor(id: string) { super(`IVR flow not found: ${id}`); this.name = 'IvrFlowNotFoundError'; }
@@ -86,7 +95,11 @@ function getGraphNodes(graph: Record<string, unknown>): Array<Record<string, unk
     : [];
 }
 
-function simulateGraph(graph: Record<string, unknown>, scenario: SimulationScenario): SimulationOutcome {
+function simulateGraph(
+  graph: Record<string, unknown>,
+  scenario: SimulationScenario,
+  schedules: Map<string, ScheduleRef> = new Map(),
+): SimulationOutcome {
   const baseValidation = validateIvrGraph(graph);
   if (baseValidation.status === 'failed') {
     return {
@@ -205,6 +218,32 @@ function simulateGraph(graph: Record<string, unknown>, scenario: SimulationScena
       };
     }
 
+    if (type === 'business_hours') {
+      const scheduleId = typeof node.schedule_id === 'string' ? node.schedule_id : '';
+      const schedule = schedules.get(scheduleId);
+      if (!schedule) {
+        return {
+          status: 'failed',
+          path,
+          final_action: null,
+          errors: [toSimulationError(`graph_json.nodes.${currentId}.schedule_id`, `Schedule not found or not active: ${scheduleId}`)],
+        };
+      }
+      const evalAt = scenario.now ? new Date(scenario.now) : new Date();
+      const inHours = isInBusinessHours(
+        {
+          timezone: schedule.timezone,
+          weekly_rules_json: Array.isArray(schedule.weekly_rules_json) ? schedule.weekly_rules_json as never : [],
+          holiday_overrides_json: Array.isArray(schedule.holiday_overrides_json) ? schedule.holiday_overrides_json as never : [],
+        },
+        evalAt,
+      );
+      currentId = typeof (inHours ? node.in_hours_node_id : node.out_of_hours_node_id) === 'string'
+        ? (inHours ? node.in_hours_node_id : node.out_of_hours_node_id) as string
+        : undefined;
+      continue;
+    }
+
     return {
       status: 'failed',
       path,
@@ -254,6 +293,12 @@ export class IvrFlowService {
     const version = await this.repo.findVersionById(versionId, flowId, tenantId);
     if (!version) throw new FlowVersionNotFoundError(versionId);
     return version;
+  }
+
+  async getHistory(flowId: string, tenantId: string): Promise<FlowHistory> {
+    const flow = await this.repo.findById(flowId, tenantId);
+    if (!flow) throw new IvrFlowNotFoundError(flowId);
+    return this.repo.getHistory(flowId, tenantId);
   }
 
   async createVersion(flowId: string, tenantId: string, graphJson: Record<string, unknown> | undefined, createdBy?: string): Promise<FlowVersion> {
@@ -315,6 +360,19 @@ export class IvrFlowService {
         }
       }
 
+      const businessHoursNodes = nodes.filter((n) => n.type === 'business_hours' && typeof n.schedule_id === 'string');
+      const scheduleIds = businessHoursNodes.map((n) => n.schedule_id as string);
+      const activeSchedules = await this.repo.findActiveScheduleRefs(tenantId, scheduleIds);
+      for (const node of businessHoursNodes) {
+        const sid = node.schedule_id as string;
+        if (!activeSchedules.has(sid)) {
+          outcome.errors.push({
+            field: `graph_json.nodes.${String(node.id)}.schedule_id`,
+            message: `Schedule not found or not active in this tenant: ${sid}`,
+          });
+        }
+      }
+
       if (outcome.errors.length > 0) {
         outcome.status = 'failed';
       }
@@ -344,7 +402,13 @@ export class IvrFlowService {
     const version = await this.repo.findVersionById(versionId, flowId, tenantId);
     if (!version) throw new FlowVersionNotFoundError(versionId);
 
-    const outcome = simulateGraph(version.graph_json, scenario);
+    const nodes = getGraphNodes(version.graph_json);
+    const scheduleIds = nodes
+      .filter((n) => n.type === 'business_hours' && typeof n.schedule_id === 'string')
+      .map((n) => n.schedule_id as string);
+    const schedules = await this.repo.findActiveScheduleRefs(tenantId, scheduleIds);
+
+    const outcome = simulateGraph(version.graph_json, scenario, schedules);
     await this.repo.storeSimulationResult({ tenant_id: tenantId, flow_id: flowId, version_id: versionId, scenario, outcome });
 
     if (outcome.status === 'passed') {

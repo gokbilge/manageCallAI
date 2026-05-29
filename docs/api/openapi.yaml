@@ -851,7 +851,41 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /ivr-flows/{flowId}/history:
+    parameters:
+      - $ref: '#/components/parameters/FlowIdParam'
+    get:
+      tags: [IvrFlows]
+      summary: Get IVR flow validation, simulation, publish, and audit history
+      responses:
+        '200':
+          description: IVR flow history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrFlowHistoryResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
   /runtime/ivr/sessions:
+    get:
+      tags: [Runtime]
+      summary: List IVR runtime sessions for the authenticated tenant
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [running, completed, failed]
+      responses:
+        '200':
+          description: Runtime session list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrRuntimeSessionListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [Runtime]
       summary: Start an IVR runtime session
@@ -874,6 +908,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IvrRuntimeSessionResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /runtime/ivr/sessions/{sessionId}:
+    parameters:
+      - $ref: '#/components/parameters/SessionIdParam'
+    get:
+      tags: [Runtime]
+      summary: Get IVR runtime session replay for the authenticated tenant
+      responses:
+        '200':
+          description: Runtime session replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IvrRuntimeSessionReplayResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -978,6 +1028,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RuntimeHealthResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /platform/runtime/summary:
+    get:
+      tags: [Platform]
+      summary: Runtime summary counters (platform_admin only)
+      responses:
+        '200':
+          description: Runtime summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformRuntimeSummaryResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -2423,6 +2487,79 @@ components:
         data:
           $ref: '#/components/schemas/IvrRuntimeSessionResult'
 
+    IvrRuntimeSessionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/IvrRuntimeSession'
+
+    IvrRuntimeSessionStep:
+      type: object
+      required: [id, session_id, step_index, phase, outcome, resulting_status, variables_json, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        step_index:
+          type: integer
+        phase:
+          type: string
+          enum: [start, advance]
+        node_id:
+          type: string
+          nullable: true
+        outcome:
+          type: string
+          enum: [start, completed, digits, timeout, invalid]
+        digits:
+          type: string
+          nullable: true
+        action_json:
+          type: object
+          nullable: true
+          additionalProperties: true
+        resulting_node_id:
+          type: string
+          nullable: true
+        resulting_status:
+          type: string
+          enum: [running, completed, failed]
+        variables_json:
+          type: object
+          additionalProperties:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+
+    IvrRuntimeSessionReplay:
+      type: object
+      required: [session, steps, call_events]
+      properties:
+        session:
+          $ref: '#/components/schemas/IvrRuntimeSession'
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/IvrRuntimeSessionStep'
+        call_events:
+          type: array
+          items:
+            $ref: '#/components/schemas/CallEvent'
+
+    IvrRuntimeSessionReplayResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/IvrRuntimeSessionReplay'
+
     CallEvent:
       type: object
       required: [id, tenant_id, call_id, event_type, event_time, payload, ingested_at]
@@ -2549,6 +2686,175 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/ServiceHealth'
+
+    PlatformRuntimeSummary:
+      type: object
+      required:
+        [active_sessions, completed_sessions_24h, failed_sessions_24h, call_events_24h, failed_runtime_ingestions_24h, pending_approvals]
+      properties:
+        active_sessions:
+          type: integer
+        completed_sessions_24h:
+          type: integer
+        failed_sessions_24h:
+          type: integer
+        call_events_24h:
+          type: integer
+        failed_runtime_ingestions_24h:
+          type: integer
+        pending_approvals:
+          type: integer
+
+    PlatformRuntimeSummaryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PlatformRuntimeSummary'
+
+    IvrFlowHistoryEntryValidation:
+      type: object
+      required: [id, status, errors, warnings, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version_id:
+          type: string
+          format: uuid
+          nullable: true
+        validator_version:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [passed, failed, warning_only]
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        warnings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+
+    IvrFlowHistoryEntrySimulation:
+      type: object
+      required: [id, scenario, status, result_payload, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version_id:
+          type: string
+          format: uuid
+          nullable: true
+        scenario:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum: [passed, failed, inconclusive]
+        result_payload:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+
+    IvrFlowHistoryEntryPublish:
+      type: object
+      required: [id, action_type, triggered_by_type, result, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version_id:
+          type: string
+          format: uuid
+          nullable: true
+        action_type:
+          type: string
+          enum: [publish, rollback]
+        triggered_by_type:
+          type: string
+          enum: [user, workflow, ai_agent, system]
+        triggered_by_id:
+          type: string
+          nullable: true
+        approval_request_id:
+          type: string
+          format: uuid
+          nullable: true
+        approval_status:
+          type: string
+          nullable: true
+          enum: [pending, approved, rejected, expired]
+        decision_at:
+          type: string
+          format: date-time
+          nullable: true
+        result:
+          type: string
+          enum: [success, failed, pending_approval]
+        created_at:
+          type: string
+          format: date-time
+
+    IvrFlowHistoryEntryAudit:
+      type: object
+      required: [id, actor_type, action, metadata, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        actor_type:
+          type: string
+          enum: [user, workflow, ai_agent, system]
+        actor_id:
+          type: string
+          nullable: true
+        action:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+
+    IvrFlowHistory:
+      type: object
+      required: [validations, simulations, publishes, audits]
+      properties:
+        validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/IvrFlowHistoryEntryValidation'
+        simulations:
+          type: array
+          items:
+            $ref: '#/components/schemas/IvrFlowHistoryEntrySimulation'
+        publishes:
+          type: array
+          items:
+            $ref: '#/components/schemas/IvrFlowHistoryEntryPublish'
+        audits:
+          type: array
+          items:
+            $ref: '#/components/schemas/IvrFlowHistoryEntryAudit'
+
+    IvrFlowHistoryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/IvrFlowHistory'
 
     # ── FreeSWITCH runtime ────────────────────────────────────────────────────
 

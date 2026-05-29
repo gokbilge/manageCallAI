@@ -12,6 +12,8 @@ export const paths = {
     ivrFlows: '/tenant/ivr-flows',
     approvals: '/tenant/approvals',
     calls: '/tenant/calls',
+    runtimeSessions: '/tenant/runtime/sessions',
+    runtimeSession: (sessionId: string) => `/tenant/runtime/sessions/${sessionId}`,
     smokeTest: '/tenant/integrations/directory-smoke-test',
   },
 } as const;

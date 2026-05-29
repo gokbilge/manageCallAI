@@ -18,6 +18,22 @@ export interface IvrRuntimeSession {
   updated_at: Date;
 }
 
+export interface IvrRuntimeSessionStep {
+  id: string;
+  tenant_id: string;
+  session_id: string;
+  step_index: number;
+  phase: 'start' | 'advance';
+  node_id: string | null;
+  outcome: 'start' | 'completed' | 'digits' | 'timeout' | 'invalid';
+  digits: string | null;
+  action_json: Record<string, unknown> | null;
+  resulting_node_id: string | null;
+  resulting_status: RuntimeSessionStatus;
+  variables_json: Record<string, string>;
+  created_at: Date;
+}
+
 export interface StartIvrRuntimeSessionInput {
   call_id: string;
   flow_id: string;
@@ -64,4 +80,18 @@ export type IvrRuntimeAction =
 export interface IvrRuntimeSessionResult {
   session: IvrRuntimeSession;
   action: IvrRuntimeAction | null;
+}
+
+export interface IvrRuntimeSessionReplay {
+  session: IvrRuntimeSession;
+  steps: IvrRuntimeSessionStep[];
+  call_events: Array<{
+    id: string;
+    call_id: string;
+    event_type: string;
+    event_time: Date;
+    source: string | null;
+    payload: Record<string, unknown>;
+    ingested_at: Date;
+  }>;
 }

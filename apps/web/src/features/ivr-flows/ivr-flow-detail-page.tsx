@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import {
   useExtensionOptions,
   useFlowVersions,
+  useFlowHistory,
   useIvrFlow,
   usePromptAssetOptions,
   usePublishFlowVersion,
@@ -24,6 +25,7 @@ export function IvrFlowDetailPage() {
   const { flowId = '' } = useParams();
   const flowQuery = useIvrFlow(flowId);
   const versionsQuery = useFlowVersions(flowId);
+  const historyQuery = useFlowHistory(flowId);
   const promptsQuery = usePromptAssetOptions();
   const extensionsQuery = useExtensionOptions();
   const updateVersion = useUpdateFlowVersion(flowId);
@@ -51,7 +53,7 @@ export function IvrFlowDetailPage() {
         description="Edit the current draft visually, then validate, simulate, and publish without leaving the flow detail page."
         actions={(
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => { void flowQuery.refetch(); void versionsQuery.refetch(); }} variant="secondary">
+            <Button onClick={() => { void flowQuery.refetch(); void versionsQuery.refetch(); void historyQuery.refetch(); }} variant="secondary">
               <RefreshCcw className="size-4" aria-hidden="true" />
               Refresh
             </Button>
@@ -160,6 +162,39 @@ export function IvrFlowDetailPage() {
               <p className="text-sm text-[var(--color-muted-fg)]">No validation result yet. Save the draft, then validate it.</p>
             )}
           </DataCard>
+
+          <DataCard title="Flow History" description="Validation, simulation, publish, and audit events for operator review.">
+            {historyQuery.isLoading ? (
+              <p className="text-sm text-[var(--color-muted-fg)]">Loading flow history...</p>
+            ) : historyQuery.isError ? (
+              <ErrorState message={historyQuery.error instanceof Error ? historyQuery.error.message : 'Unknown error'} />
+            ) : historyQuery.data ? (
+              <div className="space-y-4 text-sm">
+                <HistorySection title="Validation Runs" items={historyQuery.data.validations.map((item) => ({
+                  id: item.id,
+                  label: `${item.status} • ${new Date(item.created_at).toLocaleString()}`,
+                  meta: item.version_id ?? 'no version',
+                }))} />
+                <HistorySection title="Simulation Runs" items={historyQuery.data.simulations.map((item) => ({
+                  id: item.id,
+                  label: `${item.status} • ${new Date(item.created_at).toLocaleString()}`,
+                  meta: item.version_id ?? 'no version',
+                }))} />
+                <HistorySection title="Publish Activity" items={historyQuery.data.publishes.map((item) => ({
+                  id: item.id,
+                  label: `${item.action_type} • ${item.result} • ${new Date(item.created_at).toLocaleString()}`,
+                  meta: item.approval_status ? `approval: ${item.approval_status}` : item.version_id ?? 'no version',
+                }))} />
+                <HistorySection title="Audit Events" items={historyQuery.data.audits.map((item) => ({
+                  id: item.id,
+                  label: `${item.action} • ${new Date(item.created_at).toLocaleString()}`,
+                  meta: item.actor_id ?? item.actor_type,
+                }))} />
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--color-muted-fg)]">No flow history available yet.</p>
+            )}
+          </DataCard>
         </div>
 
         <div className="space-y-6">
@@ -265,6 +300,32 @@ export function IvrFlowDetailPage() {
           </DataCard>
         </div>
       </div>
+    </div>
+  );
+}
+
+function HistorySection({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{ id: string; label: string; meta: string }>;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs uppercase tracking-[0.1em] text-[var(--color-muted-fg)]">{title}</p>
+      {items.length > 0 ? (
+        <ul className="space-y-2">
+          {items.map((item) => (
+            <li key={item.id} className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2">
+              <p className="text-[var(--color-fg)]">{item.label}</p>
+              <p className="mt-1 font-mono text-xs text-[var(--color-muted-fg)]">{item.meta}</p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-[var(--color-muted-fg)]">No entries yet.</p>
+      )}
     </div>
   );
 }

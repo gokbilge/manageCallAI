@@ -10,6 +10,7 @@ const SUPPORTED_NODE_TYPES = new Set([
   'switch',
   'transfer_extension',
   'hangup',
+  'business_hours',
 ]);
 
 type GraphNode = Record<string, unknown> & {
@@ -153,6 +154,16 @@ export function validateIvrGraph(graph: unknown): ValidationOutcome {
       } else {
         errors.push({ field: `graph_json.nodes.${id}.cases`, message: 'switch nodes must define a cases object' });
       }
+    }
+
+    if (node.type === 'business_hours') {
+      if (typeof node.schedule_id !== 'string' || node.schedule_id.length === 0) {
+        errors.push({ field: `graph_json.nodes.${id}.schedule_id`, message: 'business_hours nodes require a schedule_id' });
+      }
+      pushMissingReference(errors, nodeIds, `graph_json.nodes.${id}.in_hours_node_id`, node.in_hours_node_id);
+      pushMissingReference(errors, nodeIds, `graph_json.nodes.${id}.out_of_hours_node_id`, node.out_of_hours_node_id);
+      if (typeof node.in_hours_node_id === 'string' && nodeIds.has(node.in_hours_node_id)) visit(node.in_hours_node_id);
+      if (typeof node.out_of_hours_node_id === 'string' && nodeIds.has(node.out_of_hours_node_id)) visit(node.out_of_hours_node_id);
     }
   };
 

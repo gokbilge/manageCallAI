@@ -16,6 +16,9 @@ import { DirectorySmokeTestPage } from '@/features/integrations/directory-smoke-
 import { WebhooksPage } from '@/features/integrations/webhooks-page';
 import { PromptsPage } from '@/features/prompts/prompts-page';
 import { RuntimeSessionsPage } from '@/features/runtime/runtime-sessions-page';
+import { RuntimeSessionDetailPage } from '@/features/runtime/runtime-session-detail-page';
+import { SchedulesPage } from '@/features/schedules/schedules-page';
+import { OutboundRoutesPage } from '@/features/outbound-routes/outbound-routes-page';
 import { RequireSession } from '@/lib/auth/require-session';
 import { RequireCapability } from '@/lib/auth/require-capability';
 import { CAPABILITIES } from '@/lib/permissions/capabilities';
@@ -79,6 +82,7 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_IVR_FLOWS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/runtime/sessions', element: <RuntimeSessionsPage /> },
+              { path: 'tenant/runtime/sessions/:sessionId', element: <RuntimeSessionDetailPage /> },
             ],
           },
           { path: 'tenant/calls', element: <CallsPage /> },
@@ -87,6 +91,18 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/webhooks', element: <WebhooksPage /> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_SCHEDULES_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/schedules', element: <SchedulesPage /> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_OUTBOUND_ROUTES_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/routes/outbound', element: <OutboundRoutesPage /> },
             ],
           },
         ],

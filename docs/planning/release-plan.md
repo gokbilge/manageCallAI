@@ -55,11 +55,13 @@ Reference:
 | `SLICE-14` | completed |
 | `SLICE-15` | planned |
 | `SLICE-16` | planned |
-| `SLICE-17` | planned |
-| `SLICE-18` | planned |
-| `SLICE-19` | planned |
+| `SLICE-17` | completed |
+| `SLICE-18` | completed |
+| `SLICE-19` | completed |
 | `SLICE-20` | planned |
 | `SLICE-21` | planned |
+| `SLICE-22` | planned |
+| `SLICE-23` | planned |
 
 The original v1 release-plan slices are closed. The new post-release slices are now
 explicit and ready for future sequencing.
@@ -116,6 +118,7 @@ SLICE-00 Current Baseline
             +--> SLICE-19 Observability and Operations Depth
             +--> SLICE-20 Automation and AI Depth
             +--> SLICE-21 Enterprise and Multi-Tenant Hardening
+            +--> SLICE-22 Recorded Media and Export Operations
 ```
 
 ## 5. Parallel Work Tracks
@@ -155,6 +158,7 @@ SLICE-00 Current Baseline
 - `SLICE-19`
 - `SLICE-20`
 - `SLICE-21`
+- `SLICE-22`
 
 ## 6. Recommended Execution Order
 
@@ -195,6 +199,7 @@ SLICE-00 Current Baseline
 18. `SLICE-19` Observability and Operations Depth
 19. `SLICE-20` Automation and AI Depth
 20. `SLICE-21` Enterprise and Multi-Tenant Hardening
+21. `SLICE-22` Recorded Media and Export Operations
 
 ## 7. Minimal Release Gate
 
@@ -231,3 +236,5 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-19](slices/SLICE-19-observability-and-operations-depth.md)
 - [SLICE-20](slices/SLICE-20-automation-and-ai-depth.md)
 - [SLICE-21](slices/SLICE-21-enterprise-and-multi-tenant-hardening.md)
+- [SLICE-22](slices/SLICE-22-recorded-media-and-export-operations.md)
+- [SLICE-23](slices/SLICE-23-caller-routing-and-outbound-runtime.md)
