@@ -118,30 +118,40 @@ export class AutomationService {
       responseCode = res.status;
       if (res.ok) {
         status = 'success';
-        await this.repo.resetDeliveryFailure(target.id).catch(() => {});
+        await this.ignoreDeliveryError(this.repo.resetDeliveryFailure(target.id));
       } else {
-        await this.repo.recordDeliveryFailure(target.id).catch(() => {});
+        await this.ignoreDeliveryError(this.repo.recordDeliveryFailure(target.id));
       }
     } catch {
-      await this.repo.recordDeliveryFailure(target.id).catch(() => {});
+      await this.ignoreDeliveryError(this.repo.recordDeliveryFailure(target.id));
     }
 
     const durationMs = Date.now() - start;
-    await this.repo.logDeliveryAttempt({
-      webhook_id: target.id,
-      tenant_id: tenantId,
-      event,
-      attempt_number: attempt,
-      status,
-      response_code: responseCode,
-      duration_ms: durationMs,
-    }).catch(() => {});
+    await this.ignoreDeliveryError(
+      this.repo.logDeliveryAttempt({
+        webhook_id: target.id,
+        tenant_id: tenantId,
+        event,
+        attempt_number: attempt,
+        status,
+        response_code: responseCode,
+        duration_ms: durationMs,
+      }),
+    );
 
     if (status === 'failed' && attempt < 3) {
       const delayMs = attempt === 1 ? 2_000 : 10_000;
       setTimeout(() => {
         void this._deliverWithRetry(target, tenantId, event, payload, attempt + 1);
       }, delayMs);
+    }
+  }
+
+  private async ignoreDeliveryError(action: Promise<void> | void): Promise<void> {
+    try {
+      await action;
+    } catch {
+      return;
     }
   }
 }
