@@ -40,6 +40,25 @@ Represents one immutable graph snapshot once published.
 - validation status
 - publish timestamp
 
+## 3.1 External And Internal Field Mapping
+
+To avoid confusion, the IVR graph currently has two names depending on layer:
+
+- External API field: `graph_json`
+- Internal database column: `flow_versions.definition`
+
+Current mapping rule:
+
+- controllers and DTOs expose `graph_json`
+- the repository stores the payload in `definition`
+- repository queries map `definition AS graph_json` when returning version data
+
+This means:
+
+- API clients should send and read `graph_json`
+- database readers will still see `definition` in the underlying table
+- `definition` may still appear as a temporary compatibility alias in some endpoints during the transition to the fully normalized external `graph_json` contract
+
 ## 4. Graph Shape
 
 ```json
