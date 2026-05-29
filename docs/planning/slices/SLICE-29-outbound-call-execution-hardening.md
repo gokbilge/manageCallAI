@@ -7,7 +7,7 @@ runtime execution, status updates, and operator visibility.
 
 ## Status
 
-**PLANNED**
+**IMPLEMENTED**
 
 ## Context
 

@@ -7,7 +7,7 @@ session trace, recordings, and exports.
 
 ## Status
 
-**PLANNED**
+**IMPLEMENTED**
 
 ## Context
 

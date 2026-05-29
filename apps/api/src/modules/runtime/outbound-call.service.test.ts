@@ -7,6 +7,8 @@ import {
 import type { OutboundCallRepository } from './outbound-call.repository.js';
 import type { OutboundCallRequest } from './outbound-call.types.js';
 
+vi.mock('../audit/fire-audit.js', () => ({ fireAuditEvent: vi.fn() }));
+
 const TENANT = 'tenant-1';
 const EXT_ID = '00000000-0000-0000-0000-000000000010';
 const TRUNK_ID = '00000000-0000-0000-0000-000000000020';
@@ -20,6 +22,7 @@ const baseRequest: OutboundCallRequest = {
   route_id: ROUTE_ID,
   sip_trunk_id: TRUNK_ID,
   status: 'pending',
+  failure_reason: null,
   created_at: new Date(),
   updated_at: new Date(),
 };
@@ -28,7 +31,9 @@ function makeRepo(overrides: Partial<OutboundCallRepository> = {}): OutboundCall
   return {
     create: vi.fn().mockResolvedValue(baseRequest),
     findById: vi.fn().mockResolvedValue(baseRequest),
+    findByTenant: vi.fn().mockResolvedValue([baseRequest]),
     findPendingByTenant: vi.fn().mockResolvedValue([baseRequest]),
+    claimRequest: vi.fn().mockResolvedValue({ ...baseRequest, status: 'dispatched' }),
     updateStatus: vi.fn().mockResolvedValue({ ...baseRequest, status: 'dispatched' }),
     findActiveExtension: vi.fn().mockResolvedValue({ id: EXT_ID }),
     resolveRouteForNumber: vi.fn().mockResolvedValue({ route_id: ROUTE_ID, sip_trunk_id: TRUNK_ID }),
@@ -124,6 +129,33 @@ describe('OutboundCallService', () => {
     });
   });
 
+  describe('getById', () => {
+    it('returns the request when found', async () => {
+      const result = await service.getById(baseRequest.id, TENANT);
+      expect(result.id).toBe(baseRequest.id);
+      expect(vi.mocked(repo.findById)).toHaveBeenCalledWith(baseRequest.id, TENANT);
+    });
+
+    it('throws OutboundCallNotFoundError when not found', async () => {
+      repo = makeRepo({ findById: vi.fn().mockResolvedValue(null) });
+      service = new OutboundCallService(repo);
+      await expect(service.getById('missing-id', TENANT)).rejects.toBeInstanceOf(OutboundCallNotFoundError);
+    });
+  });
+
+  describe('listByTenant', () => {
+    it('returns all requests for tenant', async () => {
+      const result = await service.listByTenant(TENANT);
+      expect(result).toHaveLength(1);
+      expect(vi.mocked(repo.findByTenant)).toHaveBeenCalledWith(TENANT, undefined);
+    });
+
+    it('passes status filter to repo', async () => {
+      await service.listByTenant(TENANT, 'failed');
+      expect(vi.mocked(repo.findByTenant)).toHaveBeenCalledWith(TENANT, 'failed');
+    });
+  });
+
   describe('getPendingByTenant', () => {
     it('returns pending requests', async () => {
       const result = await service.getPendingByTenant(TENANT);
@@ -132,10 +164,42 @@ describe('OutboundCallService', () => {
     });
   });
 
+  describe('claimRequest', () => {
+    it('claims a pending request', async () => {
+      const result = await service.claimRequest(baseRequest.id, TENANT);
+      expect(result.status).toBe('dispatched');
+      expect(vi.mocked(repo.claimRequest)).toHaveBeenCalledWith(baseRequest.id, TENANT);
+    });
+
+    it('throws OutboundCallNotFoundError when already claimed or missing', async () => {
+      repo = makeRepo({ claimRequest: vi.fn().mockResolvedValue(null) });
+      service = new OutboundCallService(repo);
+      await expect(service.claimRequest('id', TENANT)).rejects.toBeInstanceOf(OutboundCallNotFoundError);
+    });
+  });
+
   describe('updateStatus', () => {
     it('marks as dispatched', async () => {
       const result = await service.updateStatus(baseRequest.id, TENANT, 'dispatched');
       expect(result.status).toBe('dispatched');
+    });
+
+    it('accepts failure_reason for failed status', async () => {
+      const failed = { ...baseRequest, status: 'failed' as const, failure_reason: 'no answer' };
+      repo = makeRepo({ updateStatus: vi.fn().mockResolvedValue(failed) });
+      service = new OutboundCallService(repo);
+      const result = await service.updateStatus(baseRequest.id, TENANT, 'failed', 'no answer');
+      expect(result.failure_reason).toBe('no answer');
+      expect(vi.mocked(repo.updateStatus)).toHaveBeenCalledWith(baseRequest.id, TENANT, 'failed', 'no answer');
+    });
+
+    it('accepts answered and completed statuses', async () => {
+      for (const s of ['answered', 'completed'] as const) {
+        repo = makeRepo({ updateStatus: vi.fn().mockResolvedValue({ ...baseRequest, status: s }) });
+        service = new OutboundCallService(repo);
+        const result = await service.updateStatus(baseRequest.id, TENANT, s);
+        expect(result.status).toBe(s);
+      }
     });
 
     it('throws OutboundCallNotFoundError when not found', async () => {

@@ -29,6 +29,9 @@ import { recordingAnalysisController, recordingController } from './modules/reco
 import { exportController } from './modules/export/export.controller.js';
 import { userController } from './modules/users/user.controller.js';
 import { ivrAiController, promptGenerationController } from './modules/provider-work/provider-work.controller.js';
+import { channelAccountController } from './modules/channel-accounts/channel-account.controller.js';
+import { channelMessageController } from './modules/channel-messages/channel-message.controller.js';
+import { meetingSessionController } from './modules/meeting-sessions/meeting-session.controller.js';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -74,6 +77,9 @@ export function buildApp() {
   app.register(ivrAiController, { prefix: '/api/v1' });
   app.register(exportController, { prefix: '/api/v1/export' });
   app.register(userController, { prefix: '/api/v1/users' });
+  app.register(channelAccountController, { prefix: '/api/v1/channel-accounts' });
+  app.register(channelMessageController, { prefix: '/api/v1/channel' });
+  app.register(meetingSessionController, { prefix: '/api/v1/meeting-sessions' });
 
   return app;
 }

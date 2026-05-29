@@ -1,5 +1,6 @@
+import { fireAuditEvent } from '../audit/fire-audit.js';
 import type { OutboundCallRepository } from './outbound-call.repository.js';
-import type { CreateOutboundCallInput, OutboundCallRequest } from './outbound-call.types.js';
+import type { CreateOutboundCallInput, OutboundCallRequest, OutboundCallStatus } from './outbound-call.types.js';
 
 export class OutboundCallValidationError extends Error {
   constructor(msg: string) { super(msg); this.name = 'OutboundCallValidationError'; }
@@ -49,22 +50,66 @@ export class OutboundCallService {
       }
     }
 
-    return this.repo.create({
+    const request = await this.repo.create({
       tenant_id: input.tenant_id,
       extension_id: input.extension_id,
       dial_number: input.dial_number.trim(),
       route_id: routeId,
       sip_trunk_id: trunkId,
     });
+
+    fireAuditEvent({
+      tenant_id: input.tenant_id,
+      actor_id: null,
+      action: 'outbound_call.created',
+      resource_type: 'outbound_call_request',
+      resource_id: request.id,
+      metadata: { dial_number: request.dial_number, route_id: routeId },
+    });
+
+    return request;
+  }
+
+  async getById(id: string, tenantId: string): Promise<OutboundCallRequest> {
+    const r = await this.repo.findById(id, tenantId);
+    if (!r) throw new OutboundCallNotFoundError(id);
+    return r;
+  }
+
+  async listByTenant(tenantId: string, status?: OutboundCallStatus): Promise<OutboundCallRequest[]> {
+    return this.repo.findByTenant(tenantId, status);
   }
 
   async getPendingByTenant(tenantId: string): Promise<OutboundCallRequest[]> {
     return this.repo.findPendingByTenant(tenantId);
   }
 
-  async updateStatus(id: string, tenantId: string, status: 'dispatched' | 'failed'): Promise<OutboundCallRequest> {
-    const r = await this.repo.updateStatus(id, tenantId, status);
+  async claimRequest(id: string, tenantId: string): Promise<OutboundCallRequest> {
+    const r = await this.repo.claimRequest(id, tenantId);
     if (!r) throw new OutboundCallNotFoundError(id);
+    return r;
+  }
+
+  async updateStatus(
+    id: string,
+    tenantId: string,
+    status: Exclude<OutboundCallStatus, 'pending'>,
+    failureReason?: string,
+  ): Promise<OutboundCallRequest> {
+    const r = await this.repo.updateStatus(id, tenantId, status, failureReason);
+    if (!r) throw new OutboundCallNotFoundError(id);
+
+    if (status === 'completed' || status === 'failed' || status === 'expired') {
+      fireAuditEvent({
+        tenant_id: tenantId,
+        actor_id: null,
+        action: `outbound_call.${status}`,
+        resource_type: 'outbound_call_request',
+        resource_id: id,
+        metadata: failureReason ? { failure_reason: failureReason } : {},
+      });
+    }
+
     return r;
   }
 }

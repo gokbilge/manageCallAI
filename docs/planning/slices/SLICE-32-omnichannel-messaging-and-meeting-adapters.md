@@ -8,7 +8,7 @@ responses through channel adapters without coupling the telecom core to any prov
 
 ## Status
 
-**PLANNED**
+**IMPLEMENTED**
 
 ## Context
 

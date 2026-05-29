@@ -133,3 +133,79 @@ return $input.all();
   A publish that requires approval always returns `202 pending_approval`, regardless of caller identity.
 - API keys are scoped to a single tenant; they cannot access other tenants' data.
 - Revoke keys immediately if compromised: `DELETE /api/v1/automation/keys/{id}`.
+
+## 8. Approval workflow (n8n example)
+
+Use this pattern when a publish returns `202 pending_approval` and you want n8n to notify a Slack channel then poll for a human decision.
+
+**Trigger**: Webhook node receives `ivr_flow.publish_pending` event.
+
+**Step 1 — Fetch approval details** (HTTP Request):
+```
+GET /api/v1/approvals/{approval_request_id}
+```
+Extract `flow_name` and `requested_by` from the response.
+
+**Step 2 — Notify Slack** (Slack node):
+```
+Post to #flow-approvals: "New approval request for {{flow_name}} by {{requested_by}}. Approve at: {{your-ui-url}}/tenant/approvals"
+```
+
+**Step 3 — Wait** (Wait node, e.g. 24 hours):
+After waiting, or triggered by a manual n8n webhook from your approval UI.
+
+**Step 4 — Check approval status** (HTTP Request):
+```
+GET /api/v1/approvals/{approval_request_id}
+```
+Branch on `data.status`: `approved` → continue, `rejected` / `expired` → notify and stop.
+
+**Step 5 — Handle result** (Switch node):
+- `approved`: Send a confirmation Slack message.
+- `rejected`: Alert the flow author with the rejection reason.
+
+---
+
+## 9. Failed-call debug workflow (n8n example)
+
+Use this pattern to automatically investigate failed call events and produce a debug report.
+
+**Trigger**: Webhook node receives `call.failed` or `ivr_session.failed` event.
+
+**Step 1 — Fetch call events** (HTTP Request):
+```
+GET /api/v1/call-events?call_id={{call_id}}
+```
+This returns ordered events for the call.
+
+**Step 2 — Fetch session replay** (HTTP Request, if IVR call):
+```
+GET /api/v1/runtime/ivr/sessions?call_id={{call_id}}
+```
+Pick the first session, then:
+```
+GET /api/v1/runtime/ivr/sessions/{session_id}
+```
+The replay includes every node step, collected digits, branch decisions, and failure nodes.
+
+**Step 3 — Fetch recordings** (HTTP Request, if voicemail/recording exists):
+```
+GET /api/v1/recordings?call_id={{call_id}}
+```
+
+**Step 4 — Compose report** (Code node):
+```js
+const events  = $node["Fetch call events"].json.data;
+const replay  = $node["Fetch session replay"].json.data;
+const summary = {
+  call_id:      events[0]?.call_id,
+  event_count:  events.length,
+  session_steps: replay?.steps?.length ?? 0,
+  last_event:   events[events.length - 1]?.event_type,
+  failed_at:    replay?.steps?.find(s => s.status === 'failed')?.node_id,
+};
+return [{ json: summary }];
+```
+
+**Step 5 — Send report** (Slack or Email node):
+Post the summary to a `#call-failures` channel or email the on-call engineer.

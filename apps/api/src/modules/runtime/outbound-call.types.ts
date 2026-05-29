@@ -1,4 +1,10 @@
-export type OutboundCallStatus = 'pending' | 'dispatched' | 'failed';
+export type OutboundCallStatus =
+  | 'pending'
+  | 'dispatched'
+  | 'answered'
+  | 'completed'
+  | 'failed'
+  | 'expired';
 
 export interface OutboundCallRequest {
   id: string;
@@ -8,6 +14,7 @@ export interface OutboundCallRequest {
   route_id: string | null;
   sip_trunk_id: string | null;
   status: OutboundCallStatus;
+  failure_reason: string | null;
   created_at: Date;
   updated_at: Date;
 }

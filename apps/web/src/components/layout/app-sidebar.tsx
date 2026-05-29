@@ -47,6 +47,7 @@ const tenantNav: NavItem[] = [
   { to: '/tenant/numbers', label: 'Phone Numbers', icon: Hash, capability: CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW },
   { to: '/tenant/routes/inbound', label: 'Inbound Routes', icon: GitBranch, capability: CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW },
   { to: '/tenant/routes/outbound', label: 'Outbound Routes', icon: ArrowUpRight, capability: CAPABILITIES.TENANT_OUTBOUND_ROUTES_VIEW },
+  { to: '/tenant/outbound-calls', label: 'Outbound Calls', icon: PhoneCall, capability: CAPABILITIES.TENANT_OUTBOUND_CALLS_VIEW },
   { to: '/tenant/ivr-flows', label: 'IVR Flows', icon: Workflow, capability: CAPABILITIES.TENANT_IVR_FLOWS_VIEW },
   { to: '/tenant/approvals', label: 'Approvals', icon: ClipboardCheck, capability: CAPABILITIES.TENANT_APPROVALS_VIEW },
   { to: '/tenant/prompts', label: 'Prompts', icon: Mic, capability: CAPABILITIES.TENANT_PROMPTS_VIEW },

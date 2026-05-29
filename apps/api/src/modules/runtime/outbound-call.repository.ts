@@ -1,7 +1,7 @@
 import type { Pool } from 'pg';
-import type { OutboundCallRequest } from './outbound-call.types.js';
+import type { OutboundCallRequest, OutboundCallStatus } from './outbound-call.types.js';
 
-const COLUMNS = `id, tenant_id, extension_id, dial_number, route_id, sip_trunk_id, status, created_at, updated_at`;
+const COLUMNS = `id, tenant_id, extension_id, dial_number, route_id, sip_trunk_id, status, failure_reason, created_at, updated_at`;
 
 export class OutboundCallRepository {
   constructor(private readonly db: Pool) {}
@@ -31,6 +31,20 @@ export class OutboundCallRepository {
     return r.rows[0] ?? null;
   }
 
+  async findByTenant(tenantId: string, status?: OutboundCallStatus, limit = 100): Promise<OutboundCallRequest[]> {
+    const params: unknown[] = [tenantId, limit];
+    const statusClause = status ? `AND status = $3` : '';
+    if (status) params.splice(1, 0, status);
+    const r = await this.db.query<OutboundCallRequest>(
+      `SELECT ${COLUMNS} FROM outbound_call_requests
+       WHERE tenant_id = $1 ${statusClause}
+       ORDER BY created_at DESC
+       LIMIT $${params.length}`,
+      params,
+    );
+    return r.rows;
+  }
+
   async findPendingByTenant(tenantId: string, limit = 20): Promise<OutboundCallRequest[]> {
     const r = await this.db.query<OutboundCallRequest>(
       `SELECT ${COLUMNS} FROM outbound_call_requests
@@ -42,13 +56,29 @@ export class OutboundCallRepository {
     return r.rows;
   }
 
-  async updateStatus(id: string, tenantId: string, status: 'dispatched' | 'failed'): Promise<OutboundCallRequest | null> {
+  async claimRequest(id: string, tenantId: string): Promise<OutboundCallRequest | null> {
     const r = await this.db.query<OutboundCallRequest>(
       `UPDATE outbound_call_requests
-       SET status = $1, updated_at = NOW()
+       SET status = 'dispatched', updated_at = NOW()
+       WHERE id = $1 AND tenant_id = $2 AND status = 'pending'
+       RETURNING ${COLUMNS}`,
+      [id, tenantId],
+    );
+    return r.rows[0] ?? null;
+  }
+
+  async updateStatus(
+    id: string,
+    tenantId: string,
+    status: Exclude<OutboundCallStatus, 'pending'>,
+    failureReason?: string,
+  ): Promise<OutboundCallRequest | null> {
+    const r = await this.db.query<OutboundCallRequest>(
+      `UPDATE outbound_call_requests
+       SET status = $1, failure_reason = $4, updated_at = NOW()
        WHERE id = $2 AND tenant_id = $3
        RETURNING ${COLUMNS}`,
-      [status, id, tenantId],
+      [status, id, tenantId, failureReason ?? null],
     );
     return r.rows[0] ?? null;
   }

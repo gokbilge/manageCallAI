@@ -19,6 +19,7 @@ import { RuntimeSessionsPage } from '@/features/runtime/runtime-sessions-page';
 import { RuntimeSessionDetailPage } from '@/features/runtime/runtime-session-detail-page';
 import { SchedulesPage } from '@/features/schedules/schedules-page';
 import { OutboundRoutesPage } from '@/features/outbound-routes/outbound-routes-page';
+import { OutboundCallsPage } from '@/features/outbound-calls/outbound-calls-page';
 import { RequireSession } from '@/lib/auth/require-session';
 import { RequireCapability } from '@/lib/auth/require-capability';
 import { CAPABILITIES } from '@/lib/permissions/capabilities';
@@ -103,6 +104,12 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_OUTBOUND_ROUTES_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/routes/outbound', element: <OutboundRoutesPage /> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_OUTBOUND_CALLS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/outbound-calls', element: <OutboundCallsPage /> },
             ],
           },
         ],
