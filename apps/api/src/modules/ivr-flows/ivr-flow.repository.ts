@@ -256,9 +256,9 @@ export class IvrFlowRepository {
         [tenantId, flowId],
       ),
       this.db.query<FlowAuditHistoryEntry>(
-        `SELECT id, actor_type, actor_id, action, metadata, created_at
-         FROM audit_events
-         WHERE tenant_id = $1 AND object_type = 'ivr_flow' AND object_id = $2
+        `SELECT id, actor_type, actor_id, action, metadata_json AS metadata, created_at
+         FROM tenant_audit_log
+         WHERE tenant_id = $1 AND resource_type = 'ivr_flow' AND resource_id = $2::text
          ORDER BY created_at DESC
          LIMIT 50`,
         [tenantId, flowId],

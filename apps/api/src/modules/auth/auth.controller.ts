@@ -69,15 +69,9 @@ export const authController: FastifyPluginAsyncZod = async (app) => {
         return { token };
       } catch (err) {
         if (err instanceof AuthError) {
-          // Audit login failure without exposing the password or user ID.
-          fireAuditEvent({
-            tenant_id: 'system',
-            actor_id: null,
-            actor_type: 'system',
-            action: 'auth.login_failed',
-            resource_type: 'user',
-            metadata: { tenant_slug: req.body.tenant_slug, reason: err.message },
-          });
+          // Login failures cannot be written to tenant_audit_log because we
+          // don't have a valid tenant_id (the tenant slug may not resolve).
+          // The rate-limit + application log provide the audit trail here.
           return sendUnauthenticated(reply, err.message);
         }
         throw err;

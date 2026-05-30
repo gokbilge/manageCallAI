@@ -229,8 +229,8 @@ export class InboundRouteRepository {
         [input.tenant_id, input.route_id, input.version_id, input.triggered_by_id],
       );
       await client.query(
-        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
-         VALUES ($1, 'user', $2, 'publish', 'inbound_route', $3)`,
+        `INSERT INTO tenant_audit_log (tenant_id, actor_id, actor_type, action, resource_type, resource_id)
+         VALUES ($1, $2, 'user', 'inbound_route.published', 'inbound_route', $3)`,
         [input.tenant_id, input.triggered_by_id, input.route_id],
       );
       await client.query('COMMIT');
@@ -280,8 +280,8 @@ export class InboundRouteRepository {
         [input.tenant_id, input.route_id, target.id, input.triggered_by_id],
       );
       await client.query(
-        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
-         VALUES ($1, 'user', $2, 'rollback', 'inbound_route', $3)`,
+        `INSERT INTO tenant_audit_log (tenant_id, actor_id, actor_type, action, resource_type, resource_id)
+         VALUES ($1, $2, 'user', 'inbound_route.rollback', 'inbound_route', $3)`,
         [input.tenant_id, input.triggered_by_id, input.route_id],
       );
       await client.query('COMMIT');
