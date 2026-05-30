@@ -5,7 +5,8 @@ import { AuditService } from './audit.service.js';
 const service = new AuditService(new AuditRepository(db));
 
 export function fireAuditEvent(input: LogAuditEventInput): void {
-  void service.logEvent(input).catch(() => {
-    /* audit failures must not break the primary request */
+  void service.logEvent(input).catch((err: unknown) => {
+    // Audit failures must not break the primary request, but must be visible.
+    console.error('[audit] failed to write audit event', { action: input.action, err });
   });
 }

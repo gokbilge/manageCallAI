@@ -55,7 +55,7 @@ export class ApprovalRepository {
   async markApproved(id: string, tenantId: string): Promise<boolean> {
     const r = await this.db.query(
       `UPDATE approval_requests
-       SET status = 'approved'
+       SET status = 'approved', decision_at = NOW()
        WHERE id = $1 AND tenant_id = $2 AND status = 'pending'`,
       [id, tenantId],
     );
@@ -65,7 +65,7 @@ export class ApprovalRepository {
   async markRejected(id: string, tenantId: string): Promise<boolean> {
     const r = await this.db.query(
       `UPDATE approval_requests
-       SET status = 'rejected'
+       SET status = 'rejected', decision_at = NOW()
        WHERE id = $1 AND tenant_id = $2 AND status = 'pending'`,
       [id, tenantId],
     );

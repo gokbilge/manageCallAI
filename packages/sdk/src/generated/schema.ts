@@ -4684,7 +4684,7 @@ export interface components {
         CreateAutomationWebhookBody: {
             name: string;
             url: string;
-            events: ("ivr_flow.published" | "ivr_flow.publish_pending" | "ivr_flow.rollback_completed" | "ivr_flow.validation_failed" | "approval.requested" | "approval.approved" | "approval.rejected" | "call.completed" | "voicemail.recording_available" | "outbound_call.dispatched")[];
+            events: ("ivr_flow.published" | "ivr_flow.publish_pending" | "ivr_flow.rollback_completed" | "ivr_flow.validation_failed" | "approval.requested" | "approval.approved" | "approval.rejected" | "call.completed" | "call.started" | "voicemail.recording_available" | "outbound_call.dispatched" | "outbound_call.completed" | "outbound_call.failed" | "extension.registered" | "extension.expired" | "recording.analysis_completed" | "recording.analysis_failed")[];
         };
         CallEvent: {
             /** Format: uuid */

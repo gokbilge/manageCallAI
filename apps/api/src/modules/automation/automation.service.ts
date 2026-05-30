@@ -100,17 +100,9 @@ export class AutomationService {
     return this.repo.findDeliveryQueueForWebhook(webhookId, tenantId);
   }
 
-  fireWebhooks(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): void {
-    void this.enqueueWebhooks(tenantId, event, data);
-  }
-
   async enqueueWebhooks(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): Promise<WebhookDeliveryQueueItem[]> {
     const payload = { event, tenant_id: tenantId, data, timestamp: new Date().toISOString() };
-    try {
-      return await this.repo.enqueueWebhookDeliveries({ tenant_id: tenantId, event, payload_json: payload });
-    } catch {
-      return [];
-    }
+    return this.repo.enqueueWebhookDeliveries({ tenant_id: tenantId, event, payload_json: payload });
   }
 
   listAbandonedDeliveries(tenantId: string, limit?: number): Promise<WebhookDeliveryQueueItem[]> {

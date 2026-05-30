@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildIvrDialplanResponse, buildCallGroupDialplanResponse } from './freeswitch.controller.js';
+import {
+  buildIvrDialplanResponse,
+  buildCallGroupDialplanResponse,
+  buildQueueDialplanResponse,
+  buildVoicemailDialplanResponse,
+} from './freeswitch.controller.js';
 
 const ROUTE_ID = '00000000-0000-0000-0000-000000000001';
 const TENANT_ID = '00000000-0000-0000-0000-000000000002';
@@ -90,5 +95,84 @@ describe('buildCallGroupDialplanResponse', () => {
     });
 
     expect(xml).toContain('301@a&amp;b.example.com');
+  });
+
+  it('escapes XML special chars in extension numbers', () => {
+    const xml = buildCallGroupDialplanResponse({
+      routeId: ROUTE_ID,
+      tenantId: TENANT_ID,
+      matchValue: '+14155550006',
+      strategy: 'simultaneous',
+      members: [{ extension_number: '4<01">', directory_domain: 'tenant.local' }],
+    });
+
+    // XML special chars must be escaped; raw characters must not appear.
+    expect(xml).not.toContain('<01">');
+    expect(xml).toContain('&lt;');
+    expect(xml).toContain('&gt;');
+    expect(xml).toContain('&quot;');
+  });
+});
+
+describe('buildQueueDialplanResponse', () => {
+  it('builds a simultaneous bridge for queue members', () => {
+    const xml = buildQueueDialplanResponse({
+      routeId: ROUTE_ID,
+      tenantId: TENANT_ID,
+      matchValue: '+14155550010',
+      strategy: 'simultaneous',
+      members: [
+        { extension_number: '501', directory_domain: 'q.local' },
+        { extension_number: '502', directory_domain: 'q.local' },
+      ],
+    });
+
+    expect(xml).toContain('sofia/internal/501@q.local,sofia/internal/502@q.local');
+    expect(xml).toContain('section name="dialplan"');
+  });
+});
+
+describe('buildVoicemailDialplanResponse', () => {
+  it('builds a voicemail action with mailbox number and domain', () => {
+    const xml = buildVoicemailDialplanResponse({
+      routeId: ROUTE_ID,
+      tenantId: TENANT_ID,
+      matchValue: '+14155550020',
+      mailboxNumber: '9001',
+      domain: 'vm.local',
+      greetingPromptUri: null,
+    });
+
+    expect(xml).toContain('application="voicemail"');
+    expect(xml).toContain('default vm.local 9001');
+  });
+
+  it('includes playback action when greeting prompt is set', () => {
+    const xml = buildVoicemailDialplanResponse({
+      routeId: ROUTE_ID,
+      tenantId: TENANT_ID,
+      matchValue: '+14155550021',
+      mailboxNumber: '9002',
+      domain: 'vm.local',
+      greetingPromptUri: 'file:///prompts/greeting.wav',
+    });
+
+    expect(xml).toContain('application="playback"');
+    expect(xml).toContain('file:///prompts/greeting.wav');
+  });
+
+  it('escapes XML special chars in greeting prompt URI', () => {
+    const xml = buildVoicemailDialplanResponse({
+      routeId: ROUTE_ID,
+      tenantId: TENANT_ID,
+      matchValue: '+14155550022',
+      mailboxNumber: '9003',
+      domain: 'vm.local',
+      greetingPromptUri: 'http://host/a&b=<c>',
+    });
+
+    expect(xml).not.toContain('a&b=<c>');
+    expect(xml).toContain('&amp;');
+    expect(xml).toContain('&lt;');
   });
 });

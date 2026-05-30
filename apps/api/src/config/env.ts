@@ -20,13 +20,6 @@ const defaultRuntimeApiToken = 'change-me-runtime-token';
 const defaultSipSecretMasterKey =
   '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
-function parseBoolean(key: string, defaultValue: boolean): boolean {
-  const value = process.env[key];
-  if (value === undefined || value.trim() === '') return defaultValue;
-
-  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
-}
-
 function assertProductionSecret(
   name: string,
   value: string,
@@ -52,7 +45,6 @@ const configValues = {
   runtimeApiToken: required('RUNTIME_API_TOKEN'),
   sipSecretMasterKey: required('SIP_SECRET_MASTER_KEY'),
   sipSecretKeyId: required('SIP_SECRET_KEY_ID'),
-  allowRuntimeTokenFallback: parseBoolean('ALLOW_RUNTIME_TOKEN_FALLBACK', !isProduction),
   platformOperatorEmails: (process.env['PLATFORM_OPERATOR_EMAILS'] ?? '')
     .split(',')
     .map((e) => e.trim())

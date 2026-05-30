@@ -84,6 +84,12 @@ jobs:
         run: pnpm audit --audit-level=high
         continue-on-error: false
 
+      # ── Migration integrity ──────────────────────────────────────────────────
+      # Ensures no two non-shim migration files share the same numeric prefix,
+      # which would make the apply order ambiguous across environments.
+      - name: Migration prefix uniqueness check
+        run: node scripts/check-migrations.mjs
+
       # ── Migration replay ─────────────────────────────────────────────────────
       # Applies every migration against the fresh CI database to prove that the
       # migration chain is coherent and all SQL is valid.
@@ -106,6 +112,12 @@ jobs:
       # ── Tests (unit + integration) ───────────────────────────────────────────
       - name: Tests
         run: pnpm test
+
+      # ── Coverage ─────────────────────────────────────────────────────────────
+      # Unit tests only for coverage — integration tests require a live DB and
+      # are covered by the Tests step above. Threshold: 65% lines.
+      - name: Coverage
+        run: pnpm --filter @managecallai/api exec vitest run --coverage --project unit
 
       # ── Go test ──────────────────────────────────────────────────────────────
       - name: Go test

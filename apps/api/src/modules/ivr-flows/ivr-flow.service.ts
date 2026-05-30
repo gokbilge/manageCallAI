@@ -136,9 +136,23 @@ function simulateGraph(
   const variables: Record<string, string> = { ...(scenario.variables ?? {}) };
   const callerNumber = scenario.caller_number;
   const scenarioHour = resolveScenarioHour(scenario.now);
+  // Track how many times each node is visited. Retry-capable nodes (e.g.
+  // play_collect after invalid input) may legitimately revisit a node up to 3
+  // times. A fourth visit indicates a cycle in the graph.
+  const visitCounts = new Map<string, number>();
 
   while (currentId && steps < 100) {
     steps += 1;
+    const nodeVisits = (visitCounts.get(currentId) ?? 0) + 1;
+    visitCounts.set(currentId, nodeVisits);
+    if (nodeVisits > 3) {
+      return {
+        status: 'failed',
+        path,
+        final_action: null,
+        errors: [toSimulationError(`graph_json.nodes.${currentId}`, `Cycle detected: node visited ${nodeVisits} times`)],
+      };
+    }
     path.push(currentId);
     const node = nodes.get(currentId);
     if (!node) {
@@ -349,9 +363,9 @@ export class IvrFlowService {
   async createVersion(flowId: string, tenantId: string, graphJson: Record<string, unknown> | undefined, createdBy?: string): Promise<FlowVersion> {
     const flow = await this.repo.findById(flowId, tenantId);
     if (!flow) throw new IvrFlowNotFoundError(flowId);
-    const nextNum = await this.repo.nextVersionNumber(flowId);
     const sourceGraph = graphJson ?? flow.versions[0]?.graph_json ?? defaultIvrGraph();
-    return this.repo.createVersion({ tenant_id: tenantId, flow_id: flowId, version_number: nextNum, definition: sourceGraph, created_by: createdBy });
+    // version_number is determined inside createVersion's locked transaction.
+    return this.repo.createVersion({ tenant_id: tenantId, flow_id: flowId, definition: sourceGraph, created_by: createdBy });
   }
 
   async updateVersionDefinition(flowId: string, versionId: string, tenantId: string, graphJson: Record<string, unknown>): Promise<FlowVersion> {

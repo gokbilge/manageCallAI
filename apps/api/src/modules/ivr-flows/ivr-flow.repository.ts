@@ -128,18 +128,32 @@ export class IvrFlowRepository {
   async createVersion(input: {
     tenant_id: string;
     flow_id: string;
-    version_number: number;
     definition: Record<string, unknown>;
     created_by?: string;
   }): Promise<FlowVersion> {
     const client = await this.db.connect();
     try {
       await client.query('BEGIN');
+
+      // Lock the flow row so MAX(version_number) + INSERT is atomic. Without
+      // this lock two concurrent createVersion calls can read the same MAX and
+      // both try to insert the same version_number, hitting the UNIQUE constraint.
+      await client.query(
+        `SELECT id FROM ivr_flows WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
+        [input.flow_id, input.tenant_id],
+      );
+
+      const maxR = await client.query<{ max: number | null }>(
+        `SELECT MAX(version_number) AS max FROM flow_versions WHERE flow_id = $1`,
+        [input.flow_id],
+      );
+      const version_number = (maxR.rows[0]?.max ?? 0) + 1;
+
       const versionR = await client.query<FlowVersion>(
         `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by)
          VALUES ($1, $2, $3, 'draft', $4, $5)
          RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
-        [input.tenant_id, input.flow_id, input.version_number, JSON.stringify(input.definition), input.created_by ?? null],
+        [input.tenant_id, input.flow_id, version_number, JSON.stringify(input.definition), input.created_by ?? null],
       );
       const version = versionR.rows[0]!;
       await client.query(
@@ -360,6 +374,16 @@ export class IvrFlowRepository {
     try {
       await client.query('BEGIN');
 
+      // Lock the target version row so concurrent publish calls are serialized.
+      // If the version does not exist (wrong tenant/id), the lock returns no rows
+      // and subsequent updates will no-op, keeping the transaction clean.
+      await client.query(
+        `SELECT id FROM flow_versions
+         WHERE id = $1 AND flow_id = $2 AND tenant_id = $3
+         FOR UPDATE`,
+        [input.version_id, input.flow_id, input.tenant_id],
+      );
+
       // Supersede the current active version (if any)
       await client.query(
         `UPDATE flow_versions SET state = 'superseded'
@@ -415,6 +439,12 @@ export class IvrFlowRepository {
     const client = await this.db.connect();
     try {
       await client.query('BEGIN');
+
+      // Lock the flow row to serialize concurrent rollback attempts.
+      await client.query(
+        `SELECT id FROM ivr_flows WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
+        [input.flow_id, input.tenant_id],
+      );
 
       // Find the most recent superseded version
       const targetR = await client.query<FlowVersion>(
@@ -475,6 +505,10 @@ export class IvrFlowRepository {
     );
     return (r.rows[0]?.max ?? 0) + 1;
   }
+
+  // Kept for callers that still need a preview of the next number outside a
+  // transaction. createVersion() no longer uses this — it reads MAX inside its
+  // own locked transaction.
 
   async findActiveExtensionIds(tenantId: string, ids: string[]): Promise<Set<string>> {
     if (ids.length === 0) return new Set();

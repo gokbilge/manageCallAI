@@ -1,5 +1,6 @@
 import formbody from '@fastify/formbody';
 import jwt from '@fastify/jwt';
+import rateLimit from '@fastify/rate-limit';
 import type { FastifyJWTOptions } from '@fastify/jwt';
 import Fastify, { type FastifyInstance, type FastifyPluginCallback } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
@@ -88,11 +89,8 @@ function registerIntegrationModules(app: FastifyInstance): void {
   app.register(automationController, { prefix: '/api/v1/automation' });
   app.register(webhooksController, { prefix: '/api/v1/webhooks' });
   app.register(channelAccountController, { prefix: '/api/v1/channel-accounts' });
-  app.register(channelAccountController, { prefix: '/api/v1/channels/accounts' });
-  app.register(channelMessageController, { prefix: '/api/v1/channel' });
   app.register(channelMessageController, { prefix: '/api/v1/channels' });
   app.register(meetingSessionController, { prefix: '/api/v1/meeting-sessions' });
-  app.register(meetingSessionController, { prefix: '/api/v1/channels/voice-sessions' });
   app.register(exportController, { prefix: '/api/v1/export' });
 }
 
@@ -127,6 +125,19 @@ export function buildApp() {
   app.register(jwtPlugin, {
     secret: config.jwtSecret,
     sign: { expiresIn: '24h' },
+  });
+
+  // Rate limiting: opt-in per route via config.rateLimit. Global max is a
+  // conservative backstop; auth and simulation routes set tighter limits.
+  void app.register(rateLimit, {
+    global: false,
+    max: 300,
+    timeWindow: '1 minute',
+    errorResponseBuilder: (_req, context) => ({
+      error: 'RESOURCE_EXHAUSTED',
+      message: `Rate limit exceeded. Try again in ${Math.ceil(context.ttl / 1000)}s`,
+      request_id: '',
+    }),
   });
 
   app.register(healthController, { prefix: '/health' });

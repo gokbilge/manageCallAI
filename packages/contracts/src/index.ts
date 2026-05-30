@@ -1,5 +1,6 @@
 export { registry, z } from './registry.js';
 export { OpenApiGeneratorV31, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
+export * from './mcp-schemas.js';
 import './schemas/register.js';
 
 export * from './schemas/common.js';

@@ -1,3 +1,4 @@
+import { SimulationScenarioMcpSchema } from '@managecallai/contracts';
 import { apiCall } from '../api-client.js';
 
 export const IVR_FLOW_TOOLS = [
@@ -63,22 +64,14 @@ export const IVR_FLOW_TOOLS = [
     name: 'simulate_flow',
     description:
       'Simulate the current draft version with a caller scenario. Returns the execution path and final action.',
+    // inputSchema is derived from SimulationScenarioSchema in packages/contracts so
+    // that adding a new scenario field automatically updates the MCP tool description.
     inputSchema: {
       type: 'object' as const,
       required: ['flow_id'],
       properties: {
-        flow_id:              { type: 'string', description: 'UUID of the IVR flow' },
-        // Fields below mirror SimulationScenarioSchema in packages/contracts.
-        // The contract-drift.test.ts enforces alignment between this list and the schema.
-        digits:               { type: 'array', items: { type: 'string' }, description: 'DTMF digit sequences to inject at each collect node' },
-        collected_digits:     { type: 'object', description: 'Pre-collected digits keyed by node id' },
-        caller_number:        { type: 'string', description: 'Simulated caller E.164 number, e.g. +14155550001' },
-        now:                  { type: 'string', description: 'ISO 8601 datetime to use as "now" for time-of-day branches' },
-        force_timeout:        { type: 'boolean', description: 'Force all collect nodes to time out' },
-        force_timeout_nodes:  { type: 'array', items: { type: 'string' }, description: 'Node ids that should time out' },
-        force_invalid:        { type: 'boolean', description: 'Force all collect nodes to receive invalid input' },
-        force_invalid_nodes:  { type: 'array', items: { type: 'string' }, description: 'Node ids that should receive invalid input' },
-        variables:            { type: 'object', description: 'Initial session variable overrides' },
+        flow_id: { type: 'string', description: 'UUID of the IVR flow' },
+        ...(SimulationScenarioMcpSchema['properties'] as Record<string, unknown> ?? {}),
       },
     },
   },

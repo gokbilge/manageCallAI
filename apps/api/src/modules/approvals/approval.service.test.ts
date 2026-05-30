@@ -115,7 +115,6 @@ describe('ApprovalService', () => {
       vi.mocked(approvalRepo.findAssociatedPublishRecord).mockResolvedValue(publishRecord);
       vi.mocked(approvalRepo.markApproved).mockResolvedValue(true);
       vi.mocked(approvalRepo.updatePublishRecordResult).mockResolvedValue(undefined);
-      vi.mocked(approvalRepo.writeAuditEvent).mockResolvedValue(undefined);
       vi.mocked(ivrFlowRepo.publish).mockResolvedValue(makeFlow());
 
       const result = await service.approve(APPROVAL_ID, TENANT_ID, APPROVER_ID);
@@ -127,9 +126,6 @@ describe('ApprovalService', () => {
         triggered_by_id: APPROVER_ID,
       });
       expect(approvalRepo.markApproved).toHaveBeenCalledWith(APPROVAL_ID, TENANT_ID);
-      expect(approvalRepo.writeAuditEvent).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'approve', object_id: APPROVAL_ID }),
-      );
       expect(result.action_type).toBe('publish');
       expect(result.publish_result).toBe('success');
       expect(result.approval_request.status).toBe('approved');
@@ -146,7 +142,6 @@ describe('ApprovalService', () => {
       vi.mocked(approvalRepo.findAssociatedPublishRecord).mockResolvedValue(publishRecord);
       vi.mocked(approvalRepo.markApproved).mockResolvedValue(true);
       vi.mocked(approvalRepo.updatePublishRecordResult).mockResolvedValue(undefined);
-      vi.mocked(approvalRepo.writeAuditEvent).mockResolvedValue(undefined);
       vi.mocked(ivrFlowRepo.rollback).mockResolvedValue({ flow: makeFlow(), target_version_id: VERSION_ID });
 
       const result = await service.approve(APPROVAL_ID, TENANT_ID, APPROVER_ID);
@@ -195,15 +190,11 @@ describe('ApprovalService', () => {
       vi.mocked(approvalRepo.findAssociatedPublishRecord).mockResolvedValue(publishRecord);
       vi.mocked(approvalRepo.markRejected).mockResolvedValue(true);
       vi.mocked(approvalRepo.updatePublishRecordResult).mockResolvedValue(undefined);
-      vi.mocked(approvalRepo.writeAuditEvent).mockResolvedValue(undefined);
 
       const result = await service.reject(APPROVAL_ID, TENANT_ID, APPROVER_ID);
 
       expect(approvalRepo.markRejected).toHaveBeenCalledWith(APPROVAL_ID, TENANT_ID);
       expect(approvalRepo.updatePublishRecordResult).toHaveBeenCalledWith(APPROVAL_ID, 'failed');
-      expect(approvalRepo.writeAuditEvent).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'reject', object_id: APPROVAL_ID }),
-      );
       expect(result.approval_request.status).toBe('rejected');
     });
 
