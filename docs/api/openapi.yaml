@@ -7243,3 +7243,46 @@ components:
           $ref: "#/components/schemas/LiveSnapshot"
       required:
         - data
+    StreamEvent:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - live
+            - degraded
+        data:
+          allOf:
+            - $ref: "#/components/schemas/LiveSnapshot"
+            - type:
+                - object
+                - "null"
+        generated_at:
+          type: string
+          format: date-time
+      required:
+        - status
+        - data
+        - generated_at
+    PlatformHealthSnapshot:
+      type: object
+      properties:
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceHealth"
+        active_sessions_total:
+          type: integer
+        completed_sessions_24h:
+          type: integer
+        failed_sessions_24h:
+          type: integer
+        generated_at:
+          type: string
+          format: date-time
+      required:
+        - services
+        - active_sessions_total
+        - completed_sessions_24h
+        - failed_sessions_24h
+        - generated_at

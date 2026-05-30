@@ -1,5 +1,5 @@
 import type { Pool } from 'pg';
-import type { LiveSnapshot, QueueDepth, RunningSession, WebhookBacklog } from './observability.types.js';
+import type { LiveSnapshot, PlatformRuntimeSummary, QueueDepth, RunningSession, WebhookBacklog } from './observability.types.js';
 
 export class ObservabilityRepository {
   constructor(private readonly db: Pool) {}
@@ -76,6 +76,27 @@ export class ObservabilityRepository {
       processing: counts['processing'] ?? 0,
       failed: counts['failed'] ?? 0,
       abandoned: counts['abandoned'] ?? 0,
+    };
+  }
+
+  async getPlatformRuntimeSummary(): Promise<PlatformRuntimeSummary> {
+    const result = await this.db.query<{
+      active_sessions: string;
+      completed_sessions_24h: string;
+      failed_sessions_24h: string;
+    }>(
+      `SELECT
+         (SELECT COUNT(*)::text FROM ivr_flow_sessions WHERE status = 'running') AS active_sessions,
+         (SELECT COUNT(*)::text FROM ivr_flow_sessions WHERE status = 'completed'
+            AND created_at >= NOW() - INTERVAL '24 hours') AS completed_sessions_24h,
+         (SELECT COUNT(*)::text FROM ivr_flow_sessions WHERE status = 'failed'
+            AND created_at >= NOW() - INTERVAL '24 hours') AS failed_sessions_24h`,
+    );
+    const row = result.rows[0]!;
+    return {
+      active_sessions: parseInt(row.active_sessions, 10),
+      completed_sessions_24h: parseInt(row.completed_sessions_24h, 10),
+      failed_sessions_24h: parseInt(row.failed_sessions_24h, 10),
     };
   }
 

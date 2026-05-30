@@ -1,4 +1,5 @@
 import { z } from '../registry.js';
+import { ServiceHealthSchema } from './platform.js';
 
 // ── Sub-schemas ───────────────────────────────────────────────────────────────
 
@@ -49,3 +50,33 @@ export const LiveSnapshotResponseSchema = z.object({
   data: LiveSnapshotSchema,
 }).openapi('LiveSnapshotResponse');
 export type LiveSnapshotResponse = z.infer<typeof LiveSnapshotResponseSchema>;
+
+// ── SSE stream event ──────────────────────────────────────────────────────────
+// Events emitted by the /api/v1/observability/stream SSE endpoint.
+// status="live" means the snapshot is fresh; status="degraded" means the
+// backend could not fetch a fresh snapshot (the data field will be null).
+// Clients must not display degraded events as authoritative state — they
+// should maintain the last known good snapshot and show an indicator.
+
+export const StreamStatusSchema = z.enum(['live', 'degraded']);
+export type StreamStatus = z.infer<typeof StreamStatusSchema>;
+
+export const StreamEventSchema = z.object({
+  status: StreamStatusSchema,
+  data: LiveSnapshotSchema.nullable(),
+  generated_at: z.string().datetime(),
+}).openapi('StreamEvent');
+export type StreamEvent = z.infer<typeof StreamEventSchema>;
+
+// ── Platform health snapshot ──────────────────────────────────────────────────
+// Aggregate runtime health visible to platform admins (PLATFORM_RUNTIME_VIEW).
+// Never includes per-tenant data or cross-tenant sessions.
+
+export const PlatformHealthSnapshotSchema = z.object({
+  services: z.array(ServiceHealthSchema),
+  active_sessions_total: z.number().int(),
+  completed_sessions_24h: z.number().int(),
+  failed_sessions_24h: z.number().int(),
+  generated_at: z.string().datetime(),
+}).openapi('PlatformHealthSnapshot');
+export type PlatformHealthSnapshot = z.infer<typeof PlatformHealthSnapshotSchema>;
