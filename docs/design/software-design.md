@@ -38,6 +38,8 @@ Responsibilities:
 - Display validation and simulation results
 - Support publish and rollback actions
 - Surface audit and call-event visibility
+- Render live operational state for active calls, queues, runtime health, and
+  adapter backlogs in a dense cockpit surface
 
 ### 3.2 Control Plane API
 
@@ -133,7 +135,8 @@ Responsibilities:
 - Execute recording transcription and summarization requests
 - Generate prompt media from text when a tenant configures a text-to-speech provider
 - Resolve delegated IVR AI turns when a flow needs AI-assisted answering
-- Send outbound channel messages and normalize inbound provider messages
+- Store outbound channel message work for independent adapter services and normalize
+  inbound provider messages
 - Represent provider-specific voice, voice-message, meeting, or SIP-bridge sessions
   through stable channel session records
 
@@ -142,6 +145,8 @@ Design constraints:
 - Provider adapters must call domain APIs rather than writing business state directly
 - Provider credentials must be write-only and stored outside public response payloads
 - Provider metadata is diagnostic context only; it must not drive core business logic
+- WhatsApp, Telegram, Google Meet, and custom adapters run as independent services;
+  `apps/api` exposes contracts and state transitions but does not host provider SDKs.
 
 ## 4. Core Domain Concepts
 
@@ -306,11 +311,23 @@ This workflow covers recording analysis, prompt generation, and IVR AI turns.
 ### 6.7 Channel Message Workflow
 
 1. A tenant configures a channel account with declared capabilities.
-2. Outbound messages are created against that account and normalized into the channel message model.
-3. The adapter delivers through the provider and reports state.
-4. Inbound messages are ingested through internal endpoints and normalized.
-5. Voice or meeting interactions create channel voice session records when the account
+2. Outbound messages are created against that account and stored as queued work.
+3. An independent adapter service claims queued work through an internal API endpoint.
+4. The adapter delivers through the provider and reports sent or failed state.
+5. Inbound messages are ingested through internal endpoints and normalized.
+6. Voice or meeting interactions create channel voice session records when the account
    capability supports that interaction type.
+
+### 6.8 Live Observability Workflow
+
+1. Runtime events, call events, queue state, webhook queue state, and adapter work
+   state are normalized in the control plane.
+2. A tenant or platform operator opens the live cockpit.
+3. The API authenticates the stream and authorizes the tenant or platform scope.
+4. The backend emits summarized operational snapshots or deltas over WebSocket or
+   Server-Sent Events.
+5. The UI renders dense active-call, queue, node-health, and backlog views with
+   stale/disconnected states.
 
 ## 7. Interface Design Principles
 
@@ -319,11 +336,14 @@ This workflow covers recording analysis, prompt generation, and IVR AI turns.
 - Use business nouns and business actions
 - Avoid raw switch internals as first-class public objects
 - Keep publish, validate, and simulate as explicit lifecycle operations
+- Live observability interfaces should stream summarized state and identifiers
+  that link to detail pages, not replace replay, audit, or export APIs.
 
 ### 7.2 MCP Tools
 
 - Use intent-based tool names
 - Use schema-validated structured inputs
+- Derive or drift-test tool contracts against shared API and IVR schemas
 - Return concise, machine-usable outputs
 - Block unrestricted switch-level operations
 

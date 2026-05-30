@@ -89,6 +89,11 @@ const queueRef: QueueTransferReference = {
   name: 'Support',
   strategy: 'simultaneous',
   ring_timeout_seconds: 20,
+  retry_delay_seconds: 5,
+  max_wait_seconds: 120,
+  music_on_hold: null,
+  overflow_target_type: null,
+  overflow_target_id: null,
   members: [
     { extension_number: '200', directory_domain: 'acme.managecallai.local', position: 0 },
   ],
@@ -331,6 +336,11 @@ describe('IvrRuntimeService', () => {
       target_type: 'queue',
       strategy: 'simultaneous',
       ring_timeout_seconds: 20,
+      retry_delay_seconds: 5,
+      max_wait_seconds: 120,
+      music_on_hold: null,
+      overflow_target_type: null,
+      overflow_target_id: null,
       members: [{ extension_number: '200', domain: 'acme.managecallai.local' }],
     });
     expect(result.session.variables_json.language).toBe('tr');

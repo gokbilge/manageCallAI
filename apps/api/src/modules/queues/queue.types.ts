@@ -19,6 +19,11 @@ export interface Queue {
   description: string | null;
   strategy: QueueStrategy;
   ring_timeout_seconds: number;
+  retry_delay_seconds: number;
+  max_wait_seconds: number;
+  music_on_hold: string | null;
+  overflow_target_type: 'extension' | 'call_group' | 'queue' | 'voicemail_box' | 'flow' | null;
+  overflow_target_id: string | null;
   status: QueueStatus;
   created_at: Date;
   updated_at: Date;
@@ -34,6 +39,11 @@ export interface CreateQueueInput {
   description?: string;
   strategy?: QueueStrategy;
   ring_timeout_seconds?: number;
+  retry_delay_seconds?: number;
+  max_wait_seconds?: number;
+  music_on_hold?: string | null;
+  overflow_target_type?: 'extension' | 'call_group' | 'queue' | 'voicemail_box' | 'flow' | null;
+  overflow_target_id?: string | null;
 }
 
 export interface UpdateQueueInput {
@@ -41,6 +51,11 @@ export interface UpdateQueueInput {
   description?: string | null;
   strategy?: QueueStrategy;
   ring_timeout_seconds?: number;
+  retry_delay_seconds?: number;
+  max_wait_seconds?: number;
+  music_on_hold?: string | null;
+  overflow_target_type?: 'extension' | 'call_group' | 'queue' | 'voicemail_box' | 'flow' | null;
+  overflow_target_id?: string | null;
   status?: QueueStatus;
 }
 

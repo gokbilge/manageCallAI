@@ -24,9 +24,7 @@ export class SipTrunkService {
 
   async getById(id: string, tenantId: string): Promise<SipTrunk> {
     const trunk = await this.repo.findById(id, tenantId);
-    if (!trunk) {
-      throw new SipTrunkNotFoundError(id);
-    }
+    if (!trunk) throw new SipTrunkNotFoundError(id);
     return trunk;
   }
 
@@ -50,17 +48,13 @@ export class SipTrunkService {
       repoInput.auth_password_key_id = keyId;
     }
     const trunk = await this.repo.update(id, tenantId, repoInput);
-    if (!trunk) {
-      throw new SipTrunkNotFoundError(id);
-    }
+    if (!trunk) throw new SipTrunkNotFoundError(id);
     return trunk;
   }
 
   async deactivate(id: string, tenantId: string): Promise<SipTrunk> {
     const trunk = await this.repo.deactivate(id, tenantId);
-    if (!trunk) {
-      throw new SipTrunkNotFoundError(id);
-    }
+    if (!trunk) throw new SipTrunkNotFoundError(id);
     return trunk;
   }
 }

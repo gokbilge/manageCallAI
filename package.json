@@ -26,6 +26,10 @@
     "runtime:smoke": "powershell -ExecutionPolicy Bypass -File ./scripts/live-runtime-smoke.ps1",
     "test": "pnpm -r test",
     "generate:openapi": "node scripts/generate-openapi.mjs",
-    "generate:web-types": "node scripts/generate-web-types.mjs"
+    "generate:web-types": "node scripts/generate-web-types.mjs",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "check:mcp-contracts": "node scripts/check-mcp-contracts.mjs",
+    "check:ivr-simulation": "node scripts/check-ivr-simulation.mjs",
+    "check:freeswitch-profile": "node scripts/check-freeswitch-profile.mjs"
   }
 }

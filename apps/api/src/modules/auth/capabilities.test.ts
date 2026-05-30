@@ -129,14 +129,19 @@ describe('hasCapability', () => {
     });
   });
 
-  describe('undefined role', () => {
-    it('defaults to tenant_admin capabilities', () => {
-      expect(hasCapability(undefined, CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(true);
-      expect(hasCapability(undefined, CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW)).toBe(true);
-      expect(hasCapability(undefined, CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW)).toBe(true);
-      expect(hasCapability(undefined, CAPABILITIES.TENANT_PROMPTS_VIEW)).toBe(true);
-      expect(hasCapability(undefined, CAPABILITIES.TENANT_IVR_FLOWS_VIEW)).toBe(true);
+  describe('missing or unknown role', () => {
+    it('denies capabilities for missing roles', () => {
+      expect(hasCapability(undefined, CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(false);
+      expect(hasCapability(undefined, CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW)).toBe(false);
+      expect(hasCapability(undefined, CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW)).toBe(false);
+      expect(hasCapability(undefined, CAPABILITIES.TENANT_PROMPTS_VIEW)).toBe(false);
+      expect(hasCapability(undefined, CAPABILITIES.TENANT_IVR_FLOWS_VIEW)).toBe(false);
       expect(hasCapability(undefined, CAPABILITIES.PLATFORM_TENANTS_VIEW)).toBe(false);
+    });
+
+    it('denies capabilities for unrecognized roles', () => {
+      expect(hasCapability('bad-role', CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(false);
+      expect(hasCapability('bad-role', CAPABILITIES.PLATFORM_TENANTS_VIEW)).toBe(false);
     });
   });
 });

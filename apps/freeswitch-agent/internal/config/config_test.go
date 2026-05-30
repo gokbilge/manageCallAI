@@ -6,7 +6,7 @@ import (
 
 func TestLoadDefaults(t *testing.T) {
 	for _, key := range []string{
-		"MANAGECALLAI_TENANT_ID", "RUNTIME_API_TOKEN", "FREESWITCH_ESL_HOST",
+		"APP_ENV", "MANAGECALLAI_TENANT_ID", "RUNTIME_API_TOKEN", "FREESWITCH_ESL_HOST",
 		"FREESWITCH_ESL_PORT", "FREESWITCH_ESL_PASSWORD", "API_BASE_URL", "LOG_LEVEL",
 	} {
 		t.Setenv(key, "")
@@ -35,6 +35,9 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.RuntimeToken != "" {
 		t.Errorf("RuntimeToken default should be empty, got %q", cfg.RuntimeToken)
 	}
+	if cfg.AppEnv != "development" {
+		t.Errorf("AppEnv default: got %q, want development", cfg.AppEnv)
+	}
 }
 
 func TestLoadOverridesFromEnv(t *testing.T) {
@@ -45,6 +48,7 @@ func TestLoadOverridesFromEnv(t *testing.T) {
 	t.Setenv("FREESWITCH_ESL_PASSWORD", "MySecret")
 	t.Setenv("API_BASE_URL", "http://api:8080")
 	t.Setenv("LOG_LEVEL", "debug")
+	t.Setenv("APP_ENV", "staging")
 
 	cfg := Load()
 
@@ -69,6 +73,21 @@ func TestLoadOverridesFromEnv(t *testing.T) {
 	if cfg.LogLevel != "debug" {
 		t.Errorf("LogLevel: got %q, want debug", cfg.LogLevel)
 	}
+	if cfg.AppEnv != "staging" {
+		t.Errorf("AppEnv: got %q, want staging", cfg.AppEnv)
+	}
+}
+
+func TestProductionAcceptsStrongSecrets(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("RUNTIME_API_TOKEN", "runtime-token-that-is-long-enough")
+	t.Setenv("FREESWITCH_ESL_PASSWORD", "ESL-password-that-is-long-enough")
+
+	cfg := Load()
+
+	if cfg.AppEnv != "production" {
+		t.Errorf("AppEnv: got %q, want production", cfg.AppEnv)
+	}
 }
 
 func TestLoadInvalidPortFallsToDefault(t *testing.T) {
@@ -89,4 +108,18 @@ func TestLoadEmptyStringEnvFallsToDefault(t *testing.T) {
 	if cfg.ESLHost != "127.0.0.1" {
 		t.Errorf("ESLHost with empty env: got %q, want 127.0.0.1", cfg.ESLHost)
 	}
+}
+
+func TestProductionRejectsDefaultSecrets(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("RUNTIME_API_TOKEN", "change-me-runtime-token")
+	t.Setenv("FREESWITCH_ESL_PASSWORD", "ClueCon")
+
+	defer func() {
+		if recovered := recover(); recovered == nil {
+			t.Fatal("Load() should panic for default production secrets")
+		}
+	}()
+
+	Load()
 }

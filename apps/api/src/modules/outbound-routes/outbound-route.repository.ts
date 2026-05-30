@@ -6,7 +6,10 @@ import type {
   UpdateOutboundRouteInput,
 } from './outbound-route.types.js';
 
-const COLUMNS = `id, tenant_id, name, status, match_prefix, priority, sip_trunk_id, fallback_sip_trunk_id, max_calls_per_minute, allowed_caller_id_numbers_json, created_at, updated_at`;
+const COLUMNS = `id, tenant_id, name, status, match_prefix, priority, sip_trunk_id,
+  fallback_sip_trunk_id, max_calls_per_minute, allowed_caller_id_numbers_json,
+  allowed_destination_prefixes_json, blocked_destination_prefixes_json,
+  created_at, updated_at`;
 
 export class OutboundRouteRepository {
   constructor(private readonly db: Pool) {}
@@ -30,8 +33,12 @@ export class OutboundRouteRepository {
   async create(input: CreateOutboundRouteInput): Promise<OutboundRoute> {
     const r = await this.db.query<OutboundRoute>(
       `INSERT INTO outbound_routes
-         (tenant_id, name, match_prefix, priority, sip_trunk_id, fallback_sip_trunk_id, max_calls_per_minute, allowed_caller_id_numbers_json)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+         (
+           tenant_id, name, match_prefix, priority, sip_trunk_id,
+           fallback_sip_trunk_id, max_calls_per_minute, allowed_caller_id_numbers_json,
+           allowed_destination_prefixes_json, blocked_destination_prefixes_json
+         )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10::jsonb)
        RETURNING ${COLUMNS}`,
       [
         input.tenant_id,
@@ -42,6 +49,8 @@ export class OutboundRouteRepository {
         input.fallback_sip_trunk_id ?? null,
         input.max_calls_per_minute ?? null,
         input.allowed_caller_id_numbers_json ? JSON.stringify(input.allowed_caller_id_numbers_json) : null,
+        input.allowed_destination_prefixes_json ? JSON.stringify(input.allowed_destination_prefixes_json) : null,
+        input.blocked_destination_prefixes_json ? JSON.stringify(input.blocked_destination_prefixes_json) : null,
       ],
     );
     return r.rows[0]!;
@@ -61,6 +70,14 @@ export class OutboundRouteRepository {
     if ('allowed_caller_id_numbers_json' in input) {
       fields.push(`allowed_caller_id_numbers_json = $${idx++}::jsonb`);
       values.push(input.allowed_caller_id_numbers_json ? JSON.stringify(input.allowed_caller_id_numbers_json) : null);
+    }
+    if ('allowed_destination_prefixes_json' in input) {
+      fields.push(`allowed_destination_prefixes_json = $${idx++}::jsonb`);
+      values.push(input.allowed_destination_prefixes_json ? JSON.stringify(input.allowed_destination_prefixes_json) : null);
+    }
+    if ('blocked_destination_prefixes_json' in input) {
+      fields.push(`blocked_destination_prefixes_json = $${idx++}::jsonb`);
+      values.push(input.blocked_destination_prefixes_json ? JSON.stringify(input.blocked_destination_prefixes_json) : null);
     }
     if (input.status !== undefined) { fields.push(`status = $${idx++}`); values.push(input.status); }
 
@@ -95,7 +112,8 @@ export class OutboundRouteRepository {
 
   async resolveRouteForNumber(tenantId: string, dialNumber: string): Promise<ResolvedOutboundRoute | null> {
     const r = await this.db.query<ResolvedOutboundRoute>(
-      `SELECT id AS route_id, sip_trunk_id, fallback_sip_trunk_id, match_prefix, priority
+      `SELECT id AS route_id, sip_trunk_id, fallback_sip_trunk_id, match_prefix, priority,
+              allowed_destination_prefixes_json, blocked_destination_prefixes_json
        FROM outbound_routes
        WHERE tenant_id = $1
          AND status = 'active'

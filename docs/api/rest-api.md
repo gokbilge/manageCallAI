@@ -45,7 +45,8 @@ Authorization: Bearer <JWT>
 ```
 
 The JWT is issued by `/auth/register` or `/auth/login` and includes claims:
-`sub`, `tenant_id`, `email`, `role` (`tenant_admin` | `platform_admin`).
+`sub`, `tenant_id`, `email`, `role` (`platform_admin`, `tenant_admin`,
+`tenant_operator`, or `tenant_viewer`).
 
 **Runtime-internal endpoints** (`/freeswitch/*`, `/call-events/internal/ingest`)
 are called by FreeSWITCH and the Go ESL agent — not by end users. They require
@@ -57,7 +58,9 @@ Authorization: Bearer <RUNTIME_API_TOKEN>
 x-managecallai-runtime-token: <RUNTIME_API_TOKEN>
 ```
 
-The `runtime_token` query parameter is accepted only as a local/dev fallback for
+The `runtime_token` query/body fallback is controlled by `ALLOW_RUNTIME_TOKEN_FALLBACK`.
+It defaults on outside production and off when `APP_ENV=production`. Prefer headers
+for all callers, and only enable the fallback on an isolated compatibility path for
 `mod_xml_curl` setups that cannot send custom headers.
 
 ### 3.4 Tenant Context
@@ -563,6 +566,22 @@ GET /api/v1/outbound-routes
 POST /api/v1/outbound-routes
 ```
 
+Example request:
+
+```json
+{
+  "name": "US and UK",
+  "match_prefix": "+",
+  "sip_trunk_id": "trunk_001",
+  "allowed_destination_prefixes_json": ["+1", "+44"],
+  "blocked_destination_prefixes_json": ["+1900"]
+}
+```
+
+Outbound calls require an active route. The API rejects emergency numbers and known
+premium-rate prefixes before dispatch, then enforces route-level destination
+allowlists and blocklists.
+
 #### Get Outbound Route
 
 ```http
@@ -663,9 +682,18 @@ Example request:
   "name": "Support Queue",
   "description": "Tier-1 support",
   "strategy": "sequential",
-  "ring_timeout_seconds": 20
+  "ring_timeout_seconds": 20,
+  "retry_delay_seconds": 5,
+  "max_wait_seconds": 120,
+  "music_on_hold": "local_stream://default",
+  "overflow_target_type": "voicemail_box",
+  "overflow_target_id": "00000000-0000-0000-0000-000000000001"
 }
 ```
+
+Queue behavior is desired state, not just a bridge list. The runtime contract
+stores ring timeout, retry delay, maximum caller wait, optional music-on-hold, and
+optional overflow target.
 
 #### Get Queue
 
@@ -1409,18 +1437,21 @@ Contract rules:
 
 ### 6.16 Channel Adapter Contract
 
-Channel adapters are planned integration contracts for WhatsApp, Telegram, Google
-Meet, and custom messaging or meeting providers. The contract models capabilities
-explicitly because providers differ in their support for text messages, voice
-messages, native calling, meetings, recordings, transcripts, and SIP bridging.
+Channel adapters are manageCallAI-side integration contracts for independent
+WhatsApp, Telegram, Google Meet, and custom messaging or meeting services. The
+contract models capabilities explicitly because providers differ in their support
+for text messages, voice messages, native calling, meetings, recordings,
+transcripts, and SIP bridging.
 
-The release contract should expose these resources when implemented:
+The API exposes these resources:
 
 ```http
 POST /api/v1/channels/accounts
 GET /api/v1/channels/accounts
 GET /api/v1/channels/accounts/{channelAccountId}
 POST /api/v1/channels/messages/outbound
+POST /api/v1/channels/messages/outbound/internal/claim
+POST /api/v1/channels/messages/outbound/{requestId}/internal/result
 POST /api/v1/channels/messages/inbound/internal
 POST /api/v1/channels/voice-sessions
 GET /api/v1/channels/voice-sessions/{channelVoiceSessionId}
@@ -1430,10 +1461,13 @@ Example account request:
 
 ```json
 {
-  "provider": "whatsapp",
-  "display_name": "Support WhatsApp",
+  "provider_type": "whatsapp",
+  "name": "Support WhatsApp",
   "capabilities": ["message_inbound", "message_outbound", "voice_message"],
-  "external_account_ref": "provider-account-id"
+  "provider_config": {
+    "external_account_ref": "provider-account-id",
+    "credential_ref": "secret://tenant/support-whatsapp"
+  }
 }
 ```
 
@@ -1441,10 +1475,10 @@ Example outbound message request:
 
 ```json
 {
-  "channel_account_id": "chan_001",
-  "to_ref": "+15551234567",
-  "message_kind": "text",
-  "text": "Your support callback is scheduled."
+  "channel_account_id": "00000000-0000-0000-0000-000000000001",
+  "recipient_id": "+15551234567",
+  "message_type": "text",
+  "body": "Your support callback is scheduled."
 }
 ```
 
@@ -1453,8 +1487,12 @@ Contract rules:
 - features are gated by channel account capabilities, not provider name alone
 - credentials are write-only and represented publicly only by secret handles or status
 - raw provider webhooks are normalized before they become channel messages
+- outbound delivery is performed by independent adapter services that claim queued
+  work and report sent or failed results
 - meeting and native-call sessions do not imply FreeSWITCH control unless a SIP or
   runtime bridge is explicitly configured
+- bundled WhatsApp, Telegram, and Google Meet provider implementations are
+  placeholders; concrete provider SDKs and webhook handlers live outside `apps/api`
 
 ### 6.17 Platform Runtime Summary
 

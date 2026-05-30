@@ -34,20 +34,23 @@ export class AutomationRepository {
     name: string;
     key_prefix: string;
     key_hash: string;
+    capabilities?: string[];
     created_by?: string;
   }): Promise<ApiKey> {
+    const caps = input.capabilities ?? ['*'];
     const r = await this.db.query<ApiKey>(
-      `INSERT INTO automation_api_keys (tenant_id, name, key_prefix, key_hash, created_by)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, tenant_id, name, key_prefix, created_by, created_at, revoked_at`,
-      [input.tenant_id, input.name, input.key_prefix, input.key_hash, input.created_by ?? null],
+      `INSERT INTO automation_api_keys (tenant_id, name, key_prefix, key_hash, capabilities, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, tenant_id, name, key_prefix, capabilities, created_by, created_at, revoked_at`,
+      [input.tenant_id, input.name, input.key_prefix, input.key_hash, caps, input.created_by ?? null],
     );
     return r.rows[0]!;
   }
 
-  async findApiKeyByHash(keyHash: string): Promise<{ id: string; tenant_id: string } | null> {
-    const r = await this.db.query<{ id: string; tenant_id: string }>(
-      `SELECT id, tenant_id FROM automation_api_keys WHERE key_hash = $1 AND revoked_at IS NULL`,
+  async findApiKeyByHash(keyHash: string): Promise<{ id: string; tenant_id: string; capabilities: string[] } | null> {
+    const r = await this.db.query<{ id: string; tenant_id: string; capabilities: string[] }>(
+      `SELECT id, tenant_id, capabilities
+       FROM automation_api_keys WHERE key_hash = $1 AND revoked_at IS NULL`,
       [keyHash],
     );
     return r.rows[0] ?? null;
@@ -55,7 +58,7 @@ export class AutomationRepository {
 
   async listApiKeys(tenantId: string): Promise<ApiKey[]> {
     const r = await this.db.query<ApiKey>(
-      `SELECT id, tenant_id, name, key_prefix, created_by, created_at, revoked_at
+      `SELECT id, tenant_id, name, key_prefix, capabilities, created_by, created_at, revoked_at
        FROM automation_api_keys WHERE tenant_id = $1 ORDER BY created_at DESC`,
       [tenantId],
     );
@@ -164,20 +167,64 @@ export class AutomationRepository {
     tenant_id: string;
     event: string;
     payload_json: Record<string, unknown>;
+    event_id?: string;
   }): Promise<WebhookDeliveryQueueItem[]> {
+    // event_id is generated once per business event and shared across all webhook
+    // deliveries for that event so consumers can de-duplicate.
+    const eventId = input.event_id ?? randomBytes(16).toString('hex');
     const r = await this.db.query<WebhookDeliveryQueueItem>(
-      `INSERT INTO webhook_delivery_queue (webhook_id, tenant_id, event, payload_json)
-       SELECT id, tenant_id, $2, $3::jsonb
+      `INSERT INTO webhook_delivery_queue (webhook_id, tenant_id, event, payload_json, event_id)
+       SELECT id, tenant_id, $2, $3::jsonb, $4::uuid
        FROM automation_webhooks
        WHERE tenant_id = $1
          AND revoked_at IS NULL
          AND disabled_at IS NULL
          AND $2 = ANY(events)
+       ON CONFLICT (webhook_id, event_id) WHERE dismissed_at IS NULL DO NOTHING
        RETURNING id, webhook_id, tenant_id, event, payload_json, status, attempt_count, max_attempts,
                  next_attempt_at, claimed_at, delivered_at, last_response_code, last_error, created_at, updated_at`,
-      [input.tenant_id, input.event, JSON.stringify(input.payload_json)],
+      [input.tenant_id, input.event, JSON.stringify(input.payload_json), eventId],
     );
     return r.rows;
+  }
+
+  async listAbandonedDeliveries(tenantId: string, limit = 50): Promise<WebhookDeliveryQueueItem[]> {
+    const r = await this.db.query<WebhookDeliveryQueueItem>(
+      `SELECT id, webhook_id, tenant_id, event, payload_json, status, attempt_count, max_attempts,
+              next_attempt_at, claimed_at, delivered_at, last_response_code, last_error, created_at, updated_at
+       FROM webhook_delivery_queue
+       WHERE tenant_id = $1 AND status = 'abandoned' AND dismissed_at IS NULL
+       ORDER BY created_at DESC LIMIT $2`,
+      [tenantId, limit],
+    );
+    return r.rows;
+  }
+
+  async retryAbandonedDelivery(id: string, tenantId: string): Promise<WebhookDeliveryQueueItem | null> {
+    const r = await this.db.query<WebhookDeliveryQueueItem>(
+      `UPDATE webhook_delivery_queue
+       SET status = 'pending',
+           attempt_count = 0,
+           next_attempt_at = NOW(),
+           last_error = NULL,
+           updated_at = NOW()
+       WHERE id = $1 AND tenant_id = $2 AND status = 'abandoned' AND dismissed_at IS NULL
+       RETURNING id, webhook_id, tenant_id, event, payload_json, status, attempt_count, max_attempts,
+                 next_attempt_at, claimed_at, delivered_at, last_response_code, last_error, created_at, updated_at`,
+      [id, tenantId],
+    );
+    return r.rows[0] ?? null;
+  }
+
+  async dismissAbandonedDelivery(id: string, tenantId: string, reason?: string): Promise<boolean> {
+    const r = await this.db.query<{ id: string }>(
+      `UPDATE webhook_delivery_queue
+       SET dismissed_at = NOW(), dismiss_reason = $3, updated_at = NOW()
+       WHERE id = $1 AND tenant_id = $2 AND status = 'abandoned' AND dismissed_at IS NULL
+       RETURNING id`,
+      [id, tenantId, reason ?? null],
+    );
+    return r.rows.length > 0;
   }
 
   async claimDueWebhookDeliveries(limit: number): Promise<ClaimedWebhookDelivery[]> {

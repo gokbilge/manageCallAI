@@ -15,6 +15,7 @@ export class OutboundRouteValidationError extends Error {
 }
 
 const PREFIX_PATTERN = /^\+?[0-9]{1,20}$/;
+const MAX_PREFIXES = 100;
 
 function validatePrefix(prefix: string): string | null {
   if (!prefix || prefix.trim().length === 0) return 'match_prefix must not be empty';
@@ -28,6 +29,18 @@ function validateCallerIdList(list: unknown): string | null {
   for (const item of list) {
     if (typeof item !== 'string' || !/^\+?[0-9]+$/.test(item)) {
       return `allowed_caller_id_numbers_json entries must be numeric strings: "${String(item)}"`;
+    }
+  }
+  return null;
+}
+
+function validatePrefixList(list: unknown, field: string): string | null {
+  if (list === null || list === undefined) return null;
+  if (!Array.isArray(list)) return `${field} must be an array`;
+  if (list.length > MAX_PREFIXES) return `${field} must contain at most ${MAX_PREFIXES} entries`;
+  for (const item of list) {
+    if (typeof item !== 'string' || validatePrefix(item) !== null) {
+      return `${field} entries must be numeric prefixes: "${String(item)}"`;
     }
   }
   return null;
@@ -58,6 +71,10 @@ export class OutboundRouteService {
 
     const callerIdErr = validateCallerIdList(input.allowed_caller_id_numbers_json);
     if (callerIdErr) throw new OutboundRouteValidationError(callerIdErr);
+    const allowErr = validatePrefixList(input.allowed_destination_prefixes_json, 'allowed_destination_prefixes_json');
+    if (allowErr) throw new OutboundRouteValidationError(allowErr);
+    const blockErr = validatePrefixList(input.blocked_destination_prefixes_json, 'blocked_destination_prefixes_json');
+    if (blockErr) throw new OutboundRouteValidationError(blockErr);
 
     const trunk = await this.repo.findActiveTrunk(input.tenant_id, input.sip_trunk_id);
     if (!trunk) throw new OutboundRouteValidationError(`SIP trunk not found or not active: ${input.sip_trunk_id}`);
@@ -88,6 +105,14 @@ export class OutboundRouteService {
     if (input.allowed_caller_id_numbers_json !== undefined) {
       const callerIdErr = validateCallerIdList(input.allowed_caller_id_numbers_json);
       if (callerIdErr) throw new OutboundRouteValidationError(callerIdErr);
+    }
+    if (input.allowed_destination_prefixes_json !== undefined) {
+      const allowErr = validatePrefixList(input.allowed_destination_prefixes_json, 'allowed_destination_prefixes_json');
+      if (allowErr) throw new OutboundRouteValidationError(allowErr);
+    }
+    if (input.blocked_destination_prefixes_json !== undefined) {
+      const blockErr = validatePrefixList(input.blocked_destination_prefixes_json, 'blocked_destination_prefixes_json');
+      if (blockErr) throw new OutboundRouteValidationError(blockErr);
     }
 
     if (input.sip_trunk_id !== undefined) {

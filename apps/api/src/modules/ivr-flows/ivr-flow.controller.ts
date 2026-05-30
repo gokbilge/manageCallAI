@@ -6,6 +6,7 @@ import {
   UpdateIvrFlowBodySchema,
   SimulationScenarioSchema,
 } from '@managecallai/contracts';
+import { computeReachableBranches } from './ivr-flow.validation.js';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -24,6 +25,11 @@ import { defaultIvrGraph } from './ivr-flow.validation.js';
 import { sendNotFound, sendFailedPrecondition } from '../../errors/index.js';
 
 const service = new IvrFlowService(new IvrFlowRepository(db));
+
+function extractNodes(graph: Record<string, unknown> | undefined): Array<Record<string, unknown>> {
+  if (!graph) return [];
+  return Array.isArray(graph.nodes) ? graph.nodes as Array<Record<string, unknown>> : [];
+}
 
 function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof IvrFlowNotFoundError || err instanceof FlowVersionNotFoundError) {
@@ -316,6 +322,117 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
         fireAuditEvent({ tenant_id: user.tenant_id, actor_id: user.sub, actor_role: user.role, action: event, resource_type: 'ivr_flow', resource_id: req.params.id, metadata: { version_id: req.params.vid } });
         const statusCode = result.status === 'pending_approval' ? 202 : 200;
         return reply.code(statusCode).send({ data: result });
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  // Graph diff: compare draft version against the current active version.
+  app.get(
+    '/:id/diff',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
+      schema: { params: UuidParamsSchema },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const flow = await service.getById(req.params.id, user.tenant_id);
+        const draftVersion = flow.versions.find((v) => v.id === flow.draft_version_id);
+        const activeVersion = flow.versions.find((v) => v.id === flow.active_version_id);
+
+        if (!draftVersion) return sendNotFound(reply, 'No draft version found');
+
+        const draftNodes = extractNodes(draftVersion.graph_json);
+        const activeNodes = extractNodes(activeVersion?.graph_json);
+
+        const draftIds = new Set(draftNodes.map((n) => n.id));
+        const activeIds = new Set(activeNodes.map((n) => n.id));
+
+        const added = draftNodes.filter((n) => !activeIds.has(n.id));
+        const removed = activeNodes.filter((n) => !draftIds.has(n.id));
+        const modified = draftNodes.filter((n) => {
+          if (!activeIds.has(n.id)) return false;
+          const activeNode = activeNodes.find((a) => a.id === n.id);
+          return JSON.stringify(n) !== JSON.stringify(activeNode);
+        });
+        const unchanged = draftNodes.filter((n) => {
+          if (!activeIds.has(n.id)) return false;
+          const activeNode = activeNodes.find((a) => a.id === n.id);
+          return JSON.stringify(n) === JSON.stringify(activeNode);
+        });
+
+        return {
+          data: {
+            flow_id: flow.id,
+            draft_version_id: flow.draft_version_id,
+            active_version_id: flow.active_version_id ?? null,
+            summary: {
+              added: added.length,
+              removed: removed.length,
+              modified: modified.length,
+              unchanged: unchanged.length,
+            },
+            added,
+            removed,
+            modified: modified.map((n) => ({
+              id: n.id,
+              draft: n,
+              active: activeNodes.find((a) => a.id === n.id) ?? null,
+            })),
+          },
+        };
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  // Simulation coverage: which nodes in the draft have been visited in at least one simulation.
+  app.get(
+    '/:id/simulation-coverage',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_VIEW),
+      schema: { params: UuidParamsSchema },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const flow = await service.getById(req.params.id, user.tenant_id);
+        const draftVersion = flow.versions.find((v) => v.id === flow.draft_version_id);
+        if (!draftVersion) return sendNotFound(reply, 'No draft version found');
+
+        const allNodeIds = computeReachableBranches(draftVersion.graph_json);
+
+        // Find all node ids visited in simulation results for this version.
+        const simResults = await service.getHistory(req.params.id, user.tenant_id);
+        const visitedIds = new Set<string>();
+        for (const sim of simResults.simulations) {
+          const path = (sim.result_payload as Record<string, unknown>)?.path;
+          if (Array.isArray(path)) {
+            for (const nodeId of path as string[]) visitedIds.add(nodeId);
+          }
+        }
+
+        const coverage: Record<string, 'tested' | 'untested'> = {};
+        for (const id of allNodeIds) {
+          coverage[id] = visitedIds.has(id) ? 'tested' : 'untested';
+        }
+
+        const testedCount = Object.values(coverage).filter((v) => v === 'tested').length;
+        const totalCount = allNodeIds.size;
+
+        return {
+          data: {
+            flow_id: flow.id,
+            draft_version_id: flow.draft_version_id,
+            coverage_pct: totalCount === 0 ? 100 : Math.round((testedCount / totalCount) * 100),
+            tested_count: testedCount,
+            total_count: totalCount,
+            nodes: coverage,
+          },
+        };
       } catch (err) {
         return replyError(err, reply);
       }

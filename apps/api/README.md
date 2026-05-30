@@ -78,8 +78,10 @@ pnpm --filter @managecallai/api dev   # starts on API_PORT (default 3000)
 |----------|---------|-------------|
 | `DATABASE_URL` | `postgres://managecallai:managecallai@localhost:5432/managecallai` | PostgreSQL connection string |
 | `API_PORT` | `3000` | HTTP listen port |
+| `APP_ENV` | `development` | Set to `production` to enforce production secret checks and header-only runtime auth by default |
 | `JWT_SECRET` | — | Required; used to sign/verify JWTs |
 | `RUNTIME_API_TOKEN` | — | Bearer token for FreeSWITCH runtime endpoints |
+| `ALLOW_RUNTIME_TOKEN_FALLBACK` | `true` outside production, `false` in production | Allows `runtime_token` query/body compatibility for local or constrained `mod_xml_curl` setups |
 | `SIP_SECRET_MASTER_KEY` | — | 64-char hex; AES-256-GCM key for SIP password encryption |
 | `SIP_SECRET_KEY_ID` | — | Key version label (e.g. `v1`) |
 
@@ -87,6 +89,8 @@ pnpm --filter @managecallai/api dev   # starts on API_PORT (default 3000)
 
 - **Tenant endpoints**: `Authorization: Bearer <JWT>` (issued by `/api/v1/auth/login`)
 - **Runtime/FreeSWITCH endpoints**: `Authorization: Bearer <RUNTIME_API_TOKEN>` or `x-managecallai-runtime-token: <token>`
+
+When `APP_ENV=production`, startup rejects the sample `JWT_SECRET`, `RUNTIME_API_TOKEN`, and `SIP_SECRET_MASTER_KEY` values from local examples. Runtime query/body token fallback is disabled by default in production; use headers unless a deployment has an explicitly isolated compatibility path.
 
 ## Error responses
 

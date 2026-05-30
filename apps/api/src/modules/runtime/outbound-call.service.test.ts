@@ -36,8 +36,18 @@ function makeRepo(overrides: Partial<OutboundCallRepository> = {}): OutboundCall
     claimRequest: vi.fn().mockResolvedValue({ ...baseRequest, status: 'dispatched' }),
     updateStatus: vi.fn().mockResolvedValue({ ...baseRequest, status: 'dispatched' }),
     findActiveExtension: vi.fn().mockResolvedValue({ id: EXT_ID }),
-    resolveRouteForNumber: vi.fn().mockResolvedValue({ route_id: ROUTE_ID, sip_trunk_id: TRUNK_ID }),
-    findActiveRouteById: vi.fn().mockResolvedValue({ id: ROUTE_ID, sip_trunk_id: TRUNK_ID }),
+    resolveRouteForNumber: vi.fn().mockResolvedValue({
+      route_id: ROUTE_ID,
+      sip_trunk_id: TRUNK_ID,
+      allowed_destination_prefixes_json: null,
+      blocked_destination_prefixes_json: null,
+    }),
+    findActiveRouteById: vi.fn().mockResolvedValue({
+      id: ROUTE_ID,
+      sip_trunk_id: TRUNK_ID,
+      allowed_destination_prefixes_json: null,
+      blocked_destination_prefixes_json: null,
+    }),
     findActiveTrunk: vi.fn().mockResolvedValue({ id: TRUNK_ID }),
     ...overrides,
   } as unknown as OutboundCallRepository;
@@ -112,13 +122,12 @@ describe('OutboundCallService', () => {
       expect(vi.mocked(repo.findActiveRouteById)).not.toHaveBeenCalled();
     });
 
-    it('creates call with no route when prefix resolution finds nothing', async () => {
+    it('rejects calls when prefix resolution finds no active route', async () => {
       repo = makeRepo({ resolveRouteForNumber: vi.fn().mockResolvedValue(null) });
       service = new OutboundCallService(repo);
-      await service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' });
-      expect(vi.mocked(repo.create)).toHaveBeenCalledWith(
-        expect.objectContaining({ route_id: null, sip_trunk_id: null }),
-      );
+      await expect(
+        service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' }),
+      ).rejects.toBeInstanceOf(OutboundCallValidationError);
     });
 
     it('trims whitespace from dial_number', async () => {
@@ -126,6 +135,50 @@ describe('OutboundCallService', () => {
       expect(vi.mocked(repo.create)).toHaveBeenCalledWith(
         expect.objectContaining({ dial_number: '+905551234567' }),
       );
+    });
+
+    it('blocks emergency destinations before dispatch', async () => {
+      await expect(
+        service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '911' }),
+      ).rejects.toBeInstanceOf(OutboundCallValidationError);
+      expect(vi.mocked(repo.create)).not.toHaveBeenCalled();
+    });
+
+    it('blocks premium-rate destinations before dispatch', async () => {
+      await expect(
+        service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+19005551234' }),
+      ).rejects.toBeInstanceOf(OutboundCallValidationError);
+      expect(vi.mocked(repo.create)).not.toHaveBeenCalled();
+    });
+
+    it('enforces route destination blocklist', async () => {
+      repo = makeRepo({
+        resolveRouteForNumber: vi.fn().mockResolvedValue({
+          route_id: ROUTE_ID,
+          sip_trunk_id: TRUNK_ID,
+          allowed_destination_prefixes_json: null,
+          blocked_destination_prefixes_json: ['+90555'],
+        }),
+      });
+      service = new OutboundCallService(repo);
+      await expect(
+        service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' }),
+      ).rejects.toBeInstanceOf(OutboundCallValidationError);
+    });
+
+    it('enforces route destination allowlist', async () => {
+      repo = makeRepo({
+        resolveRouteForNumber: vi.fn().mockResolvedValue({
+          route_id: ROUTE_ID,
+          sip_trunk_id: TRUNK_ID,
+          allowed_destination_prefixes_json: ['+1'],
+          blocked_destination_prefixes_json: null,
+        }),
+      });
+      service = new OutboundCallService(repo);
+      await expect(
+        service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' }),
+      ).rejects.toBeInstanceOf(OutboundCallValidationError);
     });
   });
 

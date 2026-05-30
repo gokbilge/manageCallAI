@@ -1,8 +1,22 @@
+/**
+ * DEPRECATION NOTICE — apps/mcp-server
+ *
+ * This server previously required an access_token as a tool argument in every
+ * call. That pattern has been removed: credentials must never appear in tool
+ * arguments because they are exposed to LLM context, logs, and session
+ * transcripts.
+ *
+ * Authentication now uses MANAGECALL_API_KEY from the environment, matching
+ * the canonical apps/mcp server. For new integrations use apps/mcp instead.
+ * apps/mcp-server is retained for its Docker image tag compatibility only.
+ * No new tools should be added here.
+ */
+
 import { config } from '../config/env.js';
 
-async function callApi<T>(method: string, path: string, accessToken: string, body?: unknown): Promise<T> {
+async function callApi<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {
-    Authorization: `Bearer ${accessToken}`,
+    Authorization: `Bearer ${config.apiKey}`,
   };
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
@@ -12,6 +26,7 @@ async function callApi<T>(method: string, path: string, accessToken: string, bod
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!response.ok) {
@@ -22,14 +37,14 @@ async function callApi<T>(method: string, path: string, accessToken: string, bod
   return (await response.json()) as T;
 }
 
-export function fetchJson<T>(path: string, accessToken: string): Promise<T> {
-  return callApi<T>('GET', path, accessToken);
+export function fetchJson<T>(path: string): Promise<T> {
+  return callApi<T>('GET', path);
 }
 
-export function postJson<T>(path: string, accessToken: string, body?: unknown): Promise<T> {
-  return callApi<T>('POST', path, accessToken, body ?? {});
+export function postJson<T>(path: string, body?: unknown): Promise<T> {
+  return callApi<T>('POST', path, body ?? {});
 }
 
-export function patchJson<T>(path: string, accessToken: string, body: unknown): Promise<T> {
-  return callApi<T>('PATCH', path, accessToken, body);
+export function patchJson<T>(path: string, body: unknown): Promise<T> {
+  return callApi<T>('PATCH', path, body);
 }

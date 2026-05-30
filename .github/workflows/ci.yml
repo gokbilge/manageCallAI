@@ -64,15 +64,36 @@ jobs:
           done
           exit 1
 
-      - name: Migration syntax check
-        run: pnpm db:check
+      # ── Secret scanning ──────────────────────────────────────────────────────
+      - name: Secret scan
+        run: node scripts/check-secrets.mjs
 
+      # ── TypeScript build ─────────────────────────────────────────────────────
       - name: TypeScript build
         run: pnpm build
 
+      # ── Lint ─────────────────────────────────────────────────────────────────
       - name: Lint
         run: pnpm lint
 
+      # ── Dependency vulnerability audit ───────────────────────────────────────
+      # Fails on high or critical severity. To add a suppressed exception, document
+      # it in docs/security/audit-exceptions.md and run:
+      #   pnpm audit --audit-level=high --json > docs/security/audit-results.json
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high
+        continue-on-error: false
+
+      # ── Migration replay ─────────────────────────────────────────────────────
+      # Applies every migration against the fresh CI database to prove that the
+      # migration chain is coherent and all SQL is valid.
+      - name: Migration syntax check
+        run: pnpm db:check
+
+      - name: Apply migrations (full replay)
+        run: pnpm db:migrate
+
+      # ── OpenAPI ──────────────────────────────────────────────────────────────
       - name: OpenAPI generate and verify
         run: |
           pnpm --filter @managecallai/contracts build
@@ -82,8 +103,82 @@ jobs:
       - name: OpenAPI coverage check
         run: node scripts/check-openapi-coverage.mjs
 
+      # ── Tests (unit + integration) ───────────────────────────────────────────
       - name: Tests
         run: pnpm test
 
+      # ── Go test ──────────────────────────────────────────────────────────────
       - name: Go test
         run: cd apps/freeswitch-agent && go test ./...
+
+      # ── MCP contract drift check ─────────────────────────────────────────────
+      # Verifies MCP tool inputSchemas stay aligned with packages/contracts Zod schemas.
+      - name: MCP contract drift check
+        run: node scripts/check-mcp-contracts.mjs
+
+      # ── IVR simulation regression ────────────────────────────────────────────
+      # Runs IVR graph validator and simulation engine unit tests explicitly to
+      # ensure call-flow behaviour doesn't regress when node types or graph rules change.
+      - name: IVR simulation regression
+        run: node scripts/check-ivr-simulation.mjs
+
+      # ── Runtime XML golden-file tests ────────────────────────────────────────
+      # The dialplan-builders unit tests in apps/api verify that FreeSWITCH XML
+      # responses match expected golden assertions (covered by pnpm test above).
+      # This step makes the gate explicit for reviewers.
+      - name: Runtime XML golden-file tests (dialplan builders)
+        run: |
+          pnpm --filter @managecallai/api exec vitest run \
+            src/modules/freeswitch/dialplan-builders.test.ts
+
+      # ── FreeSWITCH profile smoke test ────────────────────────────────────────
+      # BLOCKER: FreeSWITCH cannot run as a GitHub Actions service container
+      # because it requires host network access for SIP/media and non-trivial
+      # startup configuration (sofia XML config, mod_xml_curl URL, etc.).
+      # The deterministic CI substitute is the dialplan golden-file test above.
+      # To run the full ESL smoke test locally: pnpm runtime:up && node scripts/check-freeswitch-profile.mjs
+      #
+      # Uncomment the step below when a self-hosted runner with FreeSWITCH is available:
+      # - name: FreeSWITCH profile smoke test
+      #   run: node scripts/check-freeswitch-profile.mjs
+      #   env:
+      #     FREESWITCH_ESL_HOST: <runner-host>
+      #     FREESWITCH_ESL_PASSWORD: ${{ secrets.FREESWITCH_ESL_PASSWORD }}
+
+  # ── Docker image build test ───────────────────────────────────────────────────
+  docker-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: managecallai-api
+            context: .
+            dockerfile: apps/api/Dockerfile
+          - image: managecallai-worker
+            context: .
+            dockerfile: apps/worker/Dockerfile
+          - image: managecallai-mcp
+            context: .
+            dockerfile: apps/mcp/Dockerfile
+          - image: managecallai-mcp-server
+            context: .
+            dockerfile: apps/mcp-server/Dockerfile
+          - image: managecallai-freeswitch-agent
+            context: .
+            dockerfile: apps/freeswitch-agent/Dockerfile
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: false
+          tags: ${{ matrix.image }}:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

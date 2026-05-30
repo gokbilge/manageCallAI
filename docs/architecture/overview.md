@@ -55,6 +55,8 @@ manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSW
 - React + TypeScript operator console
 - Consumes backend APIs
 - Presents domain-level telecom objects and lifecycle operations
+- Provides a live operations cockpit for active sessions, queue pressure, runtime
+  health, and recent failures
 
 ### 5.2 API Layer
 
@@ -81,11 +83,14 @@ manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSW
 ### 5.5 Provider Integration Layer
 
 - Optional adapter workers or plugins for AI, media, messaging, meeting, and channel systems
+- Runs as independent service processes outside `apps/api`
 - Claims asynchronous work from internal API endpoints and posts bounded results back
 - Supports recording analysis, prompt generation, IVR AI turns, outbound messages,
   inbound message ingestion, and channel voice or meeting sessions
 - Uses capability flags because providers do not expose identical message and voice features
 - Keeps provider credentials and raw provider payloads outside public domain responses
+- Treats bundled WhatsApp, Telegram, and Google Meet implementations as placeholders
+  until a deployer installs external adapters
 
 ### 5.6 Domain Core
 
@@ -178,6 +183,8 @@ This is the minimum slice that demonstrates control-plane state, runtime consump
 2. The adapter layer ingests and normalizes them.
 3. The control plane stores operational records.
 4. UI, API, and workflows consume summarized or business-level views.
+5. Live UI surfaces receive authorized WebSocket or Server-Sent Events updates
+   derived from normalized operational state.
 
 ### 6.4 Provider Work Request Flow
 
@@ -194,9 +201,12 @@ This flow applies to recording analysis, prompt generation, and IVR AI turns.
 
 1. A tenant configures a channel account with explicit capabilities.
 2. Outbound messages are submitted as business-level channel messages.
-3. Provider adapters deliver messages and report delivery state.
-4. Inbound provider events are ingested through internal endpoints and normalized.
-5. Voice-message, native-call, meeting, and SIP-bridge sessions are represented by
+3. The API stores outbound requests as queued provider-neutral work.
+4. An independent adapter service claims queued work through an internal endpoint.
+5. The adapter delivers through WhatsApp, Telegram, Google Meet, or a custom provider
+   outside the API process and reports sent or failed results back.
+6. Inbound provider events are ingested through internal endpoints and normalized.
+7. Voice-message, native-call, meeting, and SIP-bridge sessions are represented by
    capability-specific channel voice session records.
 
 ## 7. Deployment View
@@ -228,6 +238,7 @@ These may run as separate services or a small number of deployable units dependi
 - Boundary D: Control plane to database
 - Boundary E: Control plane to FreeSWITCH and runtime event sources
 - Boundary F: Control plane to external provider adapters and provider APIs
+- Boundary G: Browser live-observability stream to control plane
 
 Each boundary requires authentication, authorization, input validation, and operational logging where applicable.
 
@@ -262,6 +273,8 @@ Each boundary requires authentication, authorization, input validation, and oper
 - Publish and rollback history
 - Call event and CDR ingestion records
 - Operational logs and metrics for adapter and API components
+- Live operations stream for active calls, active IVR sessions, queue depth,
+  runtime health, webhook backlog, and adapter work backlog
 
 ## 13. Technology Direction
 

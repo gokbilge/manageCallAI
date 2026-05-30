@@ -18,6 +18,8 @@ const baseRoute: OutboundRoute = {
   fallback_sip_trunk_id: null,
   max_calls_per_minute: null,
   allowed_caller_id_numbers_json: null,
+  allowed_destination_prefixes_json: null,
+  blocked_destination_prefixes_json: null,
   created_at: new Date(),
   updated_at: new Date(),
 };
@@ -31,7 +33,13 @@ function makeRepo(overrides: Partial<OutboundRouteRepository> = {}): OutboundRou
     deactivate: vi.fn().mockResolvedValue({ ...baseRoute, status: 'inactive' }),
     findActiveTrunk: vi.fn().mockResolvedValue({ id: TRUNK_A }),
     resolveRouteForNumber: vi.fn().mockResolvedValue({
-      route_id: 'route-1', sip_trunk_id: TRUNK_A, fallback_sip_trunk_id: null, match_prefix: '+', priority: 100,
+      route_id: 'route-1',
+      sip_trunk_id: TRUNK_A,
+      fallback_sip_trunk_id: null,
+      match_prefix: '+',
+      priority: 100,
+      allowed_destination_prefixes_json: null,
+      blocked_destination_prefixes_json: null,
     }),
     ...overrides,
   } as unknown as OutboundRouteRepository;
@@ -108,6 +116,26 @@ describe('OutboundRouteService', () => {
     await expect(service.create({
       tenant_id: TENANT, name: 'Bad', match_prefix: '+1', sip_trunk_id: TRUNK_A,
       allowed_caller_id_numbers_json: ['not-a-number'],
+    })).rejects.toThrow(OutboundRouteValidationError);
+  });
+
+  it('rejects invalid destination allowlist entries', async () => {
+    await expect(service.create({
+      tenant_id: TENANT,
+      name: 'Bad',
+      match_prefix: '+1',
+      sip_trunk_id: TRUNK_A,
+      allowed_destination_prefixes_json: ['abc'],
+    })).rejects.toThrow(OutboundRouteValidationError);
+  });
+
+  it('rejects invalid destination blocklist entries', async () => {
+    await expect(service.create({
+      tenant_id: TENANT,
+      name: 'Bad',
+      match_prefix: '+1',
+      sip_trunk_id: TRUNK_A,
+      blocked_destination_prefixes_json: ['+1555', 'abc'],
     })).rejects.toThrow(OutboundRouteValidationError);
   });
 

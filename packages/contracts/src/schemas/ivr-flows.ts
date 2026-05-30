@@ -184,3 +184,23 @@ export const CreateFlowVersionBodySchema = z.object({
   definition: z.record(z.unknown()).optional(),
 }).openapi('CreateFlowVersionBody');
 export type CreateFlowVersionBody = z.infer<typeof CreateFlowVersionBodySchema>;
+
+// ── Supported node types ──────────────────────────────────────────────────────
+// Canonical list used by the IVR graph validator and exposed to MCP tool schemas.
+// Any change here must be reflected in the validator (ivr-flow.validation.ts) and
+// vice-versa — the MCP contract drift test (apps/mcp) enforces alignment.
+export const IVR_NODE_TYPES = [
+  'start',
+  'play_prompt',
+  'play_collect',
+  'switch',
+  'transfer_extension',
+  'hangup',
+  'business_hours',
+  'caller_id_match',
+  'set_variable',
+  'queue',
+  'voicemail_drop',
+] as const;
+
+export type IvrNodeType = (typeof IVR_NODE_TYPES)[number];

@@ -3,6 +3,8 @@ export interface ApiKey {
   tenant_id: string;
   name: string;
   key_prefix: string;
+  /** Explicit capability list. ['*'] = full tenant_admin set (legacy default). */
+  capabilities: string[];
   created_by: string | null;
   created_at: Date;
   revoked_at: Date | null;
@@ -38,8 +40,15 @@ export const WEBHOOK_EVENTS = [
   'approval.approved',
   'approval.rejected',
   'call.completed',
+  'call.started',
   'voicemail.recording_available',
   'outbound_call.dispatched',
+  'outbound_call.completed',
+  'outbound_call.failed',
+  'extension.registered',
+  'extension.expired',
+  'recording.analysis_completed',
+  'recording.analysis_failed',
 ] as const;
 
 export interface WebhookDeliveryAttempt {

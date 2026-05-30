@@ -16,6 +16,8 @@ export const OutboundRouteSchema = z.object({
   fallback_sip_trunk_id: z.string().uuid().nullable(),
   max_calls_per_minute: z.number().int().nullable(),
   allowed_caller_id_numbers_json: z.array(z.string()).nullable(),
+  allowed_destination_prefixes_json: z.array(z.string()).nullable(),
+  blocked_destination_prefixes_json: z.array(z.string()).nullable(),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
 }).openapi('OutboundRoute');
@@ -27,6 +29,8 @@ export const ResolvedOutboundRouteSchema = z.object({
   fallback_sip_trunk_id: z.string().uuid().nullable(),
   match_prefix: z.string(),
   priority: z.number().int(),
+  allowed_destination_prefixes_json: z.array(z.string()).nullable(),
+  blocked_destination_prefixes_json: z.array(z.string()).nullable(),
 }).openapi('ResolvedOutboundRoute');
 export type ResolvedOutboundRoute = z.infer<typeof ResolvedOutboundRouteSchema>;
 
@@ -39,6 +43,8 @@ export const CreateOutboundRouteBodySchema = z.object({
   fallback_sip_trunk_id: z.string().uuid().nullable().optional(),
   max_calls_per_minute: z.number().int().nullable().optional(),
   allowed_caller_id_numbers_json: z.array(z.string()).nullable().optional(),
+  allowed_destination_prefixes_json: z.array(z.string()).nullable().optional(),
+  blocked_destination_prefixes_json: z.array(z.string()).nullable().optional(),
 }).openapi('CreateOutboundRouteBody');
 export type CreateOutboundRouteBody = z.infer<typeof CreateOutboundRouteBodySchema>;
 
@@ -50,6 +56,8 @@ export const UpdateOutboundRouteBodySchema = z.object({
   fallback_sip_trunk_id: z.string().uuid().nullable().optional(),
   max_calls_per_minute: z.number().int().nullable().optional(),
   allowed_caller_id_numbers_json: z.array(z.string()).nullable().optional(),
+  allowed_destination_prefixes_json: z.array(z.string()).nullable().optional(),
+  blocked_destination_prefixes_json: z.array(z.string()).nullable().optional(),
   status: OutboundRouteStatusSchema.optional(),
 }).openapi('UpdateOutboundRouteBody');
 export type UpdateOutboundRouteBody = z.infer<typeof UpdateOutboundRouteBodySchema>;

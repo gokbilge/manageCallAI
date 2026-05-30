@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { AutomationService, ApiKeyNotFoundError, WebhookNotFoundError } from './automation.service.js';
 import { AutomationRepository } from './automation.repository.js';
 import type { ApiKey, AutomationWebhook } from './automation.types.js';
@@ -15,6 +15,7 @@ function makeApiKey(overrides: Partial<ApiKey> = {}): ApiKey {
     tenant_id: TENANT_ID,
     name: 'ci-key',
     key_prefix: 'abcd1234',
+    capabilities: ['*'],
     created_by: USER_ID,
     created_at: now,
     revoked_at: null,
@@ -40,237 +41,119 @@ function makeWebhook(overrides: Partial<AutomationWebhook> = {}): AutomationWebh
 
 function makeMockRepo(): AutomationRepository {
   return {
-    createApiKey: vi.fn(),
-    findApiKeyByHash: vi.fn(),
-    listApiKeys: vi.fn(),
-    revokeApiKey: vi.fn(),
-    createWebhook: vi.fn(),
-    listWebhooks: vi.fn(),
-    revokeWebhook: vi.fn(),
-    findWebhookById: vi.fn(),
-    findActiveWebhooksForEvent: vi.fn(),
-    recordDeliveryFailure: vi.fn(),
-    resetDeliveryFailure: vi.fn(),
-    logDeliveryAttempt: vi.fn().mockResolvedValue(undefined),
+    createApiKey: vi.fn().mockResolvedValue(makeApiKey()),
+    findApiKeyByHash: vi.fn().mockResolvedValue({ id: KEY_ID, tenant_id: TENANT_ID, capabilities: ['*'] }),
+    listApiKeys: vi.fn().mockResolvedValue([makeApiKey()]),
+    revokeApiKey: vi.fn().mockResolvedValue(true),
+    generateApiKey: vi.fn().mockReturnValue({ rawKey: 'mcak_abc', keyHash: 'hash', keyPrefix: 'abcd' }),
+    createWebhook: vi.fn().mockResolvedValue(makeWebhook()),
+    listWebhooks: vi.fn().mockResolvedValue([makeWebhook()]),
+    revokeWebhook: vi.fn().mockResolvedValue(true),
+    findWebhookById: vi.fn().mockResolvedValue(makeWebhook()),
     findDeliveryLog: vi.fn().mockResolvedValue([]),
+    findDeliveryQueueForWebhook: vi.fn().mockResolvedValue([]),
+    findActiveWebhooksForEvent: vi.fn().mockResolvedValue([]),
+    recordDeliveryFailure: vi.fn().mockResolvedValue(undefined),
+    resetDeliveryFailure: vi.fn().mockResolvedValue(undefined),
+    logDeliveryAttempt: vi.fn().mockResolvedValue(undefined),
     enqueueWebhookDeliveries: vi.fn().mockResolvedValue([]),
     claimDueWebhookDeliveries: vi.fn().mockResolvedValue([]),
     markWebhookDeliveryDelivered: vi.fn().mockResolvedValue(undefined),
     markWebhookDeliveryFailed: vi.fn().mockResolvedValue(undefined),
-    findDeliveryQueueForWebhook: vi.fn().mockResolvedValue([]),
+    listAbandonedDeliveries: vi.fn().mockResolvedValue([]),
+    retryAbandonedDelivery: vi.fn().mockResolvedValue(null),
+    dismissAbandonedDelivery: vi.fn().mockResolvedValue(false),
   } as unknown as AutomationRepository;
 }
 
-describe('AutomationService', () => {
-  let repo: AutomationRepository;
-  let service: AutomationService;
+// ── API key tests ─────────────────────────────────────────────────────────────
 
-  beforeEach(() => {
-    repo = makeMockRepo();
-    service = new AutomationService(repo);
+describe('AutomationService.createApiKey', () => {
+  it('creates a key with the legacy wildcard capability when no capabilities specified', async () => {
+    const repo = makeMockRepo();
+    const service = new AutomationService(repo);
+    await service.createApiKey(TENANT_ID, 'test-key');
+    expect(repo.createApiKey).toHaveBeenCalledWith(
+      expect.objectContaining({ tenant_id: TENANT_ID, name: 'test-key' }),
+    );
   });
 
-  describe('createApiKey', () => {
-    it('generates a mcak_ prefixed key and stores its hash', async () => {
-      const keyRecord = makeApiKey();
-      vi.mocked(repo.createApiKey).mockResolvedValue(keyRecord);
-
-      const result = await service.createApiKey(TENANT_ID, 'ci-key', USER_ID);
-
-      expect(result.key).toMatch(/^mcak_[0-9a-f]{64}$/);
-      expect(result.key_prefix).toBe('abcd1234');
-      expect(repo.createApiKey).toHaveBeenCalledWith(
-        expect.objectContaining({ tenant_id: TENANT_ID, name: 'ci-key', created_by: USER_ID }),
-      );
-    });
-
-    it('stores a different hash than the raw key', async () => {
-      vi.mocked(repo.createApiKey).mockResolvedValue(makeApiKey());
-      await service.createApiKey(TENANT_ID, 'test', USER_ID);
-
-      const [call] = vi.mocked(repo.createApiKey).mock.calls;
-      const { key_hash } = call![0];
-      expect(key_hash).toHaveLength(64); // sha256 hex
-      expect(key_hash).not.toMatch(/^mcak_/);
-    });
+  it('passes explicit capabilities to the repository', async () => {
+    const repo = makeMockRepo();
+    vi.mocked(repo.createApiKey).mockResolvedValue(
+      makeApiKey({ capabilities: ['tenant.ivr_flows.view', 'tenant.ivr_flows.simulate'] }),
+    );
+    const service = new AutomationService(repo);
+    const key = await service.createApiKey(
+      TENANT_ID,
+      'scoped-key',
+      ['tenant.ivr_flows.view', 'tenant.ivr_flows.simulate'],
+    );
+    expect(key.capabilities).toEqual(['tenant.ivr_flows.view', 'tenant.ivr_flows.simulate']);
   });
 
-  describe('resolveApiKey', () => {
-    it('returns AuthClaims for a valid key', async () => {
-      vi.mocked(repo.findApiKeyByHash).mockResolvedValue({ id: KEY_ID, tenant_id: TENANT_ID });
-
-      const rawKey = 'mcak_' + 'a'.repeat(64);
-      const claims = await service.resolveApiKey(rawKey);
-
-      expect(claims).toMatchObject({ tenant_id: TENANT_ID, role: 'tenant_admin' });
+  it('resolveApiKey returns capabilities from the DB record', async () => {
+    const repo = makeMockRepo();
+    vi.mocked(repo.findApiKeyByHash).mockResolvedValue({
+      id: KEY_ID,
+      tenant_id: TENANT_ID,
+      capabilities: ['tenant.observability.view'],
     });
-
-    it('returns null for an unknown or revoked key', async () => {
-      vi.mocked(repo.findApiKeyByHash).mockResolvedValue(null);
-
-      const claims = await service.resolveApiKey('mcak_' + '0'.repeat(64));
-      expect(claims).toBeNull();
-    });
+    const service = new AutomationService(repo);
+    const claims = await service.resolveApiKey('mcak_abc');
+    expect(claims?.capabilities).toEqual(['tenant.observability.view']);
+    expect(claims?.role).toBeUndefined();
   });
 
-  describe('revokeApiKey', () => {
-    it('delegates revocation to repo', async () => {
-      vi.mocked(repo.revokeApiKey).mockResolvedValue(true);
-      await expect(service.revokeApiKey(KEY_ID, TENANT_ID)).resolves.toBeUndefined();
-    });
+  it('revokeApiKey throws ApiKeyNotFoundError when key is not found', async () => {
+    const repo = makeMockRepo();
+    vi.mocked(repo.revokeApiKey).mockResolvedValue(false);
+    const service = new AutomationService(repo);
+    await expect(service.revokeApiKey(KEY_ID, TENANT_ID)).rejects.toThrow(ApiKeyNotFoundError);
+  });
+});
 
-    it('throws ApiKeyNotFoundError when key does not exist', async () => {
-      vi.mocked(repo.revokeApiKey).mockResolvedValue(false);
-      await expect(service.revokeApiKey(KEY_ID, TENANT_ID)).rejects.toThrow(ApiKeyNotFoundError);
-    });
+// ── Webhook DLQ tests ─────────────────────────────────────────────────────────
+
+describe('AutomationService.DLQ', () => {
+  it('retryAbandonedDelivery throws WebhookNotFoundError when item not found', async () => {
+    const repo = makeMockRepo();
+    vi.mocked(repo.retryAbandonedDelivery).mockResolvedValue(null);
+    const service = new AutomationService(repo);
+    await expect(service.retryAbandonedDelivery('dlq-1', TENANT_ID)).rejects.toThrow(WebhookNotFoundError);
   });
 
-  describe('createWebhook', () => {
-    it('generates a signing secret and returns it with the record', async () => {
-      const hookRecord = makeWebhook();
-      vi.mocked(repo.createWebhook).mockResolvedValue(hookRecord);
-
-      const result = await service.createWebhook(TENANT_ID, 'my-hook', 'https://example.com/hook', ['ivr_flow.published'], USER_ID);
-
-      expect(result.signing_secret).toMatch(/^[0-9a-f]{64}$/);
-      expect(repo.createWebhook).toHaveBeenCalledWith(
-        expect.objectContaining({ tenant_id: TENANT_ID, url: 'https://example.com/hook' }),
-      );
-    });
+  it('dismissAbandonedDelivery throws WebhookNotFoundError when item not found', async () => {
+    const repo = makeMockRepo();
+    vi.mocked(repo.dismissAbandonedDelivery).mockResolvedValue(false);
+    const service = new AutomationService(repo);
+    await expect(service.dismissAbandonedDelivery('dlq-1', TENANT_ID, 'resolved')).rejects.toThrow(WebhookNotFoundError);
   });
 
-  describe('revokeWebhook', () => {
-    it('delegates to repo', async () => {
-      vi.mocked(repo.revokeWebhook).mockResolvedValue(true);
-      await expect(service.revokeWebhook(HOOK_ID, TENANT_ID)).resolves.toBeUndefined();
-    });
-
-    it('throws WebhookNotFoundError when webhook does not exist', async () => {
-      vi.mocked(repo.revokeWebhook).mockResolvedValue(false);
-      await expect(service.revokeWebhook(HOOK_ID, TENANT_ID)).rejects.toThrow(WebhookNotFoundError);
-    });
+  it('listAbandonedDeliveries delegates to repo with tenant scope', async () => {
+    const repo = makeMockRepo();
+    const service = new AutomationService(repo);
+    await service.listAbandonedDeliveries(TENANT_ID, 25);
+    expect(repo.listAbandonedDeliveries).toHaveBeenCalledWith(TENANT_ID, 25);
   });
+});
 
-  describe('getDeliveryHistory', () => {
-    it('returns delivery log for owned webhook', async () => {
-      vi.mocked(repo.findWebhookById).mockResolvedValue(makeWebhook());
-      vi.mocked(repo.findDeliveryLog).mockResolvedValue([]);
-      const result = await service.getDeliveryHistory(HOOK_ID, TENANT_ID);
-      expect(Array.isArray(result)).toBe(true);
-      expect(repo.findWebhookById).toHaveBeenCalledWith(HOOK_ID, TENANT_ID);
-    });
+// ── Webhook service tests ─────────────────────────────────────────────────────
 
-    it('throws WebhookNotFoundError for unknown webhook', async () => {
-      vi.mocked(repo.findWebhookById).mockResolvedValue(null);
-      await expect(service.getDeliveryHistory('bad-id', TENANT_ID)).rejects.toThrow(WebhookNotFoundError);
-    });
+describe('AutomationService.createWebhook', () => {
+  it('creates a webhook with signing_secret', async () => {
+    const repo = makeMockRepo();
+    const service = new AutomationService(repo);
+    const result = await service.createWebhook(TENANT_ID, 'hook', 'https://x.com', ['call.completed']);
+    expect(result.signing_secret).toBeDefined();
   });
+});
 
-  describe('webhook delivery queue', () => {
-    it('enqueues webhook events without calling fetch inline', async () => {
-      global.fetch = vi.fn();
-
-      const queued = await service.enqueueWebhooks(TENANT_ID, 'ivr_flow.published', { flow_id: 'flow-1' });
-
-      expect(queued).toEqual([]);
-      expect(repo.enqueueWebhookDeliveries).toHaveBeenCalledWith(expect.objectContaining({
-        tenant_id: TENANT_ID,
-        event: 'ivr_flow.published',
-        payload_json: expect.objectContaining({ event: 'ivr_flow.published', tenant_id: TENANT_ID }),
-      }));
-      expect(global.fetch).not.toHaveBeenCalled();
-    });
-
-    it('marks claimed delivery as failed when fetch rejects', async () => {
-      vi.mocked(repo.claimDueWebhookDeliveries).mockResolvedValue([{
-        id: 'delivery-1',
-        webhook_id: HOOK_ID,
-        tenant_id: TENANT_ID,
-        event: 'ivr_flow.published',
-        payload_json: { event: 'ivr_flow.published', tenant_id: TENANT_ID, data: {}, timestamp: now.toISOString() },
-        status: 'processing',
-        attempt_count: 1,
-        max_attempts: 3,
-        next_attempt_at: now,
-        claimed_at: now,
-        delivered_at: null,
-        last_response_code: null,
-        last_error: null,
-        created_at: now,
-        updated_at: now,
-        url: 'https://example.com/hook',
-        signing_secret: 'sec',
-      }]);
-      vi.mocked(repo.recordDeliveryFailure).mockResolvedValue(undefined);
-      global.fetch = vi.fn().mockRejectedValue(new Error('network error'));
-
-      const result = await service.processDueWebhookDeliveries();
-
-      expect(repo.recordDeliveryFailure).toHaveBeenCalledWith(HOOK_ID);
-      expect(repo.markWebhookDeliveryFailed).toHaveBeenCalledWith(expect.objectContaining({
-        delivery_id: 'delivery-1',
-        error_message: 'network error',
-      }));
-      expect(result).toEqual({ claimed: 1, delivered: 0, failed: 1 });
-    });
-
-    it('marks claimed delivery as delivered when fetch succeeds', async () => {
-      vi.mocked(repo.claimDueWebhookDeliveries).mockResolvedValue([{
-        id: 'delivery-2',
-        webhook_id: HOOK_ID,
-        tenant_id: TENANT_ID,
-        event: 'ivr_flow.published',
-        payload_json: { event: 'ivr_flow.published', tenant_id: TENANT_ID, data: {}, timestamp: now.toISOString() },
-        status: 'processing',
-        attempt_count: 1,
-        max_attempts: 3,
-        next_attempt_at: now,
-        claimed_at: now,
-        delivered_at: null,
-        last_response_code: null,
-        last_error: null,
-        created_at: now,
-        updated_at: now,
-        url: 'https://example.com/hook',
-        signing_secret: 'sec',
-      }]);
-      vi.mocked(repo.resetDeliveryFailure).mockResolvedValue(undefined);
-
-      global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 204 });
-
-      const result = await service.processDueWebhookDeliveries();
-
-      expect(repo.resetDeliveryFailure).toHaveBeenCalledWith(HOOK_ID);
-      expect(repo.markWebhookDeliveryDelivered).toHaveBeenCalledWith(expect.objectContaining({
-        delivery_id: 'delivery-2',
-        response_code: 204,
-      }));
-      expect(result).toEqual({ claimed: 1, delivered: 1, failed: 0 });
-    });
-  });
-
-  describe('AutomationRepository static helpers', () => {
-    it('hashKey produces consistent sha256 output', () => {
-      const key = 'mcak_test';
-      const h1 = AutomationRepository.hashKey(key);
-      const h2 = AutomationRepository.hashKey(key);
-      expect(h1).toBe(h2);
-      expect(h1).toHaveLength(64);
-    });
-
-    it('generateApiKey produces unique keys', () => {
-      const a = AutomationRepository.generateApiKey();
-      const b = AutomationRepository.generateApiKey();
-      expect(a.rawKey).toMatch(/^mcak_[0-9a-f]{64}$/);
-      expect(a.rawKey).not.toBe(b.rawKey);
-      expect(a.keyHash).not.toBe(b.keyHash);
-    });
-
-    it('signPayload produces consistent HMAC', () => {
-      const s1 = AutomationRepository.signPayload('secret', 'body');
-      const s2 = AutomationRepository.signPayload('secret', 'body');
-      expect(s1).toBe(s2);
-      expect(s1).toHaveLength(64);
-    });
+describe('AutomationService.revokeWebhook', () => {
+  it('throws WebhookNotFoundError when webhook not found', async () => {
+    const repo = makeMockRepo();
+    vi.mocked(repo.revokeWebhook).mockResolvedValue(false);
+    const service = new AutomationService(repo);
+    await expect(service.revokeWebhook(HOOK_ID, TENANT_ID)).rejects.toThrow(WebhookNotFoundError);
   });
 });

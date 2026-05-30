@@ -176,6 +176,8 @@ registry.register('ChannelMessage', channelMessages.ChannelMessageSchema);
 registry.register('ChannelMessageRequest', channelMessages.ChannelMessageRequestSchema);
 registry.register('IngestInboundMessageBody', channelMessages.IngestInboundMessageBodySchema);
 registry.register('CreateOutboundMessageBody', channelMessages.CreateOutboundMessageBodySchema);
+registry.register('ClaimOutboundMessageBody', channelMessages.ClaimOutboundMessageBodySchema);
+registry.register('CompleteOutboundMessageBody', channelMessages.CompleteOutboundMessageBodySchema);
 
 // meeting-sessions
 registry.register('MeetingSession', meetingSessions.MeetingSessionSchema);
@@ -241,6 +243,8 @@ registry.register('WebhookDeliveryQueueListResponse', responses.WebhookDeliveryQ
 registry.register('ChannelAccountResponse', responses.ChannelAccountResponseSchema);
 registry.register('ChannelAccountListResponse', responses.ChannelAccountListResponseSchema);
 registry.register('ChannelMessageResponse', responses.ChannelMessageResponseSchema);
+registry.register('ChannelMessageRequestResponse', responses.ChannelMessageRequestResponseSchema);
+registry.register('ChannelMessageRequestListResponse', responses.ChannelMessageRequestListResponseSchema);
 registry.register('ChannelVoiceSessionResponse', responses.ChannelVoiceSessionResponseSchema);
 registry.register('TenantListResponse', responses.TenantListResponseSchema);
 registry.register('RuntimeHealthResponse', responses.RuntimeHealthResponseSchema);

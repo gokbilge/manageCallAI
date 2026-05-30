@@ -8,5 +8,10 @@ export async function resolveApiKey(rawKey: string): Promise<AuthClaims | null> 
   const keyHash = AutomationRepository.hashKey(rawKey);
   const record = await repo.findApiKeyByHash(keyHash);
   if (!record) return null;
-  return { sub: record.id, tenant_id: record.tenant_id, email: '', role: 'tenant_admin' };
+  return {
+    sub: record.id,
+    tenant_id: record.tenant_id,
+    email: '',
+    capabilities: record.capabilities,
+  };
 }

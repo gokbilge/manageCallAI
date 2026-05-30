@@ -35,6 +35,11 @@ export interface CallGroupTarget {
 export interface QueueTarget {
   strategy: 'simultaneous' | 'sequential';
   ring_timeout_seconds: number;
+  retry_delay_seconds: number;
+  max_wait_seconds: number;
+  music_on_hold: string | null;
+  overflow_target_type: 'extension' | 'call_group' | 'queue' | 'voicemail_box' | 'flow' | null;
+  overflow_target_id: string | null;
   members: CallGroupMemberEntry[];
 }
 
@@ -126,8 +131,18 @@ export class RouteLookupRepository {
   }
 
   async findQueueTarget(queueId: string): Promise<QueueTarget | null> {
-    const queueR = await this.db.query<{ strategy: string; ring_timeout_seconds: number }>(
-      `SELECT strategy, ring_timeout_seconds FROM queues WHERE id = $1 AND status = 'active'`,
+    const queueR = await this.db.query<{
+      strategy: string;
+      ring_timeout_seconds: number;
+      retry_delay_seconds: number;
+      max_wait_seconds: number;
+      music_on_hold: string | null;
+      overflow_target_type: 'extension' | 'call_group' | 'queue' | 'voicemail_box' | 'flow' | null;
+      overflow_target_id: string | null;
+    }>(
+      `SELECT strategy, ring_timeout_seconds, retry_delay_seconds, max_wait_seconds,
+              music_on_hold, overflow_target_type, overflow_target_id
+       FROM queues WHERE id = $1 AND status = 'active'`,
       [queueId],
     );
     if (!queueR.rows[0]) return null;
@@ -146,6 +161,11 @@ export class RouteLookupRepository {
     return {
       strategy: queueR.rows[0].strategy as 'simultaneous' | 'sequential',
       ring_timeout_seconds: queueR.rows[0].ring_timeout_seconds,
+      retry_delay_seconds: queueR.rows[0].retry_delay_seconds,
+      max_wait_seconds: queueR.rows[0].max_wait_seconds,
+      music_on_hold: queueR.rows[0].music_on_hold,
+      overflow_target_type: queueR.rows[0].overflow_target_type,
+      overflow_target_id: queueR.rows[0].overflow_target_id,
       members: membersR.rows,
     };
   }

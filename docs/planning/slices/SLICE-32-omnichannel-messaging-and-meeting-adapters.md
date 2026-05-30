@@ -2,9 +2,10 @@
 
 ## Goal
 
-Define integration contracts for WhatsApp, Telegram, and Google Meet so manageCallAI
-can route messages, voice-like interactions, meeting links, recordings, and AI-assisted
-responses through channel adapters without coupling the telecom core to any provider.
+Define manageCallAI-side integration contracts for external WhatsApp, Telegram,
+Google Meet, and custom adapter services. The core platform owns normalized channel
+state and provider-neutral work queues; concrete provider delivery runs outside
+the API process.
 
 ## Status
 
@@ -27,9 +28,11 @@ meeting platforms have different capabilities and compliance rules:
 ## Scope
 
 - Add provider-neutral channel account contracts for WhatsApp, Telegram, Google Meet,
-  and custom adapters.
+  and custom external adapters.
 - Add inbound message event contract normalized across channels.
 - Add outbound message request contract with channel-specific provider metadata isolated.
+- Add internal claim/result endpoints so independent adapter services can deliver
+  queued outbound messages and report sent/failed results.
 - Add voice capability model:
   - `voice_message` for asynchronous audio messages
   - `native_call` for provider-supported voice calling
@@ -39,7 +42,10 @@ meeting platforms have different capabilities and compliance rules:
   transcript artifact metadata.
 - Add AI handoff hooks so channel messages can create IVR AI turn requests or use the
   same prompt/recording analysis contracts.
-- Add webhook ingestion endpoints for provider callbacks.
+- Add runtime-token authenticated ingestion endpoints for provider callbacks.
+- Keep bundled WhatsApp, Telegram, and Google Meet implementations as placeholders
+  only; provider SDKs, token refresh, signatures, and delivery retries belong in
+  external adapter services.
 - Document provider restrictions and forbid unofficial automation paths in release docs.
 
 ## Depends On
@@ -56,9 +62,9 @@ meeting platforms have different capabilities and compliance rules:
 
 ## Unblocks
 
-- WhatsApp customer messaging workflows
-- Telegram bot support workflows
-- Google Meet escalation from call/chat workflows
+- external WhatsApp customer messaging adapter services
+- external Telegram bot adapter services
+- external Google Meet escalation adapter services
 - AI-assisted customer question handling outside phone calls
 - future channel-specific plugins
 
@@ -68,6 +74,7 @@ meeting platforms have different capabilities and compliance rules:
 - inbound and outbound message contracts are channel-neutral
 - voice/meeting capabilities are explicit and not assumed for every provider
 - provider callbacks are authenticated and tenant-scoped
+- outbound message work can be claimed and completed by an external adapter service
 - OpenAPI documents the contracts before provider implementations are added
 
 ## Out Of Scope
@@ -77,3 +84,4 @@ meeting platforms have different capabilities and compliance rules:
 - guaranteeing WhatsApp voice availability for every business account
 - joining Google Meet as a live media bot without an approved media/SIP integration
 - storing provider credentials in public API responses
+- running provider SDKs, webhooks, or background workers inside `apps/api`

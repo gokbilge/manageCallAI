@@ -413,6 +413,11 @@ export class IvrRuntimeService {
             target_type: 'queue',
             strategy: target.strategy,
             ring_timeout_seconds: target.ring_timeout_seconds,
+            retry_delay_seconds: target.retry_delay_seconds,
+            max_wait_seconds: target.max_wait_seconds,
+            music_on_hold: target.music_on_hold,
+            overflow_target_type: target.overflow_target_type,
+            overflow_target_id: target.overflow_target_id,
             members: target.members.map((member) => ({
               extension_number: member.extension_number,
               domain: member.directory_domain,

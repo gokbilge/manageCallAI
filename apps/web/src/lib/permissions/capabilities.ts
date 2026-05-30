@@ -164,6 +164,6 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
 };
 
 export function hasCapability(role: Role | string | undefined, capability: Capability): boolean {
-  const effectiveRole: Role = (role && role in ROLE_CAPABILITIES) ? (role as Role) : 'tenant_admin';
-  return (ROLE_CAPABILITIES[effectiveRole] as readonly string[]).includes(capability);
+  if (!role || !(role in ROLE_CAPABILITIES)) return false;
+  return (ROLE_CAPABILITIES[role as Role] as readonly string[]).includes(capability);
 }

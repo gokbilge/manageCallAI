@@ -91,9 +91,19 @@ export class OutboundCallRepository {
     return r.rows[0] ?? null;
   }
 
-  async resolveRouteForNumber(tenantId: string, dialNumber: string): Promise<{ route_id: string; sip_trunk_id: string } | null> {
-    const r = await this.db.query<{ route_id: string; sip_trunk_id: string }>(
-      `SELECT id AS route_id, sip_trunk_id
+  async resolveRouteForNumber(tenantId: string, dialNumber: string): Promise<{
+    route_id: string;
+    sip_trunk_id: string;
+    allowed_destination_prefixes_json: string[] | null;
+    blocked_destination_prefixes_json: string[] | null;
+  } | null> {
+    const r = await this.db.query<{
+      route_id: string;
+      sip_trunk_id: string;
+      allowed_destination_prefixes_json: string[] | null;
+      blocked_destination_prefixes_json: string[] | null;
+    }>(
+      `SELECT id AS route_id, sip_trunk_id, allowed_destination_prefixes_json, blocked_destination_prefixes_json
        FROM outbound_routes
        WHERE tenant_id = $1
          AND status = 'active'
@@ -105,9 +115,20 @@ export class OutboundCallRepository {
     return r.rows[0] ?? null;
   }
 
-  async findActiveRouteById(tenantId: string, routeId: string): Promise<{ id: string; sip_trunk_id: string } | null> {
-    const r = await this.db.query<{ id: string; sip_trunk_id: string }>(
-      `SELECT id, sip_trunk_id FROM outbound_routes WHERE id = $1 AND tenant_id = $2 AND status = 'active'`,
+  async findActiveRouteById(tenantId: string, routeId: string): Promise<{
+    id: string;
+    sip_trunk_id: string;
+    allowed_destination_prefixes_json: string[] | null;
+    blocked_destination_prefixes_json: string[] | null;
+  } | null> {
+    const r = await this.db.query<{
+      id: string;
+      sip_trunk_id: string;
+      allowed_destination_prefixes_json: string[] | null;
+      blocked_destination_prefixes_json: string[] | null;
+    }>(
+      `SELECT id, sip_trunk_id, allowed_destination_prefixes_json, blocked_destination_prefixes_json
+       FROM outbound_routes WHERE id = $1 AND tenant_id = $2 AND status = 'active'`,
       [routeId, tenantId],
     );
     return r.rows[0] ?? null;

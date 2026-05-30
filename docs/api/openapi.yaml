@@ -1743,7 +1743,7 @@ paths:
         - ChannelAdapters
       summary: Queue outbound channel message
       description: |
-        Sends or queues a normalized message through a configured channel adapter.
+        Queues a normalized outbound message for an independent channel adapter service.
         WhatsApp template rules, Telegram bot constraints, and provider-specific
         restrictions are adapter concerns represented in provider_metadata.
       requestBody:
@@ -1753,12 +1753,73 @@ paths:
             schema:
               $ref: "#/components/schemas/CreateOutboundMessageBody"
       responses:
-        "202":
-          description: Outbound channel message accepted
+        "201":
+          description: Outbound channel message request queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ChannelMessageResponse"
+                $ref: "#/components/schemas/ChannelMessageRequestResponse"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /channels/messages/outbound/internal/claim:
+    post:
+      tags:
+        - ChannelAdapters
+      summary: Claim queued outbound channel message work
+      description: |
+        Internal endpoint for independent provider adapter services. The API remains
+        the source of truth for queued work; adapters claim one queued request at a
+        time and deliver it through their provider-specific service.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimOutboundMessageBody"
+      responses:
+        "200":
+          description: Claimed request, or null when no work is available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelMessageRequestResponse"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /channels/messages/outbound/{requestId}/internal/result:
+    post:
+      tags:
+        - ChannelAdapters
+      summary: Submit outbound channel delivery result
+      description: |
+        Internal endpoint for independent provider adapter services to mark claimed
+        outbound work as sent or failed. Provider payloads stay bounded in
+        provider_metadata and are not canonical business state.
+      security:
+        - runtimeTokenHeader: []
+        - runtimeTokenBearer: []
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteOutboundMessageBody"
+      responses:
+        "200":
+          description: Delivery result accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelMessageRequestResponse"
         default:
           $ref: "#/components/responses/ErrorResponse"
   /channels/messages/inbound/internal:
@@ -2892,6 +2953,29 @@ components:
             - sequential
         ring_timeout_seconds:
           type: integer
+        retry_delay_seconds:
+          type: integer
+        max_wait_seconds:
+          type: integer
+        music_on_hold:
+          type:
+            - string
+            - "null"
+        overflow_target_type:
+          type:
+            - string
+            - "null"
+          enum:
+            - extension
+            - call_group
+            - queue
+            - voicemail_box
+            - flow
+        overflow_target_id:
+          type:
+            - string
+            - "null"
+          format: uuid
         status:
           type: string
           enum: &a12
@@ -2910,6 +2994,11 @@ components:
         - description
         - strategy
         - ring_timeout_seconds
+        - retry_delay_seconds
+        - max_wait_seconds
+        - music_on_hold
+        - overflow_target_type
+        - overflow_target_id
         - status
         - created_at
         - updated_at
@@ -2937,6 +3026,29 @@ components:
           enum: *a11
         ring_timeout_seconds:
           type: integer
+        retry_delay_seconds:
+          type: integer
+        max_wait_seconds:
+          type: integer
+        music_on_hold:
+          type:
+            - string
+            - "null"
+        overflow_target_type:
+          type:
+            - string
+            - "null"
+          enum:
+            - extension
+            - call_group
+            - queue
+            - voicemail_box
+            - flow
+        overflow_target_id:
+          type:
+            - string
+            - "null"
+          format: uuid
       required:
         - name
     UpdateQueueBody:
@@ -2954,6 +3066,29 @@ components:
           enum: *a11
         ring_timeout_seconds:
           type: integer
+        retry_delay_seconds:
+          type: integer
+        max_wait_seconds:
+          type: integer
+        music_on_hold:
+          type:
+            - string
+            - "null"
+        overflow_target_type:
+          type:
+            - string
+            - "null"
+          enum:
+            - extension
+            - call_group
+            - queue
+            - voicemail_box
+            - flow
+        overflow_target_id:
+          type:
+            - string
+            - "null"
+          format: uuid
         status:
           type: string
           enum: *a12
@@ -3917,6 +4052,10 @@ components:
           type: string
         key_prefix:
           type: string
+        capabilities:
+          type: array
+          items:
+            type: string
         created_by:
           type:
             - string
@@ -3935,6 +4074,7 @@ components:
         - tenant_id
         - name
         - key_prefix
+        - capabilities
         - created_by
         - created_at
         - revoked_at
@@ -4125,6 +4265,10 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        capabilities:
+          type: array
+          items:
+            type: string
       required:
         - name
     CreateAutomationWebhookBody:
@@ -4366,6 +4510,18 @@ components:
             - "null"
           items:
             type: string
+        allowed_destination_prefixes_json:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+        blocked_destination_prefixes_json:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
         created_at:
           type: string
           format: date-time
@@ -4383,6 +4539,8 @@ components:
         - fallback_sip_trunk_id
         - max_calls_per_minute
         - allowed_caller_id_numbers_json
+        - allowed_destination_prefixes_json
+        - blocked_destination_prefixes_json
         - created_at
         - updated_at
     ResolvedOutboundRoute:
@@ -4403,12 +4561,26 @@ components:
           type: string
         priority:
           type: integer
+        allowed_destination_prefixes_json:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+        blocked_destination_prefixes_json:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
       required:
         - route_id
         - sip_trunk_id
         - fallback_sip_trunk_id
         - match_prefix
         - priority
+        - allowed_destination_prefixes_json
+        - blocked_destination_prefixes_json
     CreateOutboundRouteBody:
       type: object
       properties:
@@ -4433,6 +4605,18 @@ components:
             - integer
             - "null"
         allowed_caller_id_numbers_json:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+        allowed_destination_prefixes_json:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+        blocked_destination_prefixes_json:
           type:
             - array
             - "null"
@@ -4466,6 +4650,18 @@ components:
             - integer
             - "null"
         allowed_caller_id_numbers_json:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+        allowed_destination_prefixes_json:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+        blocked_destination_prefixes_json:
           type:
             - array
             - "null"
@@ -5369,9 +5565,28 @@ components:
           type: string
           enum:
             - queued
+            - processing
             - sent
             - failed
         failure_reason:
+          type:
+            - string
+            - "null"
+        processor_id:
+          type:
+            - string
+            - "null"
+        claimed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        external_id:
           type:
             - string
             - "null"
@@ -5394,12 +5609,19 @@ components:
         - media_reference
         - status
         - failure_reason
+        - processor_id
+        - claimed_at
+        - completed_at
+        - external_id
         - provider_metadata
         - created_at
         - updated_at
     IngestInboundMessageBody:
       type: object
       properties:
+        tenant_id:
+          type: string
+          format: uuid
         channel_account_id:
           type: string
           format: uuid
@@ -5423,6 +5645,7 @@ components:
           type: string
           format: date-time
       required:
+        - tenant_id
         - channel_account_id
         - message_type
     CreateOutboundMessageBody:
@@ -5448,6 +5671,39 @@ components:
         - channel_account_id
         - recipient_id
         - message_type
+    ClaimOutboundMessageBody:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        channel_account_id:
+          type: string
+          format: uuid
+        processor_id:
+          type: string
+          maxLength: 255
+      required:
+        - tenant_id
+    CompleteOutboundMessageBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - sent
+            - failed
+        external_id:
+          type: string
+          maxLength: 512
+        failure_reason:
+          type: string
+          maxLength: 1000
+        provider_metadata:
+          type: object
+          additionalProperties: {}
+      required:
+        - status
     MeetingSession:
       type: object
       properties:
@@ -6319,6 +6575,26 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/ChannelMessage"
+      required:
+        - data
+    ChannelMessageRequestResponse:
+      type: object
+      properties:
+        data:
+          allOf:
+            - $ref: "#/components/schemas/ChannelMessageRequest"
+            - type:
+                - object
+                - "null"
+      required:
+        - data
+    ChannelMessageRequestListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelMessageRequest"
       required:
         - data
     ChannelVoiceSessionResponse:

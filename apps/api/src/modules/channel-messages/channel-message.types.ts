@@ -1,6 +1,7 @@
 export type MessageDirection = 'inbound' | 'outbound';
 export type MessageType = 'text' | 'voice_message' | 'meeting' | 'image' | 'document';
 export type VoiceCapability = 'voice_message' | 'native_call' | 'meeting' | 'sip_bridge';
+export type MessageRequestStatus = 'queued' | 'processing' | 'sent' | 'failed';
 
 export interface ChannelMessage {
   id: string;
@@ -26,8 +27,12 @@ export interface ChannelMessageRequest {
   message_type: MessageType;
   body: string | null;
   media_reference: string | null;
-  status: 'queued' | 'sent' | 'failed';
+  status: MessageRequestStatus;
   failure_reason: string | null;
+  processor_id: string | null;
+  claimed_at: Date | null;
+  completed_at: Date | null;
+  external_id: string | null;
   provider_metadata: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
@@ -44,6 +49,19 @@ export interface IngestInboundMessageInput {
   media_reference?: string;
   provider_metadata?: Record<string, unknown>;
   received_at?: string;
+}
+
+export interface ClaimOutboundMessageInput {
+  tenant_id: string;
+  channel_account_id?: string;
+  processor_id?: string;
+}
+
+export interface CompleteOutboundMessageInput {
+  status: Extract<MessageRequestStatus, 'sent' | 'failed'>;
+  external_id?: string;
+  failure_reason?: string;
+  provider_metadata?: Record<string, unknown>;
 }
 
 export interface CreateOutboundMessageInput {

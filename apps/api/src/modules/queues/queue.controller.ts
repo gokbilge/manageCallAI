@@ -11,6 +11,7 @@ import {
   QueueMemberNotFoundError,
   QueueNotFoundError,
   QueueService,
+  QueueValidationError,
 } from './queue.service.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 import {
@@ -26,7 +27,7 @@ function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof QueueNotFoundError || err instanceof QueueMemberNotFoundError) {
     return sendNotFound(reply, err.message);
   }
-  if (err instanceof QueueMemberInvalidError) {
+  if (err instanceof QueueMemberInvalidError || err instanceof QueueValidationError) {
     return sendInvalidArgument(reply, err.message);
   }
   throw err;
@@ -52,8 +53,12 @@ export const queueController: FastifyPluginAsyncZod = async (app) => {
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
-      const queue = await service.create({ ...req.body, tenant_id: user.tenant_id });
-      return reply.code(201).send({ data: queue });
+      try {
+        const queue = await service.create({ ...req.body, tenant_id: user.tenant_id });
+        return reply.code(201).send({ data: queue });
+      } catch (err) {
+        return replyError(err, reply);
+      }
     },
   );
 

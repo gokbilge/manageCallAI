@@ -26,7 +26,7 @@ import { CallEventSchema } from './call-events.js';
 import { RecordingSchema, RecordingAnalysisRequestSchema } from './recordings.js';
 import { WebhookDeliveryQueueItemSchema } from './automation.js';
 import { ChannelAccountSchema } from './channel-accounts.js';
-import { ChannelMessageSchema } from './channel-messages.js';
+import { ChannelMessageSchema, ChannelMessageRequestSchema } from './channel-messages.js';
 import { MeetingSessionSchema } from './meeting-sessions.js';
 import { TenantSummarySchema, RuntimeHealthSummarySchema, PlatformRuntimeSummarySchema } from './platform.js';
 
@@ -143,6 +143,10 @@ export type ChannelAccountListResponse = z.infer<typeof ChannelAccountListRespon
 // ── Channel Messages ──────────────────────────────────────────────────────────
 export const ChannelMessageResponseSchema = z.object({ data: ChannelMessageSchema }).openapi('ChannelMessageResponse');
 export type ChannelMessageResponse = z.infer<typeof ChannelMessageResponseSchema>;
+export const ChannelMessageRequestResponseSchema = z.object({ data: ChannelMessageRequestSchema.nullable() }).openapi('ChannelMessageRequestResponse');
+export type ChannelMessageRequestResponse = z.infer<typeof ChannelMessageRequestResponseSchema>;
+export const ChannelMessageRequestListResponseSchema = z.object({ data: z.array(ChannelMessageRequestSchema) }).openapi('ChannelMessageRequestListResponse');
+export type ChannelMessageRequestListResponse = z.infer<typeof ChannelMessageRequestListResponseSchema>;
 
 // ── Meeting Sessions (Channel Voice) ─────────────────────────────────────────
 export const ChannelVoiceSessionResponseSchema = z.object({ data: MeetingSessionSchema }).openapi('ChannelVoiceSessionResponse');

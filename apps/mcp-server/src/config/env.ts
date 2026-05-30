@@ -16,4 +16,7 @@ function required(key: string): string {
 
 export const config = {
   apiBaseUrl: required('API_BASE_URL').replace(/\/$/, ''),
+  // Prefer MANAGECALL_API_KEY (API-key auth). Legacy MANAGECALL_ACCESS_TOKEN
+  // (JWT passed as a tool argument) is deprecated — see SLICE-38/41.
+  apiKey: process.env['MANAGECALL_API_KEY'] ?? '',
 } as const;

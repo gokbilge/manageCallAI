@@ -11,14 +11,24 @@ export class OutboundCallNotFoundError extends Error {
 }
 
 const DIAL_NUMBER_PATTERN = /^\+?[0-9]{3,20}$/;
+const EMERGENCY_NUMBERS = new Set(['000', '110', '112', '118', '119', '911', '999']);
+const PREMIUM_RATE_PREFIXES = ['+1900', '1900', '+1976', '1976'];
+
+type RouteSafetyPolicy = {
+  allowed_destination_prefixes_json: string[] | null;
+  blocked_destination_prefixes_json: string[] | null;
+};
 
 export class OutboundCallService {
   constructor(private readonly repo: OutboundCallRepository) {}
 
   async create(input: CreateOutboundCallInput): Promise<OutboundCallRequest> {
-    if (!DIAL_NUMBER_PATTERN.test(input.dial_number.trim())) {
+    const dialNumber = input.dial_number.trim();
+    if (!DIAL_NUMBER_PATTERN.test(dialNumber)) {
       throw new OutboundCallValidationError('dial_number must be a valid E.164 number or digit string (3–20 digits)');
     }
+
+    assertGloballyAllowedDestination(dialNumber);
 
     const extension = await this.repo.findActiveExtension(input.tenant_id, input.extension_id);
     if (!extension) {
@@ -35,12 +45,18 @@ export class OutboundCallService {
       }
       routeId = route.id;
       trunkId = route.sip_trunk_id;
+      assertRouteAllowedDestination(dialNumber, route);
     } else {
-      const resolved = await this.repo.resolveRouteForNumber(input.tenant_id, input.dial_number.trim());
+      const resolved = await this.repo.resolveRouteForNumber(input.tenant_id, dialNumber);
       if (resolved) {
         routeId = resolved.route_id;
         trunkId = resolved.sip_trunk_id;
+        assertRouteAllowedDestination(dialNumber, resolved);
       }
+    }
+
+    if (!routeId || !trunkId) {
+      throw new OutboundCallValidationError('No active outbound route matches the dial number');
     }
 
     if (trunkId) {
@@ -53,7 +69,7 @@ export class OutboundCallService {
     const request = await this.repo.create({
       tenant_id: input.tenant_id,
       extension_id: input.extension_id,
-      dial_number: input.dial_number.trim(),
+      dial_number: dialNumber,
       route_id: routeId,
       sip_trunk_id: trunkId,
     });
@@ -112,4 +128,30 @@ export class OutboundCallService {
 
     return r;
   }
+}
+
+function assertGloballyAllowedDestination(dialNumber: string): void {
+  const normalized = dialNumber.replace(/^\+/, '');
+  if (EMERGENCY_NUMBERS.has(normalized)) {
+    throw new OutboundCallValidationError('Emergency destinations are blocked by outbound safety policy');
+  }
+  if (matchesAnyPrefix(dialNumber, PREMIUM_RATE_PREFIXES)) {
+    throw new OutboundCallValidationError('Premium-rate destinations are blocked by outbound safety policy');
+  }
+}
+
+function assertRouteAllowedDestination(dialNumber: string, route: RouteSafetyPolicy): void {
+  const blocked = route.blocked_destination_prefixes_json ?? [];
+  if (matchesAnyPrefix(dialNumber, blocked)) {
+    throw new OutboundCallValidationError('Dial number is blocked by the outbound route destination policy');
+  }
+
+  const allowed = route.allowed_destination_prefixes_json ?? [];
+  if (allowed.length > 0 && !matchesAnyPrefix(dialNumber, allowed)) {
+    throw new OutboundCallValidationError('Dial number is outside the outbound route destination allowlist');
+  }
+}
+
+function matchesAnyPrefix(dialNumber: string, prefixes: readonly string[]): boolean {
+  return prefixes.some((prefix) => dialNumber.startsWith(prefix));
 }

@@ -1,6 +1,7 @@
 export type SipTrunkStatus = 'active' | 'inactive';
 export type SipTrunkDirection = 'inbound' | 'outbound' | 'bidirectional';
 export type SipTrunkTransport = 'udp' | 'tcp' | 'tls';
+export type SipTrunkDtmfMode = 'rfc2833' | 'info' | 'inband' | 'auto';
 
 export interface SipTrunk {
   id: string;
@@ -14,6 +15,8 @@ export interface SipTrunk {
   port: number;
   transport: SipTrunkTransport;
   auth_username: string;
+  dtmf_mode: SipTrunkDtmfMode;
+  codec_prefs: string[] | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -45,6 +48,8 @@ export interface CreateSipTrunkRepoInput {
   auth_username: string;
   auth_password_ciphertext: string;
   auth_password_key_id: string;
+  dtmf_mode?: SipTrunkDtmfMode;
+  codec_prefs?: string[] | null;
 }
 
 export interface UpdateSipTrunkInput {
@@ -58,6 +63,8 @@ export interface UpdateSipTrunkInput {
   transport?: SipTrunkTransport;
   auth_username?: string;
   auth_password?: string;
+  dtmf_mode?: SipTrunkDtmfMode;
+  codec_prefs?: string[] | null;
 }
 
 export interface UpdateSipTrunkRepoInput {
@@ -72,4 +79,6 @@ export interface UpdateSipTrunkRepoInput {
   auth_username?: string;
   auth_password_ciphertext?: string;
   auth_password_key_id?: string;
+  dtmf_mode?: SipTrunkDtmfMode;
+  codec_prefs?: string[] | null;
 }

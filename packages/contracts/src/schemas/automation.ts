@@ -1,18 +1,56 @@
 import { z } from '../registry.js';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// ── Business event catalog ────────────────────────────────────────────────────
+// Every event that can be emitted to webhook subscribers is defined here.
+// Adding a new event requires: (1) add to WEBHOOK_EVENTS, (2) add a
+// WEBHOOK_EVENT_DESCRIPTIONS entry, (3) fire it in the relevant service.
 export const WEBHOOK_EVENTS = [
+  // IVR flow lifecycle
   'ivr_flow.published',
   'ivr_flow.publish_pending',
   'ivr_flow.rollback_completed',
   'ivr_flow.validation_failed',
+  // Approval workflow
   'approval.requested',
   'approval.approved',
   'approval.rejected',
+  // Call events
   'call.completed',
+  'call.started',
+  // Voicemail
   'voicemail.recording_available',
+  // Outbound calls
   'outbound_call.dispatched',
+  'outbound_call.completed',
+  'outbound_call.failed',
+  // Extension registration
+  'extension.registered',
+  'extension.expired',
+  // Recordings
+  'recording.analysis_completed',
+  'recording.analysis_failed',
 ] as const;
+
+/** Human-readable descriptions for every business event. */
+export const WEBHOOK_EVENT_DESCRIPTIONS: Record<(typeof WEBHOOK_EVENTS)[number], string> = {
+  'ivr_flow.published': 'An IVR flow version was published and is now live.',
+  'ivr_flow.publish_pending': 'An IVR flow publish request is awaiting human approval.',
+  'ivr_flow.rollback_completed': 'An IVR flow was rolled back to the previous published version.',
+  'ivr_flow.validation_failed': 'An IVR flow draft failed structural validation.',
+  'approval.requested': 'A tenant action requires human approval.',
+  'approval.approved': 'An approval request was approved.',
+  'approval.rejected': 'An approval request was rejected.',
+  'call.completed': 'An inbound or outbound call ended.',
+  'call.started': 'An inbound or outbound call began.',
+  'voicemail.recording_available': 'A voicemail recording was deposited and is available for retrieval.',
+  'outbound_call.dispatched': 'An outbound call request was dispatched to FreeSWITCH.',
+  'outbound_call.completed': 'A dispatched outbound call completed successfully.',
+  'outbound_call.failed': 'A dispatched outbound call failed.',
+  'extension.registered': 'A SIP extension successfully registered with FreeSWITCH.',
+  'extension.expired': 'A SIP extension registration expired.',
+  'recording.analysis_completed': 'A recording analysis job (transcription, summary) completed.',
+  'recording.analysis_failed': 'A recording analysis job failed.',
+};
 
 export const WebhookEventSchema = z.enum(WEBHOOK_EVENTS);
 export type WebhookEvent = z.infer<typeof WebhookEventSchema>;
@@ -33,6 +71,7 @@ export const ApiKeySchema = z.object({
   tenant_id: z.string().uuid(),
   name: z.string(),
   key_prefix: z.string(),
+  capabilities: z.array(z.string()),
   created_by: z.string().uuid().nullable(),
   created_at: z.string().datetime(),
   revoked_at: z.string().datetime().nullable(),
@@ -98,6 +137,7 @@ export type WebhookDeliveryQueueItem = z.infer<typeof WebhookDeliveryQueueItemSc
 // ── Request schemas ───────────────────────────────────────────────────────────
 export const CreateApiKeyBodySchema = z.object({
   name: z.string().min(1).max(255),
+  capabilities: z.array(z.string()).optional(),
 }).openapi('CreateApiKeyBody');
 export type CreateApiKeyBody = z.infer<typeof CreateApiKeyBodySchema>;
 

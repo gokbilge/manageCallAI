@@ -3309,7 +3309,7 @@ export interface paths {
         put?: never;
         /**
          * Queue outbound channel message
-         * @description Sends or queues a normalized message through a configured channel adapter.
+         * @description Queues a normalized outbound message for an independent channel adapter service.
          *     WhatsApp template rules, Telegram bot constraints, and provider-specific
          *     restrictions are adapter concerns represented in provider_metadata.
          */
@@ -3326,13 +3326,107 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Outbound channel message accepted */
-                202: {
+                /** @description Outbound channel message request queued */
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ChannelMessageResponse"];
+                        "application/json": components["schemas"]["ChannelMessageRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/messages/outbound/internal/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim queued outbound channel message work
+         * @description Internal endpoint for independent provider adapter services. The API remains
+         *     the source of truth for queued work; adapters claim one queued request at a
+         *     time and deliver it through their provider-specific service.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ClaimOutboundMessageBody"];
+                };
+            };
+            responses: {
+                /** @description Claimed request, or null when no work is available */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChannelMessageRequestResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/messages/outbound/{requestId}/internal/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit outbound channel delivery result
+         * @description Internal endpoint for independent provider adapter services to mark claimed
+         *     outbound work as sent or failed. Provider payloads stay bounded in
+         *     provider_metadata and are not canonical business state.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    requestId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CompleteOutboundMessageBody"];
+                };
+            };
+            responses: {
+                /** @description Delivery result accepted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChannelMessageRequestResponse"];
                     };
                 };
                 default: components["responses"]["ErrorResponse"];
@@ -4084,6 +4178,13 @@ export interface components {
             /** @enum {string} */
             strategy: "simultaneous" | "sequential";
             ring_timeout_seconds: number;
+            retry_delay_seconds: number;
+            max_wait_seconds: number;
+            music_on_hold: string | null;
+            /** @enum {string|null} */
+            overflow_target_type: "extension" | "call_group" | "queue" | "voicemail_box" | "flow" | null;
+            /** Format: uuid */
+            overflow_target_id: string | null;
             /** @enum {string} */
             status: "active" | "inactive";
             /** Format: date-time */
@@ -4100,6 +4201,13 @@ export interface components {
             /** @enum {string} */
             strategy?: "simultaneous" | "sequential";
             ring_timeout_seconds?: number;
+            retry_delay_seconds?: number;
+            max_wait_seconds?: number;
+            music_on_hold?: string | null;
+            /** @enum {string|null} */
+            overflow_target_type?: "extension" | "call_group" | "queue" | "voicemail_box" | "flow" | null;
+            /** Format: uuid */
+            overflow_target_id?: string | null;
         };
         UpdateQueueBody: {
             name?: string;
@@ -4107,6 +4215,13 @@ export interface components {
             /** @enum {string} */
             strategy?: "simultaneous" | "sequential";
             ring_timeout_seconds?: number;
+            retry_delay_seconds?: number;
+            max_wait_seconds?: number;
+            music_on_hold?: string | null;
+            /** @enum {string|null} */
+            overflow_target_type?: "extension" | "call_group" | "queue" | "voicemail_box" | "flow" | null;
+            /** Format: uuid */
+            overflow_target_id?: string | null;
             /** @enum {string} */
             status?: "active" | "inactive";
         };
@@ -4486,6 +4601,7 @@ export interface components {
             tenant_id: string;
             name: string;
             key_prefix: string;
+            capabilities: string[];
             /** Format: uuid */
             created_by: string | null;
             /** Format: date-time */
@@ -4563,6 +4679,7 @@ export interface components {
         };
         CreateApiKeyBody: {
             name: string;
+            capabilities?: string[];
         };
         CreateAutomationWebhookBody: {
             name: string;
@@ -4653,6 +4770,8 @@ export interface components {
             fallback_sip_trunk_id: string | null;
             max_calls_per_minute: number | null;
             allowed_caller_id_numbers_json: string[] | null;
+            allowed_destination_prefixes_json: string[] | null;
+            blocked_destination_prefixes_json: string[] | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -4667,6 +4786,8 @@ export interface components {
             fallback_sip_trunk_id: string | null;
             match_prefix: string;
             priority: number;
+            allowed_destination_prefixes_json: string[] | null;
+            blocked_destination_prefixes_json: string[] | null;
         };
         CreateOutboundRouteBody: {
             name: string;
@@ -4678,6 +4799,8 @@ export interface components {
             fallback_sip_trunk_id?: string | null;
             max_calls_per_minute?: number | null;
             allowed_caller_id_numbers_json?: string[] | null;
+            allowed_destination_prefixes_json?: string[] | null;
+            blocked_destination_prefixes_json?: string[] | null;
         };
         UpdateOutboundRouteBody: {
             name?: string;
@@ -4689,6 +4812,8 @@ export interface components {
             fallback_sip_trunk_id?: string | null;
             max_calls_per_minute?: number | null;
             allowed_caller_id_numbers_json?: string[] | null;
+            allowed_destination_prefixes_json?: string[] | null;
+            blocked_destination_prefixes_json?: string[] | null;
             /** @enum {string} */
             status?: "active" | "inactive";
         };
@@ -5029,8 +5154,14 @@ export interface components {
             body: string | null;
             media_reference: string | null;
             /** @enum {string} */
-            status: "queued" | "sent" | "failed";
+            status: "queued" | "processing" | "sent" | "failed";
             failure_reason: string | null;
+            processor_id: string | null;
+            /** Format: date-time */
+            claimed_at: string | null;
+            /** Format: date-time */
+            completed_at: string | null;
+            external_id: string | null;
             provider_metadata: {
                 [key: string]: unknown;
             };
@@ -5040,6 +5171,8 @@ export interface components {
             updated_at: string;
         };
         IngestInboundMessageBody: {
+            /** Format: uuid */
+            tenant_id: string;
             /** Format: uuid */
             channel_account_id: string;
             /** @enum {string} */
@@ -5063,6 +5196,22 @@ export interface components {
             message_type: "text" | "voice_message" | "meeting" | "image" | "document";
             body?: string;
             media_reference?: string;
+            provider_metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        ClaimOutboundMessageBody: {
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            channel_account_id?: string;
+            processor_id?: string;
+        };
+        CompleteOutboundMessageBody: {
+            /** @enum {string} */
+            status: "sent" | "failed";
+            external_id?: string;
+            failure_reason?: string;
             provider_metadata?: {
                 [key: string]: unknown;
             };
@@ -5406,6 +5555,12 @@ export interface components {
         };
         ChannelMessageResponse: {
             data: components["schemas"]["ChannelMessage"];
+        };
+        ChannelMessageRequestResponse: {
+            data: components["schemas"]["ChannelMessageRequest"] & (Record<string, never> | null);
+        };
+        ChannelMessageRequestListResponse: {
+            data: components["schemas"]["ChannelMessageRequest"][];
         };
         ChannelVoiceSessionResponse: {
             data: components["schemas"]["MeetingSession"];

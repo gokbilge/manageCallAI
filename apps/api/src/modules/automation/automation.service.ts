@@ -21,13 +21,19 @@ export class WebhookNotFoundError extends Error {
 export class AutomationService {
   constructor(private readonly repo: AutomationRepository) {}
 
-  async createApiKey(tenantId: string, name: string, createdBy?: string): Promise<ApiKeyCreated> {
+  async createApiKey(
+    tenantId: string,
+    name: string,
+    capabilities?: string[],
+    createdBy?: string,
+  ): Promise<ApiKeyCreated> {
     const { rawKey, keyHash, keyPrefix } = AutomationRepository.generateApiKey();
     const record = await this.repo.createApiKey({
       tenant_id: tenantId,
       name,
       key_prefix: keyPrefix,
       key_hash: keyHash,
+      capabilities,
       created_by: createdBy,
     });
     return { ...record, key: rawKey };
@@ -46,7 +52,12 @@ export class AutomationService {
     const keyHash = AutomationRepository.hashKey(rawKey);
     const record = await this.repo.findApiKeyByHash(keyHash);
     if (!record) return null;
-    return { sub: record.id, tenant_id: record.tenant_id, email: '', role: 'tenant_admin' };
+    return {
+      sub: record.id,
+      tenant_id: record.tenant_id,
+      email: '',
+      capabilities: record.capabilities,
+    };
   }
 
   async createWebhook(
@@ -102,6 +113,21 @@ export class AutomationService {
     }
   }
 
+  listAbandonedDeliveries(tenantId: string, limit?: number): Promise<WebhookDeliveryQueueItem[]> {
+    return this.repo.listAbandonedDeliveries(tenantId, limit);
+  }
+
+  async retryAbandonedDelivery(id: string, tenantId: string): Promise<WebhookDeliveryQueueItem> {
+    const item = await this.repo.retryAbandonedDelivery(id, tenantId);
+    if (!item) throw new WebhookNotFoundError();
+    return item;
+  }
+
+  async dismissAbandonedDelivery(id: string, tenantId: string, reason?: string): Promise<void> {
+    const ok = await this.repo.dismissAbandonedDelivery(id, tenantId, reason);
+    if (!ok) throw new WebhookNotFoundError();
+  }
+
   async processDueWebhookDeliveries(limit = 25): Promise<{ claimed: number; delivered: number; failed: number }> {
     const deliveries = await this.repo.claimDueWebhookDeliveries(limit);
     let delivered = 0;
@@ -134,12 +160,14 @@ export class AutomationService {
     let errorMessage: string | null = null;
 
     try {
+      const eventId = (delivery as Record<string, unknown>)['event_id'] as string | undefined;
       const res = await fetch(delivery.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-ManageCall-Signature': `sha256=${sig}`,
           'X-ManageCall-Event': delivery.event,
+          ...(eventId ? { 'Webhook-Event-Id': eventId } : {}),
         },
         body: payload,
         signal: AbortSignal.timeout(10_000),

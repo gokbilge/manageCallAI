@@ -23,8 +23,10 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-managecallai}:${POSTGRES_PASSWORD:-managecallai}@postgres:5432/${POSTGRES_DB:-managecallai}
       API_PORT: ${API_PORT:-3000}
+      APP_ENV: ${APP_ENV:-development}
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string-in-production}
       RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN:-change-me-runtime-token}
+      ALLOW_RUNTIME_TOKEN_FALLBACK: ${ALLOW_RUNTIME_TOKEN_FALLBACK:-true}
       SIP_SECRET_MASTER_KEY: ${SIP_SECRET_MASTER_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       SIP_SECRET_KEY_ID: ${SIP_SECRET_KEY_ID:-v1}
     ports:
@@ -48,6 +50,7 @@ services:
     environment:
       MANAGECALLAI_DIRECTORY_URL: ${MANAGECALLAI_DIRECTORY_URL:-http://api:3000/api/v1/freeswitch/directory}
       MANAGECALLAI_API_BASE: ${MANAGECALLAI_API_BASE:-http://api:3000/api/v1}
+      APP_ENV: ${APP_ENV:-development}
       RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN:-change-me-runtime-token}
       FREESWITCH_ESL_PASSWORD: ${FREESWITCH_ESL_PASSWORD:-ClueCon}
     ports:
@@ -70,6 +73,7 @@ services:
     environment:
       FREESWITCH_ESL_HOST: freeswitch
       FREESWITCH_ESL_PORT: 8021
+      APP_ENV: ${APP_ENV:-development}
       FREESWITCH_ESL_PASSWORD: ${FREESWITCH_ESL_PASSWORD:-ClueCon}
       API_BASE_URL: http://api:3000
       RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN:-change-me-runtime-token}

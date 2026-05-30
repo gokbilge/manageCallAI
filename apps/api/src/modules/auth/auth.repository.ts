@@ -50,8 +50,8 @@ export class AuthRepository {
       const tenantId = tenantResult.rows[0]!.id;
 
       const userResult = await client.query<CreatedUser>(
-        `INSERT INTO users (tenant_id, email, display_name, password_hash)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO users (tenant_id, email, display_name, password_hash, role)
+         VALUES ($1, $2, $3, $4, 'tenant_admin')
          RETURNING id, tenant_id, email`,
         [tenantId, input.email, input.display_name, input.password_hash],
       );

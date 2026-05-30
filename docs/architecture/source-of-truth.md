@@ -183,6 +183,7 @@ Responsibilities:
 - Validation and simulation review
 - Publish and rollback actions
 - Event and call timeline inspection
+- Live operations cockpit for active calls, queues, runtime health, and adapter backlog
 
 ### 8.2 Control Plane API
 
@@ -253,7 +254,7 @@ media, messaging, meeting, and channel systems.
 
 Implementation direction:
 
-- Adapter workers or plugins outside the domain core
+- Adapter workers or plugins outside the domain core and outside the API process
 - Internal claim/result endpoints for asynchronous processing
 - Capability flags for provider-specific feature differences
 
@@ -265,6 +266,12 @@ Responsibilities:
 - Send and ingest channel messages through provider adapters
 - Represent channel voice, voice-message, meeting, or SIP-bridge sessions without
   assuming every provider supports every capability
+
+WhatsApp, Telegram, Google Meet, and custom channel implementations are external
+adapter services. manageCallAI stores channel accounts, normalized messages,
+meeting/session records, and provider-neutral work state; it does not embed
+provider SDKs, provider webhooks, token refresh loops, or delivery workers in
+the control-plane API.
 
 Constraints:
 
@@ -394,6 +401,11 @@ Each publishable object should support:
 IVR flow graphs must not be treated as raw FreeSWITCH XML fragments. They are
 tenant-scoped business objects whose active versions are projected into runtime behavior only after validation and publish.
 
+IVR graph semantics may follow a constrained BPMN-inspired model: start event,
+action task, exclusive gateway, sequence flow, and terminal event. Full BPMN 2.0
+is not the runtime engine, and BPMN XML must not become the canonical persisted
+format unless a later ADR explicitly changes that boundary.
+
 ## 10. State Model
 
 The platform should distinguish clearly between:
@@ -475,6 +487,12 @@ Required principles:
 - Destination allowlists for outbound safety
 - Route-impact analysis before publish
 - Rollback-first publishing model
+- Live observability streams must enforce the same tenant and role boundaries as
+  REST reads, and must not stream raw provider secrets or raw switch payloads
+
+Outbound dispatch must fail closed. Calls without an active route are rejected, and
+route-level destination allowlists/blocklists plus global emergency and premium-rate
+blocks are enforced before a runtime request is queued.
 
 ## 13. API Design Rules
 
@@ -521,6 +539,8 @@ Rules:
 
 - Tools should be intent-based
 - Tool inputs must be schema-validated
+- Tool schemas should be generated from, imported from, or drift-tested against
+  shared REST/IVR contracts rather than hand-maintained independently
 - Risky actions should require explicit confirmation or approval policy
 - Output should be concise, auditable, and machine-usable
 
@@ -618,6 +638,8 @@ Milestone 1 should begin with the first vertical slice above before broader IVR 
 
 - Flow schema
 - Visual builder
+- BPMN-inspired graph semantics over the existing desired-state model
+- Shared execution planner for validation, simulation, runtime resolution, and replay
 - Prompt manager
 - Publish and rollback
 - Flow simulator
@@ -646,6 +668,7 @@ Milestone 1 should begin with the first vertical slice above before broader IVR 
 - Policy engine
 - HA-ready FreeSWITCH support
 - Monitoring and alerting
+- Live operations cockpit with tenant-scoped WebSocket/SSE observability
 
 ### Milestone 6: Provider and Omnichannel Contracts
 

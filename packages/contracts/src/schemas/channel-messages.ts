@@ -13,7 +13,7 @@ export const MessageTypeSchema = z.enum([
 ]);
 export type MessageType = z.infer<typeof MessageTypeSchema>;
 
-export const MessageRequestStatusSchema = z.enum(['queued', 'sent', 'failed']);
+export const MessageRequestStatusSchema = z.enum(['queued', 'processing', 'sent', 'failed']);
 export type MessageRequestStatus = z.infer<typeof MessageRequestStatusSchema>;
 
 // ── Resource schemas ──────────────────────────────────────────────────────────
@@ -44,6 +44,10 @@ export const ChannelMessageRequestSchema = z.object({
   media_reference: z.string().nullable(),
   status: MessageRequestStatusSchema,
   failure_reason: z.string().nullable(),
+  processor_id: z.string().nullable(),
+  claimed_at: z.string().datetime().nullable(),
+  completed_at: z.string().datetime().nullable(),
+  external_id: z.string().nullable(),
   provider_metadata: z.record(z.unknown()),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
@@ -52,6 +56,7 @@ export type ChannelMessageRequest = z.infer<typeof ChannelMessageRequestSchema>;
 
 // ── Request schemas ───────────────────────────────────────────────────────────
 export const IngestInboundMessageBodySchema = z.object({
+  tenant_id: z.string().uuid(),
   channel_account_id: z.string().uuid(),
   message_type: MessageTypeSchema,
   external_id: z.string().optional(),
@@ -73,3 +78,18 @@ export const CreateOutboundMessageBodySchema = z.object({
   provider_metadata: z.record(z.unknown()).optional(),
 }).openapi('CreateOutboundMessageBody');
 export type CreateOutboundMessageBody = z.infer<typeof CreateOutboundMessageBodySchema>;
+
+export const ClaimOutboundMessageBodySchema = z.object({
+  tenant_id: z.string().uuid(),
+  channel_account_id: z.string().uuid().optional(),
+  processor_id: z.string().max(255).optional(),
+}).openapi('ClaimOutboundMessageBody');
+export type ClaimOutboundMessageBody = z.infer<typeof ClaimOutboundMessageBodySchema>;
+
+export const CompleteOutboundMessageBodySchema = z.object({
+  status: z.enum(['sent', 'failed']),
+  external_id: z.string().max(512).optional(),
+  failure_reason: z.string().max(1000).optional(),
+  provider_metadata: z.record(z.unknown()).optional(),
+}).openapi('CompleteOutboundMessageBody');
+export type CompleteOutboundMessageBody = z.infer<typeof CompleteOutboundMessageBodySchema>;

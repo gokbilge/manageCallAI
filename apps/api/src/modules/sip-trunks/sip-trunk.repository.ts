@@ -20,6 +20,8 @@ export class SipTrunkRepository {
     st.port,
     st.transport,
     st.auth_username,
+    st.dtmf_mode,
+    st.codec_prefs,
     st.created_at,
     st.updated_at
   `;
@@ -36,6 +38,8 @@ export class SipTrunkRepository {
     port,
     transport,
     auth_username,
+    dtmf_mode,
+    codec_prefs,
     created_at,
     updated_at
   `;
@@ -65,8 +69,9 @@ export class SipTrunkRepository {
     const result = await this.db.query<SipTrunk>(
       `INSERT INTO sip_trunks
          (tenant_id, name, direction, username, realm, proxy, port, transport,
-          auth_username, auth_password_ciphertext, auth_password_key_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          auth_username, auth_password_ciphertext, auth_password_key_id,
+          dtmf_mode, codec_prefs)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING ${this.returningColumns}`,
       [
         input.tenant_id,
@@ -80,6 +85,8 @@ export class SipTrunkRepository {
         input.auth_username,
         input.auth_password_ciphertext,
         input.auth_password_key_id,
+        input.dtmf_mode ?? 'rfc2833',
+        input.codec_prefs ?? null,
       ],
     );
     return result.rows[0]!;
@@ -102,6 +109,8 @@ export class SipTrunkRepository {
       'auth_username',
       'auth_password_ciphertext',
       'auth_password_key_id',
+      'dtmf_mode',
+      'codec_prefs',
     ] as const;
 
     for (const col of updateable) {

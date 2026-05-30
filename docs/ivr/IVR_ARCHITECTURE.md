@@ -48,6 +48,10 @@ The source of truth is a tenant-scoped IVR flow graph and its versions. The
 platform does not treat raw FreeSWITCH XML, raw ESL commands, or Lua source as
 the primary business model.
 
+The graph may use BPMN-inspired concepts such as start events, tasks, exclusive
+gateways, sequence flows, and end events, but full BPMN 2.0 is not the runtime
+model. `graph_json` remains the canonical desired-state contract.
+
 ### 4.2 One safe lifecycle
 
 Humans, n8n, and MCP all use the same lifecycle:
@@ -70,6 +74,13 @@ FreeSWITCH should execute business-approved actions only:
 
 Business logic, safety policy, validation, simulation, and publish control stay
 in the backend.
+
+### 4.4 Shared execution semantics
+
+Validation, simulation, visual path preview, runtime resolution, and session
+replay should converge on one execution planner. A visual edge in the React
+builder must have the same branch meaning when simulated and when executed by the
+backend runtime resolver.
 
 ## 5. Responsibility Split
 

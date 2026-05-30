@@ -22,6 +22,9 @@ Validation must check:
 - timeout / invalid fallback exists where needed
 - retry values are bounded
 - no unsupported node types are used for the current runtime slice
+- no unsupported BPMN-style constructs are present in runtime graph data
+- edge labels and branch conditions are deterministic and map to supported gateway
+  semantics
 - publish is blocked if validation fails
 
 ## 3. Simulation
@@ -37,6 +40,8 @@ Simulation should support:
 - explicit simulation variables
 - expected path output
 - final action output
+- BPMN-inspired step categories: `start`, `task`, `gateway`, `end`
+- visual node/edge trace IDs that the React builder can highlight
 
 Example simulation request:
 
@@ -93,3 +98,4 @@ Still intentionally out of scope:
 
 - webhook, HTTP lookup, sub-flow, external-transfer, or AI-action node execution
 - live runtime call testing through FreeSWITCH
+- full BPMN token simulation or parallel execution

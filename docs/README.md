@@ -31,6 +31,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [integration-test-plan.md](integration-test-plan.md)
   First end-to-end architecture proof plan from extension creation to event visibility.
 
+- [integrations/channel-adapters.md](integrations/channel-adapters.md)
+  External WhatsApp, Telegram, Google Meet, and custom adapter service contract.
+
 - [first-local-demo.md](first-local-demo.md)
   Short local walkthrough for bringing up PostgreSQL and the API, registering a tenant, creating an extension, and calling the FreeSWITCH directory endpoint.
 

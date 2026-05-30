@@ -8,12 +8,16 @@ import type {
   UpdateQueueInput,
 } from './queue.types.js';
 
+const QUEUE_COLUMNS = `id, tenant_id, name, description, strategy, ring_timeout_seconds,
+  retry_delay_seconds, max_wait_seconds, music_on_hold, overflow_target_type,
+  overflow_target_id, status, created_at, updated_at`;
+
 export class QueueRepository {
   constructor(private readonly db: Pool) {}
 
   async findAllByTenant(tenantId: string): Promise<Queue[]> {
     const r = await this.db.query<Queue>(
-      `SELECT id, tenant_id, name, description, strategy, ring_timeout_seconds, status, created_at, updated_at
+      `SELECT ${QUEUE_COLUMNS}
        FROM queues WHERE tenant_id = $1
        ORDER BY created_at DESC`,
       [tenantId],
@@ -23,7 +27,7 @@ export class QueueRepository {
 
   async findById(id: string, tenantId: string): Promise<QueueWithMembers | null> {
     const queueR = await this.db.query<Queue>(
-      `SELECT id, tenant_id, name, description, strategy, ring_timeout_seconds, status, created_at, updated_at
+      `SELECT ${QUEUE_COLUMNS}
        FROM queues WHERE id = $1 AND tenant_id = $2`,
       [id, tenantId],
     );
@@ -43,15 +47,24 @@ export class QueueRepository {
 
   async create(input: CreateQueueInput): Promise<QueueWithMembers> {
     const r = await this.db.query<Queue>(
-      `INSERT INTO queues (tenant_id, name, description, strategy, ring_timeout_seconds)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, tenant_id, name, description, strategy, ring_timeout_seconds, status, created_at, updated_at`,
+      `INSERT INTO queues (
+         tenant_id, name, description, strategy, ring_timeout_seconds,
+         retry_delay_seconds, max_wait_seconds, music_on_hold, overflow_target_type,
+         overflow_target_id
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING ${QUEUE_COLUMNS}`,
       [
         input.tenant_id,
         input.name,
         input.description ?? null,
         input.strategy ?? 'simultaneous',
         input.ring_timeout_seconds ?? 20,
+        input.retry_delay_seconds ?? 5,
+        input.max_wait_seconds ?? 120,
+        input.music_on_hold ?? null,
+        input.overflow_target_type ?? null,
+        input.overflow_target_id ?? null,
       ],
     );
     return { ...r.rows[0]!, members: [] };
@@ -66,11 +79,16 @@ export class QueueRepository {
     if ('description' in input) { fields.push(`description = $${idx++}`); values.push(input.description ?? null); }
     if (input.strategy !== undefined) { fields.push(`strategy = $${idx++}`); values.push(input.strategy); }
     if (input.ring_timeout_seconds !== undefined) { fields.push(`ring_timeout_seconds = $${idx++}`); values.push(input.ring_timeout_seconds); }
+    if (input.retry_delay_seconds !== undefined) { fields.push(`retry_delay_seconds = $${idx++}`); values.push(input.retry_delay_seconds); }
+    if (input.max_wait_seconds !== undefined) { fields.push(`max_wait_seconds = $${idx++}`); values.push(input.max_wait_seconds); }
+    if ('music_on_hold' in input) { fields.push(`music_on_hold = $${idx++}`); values.push(input.music_on_hold ?? null); }
+    if ('overflow_target_type' in input) { fields.push(`overflow_target_type = $${idx++}`); values.push(input.overflow_target_type ?? null); }
+    if ('overflow_target_id' in input) { fields.push(`overflow_target_id = $${idx++}`); values.push(input.overflow_target_id ?? null); }
     if (input.status !== undefined) { fields.push(`status = $${idx++}`); values.push(input.status); }
 
     if (fields.length === 0) {
       const r = await this.db.query<Queue>(
-        `SELECT id, tenant_id, name, description, strategy, ring_timeout_seconds, status, created_at, updated_at
+        `SELECT ${QUEUE_COLUMNS}
          FROM queues WHERE id = $1 AND tenant_id = $2`,
         [id, tenantId],
       );
@@ -82,7 +100,7 @@ export class QueueRepository {
     const r = await this.db.query<Queue>(
       `UPDATE queues SET ${fields.join(', ')}
        WHERE id = $${idx} AND tenant_id = $${idx + 1}
-       RETURNING id, tenant_id, name, description, strategy, ring_timeout_seconds, status, created_at, updated_at`,
+       RETURNING ${QUEUE_COLUMNS}`,
       values,
     );
     return r.rows[0] ?? null;
@@ -92,7 +110,7 @@ export class QueueRepository {
     const r = await this.db.query<Queue>(
       `UPDATE queues SET status = 'inactive', updated_at = NOW()
        WHERE id = $1 AND tenant_id = $2
-       RETURNING id, tenant_id, name, description, strategy, ring_timeout_seconds, status, created_at, updated_at`,
+       RETURNING ${QUEUE_COLUMNS}`,
       [id, tenantId],
     );
     return r.rows[0] ?? null;

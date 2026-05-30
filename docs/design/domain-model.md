@@ -259,6 +259,8 @@ Key fields:
 - `matchStrategy`
 - `destinationPattern`
 - `trunkSelectionStrategy`
+- `allowedDestinationPrefixes`
+- `blockedDestinationPrefixes`
 - `status`
 - `draftVersionId`
 - `activeVersionId`
@@ -273,6 +275,27 @@ Relationships:
 Invariants:
 
 - Active outbound routes must conform to destination allowlists and policy constraints
+- Outbound calls without an active matching route are rejected before dispatch
+- Emergency and premium-rate destinations are blocked by global safety policy
+
+### Queue Runtime Policy
+
+Represents desired-state queue behavior for call-center style routing.
+
+Key fields:
+
+- `ringTimeoutSeconds`
+- `retryDelaySeconds`
+- `maxWaitSeconds`
+- `musicOnHold`
+- `overflowTargetType`
+- `overflowTargetId`
+
+Invariants:
+
+- Queue timing values must stay within bounded operational ranges
+- Overflow target type and ID must be set or cleared together
+- Queue runtime actions must include queue behavior, not only member extensions
 
 ### 5.6 PromptAsset
 
@@ -595,6 +618,31 @@ Invariants:
 - Public APIs must not expose raw media storage paths or provider secrets.
 - Transcript and summary values are nullable until processing completes.
 
+### 8.6 LiveOperationalSnapshot
+
+Represents a short-lived, derived view of current operational state for live UI
+streams. It is not the canonical source of truth; it is assembled from runtime
+sessions, call events, queue state, runtime health, webhook delivery state, and
+adapter work queues.
+
+Key fields:
+
+- `tenantId`
+- `activeCallCount`
+- `activeIvrSessionCount`
+- `queueDepths`
+- `runtimeServices`
+- `recentFailures`
+- `webhookBacklog`
+- `adapterBacklog`
+- `generatedAt`
+
+Invariants:
+
+- Snapshots must be tenant-scoped unless served to a platform operator aggregate view.
+- Snapshots must not expose raw FreeSWITCH payloads, provider secrets, or raw provider webhook bodies.
+- Historical reporting should use durable records, not transient live snapshots.
+
 ## 9. Provider and Channel Integration Entities
 
 ### 9.1 PromptGenerationRequest
@@ -709,6 +757,8 @@ Invariants:
 
 - Credentials are referenced only by secret handle and are never returned publicly.
 - Features must be gated by declared capability instead of provider name alone.
+- The account describes an external adapter integration; provider SDKs and delivery
+  workers are not part of the control-plane API.
 
 ### 9.4 ChannelMessage
 
@@ -752,6 +802,8 @@ Invariants:
 - Raw provider event bodies are not the canonical message model.
 - Media references must be controlled storage or provider artifact references, not
   unbounded public URLs.
+- Outbound messages are first stored as provider-neutral work. External adapter
+  services claim the work, deliver it, and report sent or failed results.
 
 ### 9.5 ChannelVoiceSession
 
@@ -869,6 +921,7 @@ Suggested lifecycle:
 - Publish actions are auditable and attributable
 - AI-facing operations must remain within the constrained business vocabulary
 - Runtime artifacts are derived outputs, not canonical domain entities
+- Live observability snapshots are derived views, not canonical domain entities
 - External provider outputs are inputs to domain workflows, not direct authority
 - Provider capabilities must be explicit before channel-specific actions are accepted
 

@@ -120,6 +120,30 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [slices/SLICE-32-omnichannel-messaging-and-meeting-adapters.md](slices/SLICE-32-omnichannel-messaging-and-meeting-adapters.md)
   Provider-neutral contracts for WhatsApp, Telegram, Google Meet, and custom channel adapters.
 
+- [slices/SLICE-35-bpmn-inspired-ivr-graph-model.md](slices/SLICE-35-bpmn-inspired-ivr-graph-model.md)
+  Constrained BPMN-inspired graph semantics for visual IVR authoring.
+
+- [slices/SLICE-36-visual-ivr-execution-engine.md](slices/SLICE-36-visual-ivr-execution-engine.md)
+  Shared validation, simulation, and runtime execution planner for visual IVR graphs.
+
+- [slices/SLICE-37-live-observability-cockpit.md](slices/SLICE-37-live-observability-cockpit.md)
+  Real-time live operations cockpit for active calls, queues, runtime health, and adapter backlogs.
+
+- [slices/SLICE-38-mcp-contract-alignment.md](slices/SLICE-38-mcp-contract-alignment.md)
+  Generated/shared MCP contracts to prevent REST, IVR, and tool-schema drift.
+
+- [slices/SLICE-39-ci-telecom-safety-gates.md](slices/SLICE-39-ci-telecom-safety-gates.md)
+  Migration replay, runtime golden files, secret scanning, dependency audit, Docker,
+  MCP contract, and FreeSWITCH-profile smoke gates.
+
+- [slices/SLICE-40-p1-runtime-and-operations-hardening.md](slices/SLICE-40-p1-runtime-and-operations-hardening.md)
+  P1 runtime, IVR, automation, AI/MCP, and operations hardening backlog with
+  implemented outbound and queue safety foundations.
+
+- [slices/SLICE-41-p1-leftover-telecom-ops-and-ai-hardening.md](slices/SLICE-41-p1-leftover-telecom-ops-and-ai-hardening.md)
+  Remaining P1 telecom deployment, IVR builder/runtime, AI/MCP, automation, and
+  operations hardening work after the Slice 40 runtime-safety foundation.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)

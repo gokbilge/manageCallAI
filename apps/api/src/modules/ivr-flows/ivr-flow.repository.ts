@@ -525,8 +525,14 @@ export class IvrFlowRepository {
       name: string;
       strategy: 'simultaneous' | 'sequential';
       ring_timeout_seconds: number;
+      retry_delay_seconds: number;
+      max_wait_seconds: number;
+      music_on_hold: string | null;
+      overflow_target_type: 'extension' | 'call_group' | 'queue' | 'voicemail_box' | 'flow' | null;
+      overflow_target_id: string | null;
     }>(
-      `SELECT id, name, strategy, ring_timeout_seconds
+      `SELECT id, name, strategy, ring_timeout_seconds, retry_delay_seconds,
+              max_wait_seconds, music_on_hold, overflow_target_type, overflow_target_id
        FROM queues
        WHERE tenant_id = $1 AND id = ANY($2) AND status = 'active'`,
       [tenantId, ids],
@@ -564,6 +570,11 @@ export class IvrFlowRepository {
       name: row.name,
       strategy: row.strategy,
       ring_timeout_seconds: row.ring_timeout_seconds,
+      retry_delay_seconds: row.retry_delay_seconds,
+      max_wait_seconds: row.max_wait_seconds,
+      music_on_hold: row.music_on_hold,
+      overflow_target_type: row.overflow_target_type,
+      overflow_target_id: row.overflow_target_id,
       members: membersByQueue.get(row.id) ?? [],
     }]));
   }

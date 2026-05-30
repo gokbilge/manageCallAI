@@ -12,6 +12,7 @@ simulated before publish.
 - `ivr_flow`
 - `flow_version`
 - `graph_json`
+- BPMN-inspired execution category
 - `entry_node_id`
 - `nodes`
 - `edges`
@@ -108,6 +109,33 @@ This means:
   ]
 }
 ```
+
+## 4.1 BPMN-Inspired Execution Subset
+
+The IVR graph should follow BPMN principles without becoming a full BPMN 2.0
+runtime. `graph_json` remains the canonical API and persistence format.
+
+Supported concepts:
+
+| BPMN-inspired concept | IVR graph meaning |
+|-----------------------|-------------------|
+| Start event | `start` node / `entry_node_id` |
+| Task | Action node such as `play_prompt`, `play_collect`, `transfer_extension`, `queue`, or `voicemail_drop` |
+| Exclusive gateway | Branching node such as `switch`, `business_hours`, or `caller_id_match` |
+| End event | Terminal `hangup`, transfer, queue, or voicemail completion |
+| Sequence flow | Explicit edge or node reference from one node to the next |
+
+Unsupported BPMN features:
+
+- pools and lanes
+- parallel gateways and concurrent branches
+- compensation events
+- human tasks
+- raw BPMN XML as the runtime source of truth
+- arbitrary message events that bypass managed webhook/provider contracts
+
+This subset gives the visual builder, simulator, and runtime resolver a common
+state-machine vocabulary while keeping call execution constrained.
 
 ## 5. MVP Node Types
 
@@ -208,10 +236,12 @@ Documented but not implemented in this slice:
 - one entry node
 - node IDs unique
 - all referenced nodes must exist
+- every edge must have a deterministic source, target, and branch meaning
 - prompts must exist for prompt nodes
 - extension targets must exist and be active
 - unsafe or unreachable graphs are invalid unless explicitly allowed as detached draft nodes
 - published versions are immutable
+- unsupported BPMN constructs must be rejected or ignored only as non-runtime UI metadata
 
 ## 9. Version Status
 

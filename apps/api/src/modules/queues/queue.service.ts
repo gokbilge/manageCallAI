@@ -22,6 +22,13 @@ export class QueueMemberInvalidError extends Error {
   }
 }
 
+export class QueueValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'QueueValidationError';
+  }
+}
+
 export class QueueMemberNotFoundError extends Error {
   constructor(queueId: string, extensionId: string) {
     super(`Queue member not found: queue=${queueId} extension=${extensionId}`);
@@ -42,11 +49,13 @@ export class QueueService {
     return queue;
   }
 
-  create(input: CreateQueueInput): Promise<QueueWithMembers> {
+  async create(input: CreateQueueInput): Promise<QueueWithMembers> {
+    validateQueueInput(input);
     return this.repo.create(input);
   }
 
   async update(id: string, tenantId: string, input: UpdateQueueInput): Promise<Queue> {
+    validateQueueInput(input);
     const queue = await this.repo.update(id, tenantId, input);
     if (!queue) throw new QueueNotFoundError(id);
     return queue;
@@ -78,5 +87,33 @@ export class QueueService {
     if (!removed) {
       throw new QueueMemberNotFoundError(queueId, extensionId);
     }
+  }
+}
+
+function validateQueueInput(input: CreateQueueInput | UpdateQueueInput): void {
+  if (input.ring_timeout_seconds !== undefined) {
+    validateRange(input.ring_timeout_seconds, 'ring_timeout_seconds', 1, 300);
+  }
+  if (input.retry_delay_seconds !== undefined) {
+    validateRange(input.retry_delay_seconds, 'retry_delay_seconds', 0, 300);
+  }
+  if (input.max_wait_seconds !== undefined) {
+    validateRange(input.max_wait_seconds, 'max_wait_seconds', 1, 3600);
+  }
+
+  const hasOverflowType = 'overflow_target_type' in input;
+  const hasOverflowId = 'overflow_target_id' in input;
+  if (hasOverflowType || hasOverflowId) {
+    const type = input.overflow_target_type ?? null;
+    const id = input.overflow_target_id ?? null;
+    if ((type === null) !== (id === null)) {
+      throw new QueueValidationError('overflow_target_type and overflow_target_id must be set or cleared together');
+    }
+  }
+}
+
+function validateRange(value: number, field: string, min: number, max: number): void {
+  if (!Number.isInteger(value) || value < min || value > max) {
+    throw new QueueValidationError(`${field} must be an integer between ${min} and ${max}`);
   }
 }

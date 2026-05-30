@@ -293,14 +293,20 @@ export class IvrRuntimeRepository {
   async findActiveQueueTargets(tenantId: string, ids: string[]): Promise<Map<string, QueueTransferReference>> {
     if (ids.length === 0) return new Map();
     const queuesR = await this.db.query<{
-      id: string;
-      name: string;
-      strategy: 'simultaneous' | 'sequential';
-      ring_timeout_seconds: number;
-    }>(
-      `SELECT id, name, strategy, ring_timeout_seconds
-       FROM queues
-       WHERE tenant_id = $1 AND id = ANY($2) AND status = 'active'`,
+        id: string;
+        name: string;
+        strategy: 'simultaneous' | 'sequential';
+        ring_timeout_seconds: number;
+        retry_delay_seconds: number;
+        max_wait_seconds: number;
+        music_on_hold: string | null;
+        overflow_target_type: 'extension' | 'call_group' | 'queue' | 'voicemail_box' | 'flow' | null;
+        overflow_target_id: string | null;
+      }>(
+      `SELECT id, name, strategy, ring_timeout_seconds, retry_delay_seconds,
+              max_wait_seconds, music_on_hold, overflow_target_type, overflow_target_id
+         FROM queues
+         WHERE tenant_id = $1 AND id = ANY($2) AND status = 'active'`,
       [tenantId, ids],
     );
     if (queuesR.rows.length === 0) return new Map();
@@ -333,11 +339,16 @@ export class IvrRuntimeRepository {
 
     return new Map(queuesR.rows.map((row) => [row.id, {
       id: row.id,
-      name: row.name,
-      strategy: row.strategy,
-      ring_timeout_seconds: row.ring_timeout_seconds,
-      members: membersByQueue.get(row.id) ?? [],
-    }]));
+        name: row.name,
+        strategy: row.strategy,
+        ring_timeout_seconds: row.ring_timeout_seconds,
+        retry_delay_seconds: row.retry_delay_seconds,
+        max_wait_seconds: row.max_wait_seconds,
+        music_on_hold: row.music_on_hold,
+        overflow_target_type: row.overflow_target_type,
+        overflow_target_id: row.overflow_target_id,
+        members: membersByQueue.get(row.id) ?? [],
+      }]));
   }
 
   async findActiveVoicemailTargets(tenantId: string, ids: string[]): Promise<Map<string, VoicemailBoxReference>> {

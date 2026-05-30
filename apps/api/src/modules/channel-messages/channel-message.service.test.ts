@@ -32,6 +32,10 @@ const baseReq: ChannelMessageRequest = {
   media_reference: null,
   status: 'queued',
   failure_reason: null,
+  processor_id: null,
+  claimed_at: null,
+  completed_at: null,
+  external_id: null,
   provider_metadata: {},
   created_at: new Date(),
   updated_at: new Date(),
@@ -43,6 +47,8 @@ function makeRepo(overrides: Partial<ChannelMessageRepository> = {}): ChannelMes
     createOutboundRequest: vi.fn().mockResolvedValue(baseReq),
     findMessagesByAccount: vi.fn().mockResolvedValue([baseMsg]),
     findRequestsByAccount: vi.fn().mockResolvedValue([baseReq]),
+    claimNextOutboundRequest: vi.fn().mockResolvedValue({ ...baseReq, status: 'processing', processor_id: 'adapter-1' }),
+    completeOutboundRequest: vi.fn().mockResolvedValue({ ...baseReq, status: 'sent', external_id: 'provider-1' }),
     findChannelAccount: vi.fn().mockResolvedValue({ id: ACCOUNT_ID }),
     ...overrides,
   } as unknown as ChannelMessageRepository;
@@ -117,6 +123,41 @@ describe('ChannelMessageService', () => {
       const result = await service.listRequests(TENANT, ACCOUNT_ID);
       expect(result).toHaveLength(1);
       expect(vi.mocked(repo.findRequestsByAccount)).toHaveBeenCalledWith(TENANT, ACCOUNT_ID);
+    });
+  });
+
+  describe('claimNextOutboundRequest', () => {
+    it('claims the next queued request for an adapter', async () => {
+      const result = await service.claimNextOutboundRequest({
+        tenant_id: TENANT,
+        channel_account_id: ACCOUNT_ID,
+        processor_id: 'adapter-1',
+      });
+      expect(result?.status).toBe('processing');
+      expect(vi.mocked(repo.claimNextOutboundRequest)).toHaveBeenCalledWith({
+        tenant_id: TENANT,
+        channel_account_id: ACCOUNT_ID,
+        processor_id: 'adapter-1',
+      });
+    });
+
+    it('validates account scope when claiming for one account', async () => {
+      repo = makeRepo({ findChannelAccount: vi.fn().mockResolvedValue(null) });
+      service = new ChannelMessageService(repo);
+      await expect(
+        service.claimNextOutboundRequest({ tenant_id: TENANT, channel_account_id: 'bad' }),
+      ).rejects.toBeInstanceOf(ChannelAccountInvalidError);
+    });
+  });
+
+  describe('completeOutboundRequest', () => {
+    it('marks a processing request sent', async () => {
+      const result = await service.completeOutboundRequest('req-1', {
+        status: 'sent',
+        external_id: 'provider-1',
+      });
+      expect(result.status).toBe('sent');
+      expect(result.external_id).toBe('provider-1');
     });
   });
 });

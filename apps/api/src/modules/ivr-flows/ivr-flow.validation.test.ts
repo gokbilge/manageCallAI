@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultIvrGraph, validateIvrGraph } from './ivr-flow.validation.js';
+import { computeReachableBranches, defaultIvrGraph, validateIvrGraph } from './ivr-flow.validation.js';
 
 describe('validateIvrGraph', () => {
   it('passes a valid minimal graph', () => {
@@ -125,5 +125,87 @@ describe('validateIvrGraph', () => {
     });
     expect(result.status).toBe('failed');
     expect(result.errors.some((e) => e.field.includes('queue_id'))).toBe(true);
+  });
+
+  it('accepts valid fallback_node_id on any node type', () => {
+    const result = validateIvrGraph({
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'play', fallback_node_id: 'end' },
+        { id: 'play', type: 'play_prompt', prompt_id: 'p1', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('passed');
+  });
+
+  it('fails when fallback_node_id references a missing node', () => {
+    const result = validateIvrGraph({
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'end', fallback_node_id: 'nonexistent' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('failed');
+    expect(result.errors.some((e) => e.field.includes('fallback_node_id'))).toBe(true);
+  });
+
+  it('fails when max_retries is not a non-negative integer', () => {
+    const result = validateIvrGraph({
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'collect', max_retries: -1 },
+        { id: 'collect', type: 'play_collect', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('failed');
+    expect(result.errors.some((e) => e.field.includes('max_retries'))).toBe(true);
+  });
+
+  it('detects deep traversal that exceeds the loop detection limit', () => {
+    // Create a chain of 60 set_variable nodes to exceed MAX_TRAVERSAL_DEPTH=50
+    const nodes: Array<Record<string, unknown>> = [{ id: 'start', type: 'start', next_node_id: 'n0' }];
+    for (let i = 0; i < 55; i++) {
+      nodes.push({
+        id: `n${i}`,
+        type: 'set_variable',
+        variable_name: 'x',
+        value: `${i}`,
+        next_node_id: `n${i + 1}`,
+      });
+    }
+    nodes.push({ id: 'n55', type: 'hangup' });
+    const result = validateIvrGraph({ entry_node_id: 'start', nodes });
+    expect(result.errors.some((e) => e.message.includes('loop'))).toBe(true);
+  });
+
+  it('warns when play_prompt node has no prompt_id or prompt_uri', () => {
+    const result = validateIvrGraph({
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'play' },
+        { id: 'play', type: 'play_prompt', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('passed');
+    expect(result.warnings.some((w) => w.message.includes('silence'))).toBe(true);
+  });
+});
+
+describe('computeReachableBranches', () => {
+  it('returns all node ids from the graph', () => {
+    const graph = defaultIvrGraph();
+    const ids = computeReachableBranches(graph);
+    expect(ids.has('start')).toBe(true);
+    expect(ids.has('end')).toBe(true);
+    expect(ids.size).toBe(2);
+  });
+
+  it('returns empty set for invalid graph', () => {
+    const ids = computeReachableBranches(null);
+    expect(ids.size).toBe(0);
   });
 });

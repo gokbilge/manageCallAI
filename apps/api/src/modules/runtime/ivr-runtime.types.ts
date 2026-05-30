@@ -78,6 +78,11 @@ export type IvrRuntimeAction =
       target_type: 'queue';
       strategy: 'simultaneous' | 'sequential';
       ring_timeout_seconds: number;
+      retry_delay_seconds: number;
+      max_wait_seconds: number;
+      music_on_hold: string | null;
+      overflow_target_type: 'extension' | 'call_group' | 'queue' | 'voicemail_box' | 'flow' | null;
+      overflow_target_id: string | null;
       members: Array<{
         extension_number: string;
         domain: string | null;

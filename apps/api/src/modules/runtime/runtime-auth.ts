@@ -27,6 +27,8 @@ function extractRuntimeToken(req: FastifyRequest): string | null {
     return headerToken.trim();
   }
 
+  if (!config.allowRuntimeTokenFallback) return null;
+
   const query = req.query as Record<string, unknown> | undefined;
   const queryToken = query?.[RUNTIME_TOKEN_QUERY_KEY];
   if (typeof queryToken === 'string' && queryToken.trim() !== '') {

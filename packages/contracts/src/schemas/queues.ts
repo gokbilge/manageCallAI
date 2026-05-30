@@ -27,6 +27,11 @@ export const QueueSchema = z.object({
   description: z.string().nullable(),
   strategy: QueueStrategySchema,
   ring_timeout_seconds: z.number().int(),
+  retry_delay_seconds: z.number().int(),
+  max_wait_seconds: z.number().int(),
+  music_on_hold: z.string().nullable(),
+  overflow_target_type: z.enum(['extension', 'call_group', 'queue', 'voicemail_box', 'flow']).nullable(),
+  overflow_target_id: z.string().uuid().nullable(),
   status: QueueStatusSchema,
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
@@ -44,6 +49,11 @@ export const CreateQueueBodySchema = z.object({
   description: z.string().optional(),
   strategy: QueueStrategySchema.optional(),
   ring_timeout_seconds: z.number().int().optional(),
+  retry_delay_seconds: z.number().int().optional(),
+  max_wait_seconds: z.number().int().optional(),
+  music_on_hold: z.string().nullable().optional(),
+  overflow_target_type: z.enum(['extension', 'call_group', 'queue', 'voicemail_box', 'flow']).nullable().optional(),
+  overflow_target_id: z.string().uuid().nullable().optional(),
 }).openapi('CreateQueueBody');
 export type CreateQueueBody = z.infer<typeof CreateQueueBodySchema>;
 
@@ -52,6 +62,11 @@ export const UpdateQueueBodySchema = z.object({
   description: z.string().nullable().optional(),
   strategy: QueueStrategySchema.optional(),
   ring_timeout_seconds: z.number().int().optional(),
+  retry_delay_seconds: z.number().int().optional(),
+  max_wait_seconds: z.number().int().optional(),
+  music_on_hold: z.string().nullable().optional(),
+  overflow_target_type: z.enum(['extension', 'call_group', 'queue', 'voicemail_box', 'flow']).nullable().optional(),
+  overflow_target_id: z.string().uuid().nullable().optional(),
   status: QueueStatusSchema.optional(),
 }).openapi('UpdateQueueBody');
 export type UpdateQueueBody = z.infer<typeof UpdateQueueBodySchema>;

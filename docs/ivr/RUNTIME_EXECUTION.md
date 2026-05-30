@@ -110,6 +110,10 @@ FreeSWITCH executes only a constrained action surface such as:
 
 Anything more complex stays in the backend resolver.
 
+The backend resolver should evaluate the BPMN-inspired IVR graph semantics before
+emitting one constrained action. FreeSWITCH and Lua never receive raw BPMN XML,
+raw graph JSON, or UI-only edge metadata.
+
 ## 6. Implemented MVP runtime resolver contract
 
 Current backend runtime endpoints:
@@ -168,6 +172,8 @@ Current runtime rules:
 - hybrid Go/ESL assist for more advanced scenarios
 - deeper queue strategies and agent-state awareness
 - richer voicemail lifecycle and media retrieval
+- shared execution planner used by validation, simulation, runtime resolution, and
+  visual path highlighting
 
 ## 8. Implemented FreeSWITCH loop
 
