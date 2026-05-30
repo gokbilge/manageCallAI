@@ -268,3 +268,11 @@ registry.register('TenantListResponse', responses.TenantListResponseSchema);
 registry.register('RuntimeHealthResponse', responses.RuntimeHealthResponseSchema);
 registry.register('PlatformRuntimeSummaryResponse', responses.PlatformRuntimeSummaryResponseSchema);
 registry.register('RouteLookupResponse', responses.RouteLookupResponseSchema);
+
+// observability
+import * as observability from './observability.js';
+registry.register('RunningSession', observability.RunningSessionSchema);
+registry.register('QueueDepth', observability.QueueDepthSchema);
+registry.register('WebhookBacklog', observability.WebhookBacklogSchema);
+registry.register('LiveSnapshot', observability.LiveSnapshotSchema);
+registry.register('LiveSnapshotResponse', observability.LiveSnapshotResponseSchema);

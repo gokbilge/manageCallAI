@@ -1,4 +1,4 @@
--- Migration 0005: Replace legacy JSONB-based sip_trunks fields with explicit columns.
+-- Migration 0005a: Replace legacy JSONB-based sip_trunks fields with explicit columns.
 --
 -- Fresh installs already get the explicit columns from 0001_initial_schema.sql.
 -- This migration upgrades older local databases that still have:
@@ -8,6 +8,10 @@
 --   auth_secret_key_id
 --   auth_secret_ref
 --   network_profile
+--
+-- Companion shim: 0005_relax_inbound_route_match_uniqueness.sql is a noop kept
+-- only to preserve schema_migrations history. The inbound-route uniqueness change
+-- it originally contained was renumbered to 0007_relax_inbound_route_match_uniqueness.sql.
 
 ALTER TABLE sip_trunks
   ADD COLUMN IF NOT EXISTS realm TEXT,

@@ -5738,6 +5738,45 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        RunningSession: {
+            /** Format: uuid */
+            id: string;
+            call_id: string;
+            /** Format: uuid */
+            flow_id: string;
+            caller_number: string | null;
+            current_node_id: string | null;
+            /** Format: date-time */
+            started_at: string;
+        };
+        QueueDepth: {
+            /** Format: uuid */
+            queue_id: string;
+            queue_name: string;
+            member_count: number;
+        };
+        WebhookBacklog: {
+            pending: number;
+            processing: number;
+            failed: number;
+            abandoned: number;
+        };
+        LiveSnapshot: {
+            /** Format: uuid */
+            tenant_id: string;
+            active_session_count: number;
+            running_sessions: components["schemas"]["RunningSession"][];
+            queue_depths: components["schemas"]["QueueDepth"][];
+            webhook_backlog: components["schemas"]["WebhookBacklog"];
+            recent_call_events_5m: number;
+            recent_session_failures_1h: number;
+            pending_approvals: number;
+            /** Format: date-time */
+            generated_at: string;
+        };
+        LiveSnapshotResponse: {
+            data: components["schemas"]["LiveSnapshot"];
+        };
     };
     responses: {
         /** @description Error response */

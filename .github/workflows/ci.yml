@@ -93,6 +93,12 @@ jobs:
       - name: Apply migrations (full replay)
         run: pnpm db:migrate
 
+      # ── DB contract check ────────────────────────────────────────────────────
+      # Verifies that all application-required columns exist after migrations.
+      # Fails fast if any column is missing, before tests run against a broken schema.
+      - name: DB contract check
+        run: pnpm db:contracts
+
       # ── OpenAPI ──────────────────────────────────────────────────────────────
       - name: OpenAPI generate and verify
         run: |

@@ -63,18 +63,22 @@ Reference:
 | `SLICE-22` | completed |
 | `SLICE-23` | completed |
 | `SLICE-24` | completed |
-| `SLICE-25` | planned |
-| `SLICE-26` | planned |
-| `SLICE-27` | planned |
-| `SLICE-28` | planned |
-| `SLICE-29` | planned |
+| `SLICE-25` | completed |
+| `SLICE-26` | completed |
+| `SLICE-27` | completed |
+| `SLICE-28` | completed |
+| `SLICE-29` | completed |
 | `SLICE-30` | planned |
 | `SLICE-31` | planned |
 | `SLICE-32` | planned |
+| `SLICE-38` | completed |
+| `SLICE-39` | completed |
 
 The original v1 release-plan slices are closed. The next release-candidate feature
-set is now explicit as `SLICE-25` through `SLICE-32`, with follow-on reliability
-and production-hardening lanes tracked in `SLICE-43` and `SLICE-44`.
+set is now explicit as `SLICE-25` through `SLICE-32`, with MCP contract
+alignment and telecom CI gates tracked in `SLICE-38` and `SLICE-39`, and
+follow-on reliability and production-hardening lanes tracked in `SLICE-43` and
+`SLICE-44`.
 
 That means:
 
@@ -257,8 +261,10 @@ SLICE-00 Current Baseline
 
 ### Stage 8 - Reliability And Production Readiness
 
-32. `SLICE-43` MVP Demonstrable Reliability
-33. `SLICE-44` Production Readiness Hardening
+32. `SLICE-38` MCP Contract Alignment
+33. `SLICE-39` CI Telecom Safety Gates
+34. `SLICE-43` MVP Demonstrable Reliability
+35. `SLICE-44` Production Readiness Hardening
 
 ## 7. Minimal Release Gate
 
@@ -306,5 +312,7 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-30](slices/SLICE-30-automation-operator-tools.md)
 - [SLICE-31](slices/SLICE-31-prompt-and-ivr-ai-integration-contracts.md)
 - [SLICE-32](slices/SLICE-32-omnichannel-messaging-and-meeting-adapters.md)
+- [SLICE-38](slices/SLICE-38-mcp-contract-alignment.md)
+- [SLICE-39](slices/SLICE-39-ci-telecom-safety-gates.md)
 - [SLICE-43](slices/SLICE-43-mvp-demonstrable-reliability.md)
 - [SLICE-44](slices/SLICE-44-production-readiness-hardening.md)
