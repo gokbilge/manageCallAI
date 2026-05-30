@@ -13,6 +13,7 @@ export type RouteVersionState = z.infer<typeof RouteVersionStateSchema>;
 
 export const InboundRouteMatchTypeSchema = z.enum(['did', 'trunk', 'pattern']);
 export type InboundRouteMatchType = z.infer<typeof InboundRouteMatchTypeSchema>;
+export const INBOUND_ROUTE_MATCH_VALUE_MAX_LENGTH = 200;
 
 export const InboundRouteTargetTypeSchema = z.enum([
   'flow',
@@ -81,7 +82,7 @@ export type ValidationOutcome = z.infer<typeof ValidationOutcomeSchema>;
 export const CreateInboundRouteBodySchema = z.object({
   name: z.string().min(1),
   match_type: InboundRouteMatchTypeSchema,
-  match_value: z.string().min(1),
+  match_value: z.string().min(1).max(INBOUND_ROUTE_MATCH_VALUE_MAX_LENGTH),
   phone_number_id: z.string().uuid().nullable().optional(),
   target_type: InboundRouteTargetTypeSchema,
   target_id: z.string().uuid().optional(),
@@ -91,7 +92,7 @@ export type CreateInboundRouteBody = z.infer<typeof CreateInboundRouteBodySchema
 export const UpdateInboundRouteBodySchema = z.object({
   name: z.string().min(1).optional(),
   match_type: InboundRouteMatchTypeSchema.optional(),
-  match_value: z.string().min(1).optional(),
+  match_value: z.string().min(1).max(INBOUND_ROUTE_MATCH_VALUE_MAX_LENGTH).optional(),
   phone_number_id: z.string().uuid().nullable().optional(),
   target_type: InboundRouteTargetTypeSchema.optional(),
   target_id: z.string().uuid().nullable().optional(),

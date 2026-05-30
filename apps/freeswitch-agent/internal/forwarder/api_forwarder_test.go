@@ -16,7 +16,7 @@ import (
 
 func newTestForwarder(baseURL, token string) *APIForwarder {
 	return NewAPIForwarder(
-		config.Config{APIBaseURL: baseURL, RuntimeToken: token},
+		config.Config{APIBaseURL: baseURL, RuntimeToken: token, TenantID: "configured-tenant"},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)
 }
@@ -55,6 +55,21 @@ func TestForwardEventSetsAuthorizationHeader(t *testing.T) {
 
 	if gotAuth != "Bearer my-secret-token" {
 		t.Errorf("Authorization: got %q, want %q", gotAuth, "Bearer my-secret-token")
+	}
+}
+
+func TestForwardEventSetsTenantHeaderFromEvent(t *testing.T) {
+	var gotTenant string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotTenant = r.Header.Get("X-Tenant-ID")
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer server.Close()
+
+	_ = newTestForwarder(server.URL, "tok").ForwardEvent(context.Background(), testEvent())
+
+	if gotTenant != "tenant-1" {
+		t.Errorf("X-Tenant-ID: got %q, want tenant-1", gotTenant)
 	}
 }
 

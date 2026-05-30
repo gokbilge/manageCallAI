@@ -149,7 +149,8 @@ if (schemasIdx === -1) {
     // Check RPC code enum
     const expectedCodes = [
       'NOT_FOUND', 'INVALID_ARGUMENT', 'UNAUTHENTICATED', 'PERMISSION_DENIED',
-      'ALREADY_EXISTS', 'RESOURCE_EXHAUSTED', 'INTERNAL', 'UNAVAILABLE',
+      'ALREADY_EXISTS', 'CONFLICT', 'FAILED_PRECONDITION', 'RESOURCE_EXHAUSTED',
+      'INTERNAL', 'UNAVAILABLE',
     ];
     for (const code of expectedCodes) {
       if (!schemaBlock.includes(code)) {

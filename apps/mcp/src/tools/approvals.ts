@@ -1,3 +1,4 @@
+import { mcpToolInputSchemas } from '@managecallai/contracts';
 import { apiCall } from '../api-client.js';
 
 export const APPROVAL_TOOLS = [
@@ -5,37 +6,18 @@ export const APPROVAL_TOOLS = [
     name: 'list_approvals',
     description:
       'List approval requests for this tenant. Pass status=pending to see what is waiting for a human decision.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        status: { type: 'string', enum: ['pending', 'approved', 'rejected'], description: 'Filter by status' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.list_approvals,
   },
   {
     name: 'get_approval',
     description: 'Get a single approval request with the associated flow and version details.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['approval_id'],
-      properties: {
-        approval_id: { type: 'string', description: 'UUID of the approval request' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.get_approval,
   },
   {
     name: 'decide_approval',
     description:
       'Approve or reject a pending approval request. Requires the tenant.approvals.decide capability.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['approval_id', 'decision'],
-      properties: {
-        approval_id: { type: 'string', description: 'UUID of the approval request' },
-        decision: { type: 'string', enum: ['approve', 'reject'], description: 'The decision to record' },
-        note: { type: 'string', description: 'Optional note to attach to the decision' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.decide_approval,
   },
 ] as const;
 
@@ -65,7 +47,7 @@ export async function handleApprovalTool(name: string, args: Args): Promise<{ te
     }
 
     case 'decide_approval': {
-      const endpoint = args.decision === 'approve'
+      const endpoint = args.decision === 'approved'
         ? `/api/v1/approvals/${args.approval_id}/approve`
         : `/api/v1/approvals/${args.approval_id}/reject`;
       const body: Record<string, unknown> = {};

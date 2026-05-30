@@ -22,7 +22,10 @@ Expected fields the backend should use:
 - `purpose`
 - `user`
 - `domain`
-- `runtime_token` or equivalent runtime auth token
+- Runtime auth credential. For `mod_xml_curl`, use HTTP Basic Auth with the
+  runtime token as the password: `http://fs:<RUNTIME_API_TOKEN>@host/path`.
+  Lua and agent calls should use `Authorization: Bearer <RUNTIME_API_TOKEN>` or
+  `x-managecallai-runtime-token`.
 
 The backend should treat:
 
@@ -64,7 +67,7 @@ section=directory
 purpose=sip_auth
 user=1001
 domain=acme-demo.managecallai.local
-runtime_token=change-me-runtime-token
+Authorization: Basic base64("fs:change-me-runtime-token")
 ```
 
 ## Example Success Response

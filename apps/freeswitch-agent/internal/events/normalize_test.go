@@ -26,6 +26,23 @@ func TestNormalizeMVPCustomRegisterEvent(t *testing.T) {
 	}
 }
 
+func TestNormalizeMVPSofiaExpire(t *testing.T) {
+	event, ok := NormalizeMVP(map[string]string{
+		"Event-Name":     "CUSTOM",
+		"Event-Subclass": "sofia::expire",
+		"from-user":      "202",
+	}, "tenant-1")
+	if !ok {
+		t.Fatal("expected sofia::expire to normalize")
+	}
+	if event.EventType != "registration_expired" {
+		t.Fatalf("expected registration_expired, got %q", event.EventType)
+	}
+	if event.CallID != "202" {
+		t.Fatalf("expected 202 from from-user, got %q", event.CallID)
+	}
+}
+
 func TestNormalizeMVPChannelCreateStillUsesEventName(t *testing.T) {
 	event, ok := NormalizeMVP(map[string]string{
 		"Event-Name": "CHANNEL_CREATE",
@@ -81,8 +98,8 @@ func TestNormalizeMVPSofiaUnregister(t *testing.T) {
 	if !ok {
 		t.Fatal("expected sofia::unregister to normalize")
 	}
-	if event.EventType != "registration_seen" {
-		t.Fatalf("expected registration_seen, got %q", event.EventType)
+	if event.EventType != "registration_expired" {
+		t.Fatalf("expected registration_expired, got %q", event.EventType)
 	}
 	if event.CallID != "201" {
 		t.Fatalf("expected 201 from from-user, got %q", event.CallID)

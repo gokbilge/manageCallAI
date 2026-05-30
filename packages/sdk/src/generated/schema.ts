@@ -3686,8 +3686,10 @@ export interface paths {
          * FreeSWITCH XML directory lookup
          * @description **Runtime-internal endpoint.** Called by FreeSWITCH `mod_xml_curl` for
          *     SIP registration and authentication. Returns FreeSWITCH XML.
-         *     Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
-         *     or query param `runtime_token=<token>` (local/dev compatibility only).
+         *     Auth: `Authorization: Basic base64(fs:<RUNTIME_API_TOKEN>)`
+         *     for `mod_xml_curl`, `Authorization: Bearer <RUNTIME_API_TOKEN>`, or
+         *     `x-managecallai-runtime-token: <token>`. Query/body token fallback is
+         *     only available when explicitly enabled for local compatibility.
          */
         get: {
             parameters: {
@@ -3696,8 +3698,6 @@ export interface paths {
                     user?: string;
                     /** @description SIP domain */
                     domain?: string;
-                    /** @description Dev-only token fallback. Prefer Authorization header. */
-                    runtime_token?: string;
                 };
                 header?: never;
                 path?: never;
@@ -3744,7 +3744,6 @@ export interface paths {
                     "application/x-www-form-urlencoded": {
                         user?: string;
                         domain?: string;
-                        runtime_token?: string;
                     };
                 };
             };
@@ -3836,8 +3835,8 @@ export interface paths {
          * @description **Runtime-internal endpoint.** Called by FreeSWITCH `mod_xml_curl` for
          *     inbound DID routing. Returns FreeSWITCH XML dialplan for active inbound
          *     routes that currently resolve to an `extension` target.
-         *     Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
-         *     or `x-managecallai-runtime-token: <token>`.
+         *     Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>` or
+         *     `x-managecallai-runtime-token: <token>`.
          */
         get: {
             parameters: {
@@ -3850,8 +3849,6 @@ export interface paths {
                     domain?: string;
                     /** @description Alternate tenant domain field */
                     domain_name?: string;
-                    /** @description Dev-only token fallback. Prefer Authorization header. */
-                    runtime_token?: string;
                 };
                 header?: never;
                 path?: never;
@@ -3891,7 +3888,6 @@ export interface paths {
                         destination_number?: string;
                         domain?: string;
                         domain_name?: string;
-                        runtime_token?: string;
                     };
                 };
             };
@@ -4601,7 +4597,7 @@ export interface components {
             tenant_id: string;
             name: string;
             key_prefix: string;
-            capabilities: string[];
+            capabilities: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "*")[];
             /** Format: uuid */
             created_by: string | null;
             /** Format: date-time */
@@ -4677,14 +4673,169 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        WebhookPayloadEnvelope: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            event: "ivr_flow.published" | "ivr_flow.publish_pending" | "ivr_flow.rollback_completed" | "ivr_flow.validation_failed" | "approval.requested" | "approval.approved" | "approval.rejected" | "call.completed" | "call.started" | "voicemail.recording_available" | "outbound_call.dispatched" | "outbound_call.completed" | "outbound_call.failed" | "extension.registered" | "extension.expired" | "recording.analysis_completed" | "recording.analysis_failed";
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: date-time */
+            timestamp: string;
+            /** @enum {number} */
+            version: 1;
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        IvrFlowPublishedPayload: {
+            /** Format: uuid */
+            flow_id: string;
+            flow_name: string;
+            /** Format: uuid */
+            version_id: string;
+            version_number: number;
+            /** @enum {string} */
+            triggered_by_type: "user" | "workflow" | "ai_agent" | "system";
+            /** Format: uuid */
+            triggered_by_id: string | null;
+        };
+        IvrFlowPublishPendingPayload: {
+            /** Format: uuid */
+            flow_id: string;
+            flow_name: string;
+            /** Format: uuid */
+            version_id: string;
+            version_number: number;
+            /** Format: uuid */
+            approval_request_id: string;
+            /** @enum {string} */
+            triggered_by_type: "user" | "workflow" | "ai_agent" | "system";
+            /** Format: uuid */
+            triggered_by_id: string | null;
+        };
+        IvrFlowRollbackCompletedPayload: {
+            /** Format: uuid */
+            flow_id: string;
+            flow_name: string;
+            /** Format: uuid */
+            rolled_back_to_version_id: string;
+            /** @enum {string} */
+            triggered_by_type: "user" | "workflow" | "ai_agent" | "system";
+            /** Format: uuid */
+            triggered_by_id: string | null;
+        };
+        IvrFlowValidationFailedPayload: {
+            /** Format: uuid */
+            flow_id: string;
+            flow_name: string;
+            /** Format: uuid */
+            version_id: string;
+            error_count: number;
+        };
+        ApprovalRequestedPayload: {
+            /** Format: uuid */
+            approval_id: string;
+            object_type: string;
+            /** Format: uuid */
+            object_id: string;
+            /** Format: uuid */
+            requested_by: string | null;
+        };
+        ApprovalApprovedPayload: {
+            /** Format: uuid */
+            approval_id: string;
+            object_type: string;
+            /** Format: uuid */
+            object_id: string;
+            /** Format: uuid */
+            decided_by: string | null;
+        };
+        ApprovalRejectedPayload: {
+            /** Format: uuid */
+            approval_id: string;
+            object_type: string;
+            /** Format: uuid */
+            object_id: string;
+            /** Format: uuid */
+            decided_by: string | null;
+            note: string | null;
+        };
+        CallCompletedPayload: {
+            call_id: string;
+            /** @enum {string} */
+            direction: "inbound" | "outbound";
+            from_number: string | null;
+            to_number: string | null;
+            duration_seconds: number | null;
+            disposition: string | null;
+        };
+        CallStartedPayload: {
+            call_id: string;
+            /** @enum {string} */
+            direction: "inbound" | "outbound";
+            from_number: string | null;
+            to_number: string | null;
+        };
+        VoicemailRecordingAvailablePayload: {
+            /** Format: uuid */
+            recording_id: string;
+            /** Format: uuid */
+            mailbox_id: string;
+            call_id: string | null;
+            duration_seconds: number | null;
+        };
+        OutboundCallDispatchedPayload: {
+            /** Format: uuid */
+            request_id: string;
+            /** Format: uuid */
+            extension_id: string;
+            dial_number: string;
+        };
+        OutboundCallCompletedPayload: {
+            /** Format: uuid */
+            request_id: string;
+            call_id: string | null;
+            duration_seconds: number | null;
+        };
+        OutboundCallFailedPayload: {
+            /** Format: uuid */
+            request_id: string;
+            failure_reason: string | null;
+        };
+        ExtensionRegisteredPayload: {
+            /** Format: uuid */
+            extension_id: string;
+            extension_number: string;
+        };
+        ExtensionExpiredPayload: {
+            /** Format: uuid */
+            extension_id: string;
+            extension_number: string;
+        };
+        RecordingAnalysisCompletedPayload: {
+            /** Format: uuid */
+            analysis_id: string;
+            /** Format: uuid */
+            recording_id: string;
+            has_transcript: boolean;
+            has_summary: boolean;
+        };
+        RecordingAnalysisFailedPayload: {
+            /** Format: uuid */
+            analysis_id: string;
+            /** Format: uuid */
+            recording_id: string;
+            error_message: string | null;
+        };
         CreateApiKeyBody: {
             name: string;
-            capabilities?: string[];
+            capabilities?: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "*")[];
         };
         CreateAutomationWebhookBody: {
             name: string;
             url: string;
-            events: ("ivr_flow.published" | "ivr_flow.publish_pending" | "ivr_flow.rollback_completed" | "ivr_flow.validation_failed" | "approval.requested" | "approval.approved" | "approval.rejected" | "call.completed" | "voicemail.recording_available" | "outbound_call.dispatched")[];
+            events: ("ivr_flow.published" | "ivr_flow.publish_pending" | "ivr_flow.rollback_completed" | "ivr_flow.validation_failed" | "approval.requested" | "approval.approved" | "approval.rejected" | "call.completed" | "call.started" | "voicemail.recording_available" | "outbound_call.dispatched" | "outbound_call.completed" | "outbound_call.failed" | "extension.registered" | "extension.expired" | "recording.analysis_completed" | "recording.analysis_failed")[];
         };
         CallEvent: {
             /** Format: uuid */

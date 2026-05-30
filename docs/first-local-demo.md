@@ -86,7 +86,7 @@ The extension SIP username defaults to the extension number unless you set `sip_
 Local compatibility form:
 
 ```bash
-curl "http://localhost:3000/api/v1/freeswitch/directory?runtime_token=<RUNTIME_API_TOKEN>&user=200&domain=acme-demo.managecallai.local"
+curl -u "fs:<RUNTIME_API_TOKEN>" "http://localhost:3000/api/v1/freeswitch/directory?user=200&domain=acme-demo.managecallai.local"
 ```
 
 Preferred production-style runtime auth:
