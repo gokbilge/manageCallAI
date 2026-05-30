@@ -81,6 +81,7 @@ async function insertPhoneNumber(tenantId: string, number = '+15551234567') {
 describe('users.role — role model invariants', () => {
   it('rejects an unknown role value', async () => {
     const tenantId = await insertTenant();
+    await client.query('SAVEPOINT inner_check');
     await expect(
       client.query(
         `INSERT INTO users (tenant_id, email, display_name, password_hash, role)
@@ -88,6 +89,8 @@ describe('users.role — role model invariants', () => {
         [tenantId],
       ),
     ).rejects.toThrow(/check/i);
+    await client.query('ROLLBACK TO SAVEPOINT inner_check');
+    await client.query('RELEASE SAVEPOINT inner_check');
   });
 
   it('accepts all four defined role values', async () => {
@@ -105,6 +108,7 @@ describe('users.role — role model invariants', () => {
 
   it('rejects an empty string role', async () => {
     const tenantId = await insertTenant();
+    await client.query('SAVEPOINT inner_check');
     await expect(
       client.query(
         `INSERT INTO users (tenant_id, email, display_name, password_hash, role)
@@ -112,6 +116,8 @@ describe('users.role — role model invariants', () => {
         [tenantId],
       ),
     ).rejects.toThrow(/check/i);
+    await client.query('ROLLBACK TO SAVEPOINT inner_check');
+    await client.query('RELEASE SAVEPOINT inner_check');
   });
 
   it('rejects null role', async () => {
@@ -133,6 +139,7 @@ describe('users.role — role model invariants', () => {
 
   it('rejects an empty password_hash', async () => {
     const tenantId = await insertTenant();
+    await client.query('SAVEPOINT inner_check');
     await expect(
       client.query(
         `INSERT INTO users (tenant_id, email, display_name, password_hash, role)
@@ -140,6 +147,8 @@ describe('users.role — role model invariants', () => {
         [tenantId],
       ),
     ).rejects.toThrow(/check/i);
+    await client.query('ROLLBACK TO SAVEPOINT inner_check');
+    await client.query('RELEASE SAVEPOINT inner_check');
   });
 });
 
@@ -151,6 +160,7 @@ describe('inbound_routes.phone_number_id — cross-tenant isolation', () => {
     const tenantB = await insertTenant('tenant-b');
     const phoneB = await insertPhoneNumber(tenantB, '+15550000001');
 
+    await client.query('SAVEPOINT inner_check');
     await expect(
       client.query(
         `INSERT INTO inbound_routes
@@ -159,6 +169,8 @@ describe('inbound_routes.phone_number_id — cross-tenant isolation', () => {
         [tenantA, phoneB],
       ),
     ).rejects.toThrow(/foreign_key_violation|phone_number_id/i);
+    await client.query('ROLLBACK TO SAVEPOINT inner_check');
+    await client.query('RELEASE SAVEPOINT inner_check');
   });
 
   it('accepts a phone number owned by the same tenant', async () => {
@@ -202,6 +214,7 @@ describe('queue_members.extension_id — cross-tenant isolation', () => {
     );
     const queueId = qR.rows[0]!.id;
 
+    await client.query('SAVEPOINT inner_check');
     await expect(
       client.query(
         `INSERT INTO queue_members (tenant_id, queue_id, extension_id, position)
@@ -209,6 +222,8 @@ describe('queue_members.extension_id — cross-tenant isolation', () => {
         [tenantA, queueId, extB],
       ),
     ).rejects.toThrow(/foreign_key_violation|extension_id/i);
+    await client.query('ROLLBACK TO SAVEPOINT inner_check');
+    await client.query('RELEASE SAVEPOINT inner_check');
   });
 });
 
@@ -292,12 +307,17 @@ describe('phone_numbers.e164_number format constraint', () => {
     const tenantId = await insertTenant('e164-t');
     const badNumbers = ['5551234', '15551234567', '+1 555 123 4567', '555-123-4567', '+'];
     for (const num of badNumbers) {
+      // Each failing query aborts the transaction within the savepoint. Use a
+      // nested savepoint so the outer savepoint (test_start) remains clean.
+      await client.query('SAVEPOINT inner_check');
       await expect(
         client.query(
           `INSERT INTO phone_numbers (tenant_id, e164_number) VALUES ($1, $2)`,
           [tenantId, num],
         ),
       ).rejects.toThrow(/check/i);
+      await client.query('ROLLBACK TO SAVEPOINT inner_check');
+      await client.query('RELEASE SAVEPOINT inner_check');
     }
   });
 
@@ -322,6 +342,7 @@ describe('automation_api_keys.capabilities format constraint', () => {
     const tenantId = await insertTenant('cap-t');
     const badCaps = ['ADMIN', 'tenant extensions create', 'tenant..extensions', '123.abc'];
     for (const cap of badCaps) {
+      await client.query('SAVEPOINT inner_check');
       await expect(
         client.query(
           `INSERT INTO automation_api_keys (tenant_id, name, key_prefix, key_hash, capabilities)
@@ -329,6 +350,8 @@ describe('automation_api_keys.capabilities format constraint', () => {
           [tenantId, randomUUID(), cap],
         ),
       ).rejects.toThrow(/check/i);
+      await client.query('ROLLBACK TO SAVEPOINT inner_check');
+      await client.query('RELEASE SAVEPOINT inner_check');
     }
   });
 

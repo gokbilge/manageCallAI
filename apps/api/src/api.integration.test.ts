@@ -334,20 +334,23 @@ describe('API integration', () => {
 
     const wrongToken = await app.inject({
       method: 'GET',
-      url: `/api/v1/freeswitch/directory?runtime_token=wrong-token&user=300&domain=${domain}`,
+      url: `/api/v1/freeswitch/directory?user=300&domain=${domain}`,
+      headers: { 'x-managecallai-runtime-token': 'wrong-token' },
     });
     expect(wrongToken.statusCode).toBe(401);
 
     const wrongDomain = await app.inject({
       method: 'GET',
-      url: `/api/v1/freeswitch/directory?runtime_token=${runtimeToken}&user=300&domain=wrong.managecallai.local`,
+      url: `/api/v1/freeswitch/directory?user=300&domain=wrong.managecallai.local`,
+      headers: { 'x-managecallai-runtime-token': runtimeToken },
     });
     expect(wrongDomain.statusCode).toBe(404);
     expect(wrongDomain.body).toContain('<groups />');
 
     const success = await app.inject({
       method: 'GET',
-      url: `/api/v1/freeswitch/directory?runtime_token=${runtimeToken}&user=300&domain=${domain}`,
+      url: `/api/v1/freeswitch/directory?user=300&domain=${domain}`,
+      headers: { 'x-managecallai-runtime-token': runtimeToken },
     });
     expect(success.statusCode).toBe(200);
     expect(success.body).toContain('DirPass123!');
