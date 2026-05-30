@@ -21,6 +21,9 @@
 -- tenant_audit_log uses domain-qualified strings ('ivr_flow.published').
 -- Rows that don't match the mapping are imported as-is with 'domain.' prefix.
 
+-- tenant_audit_log has DO INSTEAD NOTHING rules for UPDATE/DELETE (0028) which
+-- makes ON CONFLICT DO NOTHING incompatible with the table. Use WHERE NOT EXISTS
+-- for deduplication instead.
 INSERT INTO tenant_audit_log
     (tenant_id, actor_id, actor_type, action, resource_type, resource_id, created_at)
 SELECT
@@ -39,14 +42,12 @@ SELECT
     ae.created_at
 FROM audit_events ae
 WHERE NOT EXISTS (
-    -- Skip rows that were already imported in a previous run (re-entrant).
     SELECT 1 FROM tenant_audit_log tal
      WHERE tal.tenant_id    = ae.tenant_id
        AND tal.resource_type = ae.object_type
        AND tal.resource_id   = ae.object_id::text
        AND tal.created_at    = ae.created_at
-)
-ON CONFLICT DO NOTHING;
+);
 
 -- ── 2. Rename audit_events to archive ────────────────────────────────────────
 -- The DO INSTEAD NOTHING immutability rules from 0028 stay attached to the
