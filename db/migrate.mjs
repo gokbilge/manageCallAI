@@ -205,15 +205,21 @@ function requireFromWorkspace(packageName) {
 }
 
 async function ensureMigrationTable(dbClient) {
-  // The base table is created without the new columns so existing databases
-  // that predate 0037 can still run migrations. The 0037 migration adds
-  // sha256_hex and applied_by via ALTER TABLE IF NOT EXISTS.
   await dbClient.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       filename   text PRIMARY KEY,
       applied_at timestamptz NOT NULL DEFAULT now()
     )
   `);
+  // Idempotently add columns introduced in 0037 so the runner can always
+  // SELECT sha256_hex without failing on databases that haven't applied
+  // 0037 yet. The migration itself repeats these ALTERs with IF NOT EXISTS.
+  await dbClient.query(
+    `ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS sha256_hex text`
+  );
+  await dbClient.query(
+    `ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS applied_by text`
+  );
 }
 
 function printStatus(files, applied) {
