@@ -39,7 +39,7 @@ import { channelMessageController } from './modules/channel-messages/channel-mes
 import { meetingSessionController } from './modules/meeting-sessions/meeting-session.controller.js';
 import { observabilityController } from './modules/observability/observability.controller.js';
 import { registerErrorHandler } from './errors/index.js';
-import { registerLoggingHooks } from './logging/logger.js';
+import { redactSensitiveUrl, registerLoggingHooks } from './logging/logger.js';
 import { idempotencyPlugin } from './modules/idempotency/idempotency.plugin.js';
 import { registerRateLimitHook } from './security/rate-limit.js';
 
@@ -119,7 +119,29 @@ function registerPlatformModules(app: FastifyInstance): void {
 // ── App factory ───────────────────────────────────────────────────────────────
 
 export function buildApp() {
-  const app = Fastify({ logger: true });
+  const app = Fastify({
+    logger: {
+      redact: [
+        'req.headers.authorization',
+        'req.headers.cookie',
+        "req.headers['x-managecallai-runtime-token']",
+        'headers.authorization',
+        'headers.cookie',
+        "headers['x-managecallai-runtime-token']",
+      ],
+      serializers: {
+        req(req) {
+          return {
+            method: req.method,
+            url: redactSensitiveUrl(req.url),
+            host: req.hostname,
+            remoteAddress: req.ip,
+            remotePort: req.socket.remotePort,
+          };
+        },
+      },
+    },
+  });
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   const jwtPlugin = jwt as unknown as FastifyPluginCallback<FastifyJWTOptions>;

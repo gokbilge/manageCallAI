@@ -23,6 +23,7 @@ sip-credentials*
 trunk-credentials*
 jwt-secret*
 runtime-token*
+!docs/security/runtime-token-hardening.md
 
 # Local AI context files - not for version control
 CLAUDE.md

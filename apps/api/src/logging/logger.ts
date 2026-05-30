@@ -55,7 +55,7 @@ export function registerLoggingHooks(app: FastifyInstance): void {
     req.log.info(
       {
         method: req.method,
-        url: req.url,
+        url: redactSensitiveUrl(req.url),
         status_code: reply.statusCode,
         response_time_ms: Math.round(reply.elapsedTime),
       },
@@ -67,4 +67,24 @@ export function registerLoggingHooks(app: FastifyInstance): void {
 
 export function logError(req: FastifyRequest, _reply: FastifyReply, err: Error): void {
   req.log.error({ err: { message: err.message, name: err.name } }, 'request error');
+}
+
+export function redactSensitiveUrl(url: string): string {
+  const [path, query] = url.split('?', 2);
+  if (!query) return url;
+
+  const params = new URLSearchParams(query);
+  for (const key of params.keys()) {
+    if (isSensitiveQueryKey(key)) {
+      params.set(key, '[REDACTED]');
+    }
+  }
+
+  const redacted = params.toString();
+  return redacted ? `${path}?${redacted}` : path ?? url;
+}
+
+function isSensitiveQueryKey(key: string): boolean {
+  const normalized = key.toLowerCase();
+  return normalized === 'runtime_token' || normalized.endsWith('_token') || normalized.includes('secret');
 }

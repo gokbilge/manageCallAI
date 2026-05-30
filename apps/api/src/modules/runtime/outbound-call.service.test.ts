@@ -186,6 +186,43 @@ describe('OutboundCallService', () => {
       ).rejects.toBeInstanceOf(OutboundCallValidationError);
     });
 
+    it('allows a destination inside a configured country prefix allowlist', async () => {
+      repo = makeRepo({
+        resolveRouteForNumber: vi.fn().mockResolvedValue({
+          route_id: ROUTE_ID,
+          sip_trunk_id: TRUNK_ID,
+          max_calls_per_minute: null,
+          allowed_destination_prefixes_json: ['+90'],
+          blocked_destination_prefixes_json: null,
+        }),
+      });
+      service = new OutboundCallService(repo);
+
+      await service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' });
+
+      expect(vi.mocked(repo.create)).toHaveBeenCalledWith(
+        expect.objectContaining({ dial_number: '+905551234567' }),
+      );
+    });
+
+    it('enforces area-code allowlists by using the most specific allowed prefix', async () => {
+      repo = makeRepo({
+        resolveRouteForNumber: vi.fn().mockResolvedValue({
+          route_id: ROUTE_ID,
+          sip_trunk_id: TRUNK_ID,
+          max_calls_per_minute: null,
+          allowed_destination_prefixes_json: ['+1415'],
+          blocked_destination_prefixes_json: null,
+        }),
+      });
+      service = new OutboundCallService(repo);
+
+      await expect(
+        service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+12125550100' }),
+      ).rejects.toThrow('Dial number is outside the outbound route destination allowlist');
+      expect(vi.mocked(repo.create)).not.toHaveBeenCalled();
+    });
+
     it('enforces outbound route per-minute rate caps before persistence', async () => {
       repo = makeRepo({
         resolveRouteForNumber: vi.fn().mockResolvedValue({
