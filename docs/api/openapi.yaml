@@ -3708,6 +3708,35 @@ components:
       required:
         - status
         - flow
+    DryRunPublishResult:
+      type: object
+      properties:
+        dry_run:
+          type: boolean
+          enum:
+            - true
+        would_become:
+          type: string
+          enum:
+            - published
+            - pending_approval
+        require_approval:
+          type: boolean
+        version_state_valid:
+          type: boolean
+        actor_type:
+          type: string
+          enum:
+            - user
+            - workflow
+            - ai_agent
+            - system
+      required:
+        - dry_run
+        - would_become
+        - require_approval
+        - version_state_valid
+        - actor_type
     FlowValidationHistoryEntry:
       type: object
       properties:

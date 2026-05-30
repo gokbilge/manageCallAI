@@ -119,6 +119,19 @@ export const PublishAttemptResultSchema = z.object({
 }).openapi('PublishAttemptResult');
 export type PublishAttemptResult = z.infer<typeof PublishAttemptResultSchema>;
 
+// ── Dry-run publish result ────────────────────────────────────────────────────
+// Returned when dry_run=true on a publish request. No state is mutated.
+// Contains the same policy/validation outcome that a real publish would produce.
+
+export const DryRunPublishResultSchema = z.object({
+  dry_run: z.literal(true),
+  would_become: z.enum(['published', 'pending_approval']),
+  require_approval: z.boolean(),
+  version_state_valid: z.boolean(),
+  actor_type: z.enum(['user', 'workflow', 'ai_agent', 'system']),
+}).openapi('DryRunPublishResult');
+export type DryRunPublishResult = z.infer<typeof DryRunPublishResultSchema>;
+
 export const FlowValidationHistoryEntrySchema = z.object({
   id: z.string().uuid(),
   version_id: z.string().uuid().nullable(),

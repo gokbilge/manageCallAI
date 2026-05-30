@@ -1,6 +1,7 @@
 import type { IvrFlowRepository } from './ivr-flow.repository.js';
 import type {
   CreateIvrFlowInput,
+  DryRunPublishResult,
   FlowHistory,
   FlowVersion,
   FlowSimulationResult,
@@ -474,6 +475,31 @@ export class IvrFlowService {
       throw new FlowVersionStateError('No draft version available to simulate');
     }
     return this.simulate(flowId, versionId, tenantId, scenario);
+  }
+
+  /**
+   * Dry-run a publish request: run all pre-checks and return what WOULD happen
+   * without writing any database rows, emitting webhooks, or creating approvals.
+   * Identical validation path to publish() — only side effects are skipped.
+   */
+  async dryRunPublish(
+    flowId: string,
+    versionId: string,
+    tenantId: string,
+    actorType: 'user' | 'workflow' | 'ai_agent' | 'system' = 'user',
+    actorRole?: Role,
+  ): Promise<DryRunPublishResult> {
+    const version = await this.repo.findVersionById(versionId, flowId, tenantId);
+    const versionStateValid = !!version && ['validated', 'simulated'].includes(version.state);
+    const policy = await this.repo.getActivePublishPolicy(tenantId);
+    const requireApproval = !!(policy?.require_approval && actorRole !== 'platform_admin');
+    return {
+      dry_run: true,
+      would_become: requireApproval ? 'pending_approval' : 'published',
+      require_approval: requireApproval,
+      version_state_valid: versionStateValid,
+      actor_type: actorType,
+    };
   }
 
   async publish(flowId: string, versionId: string, tenantId: string, triggeredById: string, actorRole?: Role): Promise<PublishAttemptResult> {
