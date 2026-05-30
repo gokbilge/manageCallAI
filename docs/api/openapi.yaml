@@ -3630,6 +3630,23 @@ components:
           format: uuid
       required:
         - type
+    SimulationStep:
+      type: object
+      properties:
+        node_id:
+          type: string
+        category:
+          type: string
+          enum:
+            - start
+            - task
+            - gateway
+            - end
+        edge_id:
+          type: string
+      required:
+        - node_id
+        - category
     SimulationOutcome:
       type: object
       properties:
@@ -3642,6 +3659,10 @@ components:
           type: array
           items:
             type: string
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/SimulationStep"
         final_action:
           allOf:
             - $ref: "#/components/schemas/SimulationFinalAction"
@@ -3655,6 +3676,7 @@ components:
       required:
         - status
         - path
+        - steps
         - final_action
         - errors
     FlowSimulationResult:

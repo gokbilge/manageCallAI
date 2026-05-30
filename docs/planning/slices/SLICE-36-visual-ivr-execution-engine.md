@@ -8,11 +8,21 @@ as operators expect.
 
 ## Status
 
-**PLANNED**
+**COMPLETED**
 
-Audited 2026-05-30. The project has validation, simulation, runtime resolution,
-session replay data, and visual-builder utilities, but no shared execution planner
-is implemented yet across validation, simulation, runtime resolution, and replay.
+Audited 2026-05-30 (post SLICE-35). All exit criteria are met:
+
+- New shared planner module `apps/api/src/modules/ivr-flows/ivr-graph-planner.ts` provides:
+  - `buildPlannerGraph(graphJson)` — builds a typed node map with BPMN category annotations
+  - `resolveNextNode(node, ctx, outcome?)` — resolves next node + edge ID deterministically
+  - `resolveSwitchInput(node, ctx)` — shared switch token resolution (was duplicated)
+- `simulateGraph` in `ivr-flow.service.ts` uses the planner; emits `steps: SimulationStep[]` trace
+- `IvrRuntimeService.resolveNextAction` uses `buildPlannerGraph` + shared `resolveSwitchInput`
+- `SimulationOutcome` now includes `steps: SimulationStep[]` with `node_id`, `category`, `edge_id`
+- Edge IDs match `graphToBuilderEdges()` format so the React builder can highlight simulated paths
+- `SimulationStepSchema` added to contracts; `SimulationOutcomeSchema` extended
+- 31 focused planner unit tests + all existing 87 service/validation/runtime tests pass
+- `pnpm build` and `pnpm lint` clean
 
 ## Context
 

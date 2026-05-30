@@ -89,9 +89,17 @@ export const SimulationFinalActionSchema = z.object({
 }).openapi('SimulationFinalAction');
 export type SimulationFinalAction = z.infer<typeof SimulationFinalActionSchema>;
 
+export const SimulationStepSchema = z.object({
+  node_id: z.string(),
+  category: z.enum(['start', 'task', 'gateway', 'end']),
+  edge_id: z.string().optional(),
+}).openapi('SimulationStep');
+export type SimulationStep = z.infer<typeof SimulationStepSchema>;
+
 export const SimulationOutcomeSchema = z.object({
   status: z.enum(['passed', 'failed']),
   path: z.array(z.string()),
+  steps: z.array(SimulationStepSchema),
   final_action: SimulationFinalActionSchema.nullable(),
   errors: z.array(FlowValidationErrorSchema),
 }).openapi('SimulationOutcome');
