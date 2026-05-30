@@ -10,6 +10,10 @@ as operators expect.
 
 **PLANNED**
 
+Audited 2026-05-30. The project has validation, simulation, runtime resolution,
+session replay data, and visual-builder utilities, but no shared execution planner
+is implemented yet across validation, simulation, runtime resolution, and replay.
+
 ## Context
 
 The visual builder already edits IVR graphs, and the backend already validates,

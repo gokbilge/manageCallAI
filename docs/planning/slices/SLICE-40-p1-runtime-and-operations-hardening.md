@@ -1,5 +1,13 @@
 # SLICE-40 P1 Runtime And Operations Hardening
 
+## Status
+
+**PARTIALLY IMPLEMENTED - RUNTIME SAFETY FOUNDATION**
+
+Audited 2026-05-30. Queue runtime policy, outbound route safety, destination
+allow/block lists, emergency/premium blocking, and API-key capability contracts are
+implemented. Remaining P1 work is split across SLICE-41 and SLICE-42.
+
 ## Goal
 
 Turn the P1 telecom/runtime, IVR runtime, automation, AI/MCP, and operations
@@ -38,4 +46,3 @@ backlog into enforceable contracts instead of loose documentation.
   follow-up slice with a concrete owner and validation path.
 - Runtime-facing safety behavior fails closed by default.
 - Public API and OpenAPI expose all newly implemented policy fields.
-

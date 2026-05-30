@@ -1,5 +1,14 @@
 # SLICE-42 AI Dry-Run, Audit Identity, And Tracing
 
+## Status
+
+**PLANNED**
+
+Audited 2026-05-30. Audit event contracts already include
+`actor_type = "ai_agent"` and MCP tool risk classification exists, but dry-run mutation mode,
+AI/MCP actor identity enforcement, and OpenTelemetry instrumentation are not yet
+implemented.
+
 ## Goal
 
 Complete the deferred AI and operations safety foundations that were intentionally

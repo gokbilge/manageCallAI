@@ -8,7 +8,14 @@ real time.
 
 ## Status
 
-**PLANNED**
+**PARTIALLY IMPLEMENTED - TENANT COCKPIT FOUNDATION**
+
+Audited 2026-05-30. The API exposes tenant-scoped live snapshots and an SSE stream
+under `/api/v1/observability`, shared contracts define the snapshot shape, and the
+React tenant cockpit renders active sessions, queue summaries, webhook backlog,
+freshness, empty/error states, and session replay links. Remaining work is true
+event fan-out, platform aggregate runtime health in the cockpit, provider/adapter
+backlog depth, and stronger live stream degradation semantics.
 
 ## Context
 
