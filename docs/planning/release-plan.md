@@ -73,7 +73,8 @@ Reference:
 | `SLICE-32` | planned |
 
 The original v1 release-plan slices are closed. The next release-candidate feature
-set is now explicit as `SLICE-25` through `SLICE-32`.
+set is now explicit as `SLICE-25` through `SLICE-32`, with follow-on reliability
+and production-hardening lanes tracked in `SLICE-43` and `SLICE-44`.
 
 That means:
 
@@ -254,6 +255,11 @@ SLICE-00 Current Baseline
 30. `SLICE-31` Prompt and IVR AI Integration Contracts
 31. `SLICE-32` Omnichannel Messaging and Meeting Adapters
 
+### Stage 8 - Reliability And Production Readiness
+
+32. `SLICE-43` MVP Demonstrable Reliability
+33. `SLICE-44` Production Readiness Hardening
+
 ## 7. Minimal Release Gate
 
 The product is ready for the first release only when all of these are true:
@@ -300,3 +306,5 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-30](slices/SLICE-30-automation-operator-tools.md)
 - [SLICE-31](slices/SLICE-31-prompt-and-ivr-ai-integration-contracts.md)
 - [SLICE-32](slices/SLICE-32-omnichannel-messaging-and-meeting-adapters.md)
+- [SLICE-43](slices/SLICE-43-mvp-demonstrable-reliability.md)
+- [SLICE-44](slices/SLICE-44-production-readiness-hardening.md)

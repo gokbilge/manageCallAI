@@ -38,7 +38,7 @@ Verify these values in `.env`:
 - `SIP_SECRET_KEY_ID`
 
 `Authorization: Bearer <RUNTIME_API_TOKEN>` is the preferred runtime auth format.
-The `runtime_token` query/body fallback exists only for local development and constrained `mod_xml_curl` setups.
+The `runtime_token` query/body fallback exists only for local development and constrained legacy setups. FreeSWITCH `mod_xml_curl` should use HTTP Basic Auth with the runtime token as the password.
 
 ## 2. Start PostgreSQL and Run Migrations
 
@@ -119,7 +119,7 @@ curl "http://localhost:3000/api/v1/freeswitch/directory?user=200&domain=acme-dem
 Local compatibility form:
 
 ```bash
-curl "http://localhost:3000/api/v1/freeswitch/directory?runtime_token=<RUNTIME_API_TOKEN>&user=200&domain=acme-demo.managecallai.local"
+curl -u "fs:<RUNTIME_API_TOKEN>" "http://localhost:3000/api/v1/freeswitch/directory?user=200&domain=acme-demo.managecallai.local"
 ```
 
 Expected behavior:

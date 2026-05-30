@@ -14,6 +14,7 @@ type Config struct {
 	ESLPort      int
 	ESLPassword  string
 	APIBaseURL   string
+	HealthPort   int
 	LogLevel     string
 }
 
@@ -26,6 +27,7 @@ func Load() Config {
 		ESLPort:      getEnvInt("FREESWITCH_ESL_PORT", 8021),
 		ESLPassword:  getEnv("FREESWITCH_ESL_PASSWORD", "ClueCon"),
 		APIBaseURL:   getEnv("API_BASE_URL", "http://localhost:3000"),
+		HealthPort:   getEnvInt("HEALTH_PORT", 3500),
 		LogLevel:     getEnv("LOG_LEVEL", "info"),
 	}
 

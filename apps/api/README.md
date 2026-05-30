@@ -81,9 +81,14 @@ pnpm --filter @managecallai/api dev   # starts on API_PORT (default 3000)
 | `APP_ENV` | `development` | Set to `production` to enforce production secret checks and header-only runtime auth by default |
 | `JWT_SECRET` | — | Required; used to sign/verify JWTs |
 | `RUNTIME_API_TOKEN` | — | Bearer token for FreeSWITCH runtime endpoints |
-| `ALLOW_RUNTIME_TOKEN_FALLBACK` | `true` outside production, `false` in production | Allows `runtime_token` query/body compatibility for local or constrained `mod_xml_curl` setups |
+| `ALLOW_RUNTIME_TOKEN_FALLBACK` | `true` outside production, `false` in production | Allows legacy `runtime_token` query/body compatibility for local-only setups. Production FreeSWITCH `mod_xml_curl` should use HTTP Basic Auth with the runtime token as the password. |
 | `SIP_SECRET_MASTER_KEY` | — | 64-char hex; AES-256-GCM key for SIP password encryption |
 | `SIP_SECRET_KEY_ID` | — | Key version label (e.g. `v1`) |
+| `RATE_LIMIT_WINDOW_MS` | `60000` | Rate-limit window for protected edge surfaces |
+| `RATE_LIMIT_AUTH_MAX` | `100` | Requests per window for `/api/v1/auth/*` per client key |
+| `RATE_LIMIT_RUNTIME_MAX` | `1200` | Requests per window for runtime and FreeSWITCH endpoints per client key |
+| `RATE_LIMIT_WEBHOOK_MAX` | `300` | Requests per window for webhook management endpoints per client key |
+| `RATE_LIMIT_OUTBOUND_MAX` | `60` | Requests per window for outbound call initiation per client key |
 
 ## Auth model
 
@@ -91,6 +96,8 @@ pnpm --filter @managecallai/api dev   # starts on API_PORT (default 3000)
 - **Runtime/FreeSWITCH endpoints**: `Authorization: Bearer <RUNTIME_API_TOKEN>` or `x-managecallai-runtime-token: <token>`
 
 When `APP_ENV=production`, startup rejects the sample `JWT_SECRET`, `RUNTIME_API_TOKEN`, and `SIP_SECRET_MASTER_KEY` values from local examples. Runtime query/body token fallback is disabled by default in production; use headers unless a deployment has an explicitly isolated compatibility path.
+
+Auth, runtime/FreeSWITCH, webhook management, and outbound-call initiation endpoints are rate-limited at the API edge. Runtime limits key on the client IP plus a hash of the runtime credential and tenant header, so FreeSWITCH nodes are bounded without logging bearer tokens.
 
 ## Error responses
 

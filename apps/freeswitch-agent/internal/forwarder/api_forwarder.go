@@ -18,6 +18,7 @@ import (
 type APIForwarder struct {
 	baseURL      string
 	runtimeToken string
+	tenantID     string
 	client       *http.Client
 	logger       *slog.Logger
 }
@@ -26,6 +27,7 @@ func NewAPIForwarder(cfg config.Config, logger *slog.Logger) *APIForwarder {
 	return &APIForwarder{
 		baseURL:      strings.TrimRight(cfg.APIBaseURL, "/"),
 		runtimeToken: strings.TrimSpace(cfg.RuntimeToken),
+		tenantID:     strings.TrimSpace(cfg.TenantID),
 		client: &http.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -53,6 +55,9 @@ func (f *APIForwarder) ForwardEvent(ctx context.Context, event events.Normalized
 	if f.runtimeToken != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", f.runtimeToken))
 	}
+	if tenantID := firstNonEmpty(event.TenantID, f.tenantID); tenantID != "" {
+		req.Header.Set("X-Tenant-ID", tenantID)
+	}
 
 	resp, err := f.client.Do(req)
 	if err != nil {
@@ -71,4 +76,13 @@ func (f *APIForwarder) ForwardEvent(ctx context.Context, event events.Normalized
 	)
 
 	return nil
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }

@@ -208,6 +208,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@managecallai/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       fastify:
         specifier: ^5.2.0
         version: 5.8.5
@@ -242,6 +245,9 @@ importers:
       zod:
         specifier: ^3.25.0
         version: 3.25.76
+      zod-to-json-schema:
+        specifier: ^3.24.0
+        version: 3.25.2(zod@3.25.76)
     devDependencies:
       '@eslint/js':
         specifier: ^9.0.0

@@ -40,6 +40,7 @@ import { meetingSessionController } from './modules/meeting-sessions/meeting-ses
 import { registerErrorHandler } from './errors/index.js';
 import { registerLoggingHooks } from './logging/logger.js';
 import { idempotencyPlugin } from './modules/idempotency/idempotency.plugin.js';
+import { registerRateLimitHook } from './security/rate-limit.js';
 
 // ── Module group registration ─────────────────────────────────────────────────
 
@@ -117,6 +118,7 @@ export function buildApp() {
 
   registerErrorHandler(app);
   registerLoggingHooks(app);
+  registerRateLimitHook(app);
 
   app.addContentTypeParser('text/plain', { parseAs: 'string' }, (_req, body, done) => {
     done(null, body);

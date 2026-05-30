@@ -7,7 +7,7 @@ import (
 func TestLoadDefaults(t *testing.T) {
 	for _, key := range []string{
 		"APP_ENV", "MANAGECALLAI_TENANT_ID", "RUNTIME_API_TOKEN", "FREESWITCH_ESL_HOST",
-		"FREESWITCH_ESL_PORT", "FREESWITCH_ESL_PASSWORD", "API_BASE_URL", "LOG_LEVEL",
+		"FREESWITCH_ESL_PORT", "FREESWITCH_ESL_PASSWORD", "API_BASE_URL", "HEALTH_PORT", "LOG_LEVEL",
 	} {
 		t.Setenv(key, "")
 	}
@@ -25,6 +25,9 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if cfg.APIBaseURL != "http://localhost:3000" {
 		t.Errorf("APIBaseURL default: got %q, want http://localhost:3000", cfg.APIBaseURL)
+	}
+	if cfg.HealthPort != 3500 {
+		t.Errorf("HealthPort default: got %d, want 3500", cfg.HealthPort)
 	}
 	if cfg.LogLevel != "info" {
 		t.Errorf("LogLevel default: got %q, want info", cfg.LogLevel)
@@ -47,6 +50,7 @@ func TestLoadOverridesFromEnv(t *testing.T) {
 	t.Setenv("FREESWITCH_ESL_PORT", "9021")
 	t.Setenv("FREESWITCH_ESL_PASSWORD", "MySecret")
 	t.Setenv("API_BASE_URL", "http://api:8080")
+	t.Setenv("HEALTH_PORT", "4500")
 	t.Setenv("LOG_LEVEL", "debug")
 	t.Setenv("APP_ENV", "staging")
 
@@ -69,6 +73,9 @@ func TestLoadOverridesFromEnv(t *testing.T) {
 	}
 	if cfg.APIBaseURL != "http://api:8080" {
 		t.Errorf("APIBaseURL: got %q, want http://api:8080", cfg.APIBaseURL)
+	}
+	if cfg.HealthPort != 4500 {
+		t.Errorf("HealthPort: got %d, want 4500", cfg.HealthPort)
 	}
 	if cfg.LogLevel != "debug" {
 		t.Errorf("LogLevel: got %q, want debug", cfg.LogLevel)
