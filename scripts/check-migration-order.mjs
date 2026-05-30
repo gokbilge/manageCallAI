@@ -92,7 +92,6 @@ try {
 // ── Checks ─────────────────────────────────────────────────────────────────────
 
 const errors = [];
-const warnings = [];
 
 const FILENAME_RE = /^(\d{4})_.+\.sql$/;
 const byPrefix = new Map(); // prefix -> filename[]
