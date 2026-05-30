@@ -277,3 +277,5 @@ registry.register('QueueDepth', observability.QueueDepthSchema);
 registry.register('WebhookBacklog', observability.WebhookBacklogSchema);
 registry.register('LiveSnapshot', observability.LiveSnapshotSchema);
 registry.register('LiveSnapshotResponse', observability.LiveSnapshotResponseSchema);
+registry.register('StreamEvent', observability.StreamEventSchema);
+registry.register('PlatformHealthSnapshot', observability.PlatformHealthSnapshotSchema);
