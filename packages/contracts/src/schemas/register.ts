@@ -97,6 +97,7 @@ registry.register('FlowValidationOutcome', ivrFlows.FlowValidationOutcomeSchema)
 registry.register('FlowValidationResult', ivrFlows.FlowValidationResultSchema);
 registry.register('SimulationScenario', ivrFlows.SimulationScenarioSchema);
 registry.register('SimulationFinalAction', ivrFlows.SimulationFinalActionSchema);
+registry.register('SimulationStep', ivrFlows.SimulationStepSchema);
 registry.register('SimulationOutcome', ivrFlows.SimulationOutcomeSchema);
 registry.register('FlowSimulationResult', ivrFlows.FlowSimulationResultSchema);
 registry.register('PublishAttemptResult', ivrFlows.PublishAttemptResultSchema);
