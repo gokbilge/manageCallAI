@@ -168,23 +168,30 @@ END $$;
 
 -- ── 7. Capability format on API keys ─────────────────────────────────────────
 -- Only the wildcard sentinel '*' or dot-separated lowercase strings are valid.
--- Application code enforces the exact capability list; this constraint catches
--- obvious injection or typos at the DB boundary.
+-- PostgreSQL CHECK constraints cannot contain subqueries, so the validation is
+-- wrapped in an IMMUTABLE function which is then called from the constraint.
+
+CREATE OR REPLACE FUNCTION api_key_capabilities_valid(caps text[])
+RETURNS boolean LANGUAGE plpgsql IMMUTABLE AS $$
+BEGIN
+    -- Legacy wildcard: permitted only until 0039 backfill runs.
+    IF caps = ARRAY['*']::text[] THEN RETURN TRUE; END IF;
+    -- Empty array: allowed (no-capability key).
+    IF cardinality(caps) = 0 THEN RETURN TRUE; END IF;
+    -- All elements must match the dot-namespaced capability format.
+    RETURN NOT EXISTS (
+        SELECT 1 FROM unnest(caps) AS cap
+         WHERE cap <> '*'
+           AND cap !~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$'
+    );
+END $$;
 
 ALTER TABLE automation_api_keys
     DROP CONSTRAINT IF EXISTS automation_api_keys_capabilities_format;
 
 ALTER TABLE automation_api_keys
-    ADD CONSTRAINT automation_api_keys_capabilities_format CHECK (
-        capabilities = ARRAY['*']::text[]
-        OR cardinality(capabilities) = 0
-        OR NOT EXISTS (
-            SELECT 1
-              FROM unnest(capabilities) AS cap
-             WHERE cap <> '*'
-               AND cap !~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$'
-        )
-    );
+    ADD CONSTRAINT automation_api_keys_capabilities_format
+        CHECK (api_key_capabilities_valid(capabilities));
 
 -- ── 8. E.164 format on phone numbers ─────────────────────────────────────────
 -- '+' followed by 1-9, then 6-14 more digits (ITU-T E.164 range: 7-15 total).
