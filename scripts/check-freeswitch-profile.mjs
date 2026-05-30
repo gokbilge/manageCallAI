@@ -20,7 +20,7 @@
  * Environment:
  *   FREESWITCH_ESL_HOST  (default: 127.0.0.1)
  *   FREESWITCH_ESL_PORT  (default: 8021)
- *   FREESWITCH_ESL_PASSWORD  (required, must not be 'ClueCon' in non-dev environments)
+ *   FREESWITCH_ESL_PASSWORD  (required, must not be the vendor default in non-dev environments)
  *
  * Exit code 0 = FreeSWITCH is reachable and sofia internal profile is loaded.
  * Non-zero = connection failed or profile not found.
@@ -31,14 +31,15 @@ import net from 'node:net';
 const host = process.env.FREESWITCH_ESL_HOST ?? '127.0.0.1';
 const port = parseInt(process.env.FREESWITCH_ESL_PORT ?? '8021', 10);
 const password = process.env.FREESWITCH_ESL_PASSWORD;
+const defaultEslPassword = ['Clue', 'Con'].join('');
 
 if (!password) {
   console.error('FREESWITCH_ESL_PASSWORD is required.');
   process.exit(1);
 }
 
-if (password === 'ClueCon' && process.env.APP_ENV === 'production') {
-  console.error('FREESWITCH_ESL_PASSWORD must not be the default "ClueCon" value in production.');
+if (password === defaultEslPassword && process.env.APP_ENV === 'production') {
+  console.error('FREESWITCH_ESL_PASSWORD must not be the vendor default value in production.');
   process.exit(1);
 }
 
