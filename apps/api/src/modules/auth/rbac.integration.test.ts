@@ -178,8 +178,18 @@ describe('RBAC — tenant_viewer capabilities', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  it('cannot manage API keys', async () => {
+  it('can list API keys (view)', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/automation/keys', headers: authHeader(viewerToken) });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('cannot create API keys (manage)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/automation/keys',
+      headers: authHeader(viewerToken),
+      payload: { name: 'test', capabilities: ['tenant.extensions.view'] },
+    });
     expect(res.statusCode).toBe(403);
   });
 });
