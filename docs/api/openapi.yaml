@@ -7118,3 +7118,106 @@ components:
           additionalProperties: {}
       required:
         - matched
+    RunningSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        call_id:
+          type: string
+        flow_id:
+          type: string
+          format: uuid
+        caller_number:
+          type:
+            - string
+            - "null"
+        current_node_id:
+          type:
+            - string
+            - "null"
+        started_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - call_id
+        - flow_id
+        - caller_number
+        - current_node_id
+        - started_at
+    QueueDepth:
+      type: object
+      properties:
+        queue_id:
+          type: string
+          format: uuid
+        queue_name:
+          type: string
+        member_count:
+          type: integer
+      required:
+        - queue_id
+        - queue_name
+        - member_count
+    WebhookBacklog:
+      type: object
+      properties:
+        pending:
+          type: integer
+        processing:
+          type: integer
+        failed:
+          type: integer
+        abandoned:
+          type: integer
+      required:
+        - pending
+        - processing
+        - failed
+        - abandoned
+    LiveSnapshot:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        active_session_count:
+          type: integer
+        running_sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunningSession"
+        queue_depths:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueDepth"
+        webhook_backlog:
+          $ref: "#/components/schemas/WebhookBacklog"
+        recent_call_events_5m:
+          type: integer
+        recent_session_failures_1h:
+          type: integer
+        pending_approvals:
+          type: integer
+        generated_at:
+          type: string
+          format: date-time
+      required:
+        - tenant_id
+        - active_session_count
+        - running_sessions
+        - queue_depths
+        - webhook_backlog
+        - recent_call_events_5m
+        - recent_session_failures_1h
+        - pending_approvals
+        - generated_at
+    LiveSnapshotResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/LiveSnapshot"
+      required:
+        - data
