@@ -127,17 +127,14 @@ export function buildApp() {
     sign: { expiresIn: '24h' },
   });
 
-  // Rate limiting: opt-in per route via config.rateLimit. Global max is a
-  // conservative backstop; auth and simulation routes set tighter limits.
+  // Rate limiting: opt-in per route via config.rateLimit.
+  // errorResponseBuilder is intentionally omitted — the default 429 from
+  // @fastify/rate-limit works correctly with fastify-type-provider-zod;
+  // a custom builder conflicts with the Zod serializer on schema-less routes.
   void app.register(rateLimit, {
     global: false,
     max: 300,
     timeWindow: '1 minute',
-    errorResponseBuilder: (_req, context) => ({
-      error: 'RESOURCE_EXHAUSTED',
-      message: `Rate limit exceeded. Try again in ${Math.ceil(context.ttl / 1000)}s`,
-      request_id: '',
-    }),
   });
 
   app.register(healthController, { prefix: '/health' });

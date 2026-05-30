@@ -14,7 +14,7 @@ export const authController: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/register',
     {
-      config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+      config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
       schema: { body: RegisterBodySchema },
     },
     async (req, reply) => {
@@ -42,7 +42,7 @@ export const authController: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/login',
     {
-      config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+      config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
       schema: { body: LoginBodySchema },
     },
     async (req, reply) => {

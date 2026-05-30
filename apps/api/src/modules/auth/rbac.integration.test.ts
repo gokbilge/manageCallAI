@@ -99,9 +99,9 @@ describe('POST /api/v1/auth/register', () => {
     expect(res.statusCode).toBe(409);
   });
 
-  it('returns 429 after 5 registration attempts in 1 minute', async () => {
+  it('returns 429 after 30 registration attempts in 1 minute', async () => {
     const responses: number[] = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 33; i++) {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/auth/register',
@@ -141,10 +141,10 @@ describe('POST /api/v1/auth/login', () => {
     expect(res.statusCode).toBe(401);
   });
 
-  it('returns 429 after 10 attempts in 1 minute', async () => {
+  it('returns 429 after 30 attempts in 1 minute', async () => {
     const slug = randomSlug();
     const responses: number[] = [];
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 33; i++) {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/auth/login',
