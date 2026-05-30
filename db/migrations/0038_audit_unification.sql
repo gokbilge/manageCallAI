@@ -25,7 +25,7 @@ INSERT INTO tenant_audit_log
     (tenant_id, actor_id, actor_type, action, resource_type, resource_id, created_at)
 SELECT
     ae.tenant_id,
-    ae.actor_id,
+    ae.actor_id::uuid,
     ae.actor_type,
     CASE ae.action
         WHEN 'publish'  THEN 'ivr_flow.published'
