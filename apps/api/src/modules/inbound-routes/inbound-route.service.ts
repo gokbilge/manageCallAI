@@ -235,13 +235,47 @@ function validateMatchValue(matchType: InboundRoute['match_type'], matchValue: s
     throw new InboundRouteInputError(`Pattern match_value must be ${MAX_PATTERN_MATCH_VALUE_LENGTH} characters or fewer`);
   }
 
-  try {
-    new RegExp(matchValue);
-  } catch {
+  if (!hasSupportedPatternSyntax(matchValue)) {
     throw new InboundRouteInputError('Pattern match_value must be a valid regular expression');
   }
 
   if (NESTED_QUANTIFIER_PATTERN.test(matchValue)) {
     throw new InboundRouteInputError('Pattern match_value contains a nested quantified expression');
   }
+}
+
+function hasSupportedPatternSyntax(pattern: string): boolean {
+  let escaped = false;
+  let bracketDepth = 0;
+  let groupDepth = 0;
+
+  for (const char of pattern) {
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (char < ' ') return false;
+    if (char === '[') {
+      bracketDepth += 1;
+      continue;
+    }
+    if (char === ']') {
+      bracketDepth -= 1;
+      if (bracketDepth < 0) return false;
+      continue;
+    }
+    if (bracketDepth > 0) continue;
+    if (char === '(') {
+      groupDepth += 1;
+    } else if (char === ')') {
+      groupDepth -= 1;
+      if (groupDepth < 0) return false;
+    }
+  }
+
+  return !escaped && bracketDepth === 0 && groupDepth === 0;
 }

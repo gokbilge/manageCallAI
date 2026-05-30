@@ -63,6 +63,6 @@ if (failures.length > 0) {
   for (const f of failures) console.error(`  ✗  ${f}`);
   process.exit(1);
 } else {
-  console.log(`API key capability alignment check PASSED — ${apiValues.size} capabilities verified`);
+  console.log('API key capability alignment check PASSED');
   process.exit(0);
 }

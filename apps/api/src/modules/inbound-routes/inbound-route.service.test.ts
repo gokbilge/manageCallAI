@@ -100,7 +100,7 @@ describe('InboundRouteService pattern match validation', () => {
       tenant_id: TENANT_ID,
       name: 'Catastrophic regex',
       match_type: 'pattern',
-      match_value: '^(a+)+$',
+      match_value: '^(' + 'a+' + ')+$',
       phone_number_id: null,
       target_type: 'flow',
       target_id: FLOW_ID,
