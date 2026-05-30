@@ -209,6 +209,19 @@ This flow applies to recording analysis, prompt generation, and IVR AI turns.
 7. Voice-message, native-call, meeting, and SIP-bridge sessions are represented by
    capability-specific channel voice session records.
 
+### 6.6 Audit Finding Flow
+
+1. An agent, maintainer, or reviewer runs an audit using `docs/audit/audit.md`.
+2. The audit record is committed under `docs/audit/audits/` with stable finding IDs.
+3. Findings resolved in the same session are marked `done` in the audit record.
+4. Findings that remain open, in progress, or accepted are linked to GitHub issues.
+5. GitHub Issues and Projects track ownership, priority, milestone, and execution
+   status for unresolved audit work.
+6. When the work is fixed, the audit record keeps the historical finding and the
+   linked GitHub issue is closed or updated with the fix commit.
+7. Commits, pushes, PR text, issue comments, and audit-linked issue bodies use the
+   configured maintainer or contributor identity, not AI-agent attribution.
+
 ## 7. Deployment View
 
 ### 7.1 Minimum MVP Deployment

@@ -122,6 +122,23 @@ Responsibilities:
 - Accept approved automation entry points
 - Bridge external workflow systems to control-plane operations
 
+### 3.7.1 Audit and Issue Tracking
+
+Implementation direction:
+
+- Markdown audit records in `docs/audit/audits/`
+- GitHub Issues and Projects for unresolved audit work
+
+Responsibilities:
+
+- Keep audit records as the evidence trail for what was reviewed
+- Create or update GitHub issues for audit findings that remain unresolved
+- Link each unresolved finding to the issue that tracks execution
+- Use area, type, priority, and risk labels so audit debt enters normal triage
+- Close or update linked issues when the finding is fixed or accepted
+- Keep commits, pushes, PRs, and issue comments under the configured maintainer
+  or contributor identity, without AI-agent names or generated-by markers
+
 ### 3.8 Provider Adapter Layer
 
 Implementation direction:

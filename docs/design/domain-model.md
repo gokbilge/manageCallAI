@@ -42,6 +42,8 @@ It describes the primary entities, their responsibilities, key relationships, li
 - SimulationResult
 - ApprovalRequest
 - AuditEvent
+- AuditFinding
+- IssueReference
 
 ### 3.4 Runtime Observation
 
@@ -138,6 +140,53 @@ Relationships:
 
 - Can be attached to roles
 - Can gate publish or outbound routing actions
+
+### 4.5 AuditFinding
+
+Represents a discrete issue discovered during an audit.
+
+Key fields:
+
+- `id`
+- `auditFile`
+- `title`
+- `severity`
+- `status`
+- `location`
+- `finding`
+- `fix`
+- `resolvedCommit`
+- `issueUrl`
+
+Relationships:
+
+- Belongs to one audit record
+- May link to one GitHub issue when unresolved after the audit session
+
+Invariants:
+
+- Findings are never deleted from audit records
+- Unresolved findings must have a GitHub issue or a documented reason why an
+  existing issue already tracks the same risk
+- Issue links must be updated when findings are resolved or accepted
+
+### 4.6 IssueReference
+
+Represents the GitHub tracking link for unresolved audit work.
+
+Key fields:
+
+- `url`
+- `number`
+- `state`
+- `labels`
+- `milestone`
+- `project`
+
+Relationships:
+
+- Tracks one or more related audit findings
+- May be closed when all linked findings are resolved
 
 ## 5. Telecom Configuration Entities
 
