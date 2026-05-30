@@ -4,6 +4,19 @@
 
 P2 - important
 
+## Status
+
+**PARTIALLY IMPLEMENTED**
+
+Audited 2026-05-30. Production secret enforcement, capability-scoped API keys,
+outbound allow/block safety, webhook signing headers, idempotent webhook event IDs,
+health/readiness endpoints, Prometheus metrics, support bundles, production
+deployment guidance, backup/restore guidance, and migration playbook material are
+in place. Remaining work includes endpoint rate-limit coverage, append-only audit
+semantics, webhook replay-window verification tests, broader tenant-isolation
+coverage, OpenTelemetry tracing, richer subsystem health, media lifecycle
+playbooks, restore smoke guidance, and outbound fraud rate controls.
+
 ## Goal
 
 Move the product from a reliable MVP into a production-ready telecom control plane

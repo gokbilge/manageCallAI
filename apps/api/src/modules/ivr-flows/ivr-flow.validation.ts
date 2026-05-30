@@ -1,8 +1,28 @@
-import { IVR_NODE_TYPES } from '@managecallai/contracts';
+import {
+  BPMN_ONLY_NODE_TYPES,
+  GRAPH_MODEL_VERSION,
+  IVR_NODE_CATEGORY_MAP,
+  IVR_NODE_TYPES,
+} from '@managecallai/contracts';
+import type { IvrNodeCategory, IvrNodeType } from '@managecallai/contracts';
 import type { ValidationOutcome } from './ivr-flow.types.js';
 
 // Canonical node types come from packages/contracts so MCP and API stay in sync.
 const SUPPORTED_NODE_TYPES = new Set<string>(IVR_NODE_TYPES);
+
+// BPMN-only type names that must never appear in ivr-bpmn-v1 graphs.
+const BPMN_ONLY_NODE_TYPE_SET = new Set<string>(BPMN_ONLY_NODE_TYPES);
+
+// Graph-level field names that indicate raw BPMN XML embedding — not supported.
+const BPMN_ONLY_GRAPH_FIELDS = new Set(['bpmn_xml', 'lanes', 'pools', 'collaboration', 'xml']);
+
+/**
+ * Returns the BPMN-inspired execution category for a supported IVR node type,
+ * or undefined for unknown types.
+ */
+export function getNodeCategory(nodeType: string): IvrNodeCategory | undefined {
+  return IVR_NODE_CATEGORY_MAP[nodeType as IvrNodeType];
+}
 
 // Maximum number of distinct nodes that can be visited in a single traversal
 // path before a loop is detected. Prevents infinite cycles in published flows.
@@ -32,6 +52,7 @@ function pushMissingReference(
 
 export function defaultIvrGraph(): Record<string, unknown> {
   return {
+    graph_model: GRAPH_MODEL_VERSION,
     entry_node_id: 'start',
     nodes: [
       { id: 'start', type: 'start', next_node_id: 'end' },
@@ -68,6 +89,28 @@ export function validateIvrGraph(graph: unknown): ValidationOutcome {
   }
 
   const graphObject = graph as Record<string, unknown>;
+
+  // ── graph_model marker ────────────────────────────────────────────────────
+  // If the marker is present it must equal the current version. Absence is
+  // accepted for backward compatibility with flows created before SLICE-35.
+  const graphModel = graphObject.graph_model;
+  if (graphModel !== undefined && graphModel !== GRAPH_MODEL_VERSION) {
+    errors.push({
+      field: 'graph_json.graph_model',
+      message: `Unsupported graph_model: "${String(graphModel)}". Expected "${GRAPH_MODEL_VERSION}" or omit the field.`,
+    });
+  }
+
+  // ── Reject raw BPMN graph-level fields ────────────────────────────────────
+  for (const field of BPMN_ONLY_GRAPH_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(graphObject, field)) {
+      errors.push({
+        field: `graph_json.${field}`,
+        message: `Unsupported BPMN construct: "${field}" is not permitted in ivr-bpmn-v1 graphs. Raw BPMN XML structures are not supported.`,
+      });
+    }
+  }
+
   const entryNodeId = graphObject.entry_node_id;
   const nodesValue = graphObject.nodes;
 
@@ -101,10 +144,17 @@ export function validateIvrGraph(graph: unknown): ValidationOutcome {
     nodes.push(node);
 
     if (!SUPPORTED_NODE_TYPES.has(node.type)) {
-      errors.push({
-        field: `graph_json.nodes[${index}].type`,
-        message: `Unsupported node type: ${node.type}. Supported: ${[...SUPPORTED_NODE_TYPES].join(', ')}`,
-      });
+      if (BPMN_ONLY_NODE_TYPE_SET.has(node.type)) {
+        errors.push({
+          field: `graph_json.nodes[${index}].type`,
+          message: `Unsupported BPMN construct: node type "${node.type}" is a raw BPMN 2.0 type not supported in ivr-bpmn-v1. Use the supported ivr-bpmn-v1 node types instead.`,
+        });
+      } else {
+        errors.push({
+          field: `graph_json.nodes[${index}].type`,
+          message: `Unsupported node type: ${node.type}. Supported: ${[...SUPPORTED_NODE_TYPES].join(', ')}`,
+        });
+      }
     }
 
     // fallback_node_id reference validity is checked in the traversal phase (visit)

@@ -1,5 +1,16 @@
 # SLICE-41 P1 Leftover Telecom, Ops, And AI Hardening
 
+## Status
+
+**PARTIALLY IMPLEMENTED**
+
+Audited 2026-05-30. Telecom/runtime, IVR API hardening, MCP risk classification,
+API-key capability enforcement, webhook DLQ/idempotency/event catalog work,
+metrics/health/support bundle, and production operations documentation are in
+place. Remaining work includes visual builder completion, localization, live
+session debugger polish, FreeSWITCH rollback smoke automation, per-trunk SRTP
+policy, and the AI dry-run/audit/tracing lane tracked in SLICE-42.
+
 ## Goal
 
 Finish the P1 items that were not implemented in the runtime-safety foundation.
@@ -91,4 +102,3 @@ and operations hardening work.
 - Operations docs cover deployment, upgrade, backup/restore, health, metrics, and
   support diagnostics.
 - CI runs any new deterministic tests added by this slice.
-

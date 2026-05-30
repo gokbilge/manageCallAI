@@ -36,6 +36,8 @@ Reference:
 
 ## 2.1 Current Slice Status
 
+Last audited: 2026-05-30.
+
 | Slice | Status |
 |-------|--------|
 | `SLICE-00` | completed |
@@ -68,17 +70,26 @@ Reference:
 | `SLICE-27` | completed |
 | `SLICE-28` | completed |
 | `SLICE-29` | completed |
-| `SLICE-30` | planned |
-| `SLICE-31` | planned |
-| `SLICE-32` | planned |
+| `SLICE-30` | completed |
+| `SLICE-31` | completed |
+| `SLICE-32` | completed |
+| `SLICE-33` | completed |
+| `SLICE-35` | partially implemented - documented foundation |
+| `SLICE-36` | planned |
+| `SLICE-37` | partially implemented - tenant cockpit foundation |
 | `SLICE-38` | completed |
 | `SLICE-39` | completed |
+| `SLICE-40` | partially implemented - runtime safety foundation |
+| `SLICE-41` | partially implemented |
+| `SLICE-42` | planned |
+| `SLICE-43` | partially implemented |
+| `SLICE-44` | partially implemented |
 
 The original v1 release-plan slices are closed. The next release-candidate feature
-set is now explicit as `SLICE-25` through `SLICE-32`, with MCP contract
-alignment and telecom CI gates tracked in `SLICE-38` and `SLICE-39`, and
-follow-on reliability and production-hardening lanes tracked in `SLICE-43` and
-`SLICE-44`.
+set is now explicit as `SLICE-25` through `SLICE-32`. Contract generation,
+MCP alignment, telecom CI gates, and P1/P2 hardening are tracked in `SLICE-33`
+and `SLICE-35` through `SLICE-44`. `SLICE-34` is referenced by `SLICE-33` as a
+future Fastify/Zod cleanup, but no slice document exists yet.
 
 That means:
 
@@ -151,6 +162,28 @@ SLICE-00 Current Baseline
   +--> SLICE-31 Prompt and IVR AI Contracts ------+
   |
   +--> SLICE-32 Omnichannel Channel Adapters -----+
+
+  +--> SLICE-33 Schema Contracts Package ----------+
+  |
+  +--> SLICE-35 BPMN-Inspired IVR Graph Model -----+
+  |                                               |
+  +--> SLICE-36 Visual IVR Execution Engine -------+
+  |                                               |
+  +--> SLICE-37 Live Observability Cockpit --------+
+  |
+  +--> SLICE-38 MCP Contract Alignment ------------+
+  |
+  +--> SLICE-39 CI Telecom Safety Gates -----------+
+  |
+  +--> SLICE-40 P1 Runtime/Ops Foundation ---------+
+  |
+  +--> SLICE-41 P1 Leftovers ----------------------+
+  |
+  +--> SLICE-42 AI Dry-Run/Audit/Tracing ----------+
+  |
+  +--> SLICE-43 MVP Demonstrable Reliability ------+
+  |
+  +--> SLICE-44 Production Readiness Hardening ----+
 ```
 
 ## 5. Parallel Work Tracks
@@ -204,6 +237,20 @@ SLICE-00 Current Baseline
 - `SLICE-30`
 - `SLICE-31`
 - `SLICE-32`
+
+### Track G - Contracts, Reliability, And Hardening
+
+- `SLICE-33`
+- `SLICE-35`
+- `SLICE-36`
+- `SLICE-37`
+- `SLICE-38`
+- `SLICE-39`
+- `SLICE-40`
+- `SLICE-41`
+- `SLICE-42`
+- `SLICE-43`
+- `SLICE-44`
 
 ## 6. Recommended Execution Order
 
@@ -261,10 +308,17 @@ SLICE-00 Current Baseline
 
 ### Stage 8 - Reliability And Production Readiness
 
-32. `SLICE-38` MCP Contract Alignment
-33. `SLICE-39` CI Telecom Safety Gates
-34. `SLICE-43` MVP Demonstrable Reliability
-35. `SLICE-44` Production Readiness Hardening
+32. `SLICE-33` Schema Contracts Package
+33. `SLICE-35` BPMN-Inspired IVR Graph Model
+34. `SLICE-36` Visual IVR Execution Engine
+35. `SLICE-37` Live Observability Cockpit
+36. `SLICE-38` MCP Contract Alignment
+37. `SLICE-39` CI Telecom Safety Gates
+38. `SLICE-40` P1 Runtime And Operations Hardening
+39. `SLICE-41` P1 Leftover Telecom, Ops, And AI Hardening
+40. `SLICE-42` AI Dry-Run, Audit Identity, And Tracing
+41. `SLICE-43` MVP Demonstrable Reliability
+42. `SLICE-44` Production Readiness Hardening
 
 ## 7. Minimal Release Gate
 
@@ -312,7 +366,14 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-30](slices/SLICE-30-automation-operator-tools.md)
 - [SLICE-31](slices/SLICE-31-prompt-and-ivr-ai-integration-contracts.md)
 - [SLICE-32](slices/SLICE-32-omnichannel-messaging-and-meeting-adapters.md)
+- [SLICE-33](slices/SLICE-33-schema-contracts-package.md)
+- [SLICE-35](slices/SLICE-35-bpmn-inspired-ivr-graph-model.md)
+- [SLICE-36](slices/SLICE-36-visual-ivr-execution-engine.md)
+- [SLICE-37](slices/SLICE-37-live-observability-cockpit.md)
 - [SLICE-38](slices/SLICE-38-mcp-contract-alignment.md)
 - [SLICE-39](slices/SLICE-39-ci-telecom-safety-gates.md)
+- [SLICE-40](slices/SLICE-40-p1-runtime-and-operations-hardening.md)
+- [SLICE-41](slices/SLICE-41-p1-leftover-telecom-ops-and-ai-hardening.md)
+- [SLICE-42](slices/SLICE-42-ai-dry-run-audit-identity-and-tracing.md)
 - [SLICE-43](slices/SLICE-43-mvp-demonstrable-reliability.md)
 - [SLICE-44](slices/SLICE-44-production-readiness-hardening.md)
