@@ -8,6 +8,9 @@ import type {
   ValidationOutcome,
 } from './inbound-route.types.js';
 
+const MAX_PATTERN_MATCH_VALUE_LENGTH = 200;
+const NESTED_QUANTIFIER_PATTERN = /\((?:[^()\\]|\\.)*[+*](?:[^()\\]|\\.)*\)[+*{]/;
+
 export class InboundRouteNotFoundError extends Error {
   constructor(id: string) { super(`Inbound route not found: ${id}`); this.name = 'InboundRouteNotFoundError'; }
 }
@@ -106,6 +109,7 @@ export class InboundRouteService {
 
   async create(input: CreateInboundRouteInput): Promise<InboundRouteWithVersions> {
     const normalized = await this.normalizePhoneNumberBinding(input.tenant_id, input);
+    validateMatchValue(input.match_type, normalized.match_value);
     return this.repo.create({
       ...input,
       match_value: normalized.match_value,
@@ -134,6 +138,11 @@ export class InboundRouteService {
         phone_number_id: normalized.phone_number_id,
       };
     }
+
+    validateMatchValue(
+      normalizedInput.match_type ?? current.match_type,
+      normalizedInput.match_value ?? current.match_value,
+    );
 
     const route = await this.repo.update(id, tenantId, normalizedInput);
     if (!route) throw new InboundRouteNotFoundError(id);
@@ -216,5 +225,23 @@ export class InboundRouteService {
     const updated = await this.repo.setStatus(id, tenantId, 'inactive');
     if (!updated) throw new InboundRouteNotFoundError(id);
     return updated;
+  }
+}
+
+function validateMatchValue(matchType: InboundRoute['match_type'], matchValue: string): void {
+  if (matchType !== 'pattern') return;
+
+  if (matchValue.length > MAX_PATTERN_MATCH_VALUE_LENGTH) {
+    throw new InboundRouteInputError(`Pattern match_value must be ${MAX_PATTERN_MATCH_VALUE_LENGTH} characters or fewer`);
+  }
+
+  try {
+    new RegExp(matchValue);
+  } catch {
+    throw new InboundRouteInputError('Pattern match_value must be a valid regular expression');
+  }
+
+  if (NESTED_QUANTIFIER_PATTERN.test(matchValue)) {
+    throw new InboundRouteInputError('Pattern match_value contains a nested quantified expression');
   }
 }

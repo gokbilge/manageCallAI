@@ -81,7 +81,7 @@ pnpm --filter @managecallai/api dev   # starts on API_PORT (default 3000)
 | `APP_ENV` | `development` | Set to `production` to enforce production secret checks and header-only runtime auth by default |
 | `JWT_SECRET` | — | Required; used to sign/verify JWTs |
 | `RUNTIME_API_TOKEN` | — | Bearer token for FreeSWITCH runtime endpoints |
-| `ALLOW_RUNTIME_TOKEN_FALLBACK` | `true` outside production, `false` in production | Allows `runtime_token` query/body compatibility for local or constrained `mod_xml_curl` setups |
+| `ALLOW_RUNTIME_TOKEN_FALLBACK` | `true` outside production, `false` in production | Allows legacy `runtime_token` query/body compatibility for local-only setups. Production FreeSWITCH `mod_xml_curl` should use HTTP Basic Auth with the runtime token as the password. |
 | `SIP_SECRET_MASTER_KEY` | — | 64-char hex; AES-256-GCM key for SIP password encryption |
 | `SIP_SECRET_KEY_ID` | — | Key version label (e.g. `v1`) |
 

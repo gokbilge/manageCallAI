@@ -2,6 +2,11 @@ import '@fastify/jwt';
 import 'fastify';
 import type { AuthClaims } from './modules/auth/auth-claims.js';
 
+interface RuntimeClaims {
+  tenant_id?: string;
+  auth_type: 'bearer' | 'basic' | 'header' | 'fallback';
+}
+
 declare module '@fastify/jwt' {
   interface FastifyJWT {
     user: AuthClaims;
@@ -17,6 +22,7 @@ declare module 'fastify' {
 
   interface FastifyRequest {
     user: AuthClaims;
+    runtime?: RuntimeClaims;
     jwtVerify(): Promise<void>;
   }
 }

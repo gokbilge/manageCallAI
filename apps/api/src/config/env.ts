@@ -59,6 +59,8 @@ const configValues = {
     .filter(Boolean),
   platformApiHealthUrl: process.env['PLATFORM_API_HEALTH_URL'] ?? 'http://localhost:3000/health',
   platformWorkerHealthUrl: process.env['PLATFORM_WORKER_HEALTH_URL'] ?? 'http://localhost:3400/health',
+  platformFreeswitchAgentHealthUrl:
+    process.env['PLATFORM_FREESWITCH_AGENT_HEALTH_URL'] ?? 'http://localhost:3500/health',
   webhookWorkerIntervalMs: parseInt(process.env['WEBHOOK_WORKER_INTERVAL_MS'] ?? '1000', 10),
   recordingStorageRoot: resolve(process.env['RECORDING_STORAGE_ROOT'] ?? 'recordings'),
 } as const;

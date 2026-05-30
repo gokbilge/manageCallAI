@@ -1,3 +1,4 @@
+import { mcpToolInputSchemas } from '@managecallai/contracts';
 import { apiCall } from '../api-client.js';
 
 export const SCHEDULE_TOOLS = [
@@ -5,7 +6,7 @@ export const SCHEDULE_TOOLS = [
     name: 'list_schedules',
     description:
       'List all schedules for this tenant. Schedules define business hours and are referenced by business_hours IVR nodes.',
-    inputSchema: { type: 'object' as const, properties: {} },
+    inputSchema: mcpToolInputSchemas.list_schedules,
   },
 ] as const;
 

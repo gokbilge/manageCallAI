@@ -81,6 +81,45 @@ const service = new InboundRouteService(mockRepo);
 
 beforeEach(() => vi.clearAllMocks());
 
+describe('InboundRouteService pattern match validation', () => {
+  it('rejects invalid regex pattern match values on create', async () => {
+    await expect(service.create({
+      tenant_id: TENANT_ID,
+      name: 'Bad regex',
+      match_type: 'pattern',
+      match_value: '(',
+      phone_number_id: null,
+      target_type: 'flow',
+      target_id: FLOW_ID,
+    })).rejects.toThrow(InboundRouteInputError);
+    expect(mockRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects nested quantified regex patterns on create', async () => {
+    await expect(service.create({
+      tenant_id: TENANT_ID,
+      name: 'Catastrophic regex',
+      match_type: 'pattern',
+      match_value: '^(a+)+$',
+      phone_number_id: null,
+      target_type: 'flow',
+      target_id: FLOW_ID,
+    })).rejects.toThrow(InboundRouteInputError);
+    expect(mockRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects overlong regex patterns on update', async () => {
+    vi.mocked(mockRepo.findById).mockResolvedValue(makeRouteWithVersions(makeRoute({
+      match_type: 'pattern',
+      match_value: '^123$',
+    })));
+    await expect(service.update(ROUTE_ID, TENANT_ID, {
+      match_value: '^' + '1'.repeat(201) + '$',
+    })).rejects.toThrow(InboundRouteInputError);
+    expect(mockRepo.update).not.toHaveBeenCalled();
+  });
+});
+
 // ── Publish status transition ─────────────────────────────────────────────────
 
 describe('InboundRouteService.publish', () => {

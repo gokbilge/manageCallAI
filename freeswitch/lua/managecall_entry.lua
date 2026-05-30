@@ -28,6 +28,32 @@ local function trim(value)
   return normalized
 end
 
+local function safe_fs_arg(value, pattern)
+  local normalized = trim(value)
+  if not normalized or string.len(normalized) > 128 then
+    return nil
+  end
+  if string.find(normalized, "[%s,{}%[%]%;%|%'%\"\\]") then
+    return nil
+  end
+  if pattern and not string.match(normalized, pattern) then
+    return nil
+  end
+  return normalized
+end
+
+local function safe_extension(value)
+  return safe_fs_arg(value, "^[%w%._%-]+$")
+end
+
+local function safe_domain(value)
+  return safe_fs_arg(value, "^[%w%.%-]+$")
+end
+
+local function safe_uuid(value)
+  return safe_fs_arg(value, "^[%w%-]+$")
+end
+
 local function json_request(method, url, payload)
   local chunks = {}
   local body = payload and cjson.encode(payload) or ""
@@ -136,6 +162,13 @@ local function advance_runtime_session(session_id, node_id, outcome, digits, var
     payload["variables"] = variables
   end
 
+  session_id = safe_uuid(session_id)
+  if not session_id then
+    log("err", "runtime advance failed: unsafe session id")
+    session:execute("hangup", "SERVICE_UNAVAILABLE")
+    return nil
+  end
+
   local url = api_base .. "/runtime/ivr/sessions/" .. session_id .. "/advance"
   local code, decoded, raw = json_request("POST", url, payload)
   if code ~= 200 or not decoded or not decoded.data then
@@ -191,14 +224,15 @@ local function execute_runtime_action(runtime_result)
   end
 
   if action.action == "transfer" and action.target_type == "extension" then
-    local domain = trim(action.domain) or trim(session:getVariable("domain_name"))
-    if not domain then
-      log("err", "transfer action missing domain")
+    local target = safe_extension(action.target)
+    local domain = safe_domain(action.domain) or safe_domain(session:getVariable("domain_name"))
+    if not target or not domain then
+      log("err", "transfer action contains unsafe target or domain")
       session:execute("hangup", "SERVICE_UNAVAILABLE")
       return nil
     end
 
-    local bridge_str = string.format("sofia/internal/%s@%s", tostring(action.target), domain)
+    local bridge_str = string.format("sofia/internal/%s@%s", target, domain)
     log("info", "executing transfer node " .. tostring(action.node_id) .. " -> " .. bridge_str)
     session:execute("bridge", bridge_str)
     return advance_runtime_session(runtime_session.id, action.node_id, "completed")
@@ -215,9 +249,10 @@ local function execute_runtime_action(runtime_result)
     local separator = action.strategy == "sequential" and "|" or ","
     local endpoints = {}
     for _, member in ipairs(members) do
-      local domain = trim(member.domain) or trim(session:getVariable("domain_name"))
-      if member.extension_number and domain then
-        table.insert(endpoints, string.format("sofia/internal/%s@%s", tostring(member.extension_number), domain))
+      local extension_number = safe_extension(member.extension_number)
+      local domain = safe_domain(member.domain) or safe_domain(session:getVariable("domain_name"))
+      if extension_number and domain then
+        table.insert(endpoints, string.format("sofia/internal/%s@%s", extension_number, domain))
       end
     end
     if #endpoints == 0 then
@@ -232,9 +267,10 @@ local function execute_runtime_action(runtime_result)
   end
 
   if action.action == "voicemail" then
-    local domain = trim(action.domain) or trim(session:getVariable("domain_name"))
-    if not domain then
-      log("err", "voicemail action missing domain")
+    local domain = safe_domain(action.domain) or safe_domain(session:getVariable("domain_name"))
+    local mailbox_number = safe_extension(action.mailbox_number)
+    if not domain or not mailbox_number then
+      log("err", "voicemail action contains unsafe domain or mailbox")
       session:execute("hangup", "SERVICE_UNAVAILABLE")
       return nil
     end
@@ -243,7 +279,7 @@ local function execute_runtime_action(runtime_result)
       session:streamFile(action.greeting_prompt_uri)
     end
 
-    local voicemail_args = string.format("default %s %s", domain, tostring(action.mailbox_number))
+    local voicemail_args = string.format("default %s %s", domain, mailbox_number)
     log("info", "executing voicemail node " .. tostring(action.node_id) .. " -> " .. voicemail_args)
     session:execute("voicemail", voicemail_args)
     return advance_runtime_session(runtime_session.id, action.node_id, "completed")

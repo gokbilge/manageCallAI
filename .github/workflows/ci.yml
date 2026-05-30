@@ -112,9 +112,20 @@ jobs:
         run: cd apps/freeswitch-agent && go test ./...
 
       # ── MCP contract drift check ─────────────────────────────────────────────
-      # Verifies MCP tool inputSchemas stay aligned with packages/contracts Zod schemas.
+      # Verifies MCP tool inputSchemas are generated from and structurally equal
+      # to the Zod schemas in packages/contracts.
       - name: MCP contract drift check
-        run: node scripts/check-mcp-contracts.mjs
+        run: node scripts/check-mcp-schemas.mjs
+
+      # ── Webhook payload coverage check ──────────────────────────────────────
+      # Verifies every WEBHOOK_EVENTS entry has a typed payload schema in contracts.
+      - name: Webhook payload coverage check
+        run: node scripts/check-webhook-payloads.mjs
+
+      # ── API key capability alignment check ───────────────────────────────────
+      # Verifies API_KEY_CAPABILITIES in contracts matches CAPABILITIES in the API.
+      - name: API key capability alignment check
+        run: node scripts/check-api-key-capabilities.mjs
 
       # ── IVR simulation regression ────────────────────────────────────────────
       # Runs IVR graph validator and simulation engine unit tests explicitly to
