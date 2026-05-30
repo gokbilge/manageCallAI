@@ -161,6 +161,14 @@ export interface PublishAttemptResult {
   approval_request_id?: string;
 }
 
+export interface DryRunPublishResult {
+  dry_run: true;
+  would_become: 'published' | 'pending_approval';
+  require_approval: boolean;
+  version_state_valid: boolean;
+  actor_type: 'user' | 'workflow' | 'ai_agent' | 'system';
+}
+
 export interface FlowValidationHistoryEntry {
   id: string;
   version_id: string | null;
