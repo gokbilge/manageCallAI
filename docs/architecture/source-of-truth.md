@@ -131,6 +131,10 @@ Project-specific logic should live in external services and minimal integration 
 - Call execution belongs in FreeSWITCH.
 - Lua is an optional call-session helper, not a business-logic layer.
 - Runtime event and control integration belongs in an external Go or Node agent.
+- SIP scanner and TDoS filtering belongs at the SIP edge before traffic reaches
+  FreeSWITCH.
+- Runtime HTTP protection belongs at an internal gateway/API boundary with
+  cryptographic FreeSWITCH node identity, replay protection, and per-node limits.
 
 ### 6.10 Provider-Neutral Integrations
 
@@ -210,6 +214,12 @@ API-facing request and response schemas live in `packages/contracts` as Zod
 schemas. `docs/api/openapi.yaml` and `packages/sdk/src/generated/schema.ts` are
 generated from those contracts, and CI must fail when the committed OpenAPI
 document drifts from generator output.
+
+Runtime-facing API paths must not be exposed as general public endpoints in
+production. FreeSWITCH nodes and adapter agents should reach them through an
+internal network boundary or runtime edge gateway that verifies node identity,
+allowed source networks, endpoint capabilities, replay-safe signatures, and
+per-node rate limits.
 
 ### 8.3 MCP Server
 

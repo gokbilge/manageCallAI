@@ -148,6 +148,10 @@ If a planning document conflicts with the architecture docs, architecture wins.
   Focused follow-on for AI dry-run mutation mode, distinct AI/MCP audit identity,
   and OpenTelemetry tracing.
 
+- [slices/SLICE-43-runtime-edge-gateway-and-tdos-guard.md](slices/SLICE-43-runtime-edge-gateway-and-tdos-guard.md)
+  Runtime edge gateway, cryptographic FreeSWITCH node identity, per-node runtime
+  rate limits, and SIP/TDoS edge protection guidance.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)

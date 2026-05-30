@@ -41,6 +41,35 @@ admin credentials exist. The registration endpoint is rate-limited in production
 If `PLATFORM_OPERATOR_EMAILS` includes the registering email, the JWT will carry
 `role=platform_admin`. This is the recommended bootstrap path for the platform operator.
 
+## Runtime edge security
+
+Runtime HTTP endpoints used by FreeSWITCH and adapter agents must not be exposed
+directly to the public internet in production.
+
+Protect these paths behind an internal network boundary or runtime edge gateway:
+
+- `/api/v1/freeswitch/*`
+- `/api/v1/runtime/*`
+- internal event, CDR, registration, recording, and provider-work ingest paths
+
+The production target is node-specific authentication, not only a shared runtime
+token. Each FreeSWITCH node should have:
+
+- node id
+- active/next token key id for rotation
+- allowed source CIDRs
+- allowed runtime endpoint capabilities
+- per-endpoint-family rate limits
+
+Signed runtime requests should include node id, timestamp, nonce, and signature
+headers. The verifier should reject disabled nodes, invalid signatures, stale
+timestamps, replayed nonces, wrong source networks, and capability mismatches.
+
+SIP scanner and TDoS controls belong at the SIP edge before traffic reaches
+FreeSWITCH. Use firewall rules, FreeSWITCH ACLs, fail2ban-style blocking, or an
+SBC/Kamailio/OpenSIPS front door for exposed SIP ports. See
+`docs/ops/runtime-edge-security.md`.
+
 ## Database migrations
 
 Apply all migrations before starting the API:
