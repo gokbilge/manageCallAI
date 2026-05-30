@@ -137,7 +137,7 @@ export type WebhookDeliveryQueueItem = z.infer<typeof WebhookDeliveryQueueItemSc
 // ── Request schemas ───────────────────────────────────────────────────────────
 export const CreateApiKeyBodySchema = z.object({
   name: z.string().min(1).max(255),
-  capabilities: z.array(z.string()).optional(),
+  capabilities: z.array(z.string().min(1)).min(1),
 }).openapi('CreateApiKeyBody');
 export type CreateApiKeyBody = z.infer<typeof CreateApiKeyBodySchema>;
 

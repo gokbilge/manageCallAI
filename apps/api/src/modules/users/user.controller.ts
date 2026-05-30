@@ -66,7 +66,7 @@ export const userController: FastifyPluginAsyncZod = async (app) => {
       const actor = req.user as AuthClaims;
       try {
         const created = await service.create(actor.tenant_id, req.body);
-        fireAuditEvent({ tenant_id: actor.tenant_id, actor_id: actor.sub, actor_role: actor.role, action: 'user.created', resource_type: 'user', resource_id: created.id, metadata: { email: created.email, role: created.role } });
+        fireAuditEvent({ tenant_id: actor.tenant_id, actor_id: actor.sub, actor_role: actor.role, actor_type: 'user', action: 'user.created', resource_type: 'user', resource_id: created.id, metadata: { email: created.email, role: created.role } });
         return reply.code(201).send({ data: created });
       } catch (err) {
         return replyError(err, reply);
@@ -86,9 +86,20 @@ export const userController: FastifyPluginAsyncZod = async (app) => {
     async (req, reply) => {
       const actor = req.user as AuthClaims;
       try {
+        const existing = await service.getById(req.params.id, actor.tenant_id);
         const updated = await service.update(req.params.id, actor.tenant_id, actor.sub, req.body);
         if (req.body.role) {
-          fireAuditEvent({ tenant_id: actor.tenant_id, actor_id: actor.sub, actor_role: actor.role, action: 'user.role_changed', resource_type: 'user', resource_id: updated.id, metadata: { new_role: updated.role } });
+          fireAuditEvent({
+            tenant_id: actor.tenant_id,
+            actor_id: actor.sub,
+            actor_role: actor.role,
+            actor_type: 'user',
+            action: 'user.role_changed',
+            resource_type: 'user',
+            resource_id: updated.id,
+            old_value: { role: existing.role },
+            new_value: { role: updated.role },
+          });
         }
         return { data: updated };
       } catch (err) {
@@ -107,7 +118,7 @@ export const userController: FastifyPluginAsyncZod = async (app) => {
       const actor = req.user as AuthClaims;
       try {
         const deactivated = await service.deactivate(req.params.id, actor.tenant_id, actor.sub);
-        fireAuditEvent({ tenant_id: actor.tenant_id, actor_id: actor.sub, actor_role: actor.role, action: 'user.deactivated', resource_type: 'user', resource_id: deactivated.id });
+        fireAuditEvent({ tenant_id: actor.tenant_id, actor_id: actor.sub, actor_role: actor.role, actor_type: 'user', action: 'user.deactivated', resource_type: 'user', resource_id: deactivated.id, old_value: { status: 'active' }, new_value: { status: 'inactive' } });
         return { data: deactivated };
       } catch (err) {
         return replyError(err, reply);

@@ -6,6 +6,7 @@ import { AuthRepository } from './auth.repository.js';
 import { AuthError, AuthService } from './auth.service.js';
 import type { Role } from './capabilities.js';
 import { sendAlreadyExists, sendUnauthenticated } from '../../errors/index.js';
+import { fireAuditEvent } from '../audit/fire-audit.js';
 
 const service = new AuthService(new AuthRepository(db));
 
@@ -56,9 +57,27 @@ export const authController: FastifyPluginAsyncZod = async (app) => {
           email: result.email,
           role,
         });
+        fireAuditEvent({
+          tenant_id: result.tenant_id,
+          actor_id: result.id,
+          actor_type: 'user',
+          action: 'auth.login',
+          resource_type: 'user',
+          resource_id: result.id,
+          metadata: { role },
+        });
         return { token };
       } catch (err) {
         if (err instanceof AuthError) {
+          // Audit login failure without exposing the password or user ID.
+          fireAuditEvent({
+            tenant_id: 'system',
+            actor_id: null,
+            actor_type: 'system',
+            action: 'auth.login_failed',
+            resource_type: 'user',
+            metadata: { tenant_slug: req.body.tenant_slug, reason: err.message },
+          });
           return sendUnauthenticated(reply, err.message);
         }
         throw err;

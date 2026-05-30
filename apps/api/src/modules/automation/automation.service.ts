@@ -24,9 +24,16 @@ export class AutomationService {
   async createApiKey(
     tenantId: string,
     name: string,
-    capabilities?: string[],
+    capabilities: string[],
     createdBy?: string,
+    expiresAt?: Date | null,
   ): Promise<ApiKeyCreated> {
+    if (capabilities.length === 0) {
+      throw new Error('capabilities must not be empty — specify at least one capability');
+    }
+    if (capabilities.includes('*')) {
+      throw new Error("capabilities must not contain the wildcard '*' — specify explicit capability names");
+    }
     const { rawKey, keyHash, keyPrefix } = AutomationRepository.generateApiKey();
     const record = await this.repo.createApiKey({
       tenant_id: tenantId,
@@ -34,6 +41,7 @@ export class AutomationService {
       key_prefix: keyPrefix,
       key_hash: keyHash,
       capabilities,
+      expires_at: expiresAt,
       created_by: createdBy,
     });
     return { ...record, key: rawKey };
@@ -52,6 +60,7 @@ export class AutomationService {
     const keyHash = AutomationRepository.hashKey(rawKey);
     const record = await this.repo.findApiKeyByHash(keyHash);
     if (!record) return null;
+    if (record.expires_at !== null && record.expires_at <= new Date()) return null;
     return {
       sub: record.id,
       tenant_id: record.tenant_id,

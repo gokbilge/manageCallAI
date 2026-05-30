@@ -43,10 +43,14 @@ describe('AuditService', () => {
         tenant_id: 'tenant-1',
         actor_id: 'user-1',
         actor_role: 'tenant_admin',
+        actor_type: 'user',
+        request_id: null,
         action: 'approval.approved',
         resource_type: 'approval_request',
         resource_id: 'approval-1',
         metadata_json: null,
+        old_value: null,
+        new_value: null,
         created_at: '2026-05-29T00:00:00Z',
       };
       vi.mocked(repo.find).mockResolvedValueOnce([entry]);

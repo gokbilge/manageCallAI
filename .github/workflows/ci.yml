@@ -99,6 +99,13 @@ jobs:
       - name: Apply migrations (full replay)
         run: pnpm db:migrate
 
+      # ── Migration checksum verification ──────────────────────────────────────
+      # Verifies that every applied migration with a stored SHA-256 checksum
+      # matches the file on disk. Fails if any migration file was modified after
+      # it was applied — guarding against accidental or malicious schema drift.
+      - name: Migration checksum verify
+        run: pnpm db:verify
+
       # ── OpenAPI ──────────────────────────────────────────────────────────────
       - name: OpenAPI generate and verify
         run: |

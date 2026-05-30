@@ -4,17 +4,10 @@ import type { AuthClaims } from './auth-claims.js';
 import { type Capability, hasCapability } from './capabilities.js';
 import { sendPermissionDenied, sendUnauthenticated } from '../../errors/index.js';
 
-/**
- * Check whether an API key's explicit capability list grants the requested
- * capability. The special value '*' expands to the full tenant_admin set.
- */
 function apiKeyHasCapability(
   capabilities: readonly string[],
   capability: Capability,
 ): boolean {
-  if (capabilities.includes('*')) {
-    return hasCapability('tenant_admin', capability);
-  }
   return capabilities.includes(capability);
 }
 

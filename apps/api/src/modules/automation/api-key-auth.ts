@@ -8,6 +8,10 @@ export async function resolveApiKey(rawKey: string): Promise<AuthClaims | null> 
   const keyHash = AutomationRepository.hashKey(rawKey);
   const record = await repo.findApiKeyByHash(keyHash);
   if (!record) return null;
+
+  // Reject expired keys. NULL expires_at = non-expiring (legacy).
+  if (record.expires_at !== null && record.expires_at <= new Date()) return null;
+
   return {
     sub: record.id,
     tenant_id: record.tenant_id,

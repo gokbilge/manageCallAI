@@ -34,23 +34,33 @@ export class AutomationRepository {
     name: string;
     key_prefix: string;
     key_hash: string;
-    capabilities?: string[];
+    capabilities: string[];
+    expires_at?: Date | null;
     created_by?: string;
   }): Promise<ApiKey> {
-    const caps = input.capabilities ?? ['*'];
     const r = await this.db.query<ApiKey>(
-      `INSERT INTO automation_api_keys (tenant_id, name, key_prefix, key_hash, capabilities, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO automation_api_keys
+         (tenant_id, name, key_prefix, key_hash, capabilities, capabilities_version, expires_at, created_by)
+       VALUES ($1, $2, $3, $4, $5, 2, $6, $7)
        RETURNING id, tenant_id, name, key_prefix, capabilities, created_by, created_at, revoked_at`,
-      [input.tenant_id, input.name, input.key_prefix, input.key_hash, caps, input.created_by ?? null],
+      [
+        input.tenant_id,
+        input.name,
+        input.key_prefix,
+        input.key_hash,
+        input.capabilities,
+        input.expires_at ?? null,
+        input.created_by ?? null,
+      ],
     );
     return r.rows[0]!;
   }
 
-  async findApiKeyByHash(keyHash: string): Promise<{ id: string; tenant_id: string; capabilities: string[] } | null> {
-    const r = await this.db.query<{ id: string; tenant_id: string; capabilities: string[] }>(
-      `SELECT id, tenant_id, capabilities
-       FROM automation_api_keys WHERE key_hash = $1 AND revoked_at IS NULL`,
+  async findApiKeyByHash(keyHash: string): Promise<{ id: string; tenant_id: string; capabilities: string[]; expires_at: Date | null } | null> {
+    const r = await this.db.query<{ id: string; tenant_id: string; capabilities: string[]; expires_at: Date | null }>(
+      `SELECT id, tenant_id, capabilities, expires_at
+       FROM automation_api_keys
+       WHERE key_hash = $1 AND revoked_at IS NULL`,
       [keyHash],
     );
     return r.rows[0] ?? null;

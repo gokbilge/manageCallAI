@@ -9,6 +9,7 @@ import { requireCapability } from '../auth/require-capability.js';
 import { AutomationRepository } from './automation.repository.js';
 import { ApiKeyNotFoundError, AutomationService, WebhookNotFoundError } from './automation.service.js';
 import { sendNotFound } from '../../errors/index.js';
+import { fireAuditEvent } from '../audit/fire-audit.js';
 
 const service = new AutomationService(new AutomationRepository(db));
 
@@ -38,6 +39,16 @@ export const automationController: FastifyPluginAsyncZod = async (app) => {
         req.body.capabilities,
         user.sub,
       );
+      fireAuditEvent({
+        tenant_id: user.tenant_id,
+        actor_id: user.sub,
+        actor_role: user.role,
+        actor_type: 'user',
+        action: 'api_key.created',
+        resource_type: 'api_key',
+        resource_id: key.id,
+        metadata: { name: key.name, capabilities: key.capabilities },
+      });
       return reply.code(201).send({ data: key });
     },
   );
@@ -61,6 +72,15 @@ export const automationController: FastifyPluginAsyncZod = async (app) => {
       const user = req.user as AuthClaims;
       try {
         await service.revokeApiKey(req.params.id, user.tenant_id);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          actor_type: 'user',
+          action: 'api_key.revoked',
+          resource_type: 'api_key',
+          resource_id: req.params.id,
+        });
         return reply.code(204).send();
       } catch (err) {
         return replyError(err, reply);
@@ -87,6 +107,16 @@ export const automationController: FastifyPluginAsyncZod = async (app) => {
         req.body.events as never,
         user.sub,
       );
+      fireAuditEvent({
+        tenant_id: user.tenant_id,
+        actor_id: user.sub,
+        actor_role: user.role,
+        actor_type: 'user',
+        action: 'webhook.created',
+        resource_type: 'webhook',
+        resource_id: webhook.id,
+        metadata: { name: webhook.name, url: webhook.url, events: webhook.events },
+      });
       return reply.code(201).send({ data: webhook });
     },
   );
@@ -110,6 +140,15 @@ export const automationController: FastifyPluginAsyncZod = async (app) => {
       const user = req.user as AuthClaims;
       try {
         await service.revokeWebhook(req.params.id, user.tenant_id);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          actor_type: 'user',
+          action: 'webhook.revoked',
+          resource_type: 'webhook',
+          resource_id: req.params.id,
+        });
         return reply.code(204).send();
       } catch (err) {
         return replyError(err, reply);

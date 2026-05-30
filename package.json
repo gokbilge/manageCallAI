@@ -16,6 +16,7 @@
     "db:check": "node ./db/migrate.mjs",
     "db:migrate": "node ./db/migrate.mjs",
     "db:status": "node ./db/migrate.mjs --status",
+    "db:verify": "node ./db/migrate.mjs --verify",
     "db:up": "docker compose up -d postgres",
     "dev": "pnpm -r --parallel dev",
     "dev:api": "pnpm --filter @managecallai/api dev",

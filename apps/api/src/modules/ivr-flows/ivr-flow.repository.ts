@@ -414,10 +414,10 @@ export class IvrFlowRepository {
         [input.tenant_id, input.flow_id, input.version_id, input.triggered_by_id],
       );
 
-      // Audit event
+      // Audit event (unified audit log — written inside transaction for atomicity)
       await client.query(
-        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
-         VALUES ($1, 'user', $2, 'publish', 'ivr_flow', $3)`,
+        `INSERT INTO tenant_audit_log (tenant_id, actor_id, actor_type, action, resource_type, resource_id)
+         VALUES ($1, $2, 'user', 'ivr_flow.published', 'ivr_flow', $3)`,
         [input.tenant_id, input.triggered_by_id, input.flow_id],
       );
 
@@ -476,15 +476,15 @@ export class IvrFlowRepository {
         [target.id, input.flow_id],
       );
 
-      // Publish record + audit
+      // Publish record + audit (unified audit log — inside transaction for atomicity)
       await client.query(
         `INSERT INTO publish_records (tenant_id, object_type, object_id, version_id, action_type, triggered_by_type, triggered_by_id, result)
          VALUES ($1, 'ivr_flow', $2, $3, 'rollback', 'user', $4, 'success')`,
         [input.tenant_id, input.flow_id, target.id, input.triggered_by_id],
       );
       await client.query(
-        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
-         VALUES ($1, 'user', $2, 'rollback', 'ivr_flow', $3)`,
+        `INSERT INTO tenant_audit_log (tenant_id, actor_id, actor_type, action, resource_type, resource_id)
+         VALUES ($1, $2, 'user', 'ivr_flow.rollback', 'ivr_flow', $3)`,
         [input.tenant_id, input.triggered_by_id, input.flow_id],
       );
 
