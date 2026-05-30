@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and deployment help
+    url: https://github.com/gokbilge/manageCallAI/discussions
+    about: Use Discussions for Q&A, FreeSWITCH deployment help, ideas, and community conversation.
+  - name: Security vulnerability report
+    url: https://github.com/gokbilge/manageCallAI/security/advisories/new
+    about: Report suspected vulnerabilities privately instead of opening a public issue.

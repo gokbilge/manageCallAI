@@ -1,0 +1,57 @@
+name: FreeSWITCH integration issue
+description: Report a FreeSWITCH runtime, SIP profile, XML, ESL, or deployment issue.
+title: "freeswitch: "
+labels:
+  - freeswitch
+  - integration
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What FreeSWITCH integration behavior is failing or unclear?
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - mod_xml_curl directory
+        - mod_xml_curl dialplan
+        - ESL / event socket
+        - SIP profile
+        - NAT / networking
+        - TLS / SRTP
+        - Codec / media
+        - DTMF
+        - Runtime callback
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Deployment environment
+      description: Include OS, Docker/native setup, FreeSWITCH version, network topology, and relevant profile details.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or XML snippets
+      description: Redact secrets, phone numbers, domains, and customer data.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submit checks
+      options:
+        - label: I have redacted SIP credentials, tokens, phone numbers, IPs if sensitive, and customer data.
+          required: true

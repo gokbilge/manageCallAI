@@ -1,0 +1,46 @@
+name: Documentation issue
+description: Report missing, stale, unclear, or incorrect documentation.
+title: "docs: "
+labels:
+  - documentation
+body:
+  - type: textarea
+    id: issue
+    attributes:
+      label: Documentation issue
+      description: What is missing, stale, unclear, or incorrect?
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Current location
+      placeholder: docs/... or URL
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Audience
+      options:
+        - Tenant admin
+        - Operator
+        - Developer
+        - FreeSWITCH deployer
+        - Automation / AI integrator
+        - Security reviewer
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected documentation
+      description: What should the docs explain or show?
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submit checks
+      options:
+        - label: I checked the existing docs directory and README for this information.
+          required: true

@@ -1,0 +1,43 @@
+name: Architecture proposal
+description: Propose an architecture or design decision.
+title: "arch: "
+labels:
+  - architecture
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What design pressure, constraint, or gap is driving this proposal?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the architecture change and affected boundaries.
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Tradeoffs
+      description: What gets easier, harder, safer, or riskier?
+    validations:
+      required: true
+  - type: textarea
+    id: affected_docs
+    attributes:
+      label: Affected architecture docs or ADRs
+      placeholder: docs/architecture/source-of-truth.md, docs/adr/...
+  - type: textarea
+    id: migration
+    attributes:
+      label: Migration or rollout plan
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submit checks
+      options:
+        - label: I checked existing ADRs and planning slices for overlap.
+          required: true

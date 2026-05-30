@@ -1,0 +1,52 @@
+name: Security hardening task
+description: Track a non-vulnerability security hardening improvement.
+title: "security: "
+labels:
+  - security
+  - hardening
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report exploitable vulnerabilities here. Use private security advisories for suspected vulnerabilities.
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk or control gap
+      description: What security or governance risk should be reduced?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Which systems, tenants, endpoints, roles, runtime paths, or automation tools are affected?
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Authentication
+        - Authorization / RBAC
+        - Tenant isolation
+        - Secrets
+        - Runtime token handling
+        - Audit / governance
+        - Supply chain
+        - CI/CD
+        - Telecom safety
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Required tests or verification

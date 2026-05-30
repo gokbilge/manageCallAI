@@ -1,0 +1,55 @@
+name: Implementation slice
+description: Define a scoped implementation slice with acceptance criteria.
+title: "slice: "
+labels:
+  - slice
+body:
+  - type: input
+    id: slice_id
+    attributes:
+      label: Slice ID
+      placeholder: SLICE-42
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this slice is complete?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: List the included work.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: List explicit exclusions.
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Other slices, docs, services, migrations, or external systems.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - Code is implemented.
+        - Docs are aligned.
+        - Tests cover the behavior.
+        - CI passes.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Commands, CI gates, manual smoke checks, or deployment checks.
+    validations:
+      required: true
