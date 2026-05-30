@@ -10,10 +10,11 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { SimulationScenarioSchema } from './schemas/ivr-flows.js';
 
 function toMcpSchema(schema: Parameters<typeof zodToJsonSchema>[0]): Record<string, unknown> {
-  const full = zodToJsonSchema(schema, { target: 'jsonSchema7' });
-  // Strip the top-level $schema annotation — MCP doesn't use it and it adds noise.
-  const { $schema: _, ...rest } = full as Record<string, unknown>;
-  return rest;
+  const full = zodToJsonSchema(schema, { target: 'jsonSchema7' }) as Record<string, unknown>;
+  // Strip the top-level $schema annotation — MCP doesn't use it.
+  const result = { ...full };
+  delete result['$schema'];
+  return result;
 }
 
 export const SimulationScenarioMcpSchema = toMcpSchema(SimulationScenarioSchema);
