@@ -1,0 +1,101 @@
+{
+  "name": "ManageCallAI — IVR Flow Published",
+  "meta": {
+    "templateId": "managecallai-ivr-flow-published",
+    "templateCredsSetupCompleted": true
+  },
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "a1b2c3d4-0001-0001-0001-000000000002",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "managecall-events",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "notes": "Register this URL in ManageCallAI under Automation → Webhooks. Subscribe to ivr_flow.published."
+    },
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000003",
+      "name": "Verify Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nfunction verify(item, secret, tol = 300) {\n  const h = item.headers ?? {};\n  const ts = parseInt(h['x-managecall-timestamp'] ?? '0', 10);\n  if (Math.abs(Date.now() / 1000 - ts) > tol) throw new Error('timestamp_expired');\n  const body = typeof item.body === 'string' ? item.body : JSON.stringify(item.body ?? {});\n  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(`${ts}.${body}`).digest('hex');\n  const received = h['x-managecall-signature-256'] ?? '';\n  if (!received) throw new Error('missing_signature');\n  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(received))) throw new Error('signature_mismatch');\n}\n\nconst secret = $env.MANAGECALL_WEBHOOK_SECRET;\nverify($input.first(), secret);\nreturn $input.all();"
+      },
+      "notes": "Set MANAGECALL_WEBHOOK_SECRET in n8n environment variables."
+    },
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000004",
+      "name": "Fetch Flow Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.MANAGECALL_API_URL }}/api/v1/ivr-flows/{{ $json.body.data.flow_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "managecall-api-key",
+          "name": "ManageCallAI API Key"
+        }
+      },
+      "notes": "Credential type: Header Auth. Header name: Authorization. Value: Bearer <api_key>."
+    },
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000005",
+      "name": "Notify Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "text": ":white_check_mark: IVR flow *{{ $('Fetch Flow Details').item.json.data.name }}* (v{{ $json.body.data.version_number }}) published by {{ $json.body.data.triggered_by_type }}.",
+          "blocks": [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": ":white_check_mark: *IVR Flow Published*\n*Flow:* {{ $('Fetch Flow Details').item.json.data.name }}\n*Version:* {{ $json.body.data.version_number }}\n*Actor:* {{ $json.body.data.triggered_by_type }}\n*Tenant:* {{ $json.headers['x-managecall-tenant'] }}"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Set SLACK_WEBHOOK_URL in n8n environment variables."
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [[{ "node": "Verify Signature", "type": "main", "index": 0 }]]
+    },
+    "Verify Signature": {
+      "main": [[{ "node": "Fetch Flow Details", "type": "main", "index": 0 }]]
+    },
+    "Fetch Flow Details": {
+      "main": [[{ "node": "Notify Slack", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

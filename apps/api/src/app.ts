@@ -37,6 +37,7 @@ import { ivrAiController, promptGenerationController } from './modules/provider-
 import { channelAccountController } from './modules/channel-accounts/channel-account.controller.js';
 import { channelMessageController } from './modules/channel-messages/channel-message.controller.js';
 import { meetingSessionController } from './modules/meeting-sessions/meeting-session.controller.js';
+import { observabilityController } from './modules/observability/observability.controller.js';
 import { registerErrorHandler } from './errors/index.js';
 import { registerLoggingHooks } from './logging/logger.js';
 import { idempotencyPlugin } from './modules/idempotency/idempotency.plugin.js';
@@ -98,6 +99,13 @@ function registerIntegrationModules(app: FastifyInstance): void {
 }
 
 /**
+ * Observability: live tenant snapshot and SSE stream for the operations cockpit.
+ */
+function registerObservabilityModules(app: FastifyInstance): void {
+  app.register(observabilityController, { prefix: '/api/v1/observability' });
+}
+
+/**
  * Platform / cross-cutting: platform management, tenant audit log, user management,
  * auth.
  */
@@ -141,6 +149,7 @@ export function buildApp() {
   registerCoreDomainModules(app);
   registerRuntimeModules(app);
   registerIntegrationModules(app);
+  registerObservabilityModules(app);
   registerPlatformModules(app);
 
   return app;
