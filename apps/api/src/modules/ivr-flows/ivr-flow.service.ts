@@ -1,3 +1,4 @@
+import { assertCanPublish, VersionStateError } from '../domain-assertions.js';
 import type { IvrFlowRepository } from './ivr-flow.repository.js';
 import type {
   CreateIvrFlowInput,
@@ -505,8 +506,13 @@ export class IvrFlowService {
   async publish(flowId: string, versionId: string, tenantId: string, triggeredById: string, actorRole?: Role): Promise<PublishAttemptResult> {
     const version = await this.repo.findVersionById(versionId, flowId, tenantId);
     if (!version) throw new FlowVersionNotFoundError(versionId);
-    if (!['validated', 'simulated'].includes(version.state)) {
-      throw new FlowVersionStateError(`Version must be in 'validated' or 'simulated' state to publish; current state: ${version.state}`);
+    try {
+      assertCanPublish(version, ['validated', 'simulated']);
+    } catch (err) {
+      if (err instanceof VersionStateError) {
+        throw new FlowVersionStateError(err.message);
+      }
+      throw err;
     }
 
     const policy = await this.repo.getActivePublishPolicy(tenantId);
