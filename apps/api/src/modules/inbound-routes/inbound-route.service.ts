@@ -1,3 +1,4 @@
+import { assertCanPublish, assertValidRouteTarget, RouteTargetInvalidError, VersionStateError } from '../domain-assertions.js';
 import type { InboundRouteRepository } from './inbound-route.repository.js';
 import type {
   CreateInboundRouteInput,
@@ -178,8 +179,13 @@ export class InboundRouteService {
   async publish(routeId: string, versionId: string, tenantId: string, triggeredById: string): Promise<InboundRoute> {
     const version = await this.repo.findVersionById(versionId, routeId, tenantId);
     if (!version) throw new RouteVersionNotFoundError(versionId);
-    if (version.state !== 'validated') {
-      throw new RouteVersionStateError(`Version must be in 'validated' state to publish; current state: ${version.state}`);
+    try {
+      assertCanPublish(version, ['validated']);
+    } catch (err) {
+      if (err instanceof VersionStateError) {
+        throw new RouteVersionStateError(err.message);
+      }
+      throw err;
     }
     return this.repo.publish({ tenant_id: tenantId, route_id: routeId, version_id: versionId, triggered_by_id: triggeredById });
   }
@@ -196,15 +202,20 @@ export class InboundRouteService {
     const route = await this.repo.findById(id, tenantId);
     if (!route) throw new InboundRouteNotFoundError(id);
 
-    if (!route.target_id) {
-      throw new InboundRouteInputError('Route must have a target_id to be activated');
-    }
-
-    const targetExists = await this.repo.targetExists(route.target_type, route.target_id, tenantId);
-    if (!targetExists) {
-      throw new InboundRouteInputError(
-        `Target ${route.target_type} '${route.target_id}' does not exist or is not active`,
-      );
+    const targetExists = route.target_id
+      ? await this.repo.targetExists(route.target_type, route.target_id, tenantId)
+      : false;
+    try {
+      assertValidRouteTarget(route.target_type, route.target_id, targetExists);
+    } catch (err) {
+      if (err instanceof RouteTargetInvalidError) {
+        throw new InboundRouteInputError(
+          route.target_id
+            ? err.message
+            : 'Route must have a target_id to be activated',
+        );
+      }
+      throw err;
     }
 
     const hasConflict = await this.repo.hasConflictingActiveRoute(tenantId, route.match_type, route.match_value, id);
