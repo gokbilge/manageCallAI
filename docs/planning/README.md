@@ -144,6 +144,10 @@ If a planning document conflicts with the architecture docs, architecture wins.
   Remaining P1 telecom deployment, IVR builder/runtime, AI/MCP, automation, and
   operations hardening work after the Slice 40 runtime-safety foundation.
 
+- [slices/SLICE-42-ai-dry-run-audit-identity-and-tracing.md](slices/SLICE-42-ai-dry-run-audit-identity-and-tracing.md)
+  Focused follow-on for AI dry-run mutation mode, distinct AI/MCP audit identity,
+  and OpenTelemetry tracing.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)
