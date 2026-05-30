@@ -90,7 +90,7 @@ jobs:
           cd apps/freeswitch-agent
           go test -coverprofile=../../coverage/go/coverage.out ./...
           cd ../..
-          go install github.com/boumenot/gocover-cobertura@latest
+          go install github.com/boumenot/gocover-cobertura@v1.4.0
           "$(go env GOPATH)/bin/gocover-cobertura" < coverage/go/coverage.out > coverage/go/coverage.xml
 
       - name: Upload API coverage
