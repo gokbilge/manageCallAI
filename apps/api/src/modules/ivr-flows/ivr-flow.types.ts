@@ -124,9 +124,16 @@ export interface SimulationFinalAction {
   voicemail_box_id?: string;
 }
 
+export interface SimulationStep {
+  node_id: string;
+  category: 'start' | 'task' | 'gateway' | 'end';
+  edge_id: string | undefined;
+}
+
 export interface SimulationOutcome {
   status: 'passed' | 'failed';
   path: string[];
+  steps: SimulationStep[];
   final_action: SimulationFinalAction | null;
   errors: ValidationError[];
 }
