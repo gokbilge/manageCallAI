@@ -20,6 +20,12 @@ export interface WebhookBacklog {
   abandoned: number;
 }
 
+export interface PlatformRuntimeSummary {
+  active_sessions: number;
+  completed_sessions_24h: number;
+  failed_sessions_24h: number;
+}
+
 export interface LiveSnapshot {
   tenant_id: string;
   active_session_count: number;
