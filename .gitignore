@@ -7,6 +7,22 @@ dist/
 *.exe
 *.tsbuildinfo
 *.bak
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.pcap
+recordings/
+voicemail/
+media/private/
+customer-data/
+call-data/
+cdr-exports/
+sip-credentials*
+trunk-credentials*
+jwt-secret*
+runtime-token*
 
 # Local AI context files - not for version control
 CLAUDE.md
