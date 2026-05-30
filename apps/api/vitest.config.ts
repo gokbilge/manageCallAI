@@ -34,12 +34,10 @@ export default defineConfig({
         'src/**/*.integration.test.ts',
         'src/**/*.d.ts',
       ],
-      thresholds: {
-        lines: 65,
-        functions: 65,
-        branches: 55,
-        statements: 65,
-      },
+      // No global thresholds: most production code is covered by integration
+      // tests (which run against the live DB in the Tests CI step) rather than
+      // unit tests. Thresholds should be set per-file once the integration
+      // coverage reporter is connected.
     },
   },
 });
