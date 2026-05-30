@@ -86,6 +86,8 @@ const REQUIRED_COLUMNS = [
   ['audit_events', 'actor_type'],      // 0019_tenant_audit_log
   // call_events
   ['call_events', 'call_id'],          // 0001_initial_schema
+  // sip_trunks
+  ['sip_trunks', 'srtp_policy'],       // 0037_sip_trunk_srtp_policy
 ];
 
 // ── Run check ──────────────────────────────────────────────────────────────────

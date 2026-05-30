@@ -25,6 +25,9 @@ Set these in n8n under **Settings → Environment Variables** (or pass them to t
 | `ANOMALY_SHORT_CALL_SECONDS` | Threshold for short-call anomaly detection (default `5`) | `call-anomaly` |
 | `COMPLIANCE_ENDPOINT_URL` | Compliance / case management endpoint | `recording-analysis` |
 | `COMPLIANCE_KEYWORDS` | Comma-separated list of flagged phrases | `recording-analysis` |
+| `CRM_MISSED_CALL_URL` | CRM/case endpoint for missed-call follow-up | `missed-call` |
+| `VOICEMAIL_TICKET_URL` | Ticketing endpoint for new voicemail notifications | `voicemail-received` |
+| `TRANSCRIPT_INDEX_URL` | Search/index endpoint for completed recording transcripts | `recording-transcribed` |
 
 ## API key credentials
 
@@ -41,6 +44,11 @@ Required capabilities per workflow:
 | `approval-review` | `tenant.approvals.view`, `tenant.approvals.decide` |
 | `call-anomaly` | _(no API call — uses webhook payload only)_ |
 | `recording-analysis` | `tenant.recordings.view` |
+| `missed-call` | _(no API call — uses webhook payload only)_ |
+| `voicemail-received` | _(no API call — uses webhook payload only)_ |
+| `ivr-publish-failed` | _(no API call — uses webhook payload only)_ |
+| `route-rollback` | _(no API call — uses webhook payload only)_ |
+| `recording-transcribed` | _(no API call — uses webhook payload only)_ |
 
 ## Webhook signature verification
 
@@ -70,3 +78,8 @@ The absolute difference between `now` and `X-ManageCall-Timestamp` must be ≤ 3
 | `approval-review.json` | `approval.requested` | Route approval requests to Slack with interactive buttons |
 | `call-anomaly.json` | `call.completed` | Alert on anomalously short or failed calls |
 | `recording-analysis.json` | `recording.analysis_completed` | Scan transcripts for compliance keywords |
+| `missed-call.json` | `call.completed` | Create CRM follow-up for missed or unanswered calls |
+| `voicemail-received.json` | `voicemail.recording_available` | Open a ticket when a voicemail recording arrives |
+| `ivr-publish-failed.json` | `ivr_flow.validation_failed` | Alert operators when IVR publish validation fails |
+| `route-rollback.json` | `ivr_flow.rollback_completed` | Announce a completed rollback and active version |
+| `recording-transcribed.json` | `recording.analysis_completed` | Index completed recording transcripts |

@@ -2,14 +2,14 @@
 
 ## Status
 
-**PARTIALLY IMPLEMENTED**
+**COMPLETED**
 
 Audited 2026-05-30. Telecom/runtime, IVR API hardening, MCP risk classification,
 API-key capability enforcement, webhook DLQ/idempotency/event catalog work,
 metrics/health/support bundle, and production operations documentation are in
-place. Remaining work includes visual builder completion, localization, live
-session debugger polish, FreeSWITCH rollback smoke automation, per-trunk SRTP
-policy, and the AI dry-run/audit/tracing lane tracked in SLICE-42.
+place. Final close-out added per-trunk SRTP policy. Visual builder execution,
+live observability, MVP reliability, production readiness, and AI dry-run/tracing
+are owned by SLICE-36, SLICE-37, SLICE-43, SLICE-44, and SLICE-42 respectively.
 
 ## Goal
 

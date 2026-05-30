@@ -92,9 +92,10 @@ For deployments behind NAT:
 ### SRTP
 
 Enable SRTP by adding `inbound-late-negotiation=true` and `rtp-secure-media=true` to
-the FreeSWITCH sofia profile. The manageCallAI API exposes `dtmf_mode` and `codec_prefs`
-per trunk but does not yet expose SRTP policy as a per-trunk field. Add SRTP config to
-the FreeSWITCH profile directly for now.
+the FreeSWITCH sofia profile. The manageCallAI API exposes `srtp_policy` per trunk:
+`disabled`, `optional`, or `required`. Treat `required` as an operational contract
+that the selected FreeSWITCH profile or gateway must be SRTP-capable before traffic
+is enabled.
 
 ## DTMF modes
 

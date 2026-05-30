@@ -1,0 +1,60 @@
+{
+  "name": "ManageCallAI - IVR Publish Failed",
+  "meta": {
+    "templateId": "managecallai-ivr-publish-failed",
+    "templateCredsSetupCompleted": true
+  },
+  "nodes": [
+    {
+      "id": "e0030000-0003-0003-0003-000000000001",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "managecall-ivr-publish-failed",
+        "responseMode": "onReceived",
+        "options": { "rawBody": true }
+      },
+      "notes": "Subscribe to: ivr_flow.validation_failed"
+    },
+    {
+      "id": "e0030000-0003-0003-0003-000000000002",
+      "name": "Verify Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst item = $input.first().json;\nconst h = item.headers ?? {};\nconst ts = parseInt(h['x-managecall-timestamp'] ?? '0', 10);\nif (Math.abs(Date.now() / 1000 - ts) > 300) throw new Error('timestamp_expired');\nconst body = typeof item.body === 'string' ? item.body : JSON.stringify(item.body ?? {});\nconst expected = 'sha256=' + crypto.createHmac('sha256', $env.MANAGECALL_WEBHOOK_SECRET).update(`${ts}.${body}`).digest('hex');\nif (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(h['x-managecall-signature-256'] ?? ''))) throw new Error('invalid_signature');\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "e0030000-0003-0003-0003-000000000003",
+      "name": "Notify Operators",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ALERT_WEBHOOK_URL }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "title": "IVR publish failed",
+          "tenant_id": "={{ $json.body.tenant_id }}",
+          "flow_id": "={{ $json.body.data.flow_id }}",
+          "version_id": "={{ $json.body.data.version_id }}",
+          "event_id": "={{ $json.body.event_id }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [[{ "node": "Verify Signature", "type": "main", "index": 0 }]] },
+    "Verify Signature": { "main": [[{ "node": "Notify Operators", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "e0030000-0003-0003-0003-000000000099"
+}

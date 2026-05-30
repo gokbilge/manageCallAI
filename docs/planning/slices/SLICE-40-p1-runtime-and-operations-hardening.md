@@ -2,11 +2,12 @@
 
 ## Status
 
-**PARTIALLY IMPLEMENTED - RUNTIME SAFETY FOUNDATION**
+**COMPLETED**
 
 Audited 2026-05-30. Queue runtime policy, outbound route safety, destination
 allow/block lists, emergency/premium blocking, and API-key capability contracts are
-implemented. Remaining P1 work is split across SLICE-41 and SLICE-42.
+implemented. Remaining P1 work is split across concrete follow-up slices:
+SLICE-41 for P1 leftovers and SLICE-42 for AI dry-run/audit/tracing.
 
 ## Goal
 

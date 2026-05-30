@@ -10,6 +10,13 @@ export type ServiceHealth = components['schemas']['ServiceHealth'];
 export type CreateExtensionRequest = components['schemas']['CreateExtensionBody'];
 export type RegisterRequest = components['schemas']['RegisterBody'];
 export type LoginRequest = components['schemas']['LoginBody'];
+export type CreateIvrFlowRequest = components['schemas']['CreateIvrFlowBody'];
+export type IvrFlow = components['schemas']['IvrFlow'];
+export type FlowValidationResult = components['schemas']['FlowValidationResult'];
+export type FlowSimulationResult = components['schemas']['FlowSimulationResult'];
+export type SimulationScenario = components['schemas']['SimulationScenario'];
+export type PublishAttemptResult = components['schemas']['PublishAttemptResult'];
+export type IvrRuntimeSessionReplay = components['schemas']['IvrRuntimeSessionResult'];
 
 export class ManageCallApiError extends Error {
   constructor(
@@ -66,6 +73,55 @@ export class ManageCallApiClient {
   async createExtension(input: CreateExtensionRequest, options: RequestOptions): Promise<Extension> {
     const { data, error, response } = await this.client.POST('/extensions', {
       body: input,
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async createIvrFlow(input: CreateIvrFlowRequest, options: RequestOptions): Promise<IvrFlow> {
+    const { data, error, response } = await this.client.POST('/ivr-flows', {
+      body: input,
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async validateIvrFlow(flowId: string, options: RequestOptions): Promise<FlowValidationResult> {
+    const { data, error, response } = await this.client.POST('/ivr-flows/{flowId}/validate', {
+      params: { path: { flowId } },
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async simulateIvrFlow(
+    flowId: string,
+    scenario: SimulationScenario,
+    options: RequestOptions,
+  ): Promise<FlowSimulationResult> {
+    const { data, error, response } = await this.client.POST('/ivr-flows/{flowId}/simulate', {
+      params: { path: { flowId } },
+      body: scenario,
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async publishIvrFlowVersion(
+    flowId: string,
+    versionId: string,
+    options: RequestOptions,
+  ): Promise<PublishAttemptResult> {
+    const { data, error, response } = await this.client.POST('/ivr-flows/{flowId}/versions/{versionId}/publish', {
+      params: { path: { flowId, versionId } },
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async getRuntimeSessionReplay(sessionId: string, options: RequestOptions): Promise<IvrRuntimeSessionReplay> {
+    const { data, error, response } = await this.client.GET('/runtime/ivr/sessions/{sessionId}', {
+      params: { path: { sessionId } },
       headers: authHeaders(options),
     });
     return unwrap(data, error, response).data;

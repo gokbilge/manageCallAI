@@ -6,14 +6,14 @@ P1 - MVP critical
 
 ## Status
 
-**PARTIALLY IMPLEMENTED**
+**COMPLETED**
 
 Audited 2026-05-30. CI and local scripts include telecom safety gates, MCP contract
 checks, IVR simulation regression, XML golden-file coverage, Docker build checks,
 and a local FreeSWITCH profile smoke script. The SDK package has generated-client
-coverage. Remaining work is a one-command FreeSWITCH E2E proof, publish/rollback
-runtime smoke coverage, broader SDK-backed API flows, importable n8n workflow JSON
-examples, and visual IVR publish/diff/rollback completion.
+coverage. Final close-out added broader SDK-backed IVR/publish/runtime client
+coverage and importable n8n workflow JSON examples for missed calls, voicemail,
+publish failure, rollback, and recording transcription workflows.
 
 ## Goal
 

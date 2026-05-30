@@ -72,6 +72,9 @@ describe('SIP Trunks API integration', () => {
     expect(data['direction']).toBe('inbound');
     expect(data['status']).toBe('active');
     expect(data['realm']).toBe('sip.provider.example');
+    expect(data['dtmf_mode']).toBe('rfc2833');
+    expect(data['codec_prefs']).toBeNull();
+    expect(data['srtp_policy']).toBe('disabled');
     expect(data).not.toHaveProperty('auth_secret_ciphertext');
     expect(data).not.toHaveProperty('auth_password_ciphertext');
     expect(data).not.toHaveProperty('auth_password_key_id');
@@ -102,12 +105,21 @@ describe('SIP Trunks API integration', () => {
       method: 'PATCH',
       url: `/api/v1/sip-trunks/${id}`,
       headers: { authorization: `Bearer ${token}` },
-      payload: { name: 'Updated Trunk', port: 5080 },
+      payload: {
+        name: 'Updated Trunk',
+        port: 5080,
+        dtmf_mode: 'info',
+        codec_prefs: ['PCMU', 'PCMA'],
+        srtp_policy: 'required',
+      },
     });
     expect(res.statusCode).toBe(200);
     const { data } = res.json<{ data: Record<string, unknown> }>();
     expect(data['name']).toBe('Updated Trunk');
     expect(data['port']).toBe(5080);
+    expect(data['dtmf_mode']).toBe('info');
+    expect(data['codec_prefs']).toEqual(['PCMU', 'PCMA']);
+    expect(data['srtp_policy']).toBe('required');
   });
 
   it('POST /sip-trunks/:id/deactivate → deactivates trunk', async () => {
