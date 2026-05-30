@@ -1,0 +1,72 @@
+{
+  "name": "ManageCallAI - Missed Call Follow Up",
+  "meta": {
+    "templateId": "managecallai-missed-call",
+    "templateCredsSetupCompleted": true
+  },
+  "nodes": [
+    {
+      "id": "e0010000-0001-0001-0001-000000000001",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "managecall-missed-call",
+        "responseMode": "onReceived",
+        "options": { "rawBody": true }
+      },
+      "notes": "Subscribe to: call.completed"
+    },
+    {
+      "id": "e0010000-0001-0001-0001-000000000002",
+      "name": "Verify Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst item = $input.first().json;\nconst h = item.headers ?? {};\nconst ts = parseInt(h['x-managecall-timestamp'] ?? '0', 10);\nif (Math.abs(Date.now() / 1000 - ts) > 300) throw new Error('timestamp_expired');\nconst body = typeof item.body === 'string' ? item.body : JSON.stringify(item.body ?? {});\nconst expected = 'sha256=' + crypto.createHmac('sha256', $env.MANAGECALL_WEBHOOK_SECRET).update(`${ts}.${body}`).digest('hex');\nif (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(h['x-managecall-signature-256'] ?? ''))) throw new Error('invalid_signature');\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "e0010000-0001-0001-0001-000000000003",
+      "name": "Build Missed Call Case",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body ?? {};\nconst data = payload.data ?? {};\nconst disposition = String(data.disposition ?? '').toLowerCase();\nconst missed = disposition.includes('no_answer') || disposition.includes('missed') || disposition.includes('busy');\nif (!missed) return [];\nreturn [{ json: { tenant_id: payload.tenant_id, event_id: payload.event_id, call_id: data.call_id, from_number: data.from_number, to_number: data.to_number, occurred_at: payload.timestamp } }];"
+      }
+    },
+    {
+      "id": "e0010000-0001-0001-0001-000000000004",
+      "name": "Notify CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.CRM_MISSED_CALL_URL }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "tenant_id": "={{ $json.tenant_id }}",
+          "event_id": "={{ $json.event_id }}",
+          "call_id": "={{ $json.call_id }}",
+          "from_number": "={{ $json.from_number }}",
+          "to_number": "={{ $json.to_number }}",
+          "occurred_at": "={{ $json.occurred_at }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [[{ "node": "Verify Signature", "type": "main", "index": 0 }]] },
+    "Verify Signature": { "main": [[{ "node": "Build Missed Call Case", "type": "main", "index": 0 }]] },
+    "Build Missed Call Case": { "main": [[{ "node": "Notify CRM", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "e0010000-0001-0001-0001-000000000099"
+}

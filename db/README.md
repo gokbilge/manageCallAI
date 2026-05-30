@@ -46,7 +46,7 @@ The migration chain currently covers:
 | `0030_p1_runtime_safety.sql` | Runtime safety constraints for IVR sessions. |
 | `0031_webhook_event_ids_and_dlq.sql` | `event_id` on `webhook_delivery_queue`; DLQ metadata columns. |
 | `0032_idempotency_records.sql` | `idempotency_records` table for AI/automation mutation replay protection. |
-| `0033`–`0036` | Extension event log, DTMF/codec fields, recording lifecycle, voicemail messages. |
+| `0033`–`0037` | Extension event log, DTMF/codec fields, recording lifecycle, voicemail messages, SIP trunk SRTP policy. |
 
 ### Noop shims (same-number pairs)
 

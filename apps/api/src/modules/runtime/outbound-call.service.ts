@@ -15,6 +15,7 @@ const EMERGENCY_NUMBERS = new Set(['000', '110', '112', '118', '119', '911', '99
 const PREMIUM_RATE_PREFIXES = ['+1900', '1900', '+1976', '1976'];
 
 type RouteSafetyPolicy = {
+  max_calls_per_minute: number | null;
   allowed_destination_prefixes_json: string[] | null;
   blocked_destination_prefixes_json: string[] | null;
 };
@@ -37,6 +38,7 @@ export class OutboundCallService {
 
     let routeId: string | null = null;
     let trunkId: string | null = null;
+    let maxCallsPerMinute: number | null = null;
 
     if (input.route_id) {
       const route = await this.repo.findActiveRouteById(input.tenant_id, input.route_id);
@@ -45,12 +47,14 @@ export class OutboundCallService {
       }
       routeId = route.id;
       trunkId = route.sip_trunk_id;
+      maxCallsPerMinute = route.max_calls_per_minute;
       assertRouteAllowedDestination(dialNumber, route);
     } else {
       const resolved = await this.repo.resolveRouteForNumber(input.tenant_id, dialNumber);
       if (resolved) {
         routeId = resolved.route_id;
         trunkId = resolved.sip_trunk_id;
+        maxCallsPerMinute = resolved.max_calls_per_minute;
         assertRouteAllowedDestination(dialNumber, resolved);
       }
     }
@@ -65,6 +69,8 @@ export class OutboundCallService {
         throw new OutboundCallValidationError(`Resolved SIP trunk is not active: ${trunkId}`);
       }
     }
+
+    await this.assertOutboundRateAllowed(input.tenant_id, routeId, trunkId, maxCallsPerMinute);
 
     const request = await this.repo.create({
       tenant_id: input.tenant_id,
@@ -84,6 +90,19 @@ export class OutboundCallService {
     });
 
     return request;
+  }
+
+  private async assertOutboundRateAllowed(
+    tenantId: string,
+    routeId: string,
+    trunkId: string,
+    maxCallsPerMinute: number | null,
+  ): Promise<void> {
+    if (maxCallsPerMinute === null || maxCallsPerMinute <= 0) return;
+    const recent = await this.repo.countRecentAttempts(tenantId, routeId, trunkId, 60);
+    if (recent >= maxCallsPerMinute) {
+      throw new OutboundCallValidationError('Outbound route rate limit exceeded');
+    }
   }
 
   async getById(id: string, tenantId: string): Promise<OutboundCallRequest> {

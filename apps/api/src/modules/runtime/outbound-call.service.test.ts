@@ -39,16 +39,19 @@ function makeRepo(overrides: Partial<OutboundCallRepository> = {}): OutboundCall
     resolveRouteForNumber: vi.fn().mockResolvedValue({
       route_id: ROUTE_ID,
       sip_trunk_id: TRUNK_ID,
+      max_calls_per_minute: null,
       allowed_destination_prefixes_json: null,
       blocked_destination_prefixes_json: null,
     }),
     findActiveRouteById: vi.fn().mockResolvedValue({
       id: ROUTE_ID,
       sip_trunk_id: TRUNK_ID,
+      max_calls_per_minute: null,
       allowed_destination_prefixes_json: null,
       blocked_destination_prefixes_json: null,
     }),
     findActiveTrunk: vi.fn().mockResolvedValue({ id: TRUNK_ID }),
+    countRecentAttempts: vi.fn().mockResolvedValue(0),
     ...overrides,
   } as unknown as OutboundCallRepository;
 }
@@ -156,6 +159,7 @@ describe('OutboundCallService', () => {
         resolveRouteForNumber: vi.fn().mockResolvedValue({
           route_id: ROUTE_ID,
           sip_trunk_id: TRUNK_ID,
+          max_calls_per_minute: null,
           allowed_destination_prefixes_json: null,
           blocked_destination_prefixes_json: ['+90555'],
         }),
@@ -171,6 +175,7 @@ describe('OutboundCallService', () => {
         resolveRouteForNumber: vi.fn().mockResolvedValue({
           route_id: ROUTE_ID,
           sip_trunk_id: TRUNK_ID,
+          max_calls_per_minute: null,
           allowed_destination_prefixes_json: ['+1'],
           blocked_destination_prefixes_json: null,
         }),
@@ -179,6 +184,26 @@ describe('OutboundCallService', () => {
       await expect(
         service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' }),
       ).rejects.toBeInstanceOf(OutboundCallValidationError);
+    });
+
+    it('enforces outbound route per-minute rate caps before persistence', async () => {
+      repo = makeRepo({
+        resolveRouteForNumber: vi.fn().mockResolvedValue({
+          route_id: ROUTE_ID,
+          sip_trunk_id: TRUNK_ID,
+          max_calls_per_minute: 2,
+          allowed_destination_prefixes_json: null,
+          blocked_destination_prefixes_json: null,
+        }),
+        countRecentAttempts: vi.fn().mockResolvedValue(2),
+      });
+      service = new OutboundCallService(repo);
+
+      await expect(
+        service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' }),
+      ).rejects.toThrow('Outbound route rate limit exceeded');
+      expect(vi.mocked(repo.create)).not.toHaveBeenCalled();
+      expect(vi.mocked(repo.countRecentAttempts)).toHaveBeenCalledWith(TENANT, ROUTE_ID, TRUNK_ID, 60);
     });
   });
 

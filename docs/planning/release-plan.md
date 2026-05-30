@@ -79,11 +79,11 @@ Last audited: 2026-05-30.
 | `SLICE-37` | partially implemented - tenant cockpit foundation |
 | `SLICE-38` | completed |
 | `SLICE-39` | completed |
-| `SLICE-40` | partially implemented - runtime safety foundation |
-| `SLICE-41` | partially implemented |
+| `SLICE-40` | completed |
+| `SLICE-41` | completed |
 | `SLICE-42` | planned |
-| `SLICE-43` | partially implemented |
-| `SLICE-44` | partially implemented |
+| `SLICE-43` | completed |
+| `SLICE-44` | completed outside SLICE-42 tracing dependency |
 
 The original v1 release-plan slices are closed. The next release-candidate feature
 set is now explicit as `SLICE-25` through `SLICE-32`. Contract generation,

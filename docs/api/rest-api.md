@@ -318,7 +318,10 @@ Example response:
       "port": 5060,
       "transport": "udp",
       "username": "tenant-200",
-      "auth_username": "carrier-user"
+      "auth_username": "carrier-user",
+      "dtmf_mode": "rfc2833",
+      "codec_prefs": null,
+      "srtp_policy": "disabled"
     }
   ]
 }
@@ -342,7 +345,10 @@ Example request:
   "transport": "udp",
   "username": "tenant-200",
   "auth_username": "carrier-user",
-  "auth_password": "CarrierPass123!"
+  "auth_password": "CarrierPass123!",
+  "dtmf_mode": "rfc2833",
+  "codec_prefs": ["PCMU", "PCMA"],
+  "srtp_policy": "optional"
 }
 ```
 
@@ -367,7 +373,10 @@ Example response:
     "port": 5060,
     "transport": "udp",
     "username": "tenant-200",
-    "auth_username": "carrier-user"
+    "auth_username": "carrier-user",
+    "dtmf_mode": "rfc2833",
+    "codec_prefs": ["PCMU", "PCMA"],
+    "srtp_policy": "optional"
   }
 }
 ```
