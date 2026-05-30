@@ -1,7 +1,1 @@
--- Compatibility shim.
---
--- This file was originally numbered 0015 but conflicted with
--- 0015_add_ivr_flow_session_steps.sql. The content has been moved to
--- 0021_outbound_routes.sql. This file remains as a no-op so that existing
--- databases that have already recorded this filename in schema_migrations are
--- not affected.
+-- noop — see 0015_add_ivr_flow_session_steps.sql (context) and 0021_outbound_routes.sql (actual change). Retained to preserve schema_migrations history.

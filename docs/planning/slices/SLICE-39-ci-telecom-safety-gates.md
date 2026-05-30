@@ -39,7 +39,7 @@ catch unsafe runtime, schema, and deployment regressions.
 
 - **Docker image build test** (new `docker-build` job): Builds Docker images for all
   runnable apps (`api`, `worker`, `mcp`, `mcp-server`, `freeswitch-agent`) on every PR
-  without pushing. Added `apps/mcp/Dockerfile` (was missing — only mcp-server had one).
+  without pushing. Added `apps/mcp/Dockerfile`; only mcp-server had one before.
 
 - **FreeSWITCH profile smoke test**: Implemented in `scripts/check-freeswitch-profile.mjs`
   as a local-only script. Cannot run in standard CI because FreeSWITCH requires host
@@ -52,7 +52,10 @@ catch unsafe runtime, schema, and deployment regressions.
 | Script | Purpose |
 |--------|---------|
 | `check-secrets.mjs` | Secret and demo-default scanning |
-| `check-mcp-contracts.mjs` | MCP contract drift CI runner |
+| `check-mcp-contracts.mjs` | Legacy MCP contract drift runner |
+| `check-mcp-schemas.mjs` | Contract-derived MCP input schema drift checker |
+| `check-webhook-payloads.mjs` | Webhook payload contract drift checker |
+| `check-api-key-capabilities.mjs` | API-key capability contract drift checker |
 | `check-ivr-simulation.mjs` | IVR simulation regression runner |
 | `check-freeswitch-profile.mjs` | Local FreeSWITCH ESL smoke test |
 

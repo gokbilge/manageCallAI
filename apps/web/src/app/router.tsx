@@ -15,11 +15,13 @@ import { CallsPage } from '@/features/calls/calls-page';
 import { DirectorySmokeTestPage } from '@/features/integrations/directory-smoke-test-page';
 import { WebhooksPage } from '@/features/integrations/webhooks-page';
 import { PromptsPage } from '@/features/prompts/prompts-page';
+import { ObservabilityCockpitPage } from '@/features/observability/observability-cockpit-page';
 import { RuntimeSessionsPage } from '@/features/runtime/runtime-sessions-page';
 import { RuntimeSessionDetailPage } from '@/features/runtime/runtime-session-detail-page';
 import { SchedulesPage } from '@/features/schedules/schedules-page';
 import { OutboundRoutesPage } from '@/features/outbound-routes/outbound-routes-page';
 import { OutboundCallsPage } from '@/features/outbound-calls/outbound-calls-page';
+import { RecordingsPage } from '@/features/recordings/recordings-page';
 import { RequireSession } from '@/lib/auth/require-session';
 import { RequireCapability } from '@/lib/auth/require-capability';
 import { CAPABILITIES } from '@/lib/permissions/capabilities';
@@ -47,6 +49,7 @@ const router = createBrowserRouter([
           },
           { path: 'tenant', element: <Navigate to="/tenant/extensions" replace /> },
           { path: 'tenant/dashboard', element: <TenantDashboardPage /> },
+          { path: 'tenant/cockpit', element: <ObservabilityCockpitPage /> },
           { path: 'tenant/extensions', element: <ExtensionsPage /> },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW} redirectTo="/tenant/extensions" />,
@@ -87,6 +90,12 @@ const router = createBrowserRouter([
             ],
           },
           { path: 'tenant/calls', element: <CallsPage /> },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_RECORDINGS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/recordings', element: <RecordingsPage /> },
+            ],
+          },
           { path: 'tenant/integrations/directory-smoke-test', element: <DirectorySmokeTestPage /> },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW} redirectTo="/tenant/extensions" />,
