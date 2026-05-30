@@ -2473,7 +2473,7 @@ components:
             - bidirectional
         status:
           type: string
-          enum: &a7
+          enum: &a5
             - active
             - inactive
         username:
@@ -2494,28 +2494,6 @@ components:
             - tls
         auth_username:
           type: string
-        dtmf_mode:
-          type: string
-          enum: &a5
-            - rfc2833
-            - info
-            - inband
-            - auto
-        codec_prefs:
-          type:
-            - array
-            - "null"
-          items:
-            type: string
-            minLength: 1
-            maxLength: 32
-          maxItems: 16
-        srtp_policy:
-          type: string
-          enum: &a6
-            - disabled
-            - optional
-            - required
         created_at:
           type: string
           format: date-time
@@ -2534,9 +2512,6 @@ components:
         - port
         - transport
         - auth_username
-        - dtmf_mode
-        - codec_prefs
-        - srtp_policy
         - created_at
         - updated_at
     CreateSipTrunkBody:
@@ -2567,21 +2542,6 @@ components:
         auth_password:
           type: string
           minLength: 1
-        dtmf_mode:
-          type: string
-          enum: *a5
-        codec_prefs:
-          type:
-            - array
-            - "null"
-          items:
-            type: string
-            minLength: 1
-            maxLength: 32
-          maxItems: 16
-        srtp_policy:
-          type: string
-          enum: *a6
       required:
         - name
         - direction
@@ -2600,7 +2560,7 @@ components:
           enum: *a3
         status:
           type: string
-          enum: *a7
+          enum: *a5
         username:
           type:
             - string
@@ -2624,21 +2584,6 @@ components:
         auth_password:
           type: string
           minLength: 1
-        dtmf_mode:
-          type: string
-          enum: *a5
-        codec_prefs:
-          type:
-            - array
-            - "null"
-          items:
-            type: string
-            minLength: 1
-            maxLength: 32
-          maxItems: 16
-        srtp_policy:
-          type: string
-          enum: *a6
     PhoneNumber:
       type: object
       properties:
@@ -2656,7 +2601,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a9
+          enum: &a7
             - active
             - inactive
         trunk_id:
@@ -2668,7 +2613,7 @@ components:
           type:
             - string
             - "null"
-          enum: &a8
+          enum: &a6
             - inbound_route
             - flow
             - extension
@@ -2723,7 +2668,7 @@ components:
           type:
             - string
             - "null"
-          enum: *a8
+          enum: *a6
         assigned_target_id:
           type:
             - string
@@ -2731,7 +2676,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: *a9
+          enum: *a7
     PromptAsset:
       type: object
       properties:
@@ -2759,7 +2704,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a10
+          enum: &a8
             - active
             - inactive
         created_at:
@@ -2822,7 +2767,7 @@ components:
             - "null"
         status:
           type: string
-          enum: *a10
+          enum: *a8
     CallGroupMember:
       type: object
       properties:
@@ -2873,12 +2818,12 @@ components:
             - "null"
         strategy:
           type: string
-          enum: &a11
+          enum: &a9
             - simultaneous
             - sequential
         status:
           type: string
-          enum: &a12
+          enum: &a10
             - active
             - inactive
         created_at:
@@ -2917,7 +2862,7 @@ components:
           type: string
         strategy:
           type: string
-          enum: *a11
+          enum: *a9
       required:
         - name
     UpdateCallGroupBody:
@@ -2932,10 +2877,10 @@ components:
             - "null"
         strategy:
           type: string
-          enum: *a11
+          enum: *a9
         status:
           type: string
-          enum: *a12
+          enum: *a10
     AddCallGroupMemberBody:
       type: object
       properties:
@@ -2996,7 +2941,7 @@ components:
             - "null"
         strategy:
           type: string
-          enum: &a13
+          enum: &a11
             - simultaneous
             - sequential
         ring_timeout_seconds:
@@ -3026,7 +2971,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: &a14
+          enum: &a12
             - active
             - inactive
         created_at:
@@ -3071,7 +3016,7 @@ components:
           type: string
         strategy:
           type: string
-          enum: *a13
+          enum: *a11
         ring_timeout_seconds:
           type: integer
         retry_delay_seconds:
@@ -3111,7 +3056,7 @@ components:
             - "null"
         strategy:
           type: string
-          enum: *a13
+          enum: *a11
         ring_timeout_seconds:
           type: integer
         retry_delay_seconds:
@@ -3139,7 +3084,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: *a14
+          enum: *a12
     AddQueueMemberBody:
       type: object
       properties:
@@ -3182,7 +3127,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a15
+          enum: &a13
             - active
             - inactive
         created_at:
@@ -3242,7 +3187,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: *a15
+          enum: *a13
     RouteVersion:
       type: object
       properties:
@@ -3316,7 +3261,7 @@ components:
           type: string
         match_type:
           type: string
-          enum: &a16
+          enum: &a14
             - did
             - trunk
             - pattern
@@ -3329,7 +3274,7 @@ components:
           format: uuid
         target_type:
           type: string
-          enum: &a17
+          enum: &a15
             - flow
             - extension
             - call_group
@@ -3425,7 +3370,7 @@ components:
           minLength: 1
         match_type:
           type: string
-          enum: *a16
+          enum: *a14
         match_value:
           type: string
           minLength: 1
@@ -3437,7 +3382,7 @@ components:
           format: uuid
         target_type:
           type: string
-          enum: *a17
+          enum: *a15
         target_id:
           type: string
           format: uuid
@@ -3454,7 +3399,7 @@ components:
           minLength: 1
         match_type:
           type: string
-          enum: *a16
+          enum: *a14
         match_value:
           type: string
           minLength: 1
@@ -3466,7 +3411,7 @@ components:
           format: uuid
         target_type:
           type: string
-          enum: *a17
+          enum: *a15
         target_id:
           type:
             - string
@@ -3550,7 +3495,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a18
+          enum: &a16
             - draft
             - active
             - inactive
@@ -3986,7 +3931,7 @@ components:
             - "null"
         status:
           type: string
-          enum: *a18
+          enum: *a16
     CreateFlowVersionBody:
       type: object
       properties:
@@ -4128,7 +4073,7 @@ components:
           type: array
           items:
             type: string
-            enum: &a19
+            enum: &a17
               - platform.tenants.view
               - platform.runtime.view
               - platform.audit.view
@@ -4408,7 +4353,7 @@ components:
           format: uuid
         event:
           type: string
-          enum: &a20
+          enum: &a18
             - ivr_flow.published
             - ivr_flow.publish_pending
             - ivr_flow.rollback_completed
@@ -4821,7 +4766,7 @@ components:
           type: array
           items:
             type: string
-            enum: *a19
+            enum: *a17
       required:
         - name
     CreateAutomationWebhookBody:
@@ -4839,7 +4784,7 @@ components:
           type: array
           items:
             type: string
-            enum: *a20
+            enum: *a18
           minItems: 1
       required:
         - name
@@ -4946,7 +4891,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a21
+          enum: &a19
             - active
             - inactive
         timezone:
@@ -5014,7 +4959,7 @@ components:
             $ref: "#/components/schemas/HolidayOverride"
         status:
           type: string
-          enum: *a21
+          enum: *a19
     OutboundRoute:
       type: object
       properties:
@@ -5028,7 +4973,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a22
+          enum: &a20
             - active
             - inactive
         match_prefix:
@@ -5212,7 +5157,7 @@ components:
             type: string
         status:
           type: string
-          enum: *a22
+          enum: *a20
     ResolveOutboundRouteBody:
       type: object
       properties:
@@ -5240,7 +5185,7 @@ components:
           type: string
         role:
           type: string
-          enum: &a23
+          enum: &a21
             - tenant_admin
             - tenant_operator
             - tenant_viewer
@@ -5280,7 +5225,7 @@ components:
           maxLength: 255
         role:
           type: string
-          enum: *a23
+          enum: *a21
         password:
           type: string
           minLength: 8
@@ -5299,7 +5244,7 @@ components:
           maxLength: 255
         role:
           type: string
-          enum: *a23
+          enum: *a21
     ChangePasswordBody:
       type: object
       properties:
@@ -5378,7 +5323,7 @@ components:
           type: array
           items:
             type: string
-            enum: &a24
+            enum: &a22
               - transcript
               - summary
         language_hint:
@@ -5484,7 +5429,7 @@ components:
           type: array
           items:
             type: string
-            enum: *a24
+            enum: *a22
           minItems: 1
         language_hint:
           type:
@@ -5543,7 +5488,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a25
+          enum: &a23
             - running
             - completed
             - failed
@@ -5645,7 +5590,7 @@ components:
             - "null"
         resulting_status:
           type: string
-          enum: *a25
+          enum: *a23
         variables_json:
           type: object
           additionalProperties:
@@ -5944,7 +5889,7 @@ components:
           format: uuid
         provider_type:
           type: string
-          enum: &a26
+          enum: &a24
             - whatsapp
             - telegram
             - google_meet
@@ -5984,7 +5929,7 @@ components:
       properties:
         provider_type:
           type: string
-          enum: *a26
+          enum: *a24
         name:
           type: string
           minLength: 1
@@ -6030,7 +5975,7 @@ components:
             - outbound
         message_type:
           type: string
-          enum: &a27
+          enum: &a25
             - text
             - voice_message
             - meeting
@@ -6095,7 +6040,7 @@ components:
           type: string
         message_type:
           type: string
-          enum: *a27
+          enum: *a25
         body:
           type:
             - string
@@ -6170,7 +6115,7 @@ components:
           format: uuid
         message_type:
           type: string
-          enum: *a27
+          enum: *a25
         external_id:
           type: string
         sender_id:
@@ -6202,7 +6147,7 @@ components:
           minLength: 1
         message_type:
           type: string
-          enum: *a27
+          enum: *a25
         body:
           type: string
         media_reference:
@@ -6269,7 +6214,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a28
+          enum: &a26
             - scheduled
             - active
             - completed
@@ -6338,7 +6283,7 @@ components:
       properties:
         status:
           type: string
-          enum: *a28
+          enum: *a26
         meeting_url:
           type: string
         participant_count:
@@ -6386,7 +6331,7 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: &a29
+          enum: &a27
             - auto
             - openai
             - elevenlabs
@@ -6395,7 +6340,7 @@ components:
             - custom
         status:
           type: string
-          enum: &a30
+          enum: &a28
             - queued
             - processing
             - completed
@@ -6496,10 +6441,10 @@ components:
             type: string
         provider_hint:
           type: string
-          enum: *a29
+          enum: *a27
         status:
           type: string
-          enum: *a30
+          enum: *a28
         processor_id:
           type:
             - string
@@ -6588,7 +6533,7 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a29
+          enum: *a27
         metadata:
           type: object
           additionalProperties: {}
@@ -6658,7 +6603,7 @@ components:
           minItems: 1
         provider_hint:
           type: string
-          enum: *a29
+          enum: *a27
         metadata:
           type: object
           additionalProperties: {}
