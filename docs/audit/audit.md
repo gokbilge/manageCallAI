@@ -40,6 +40,8 @@ An audit covers all of:
 7. Grep for `SELECT \*`, `RETURNING \*`, `console\.`, `TODO`, `FIXME`, `sip_password[^_]`.
 8. Verify every route that should require auth has a preHandler; spot-check with a curl with no token.
 9. Produce a findings list and write it to `docs/audit/audits/<YYYY-MM-DD>-<slug>.md`.
+10. For each finding that remains `open`, `in-progress`, or `accepted`, create
+    or update a GitHub issue before closing the audit session.
 
 ## Audit document format
 
@@ -66,13 +68,39 @@ Each audit lives in `docs/audit/audits/` named `YYYY-MM-DD-<slug>.md`.
 
 Finding IDs use the format `AUD-YYYY-MM-DD-NNN` (three-digit sequence within the audit).
 
+## GitHub issue tracking
+
+Audit records are the canonical evidence trail, but GitHub Issues are the
+execution tracker for unresolved work.
+
+For every audit finding that is not resolved in the same session:
+
+1. Search existing open issues for the audit finding ID or same underlying risk.
+2. If no issue exists, create a GitHub issue using the most specific issue form.
+3. Include the audit finding ID, audit file path, affected files, severity, risk,
+   and concrete fix direction in the issue body.
+4. Add labels for `area:*`, `type:*`, `priority:*`, and `risk:*`.
+5. Assign the appropriate milestone or Project field when the finding maps to a
+   planned slice or release gate.
+6. Add the issue URL back to the audit finding under an `Issue:` line.
+
+Do not create duplicate issues for the same finding. If an issue already exists,
+comment with the new audit context and link the audit file.
+
+Audit-created issues, comments, commits, pushes, and pull requests must use the
+repository maintainer or contributor identity configured in git and GitHub. Do
+not add `Codex`, `Claude`, another AI-agent name, or generated-by footers to git
+authors, commit messages, PR text, issue comments, or audit issue bodies.
+
 ## Resolving findings
 
 When a finding is fixed:
 
 1. Update the finding's `Status` to `done` and add the commit SHA to `Resolved`.
-2. Do not delete findings — the history of what was found and fixed is valuable.
-3. If a finding is accepted as a known limitation rather than fixed, set `Status` to
+2. Close the linked GitHub issue, or comment on the issue with the fix commit if
+   the issue contains more remaining scope.
+3. Do not delete findings — the history of what was found and fixed is valuable.
+4. If a finding is accepted as a known limitation rather than fixed, set `Status` to
    `accepted` and add a one-line rationale.
 
 ## Linking to this guide

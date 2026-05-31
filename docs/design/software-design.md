@@ -122,6 +122,24 @@ Responsibilities:
 - Accept approved automation entry points
 - Bridge external workflow systems to control-plane operations
 
+### 3.7.1 Repository Governance Layer
+
+Implementation direction:
+
+- GitHub Issues for execution tracking
+- GitHub Projects and milestones for roadmap coordination
+- Protected branches, pull requests, CODEOWNERS, and required CI for changes
+- Audit records under `docs/audit/audits/` for evidence
+
+Responsibilities:
+
+- Keep `main` protected from the normal direct-commit path
+- Require branch-based PR workflow for code, docs, CI, and architecture changes
+- Map unresolved audit findings to GitHub Issues with severity, risk, area, and
+  milestone metadata
+- Keep PR summaries, issue comments, commit messages, and audit issue bodies under
+  the configured maintainer or contributor identity without AI-agent attribution
+
 ### 3.8 Provider Adapter Layer
 
 Implementation direction:
