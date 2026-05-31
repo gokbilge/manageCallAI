@@ -45,6 +45,8 @@ const policies = {
   runtime: { name: 'runtime', limit: config.rateLimitRuntimeMax, windowMs: config.rateLimitWindowMs },
   webhook: { name: 'webhook', limit: config.rateLimitWebhookMax, windowMs: config.rateLimitWindowMs },
   outbound: { name: 'outbound', limit: config.rateLimitOutboundMax, windowMs: config.rateLimitWindowMs },
+  api: { name: 'api', limit: config.rateLimitApiMax, windowMs: config.rateLimitWindowMs },
+  scrape: { name: 'scrape', limit: config.rateLimitScrapeMax, windowMs: config.rateLimitWindowMs },
 } satisfies Record<string, RateLimitPolicy>;
 
 export function registerRateLimitHook(app: FastifyInstance): void {
@@ -67,11 +69,16 @@ export function registerRateLimitHook(app: FastifyInstance): void {
 
 export function policyForPath(method: string, url: string): RateLimitPolicy | null {
   const path = url.split('?', 1)[0] ?? url;
+
   if (path.startsWith('/api/v1/auth/')) return policies.auth;
   if (method === 'POST' && path === '/api/v1/runtime/outbound') return policies.outbound;
   if (path.startsWith('/api/v1/runtime/') || path.startsWith('/api/v1/freeswitch/')) return policies.runtime;
   if (method === 'POST' && path === '/api/v1/call-events') return policies.runtime;
   if (path.startsWith('/api/v1/webhooks/')) return policies.webhook;
+
+  if (path.startsWith('/api/v1/')) return policies.api;
+  if (path === '/metrics') return policies.scrape;
+
   return null;
 }
 

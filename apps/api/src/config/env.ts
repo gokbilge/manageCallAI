@@ -78,6 +78,8 @@ const configValues = {
   rateLimitRuntimeMax: parsePositiveInt('RATE_LIMIT_RUNTIME_MAX', 1_200),
   rateLimitWebhookMax: parsePositiveInt('RATE_LIMIT_WEBHOOK_MAX', 300),
   rateLimitOutboundMax: parsePositiveInt('RATE_LIMIT_OUTBOUND_MAX', 60),
+  rateLimitApiMax: parsePositiveInt('RATE_LIMIT_API_MAX', 600),
+  rateLimitScrapeMax: parsePositiveInt('RATE_LIMIT_SCRAPE_MAX', 30),
 } as const;
 
 if (configValues.isProduction) {
