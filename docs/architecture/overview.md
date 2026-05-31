@@ -308,5 +308,9 @@ Each boundary requires authentication, authorization, input validation, and oper
 ## 15. Relationship to Other Documents
 
 - `source-of-truth.md` defines canonical direction and boundaries
+- `runtime-boundaries.md` defines what belongs in the API, Go agent, Lua, and FreeSWITCH
+- `publishable-object-lifecycle.md` defines desired state, runtime state, lifecycle states, rollback, business events, and runtime-generated artifacts
+- `architecture-review-checklist.md` is the contributor checklist for boundary-sensitive changes
+- `architecture-drift-risks.md` identifies high-risk drift areas across API, web, MCP, n8n, Go agent, Lua, contracts, and DB
 - `../requirements/srs.md` defines what the system must do
 - `../design/software-design.md` defines how the software is logically decomposed
