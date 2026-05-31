@@ -169,6 +169,36 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [slices/SLICE-51-release-grade-product-coverage-and-runbooks.md](slices/SLICE-51-release-grade-product-coverage-and-runbooks.md)
   Release-grade operator surfaces, coverage, MCP/n8n/SDK docs, and production runbooks.
 
+- [slices/SLICE-52-production-runtime-e2e-gate.md](slices/SLICE-52-production-runtime-e2e-gate.md)
+  Required production runtime E2E release gate over API, PostgreSQL, FreeSWITCH,
+  Lua, Go agent, runtime callbacks, events, observability, and rollback.
+
+- [slices/SLICE-53-production-deployment-and-network-hardening.md](slices/SLICE-53-production-deployment-and-network-hardening.md)
+  Tested production deployment, network boundaries, reverse proxy, SIP/TLS/SRTP/NAT,
+  firewall, runtime privacy, and preflight hardening.
+
+- [slices/SLICE-54-backup-restore-upgrade-dr.md](slices/SLICE-54-backup-restore-upgrade-dr.md)
+  Testable PostgreSQL/media backup, restore, upgrade, rollback, and disaster recovery gates.
+
+- [slices/SLICE-55-production-fraud-abuse-and-rate-limits.md](slices/SLICE-55-production-fraud-abuse-and-rate-limits.md)
+  Toll-fraud, SIP scanning, runtime-token, webhook-replay, MCP/AI misuse, and
+  multi-instance rate-limit hardening.
+
+- [slices/SLICE-56-production-observability-soak-and-slos.md](slices/SLICE-56-production-observability-soak-and-slos.md)
+  Production SLOs, alerting, dashboards, soak/load tests, and incident runbooks.
+
+- [slices/SLICE-57-production-tenant-isolation-and-compliance-evidence.md](slices/SLICE-57-production-tenant-isolation-and-compliance-evidence.md)
+  Tenant isolation matrix, audit/export/privacy boundaries, support-bundle
+  redaction, and compliance evidence.
+
+- [slices/SLICE-58-production-sdk-mcp-n8n-release-packaging.md](slices/SLICE-58-production-sdk-mcp-n8n-release-packaging.md)
+  Versioned SDK, MCP, n8n, OpenAPI, release notes, compatibility policy, and
+  release packaging.
+
+- [slices/SLICE-59-production-release-candidate-governance.md](slices/SLICE-59-production-release-candidate-governance.md)
+  Final production release-candidate evidence, signoffs, go/no-go, rollback, and
+  post-release monitoring governance.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)

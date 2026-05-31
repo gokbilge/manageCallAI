@@ -17,7 +17,7 @@ This directory contains the primary project documentation for `manageCallAI`.
   Initial REST API contract covering resources, lifecycle operations, payload shapes, and error handling.
 
 - [api/openapi.yaml](api/openapi.yaml)
-  Machine-readable API contract used for SDK generation and endpoint/schema alignment.
+  Generated machine-readable API artifact used for SDK generation and endpoint/schema alignment. It must align with the architecture/design source of truth and `packages/contracts`.
 
 - [freeswitch-directory-contract.md](freeswitch-directory-contract.md)
   MVP `mod_xml_curl` directory lookup contract between stock FreeSWITCH and the backend.
@@ -74,6 +74,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [planning/README.md](planning/README.md)
   Release planning index with slice-by-slice dependency and sequencing guidance from the current baseline to product release.
 
+- [planning/production-readiness-roadmap.md](planning/production-readiness-roadmap.md)
+  Public alpha, beta, and production readiness gates, including slices 52-59 for production release evidence.
+
 ## UI Documents
 
 - [ui/UI_ARCHITECTURE.md](ui/UI_ARCHITECTURE.md)
@@ -116,6 +119,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 ## Documentation Rules
 
 - `architecture/source-of-truth.md` remains the canonical direction-setting document.
-- `api/openapi.yaml` is the canonical machine-readable API contract.
-- `requirements/srs.md`, `design/software-design.md`, and `architecture/overview.md` must stay aligned with the source-of-truth document.
+- ADRs record approved architecture changes or exceptions.
+- `requirements/srs.md`, `design/software-design.md`, `design/domain-model.md`, and `architecture/overview.md` must stay aligned with the source-of-truth document.
+- `packages/contracts` owns executable API-facing schemas.
+- `api/openapi.yaml` is the generated canonical machine-readable API artifact for clients and SDK generation; it must align with source-of-truth design and contracts.
+- MCP schemas, webhook payload checks, and SDK generated types are drift evidence and must not introduce architecture that is absent from source-of-truth design docs.
 - If implementation or design changes materially affect requirements or architecture, update the relevant document in the same pull request.

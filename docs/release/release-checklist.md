@@ -49,6 +49,21 @@ If the package has not reached the Phase 3 target yet, release readiness require
 - a linked follow-up issue for each remaining high-risk gap
 - no unapproved coverage ignore comments in critical safety paths
 
+## Production Slice Gates
+
+Production release candidates must close or explicitly defer all production
+readiness slices below. Any deferral must include risk, owner, mitigation, and a
+rollback plan.
+
+- `SLICE-52` production runtime E2E gate
+- `SLICE-53` production deployment and network hardening
+- `SLICE-54` backup, restore, upgrade, and disaster recovery
+- `SLICE-55` production fraud, abuse, and rate-limit hardening
+- `SLICE-56` production observability, soak tests, and SLOs
+- `SLICE-57` production tenant isolation and compliance evidence
+- `SLICE-58` production SDK, MCP, n8n, and release packaging
+- `SLICE-59` production release candidate governance
+
 ## E2E Gates
 
 Normal CI should include an API-only demo loop covering tenant registration, extension creation, IVR validation/simulation/publish, runtime resolution, call event ingest, observability query, and rollback.

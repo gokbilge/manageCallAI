@@ -4,6 +4,19 @@ This document is the canonical product, design, and architecture reference for m
 
 If another document conflicts with this one, this document wins until an explicit architecture decision updates it.
 
+## 0. Documentation Authority
+
+Production-readiness work must follow this authority order:
+
+1. `docs/architecture/source-of-truth.md` defines product, design, and architecture intent.
+2. ADRs in `docs/adr/` record approved architecture changes or exceptions.
+3. `docs/architecture/*`, `docs/design/*`, and `docs/security/*` decompose that intent into implementation boundaries, domain model, runtime boundaries, and security posture.
+4. `packages/contracts` defines executable API-facing schemas that must implement the design.
+5. `docs/api/openapi.yaml`, generated SDK types, MCP schema checks, and webhook payload checks are generated or drift-checked evidence. They must align with the design and contracts; they do not override architecture.
+6. Planning slices under `docs/planning/slices/` define execution order and acceptance criteria. They do not change architecture unless the source-of-truth docs and any required ADRs are updated in the same change.
+
+When production-readiness implementation discovers a conflict, update the design or ADR first, then update contracts, OpenAPI, SDK, MCP, n8n, tests, and docs in that order.
+
 ## 1. Purpose
 
 manageCallAI is an open-source telecom control plane built on top of FreeSWITCH.
@@ -153,6 +166,24 @@ required business logic.
 Provider credentials are write-only operational secrets. Public responses must not
 expose provider secrets, temporary media URLs, raw storage paths, or raw provider
 payloads as authoritative domain state.
+
+### 6.11 Production-Readiness Evidence
+
+The project is not production-ready merely because a feature exists. Production
+readiness requires repeatable evidence:
+
+- runtime E2E proof over API, PostgreSQL, FreeSWITCH, Lua, Go agent, runtime
+  callbacks, event ingestion, observability, and rollback
+- tested deployment and network boundaries
+- tested backup, restore, upgrade, and rollback procedures
+- fraud, abuse, and rate-limit controls suitable for telecom production traffic
+- SLOs, alerts, logs, dashboards, and soak/load evidence for runtime paths
+- tenant isolation, audit, export, retention, and support-bundle redaction evidence
+- versioned SDK, MCP, n8n, OpenAPI, release notes, and compatibility artifacts
+- release-candidate governance with signoff, go/no-go, rollback, and monitoring
+
+These gates are tracked by `SLICE-52` through `SLICE-59` and summarized in
+`docs/planning/production-readiness-roadmap.md`.
 
 ## 7. Canonical System Model
 
@@ -680,6 +711,11 @@ Milestone 1 should begin with the first vertical slice above before broader IVR 
 - HA-ready FreeSWITCH support
 - Monitoring and alerting
 - Live operations cockpit with tenant-scoped WebSocket/SSE observability
+- Production runtime E2E release gate
+- Deployment, network, SIP/TLS/SRTP/NAT, backup, restore, upgrade, and rollback
+  procedures
+- Toll-fraud, abuse, external rate-limit store, SLO, soak, tenant-isolation
+  evidence, release packaging, and release-candidate governance
 
 ### Milestone 6: Provider and Omnichannel Contracts
 

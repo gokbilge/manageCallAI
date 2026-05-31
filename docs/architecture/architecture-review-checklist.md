@@ -6,6 +6,9 @@ objects.
 
 ## Ownership
 
+- Check `docs/architecture/source-of-truth.md` first. If this change conflicts
+  with source-of-truth design, update source-of-truth and any required ADR before
+  changing contracts or implementation.
 - Business rules live in API service classes.
 - SQL repositories contain persistence logic, not lifecycle policy.
 - PostgreSQL stores canonical desired state, lifecycle state, audit records, and
@@ -35,6 +38,8 @@ Do not mix these categories in one unbounded payload.
 - Public REST uses business vocabulary, not raw FreeSWITCH or provider vocabulary.
 - Request and response schemas are defined in `packages/contracts`.
 - Generated OpenAPI is regenerated after contract changes.
+- OpenAPI, SDK types, MCP schemas, and webhook payload checks must align with
+  source-of-truth design; they do not override it.
 - SDK and MCP checks are updated when public contracts change.
 - Runtime-internal endpoints are clearly documented and require runtime-scoped
   authentication.
@@ -76,3 +81,11 @@ Do not mix these categories in one unbounded payload.
 - Business events exclude raw provider payloads, raw FreeSWITCH payloads, SIP
   passwords, and unbounded media URLs.
 - Changes that affect runtime behavior have tests or an explicit audit note.
+
+## Production Readiness
+
+- Runtime E2E, deployment preflight, restore smoke, fraud/rate-limit tests,
+  SLO/soak evidence, tenant-isolation evidence, release packaging, and
+  release-candidate governance are required before production claims.
+- Production readiness evidence must be sanitized and attached to the release
+  candidate or referenced from immutable release artifacts.

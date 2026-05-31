@@ -87,6 +87,14 @@ Last audited: 2026-05-30.
 | `SLICE-49` | planned |
 | `SLICE-50` | planned |
 | `SLICE-51` | planned |
+| `SLICE-52` | planned |
+| `SLICE-53` | planned |
+| `SLICE-54` | planned |
+| `SLICE-55` | planned |
+| `SLICE-56` | planned |
+| `SLICE-57` | planned |
+| `SLICE-58` | planned |
+| `SLICE-59` | planned |
 
 The original v1 release-plan slices are closed. The next release-candidate feature
 set is now explicit as `SLICE-25` through `SLICE-32`. Contract generation,
@@ -261,6 +269,17 @@ SLICE-00 Current Baseline
 - `SLICE-50`
 - `SLICE-51`
 
+### Track I - Production Release Gates
+
+- `SLICE-52`
+- `SLICE-53`
+- `SLICE-54`
+- `SLICE-55`
+- `SLICE-56`
+- `SLICE-57`
+- `SLICE-58`
+- `SLICE-59`
+
 ## 6. Recommended Execution Order
 
 ### Stage 1 - Close product gaps around the current IVR foundation
@@ -335,6 +354,17 @@ SLICE-00 Current Baseline
 44. `SLICE-50` Self-Hosted FreeSWITCH Smoke CI
 45. `SLICE-51` Release-Grade Product Surfaces, Coverage, And Runbooks
 
+### Stage 10 - Production Release Gates
+
+46. `SLICE-52` Production Runtime E2E Gate
+47. `SLICE-53` Production Deployment And Network Hardening
+48. `SLICE-54` Backup, Restore, Upgrade, And Disaster Recovery
+49. `SLICE-55` Production Fraud, Abuse, And Rate-Limit Hardening
+50. `SLICE-56` Production Observability, Soak Tests, And SLOs
+51. `SLICE-57` Production Tenant Isolation And Compliance Evidence
+52. `SLICE-58` Production SDK, MCP, n8n, And Release Packaging
+53. `SLICE-59` Production Release Candidate Governance
+
 ## 7. Minimal Release Gate
 
 The product is ready for the first release only when all of these are true:
@@ -395,3 +425,11 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-49](slices/SLICE-49-public-alpha-readiness.md)
 - [SLICE-50](slices/SLICE-50-self-hosted-freeswitch-smoke-ci.md)
 - [SLICE-51](slices/SLICE-51-release-grade-product-coverage-and-runbooks.md)
+- [SLICE-52](slices/SLICE-52-production-runtime-e2e-gate.md)
+- [SLICE-53](slices/SLICE-53-production-deployment-and-network-hardening.md)
+- [SLICE-54](slices/SLICE-54-backup-restore-upgrade-dr.md)
+- [SLICE-55](slices/SLICE-55-production-fraud-abuse-and-rate-limits.md)
+- [SLICE-56](slices/SLICE-56-production-observability-soak-and-slos.md)
+- [SLICE-57](slices/SLICE-57-production-tenant-isolation-and-compliance-evidence.md)
+- [SLICE-58](slices/SLICE-58-production-sdk-mcp-n8n-release-packaging.md)
+- [SLICE-59](slices/SLICE-59-production-release-candidate-governance.md)

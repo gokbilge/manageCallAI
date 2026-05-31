@@ -15,6 +15,19 @@ It translates the product and architectural intent into implementable software s
 - Keep integration adapters replaceable without rewriting core business logic
 - Define provider-neutral AI, media, messaging, and meeting contracts before binding
   to any specific external provider
+- Make production readiness evidence-driven: runtime E2E, deployment, recovery,
+  abuse controls, observability, tenant isolation, packaging, and release
+  governance must be designed as testable workflows
+
+## 2.0 Design Authority
+
+Software design implements `docs/architecture/source-of-truth.md`. If a design
+detail conflicts with that source-of-truth document or an ADR, update the
+source-of-truth document or ADR before changing contracts or implementation.
+
+`packages/contracts`, OpenAPI, SDK types, MCP schemas, and webhook payload checks
+are executable design artifacts. They must be regenerated or drift-checked after
+design changes, but they do not override the architecture.
 
 ## 2.1 Responsibility Split
 
@@ -167,6 +180,29 @@ Design constraints:
 - Provider metadata is diagnostic context only; it must not drive core business logic
 - WhatsApp, Telegram, Google Meet, and custom adapters run as independent services;
   `apps/api` exposes contracts and state transitions but does not host provider SDKs.
+
+### 3.9 Production Readiness Evidence Layer
+
+Implementation direction:
+
+- release E2E scripts and workflows
+- production preflight checks
+- restore smoke tests
+- load/soak tests
+- compliance evidence reports
+- release-candidate checklists
+
+Responsibilities:
+
+- Prove runtime behavior across API, PostgreSQL, FreeSWITCH, Lua, and Go agent
+- Prove deployment/network boundaries and runtime endpoint privacy
+- Prove backup/restore/upgrade/rollback procedures
+- Prove fraud, abuse, and rate-limit controls
+- Prove SLOs, alerts, redacted logs, and operational dashboards
+- Prove tenant isolation, export boundaries, data retention, and support-bundle
+  redaction
+- Prove SDK, MCP, n8n, OpenAPI, release notes, and compatibility artifacts are
+  versioned and reproducible
 
 ## 4. Core Domain Concepts
 
@@ -349,6 +385,21 @@ This workflow covers recording analysis, prompt generation, and IVR AI turns.
 5. The UI renders dense active-call, queue, node-health, and backlog views with
    stale/disconnected states.
 
+### 6.9 Production Release Candidate Workflow
+
+1. Release branch or candidate tag is prepared through the protected PR workflow.
+2. Contracts, OpenAPI, SDK, MCP schemas, webhook payloads, migrations, and DB
+   contracts are regenerated or drift-checked.
+3. Runtime E2E gate proves API, PostgreSQL, FreeSWITCH, Lua, Go agent, runtime
+   callbacks, event ingestion, observability, and rollback.
+4. Deployment preflight validates production secrets, runtime endpoint privacy,
+   network assumptions, health/readiness, and FreeSWITCH reachability.
+5. Restore smoke validates PostgreSQL state and media references from backup.
+6. Fraud/rate-limit tests, tenant-isolation evidence, SLO/soak evidence, and
+   support-bundle redaction evidence are attached to the release candidate.
+7. Release governance records signoff, go/no-go decision, rollback plan, and
+   post-release monitoring window.
+
 ## 7. Interface Design Principles
 
 ### 7.1 REST API
@@ -411,6 +462,8 @@ FreeSWITCH consumes generated active state and does not own business intent.
 - Publish failures should not partially activate inconsistent state
 - Integration failures should be visible through logs, status surfaces, and audit records
 - Unsafe operations should fail closed
+- Production release evidence failures should fail closed: missing runtime E2E,
+  restore, soak, tenant-isolation, or security evidence blocks production tagging
 
 ## 10. Security Design
 
@@ -437,3 +490,7 @@ FreeSWITCH consumes generated active state and does not own business intent.
 - Approval workflow mechanics for risky publish operations
 - Provider adapter packaging, credential storage, and capability verification model
 - Channel-specific delivery and voice support matrix
+- Production external rate-limit store selection
+- Production restore-smoke fixture and media-reference validation strategy
+- Production load/soak test scale targets
+- Production release-candidate signoff ownership

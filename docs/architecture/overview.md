@@ -14,6 +14,26 @@ It defines the runtime topology, major components, data boundaries, integration 
 - Versioned, auditable, and reversible configuration lifecycle
 - Integration-friendly architecture for FreeSWITCH, MCP, and n8n
 - Provider-neutral contracts for optional AI, media, messaging, and meeting adapters
+- Production evidence before production claims
+
+## 2.1 Documentation And Contract Authority
+
+Architecture and design docs define intent and boundaries. Contracts, OpenAPI,
+SDK types, MCP schemas, and webhook payload checks are executable artifacts that
+must align with that intent.
+
+Authority order:
+
+1. `source-of-truth.md`
+2. ADRs
+3. Architecture, design, security, and runtime-boundary docs
+4. `packages/contracts`
+5. generated OpenAPI, SDK types, MCP schema checks, webhook payload checks
+6. planning slices and release checklists
+
+OpenAPI is the canonical machine-readable API artifact, but it is not the
+architecture source of truth. If OpenAPI disagrees with design, update design or
+contracts first, then regenerate OpenAPI.
 
 ## 3. High-Level Architecture
 
@@ -249,6 +269,24 @@ These may run as separate services or a small number of deployable units dependi
 - Controlled connectivity between control plane and FreeSWITCH
 - Database reachable only by trusted application services
 
+### 7.3 Production Deployment View
+
+Production deployments must define separate trust zones for:
+
+- public operator HTTP/TLS entry points
+- private API/runtime endpoints
+- PostgreSQL
+- worker and provider-adapter services
+- Go FreeSWITCH agent
+- FreeSWITCH ESL
+- SIP signaling and RTP/media ranges
+- metrics, logs, traces, and support-bundle access
+
+Runtime endpoints, PostgreSQL, ESL, provider credentials, and management
+interfaces must not be exposed publicly by default. Reverse proxies and edge
+gateways must redact secrets in access logs and enforce request-size, timeout,
+TLS, HSTS, and allowlist policies where applicable.
+
 ## 8. Trust Boundaries
 
 - Boundary A: Browser or external client to application API
@@ -279,6 +317,10 @@ Each boundary requires authentication, authorization, input validation, and oper
 - Adapter failures should not corrupt desired state
 - Publish operations should fail atomically from the domain perspective
 - Event ingestion should tolerate delayed or retried processing
+- Backup, restore, migration, rollback, and media-reference validation must be
+  tested before production release
+- Runtime E2E evidence must prove directory lookup, dialplan lookup, SIP
+  registration, IVR callback, event ingestion, observability, and rollback
 
 ## 11. Scalability Considerations
 
@@ -295,6 +337,21 @@ Each boundary requires authentication, authorization, input validation, and oper
 - Operational logs and metrics for adapter and API components
 - Live operations stream for active calls, active IVR sessions, queue depth,
   runtime health, webhook backlog, and adapter work backlog
+- Production SLOs, alert rules, and soak/load tests for runtime lookup, event
+  ingestion, webhook delivery, outbound abuse, stale agents, and stream freshness
+
+## 12.1 Production Release Gates
+
+Production release candidates require evidence from:
+
+- `SLICE-52` runtime E2E gate
+- `SLICE-53` deployment and network hardening
+- `SLICE-54` backup, restore, upgrade, and disaster recovery
+- `SLICE-55` fraud, abuse, and rate-limit hardening
+- `SLICE-56` observability, soak tests, and SLOs
+- `SLICE-57` tenant isolation and compliance evidence
+- `SLICE-58` SDK, MCP, n8n, and release packaging
+- `SLICE-59` release candidate governance
 
 ## 13. Technology Direction
 

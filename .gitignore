@@ -29,3 +29,4 @@ runtime-token*
 # Local AI context files - not for version control
 CLAUDE.md
 AGENTS.md
+.local-prompts/

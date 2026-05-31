@@ -50,9 +50,14 @@ Goal: prepare real operators to deploy, operate, recover, and secure the system.
 
 Required slices:
 
-- extend `SLICE-44` with production verification evidence
-- complete deployment/runbook work from `SLICE-51`
-- add future slices for load/soak, multi-instance rate limiting, and carrier interop
+- `SLICE-52`: production runtime E2E gate
+- `SLICE-53`: production deployment and network hardening
+- `SLICE-54`: backup, restore, upgrade, and disaster recovery
+- `SLICE-55`: production fraud, abuse, and rate-limit hardening
+- `SLICE-56`: production observability, soak tests, and SLOs
+- `SLICE-57`: production tenant isolation and compliance evidence
+- `SLICE-58`: production SDK, MCP, n8n, and release packaging
+- `SLICE-59`: production release candidate governance
 
 Exit criteria:
 
@@ -71,6 +76,14 @@ Exit criteria:
 | `SLICE-49` | Public alpha | misleading release posture, unresolved security findings |
 | `SLICE-50` | Public beta | untested real FreeSWITCH runtime integration |
 | `SLICE-51` | Public beta/production | operator UX, coverage, deployment/runbook gaps |
+| `SLICE-52` | Production | unproven real runtime loop at release time |
+| `SLICE-53` | Production | unsafe deployment/network/SIP exposure |
+| `SLICE-54` | Production | untested recovery and migration rollback |
+| `SLICE-55` | Production | toll fraud, abuse, and multi-instance rate-limit gaps |
+| `SLICE-56` | Production | weak SLOs, alerts, and load/soak confidence |
+| `SLICE-57` | Production | tenant leakage, privacy, and compliance evidence gaps |
+| `SLICE-58` | Production | unversioned SDK/MCP/n8n/release artifacts |
+| `SLICE-59` | Production | non-repeatable release candidate governance |
 
 ## Do Not Reclassify As Production Until
 
@@ -80,4 +93,3 @@ Exit criteria:
 - MCP/n8n remain narrower than REST and are drift-checked
 - outbound toll-fraud controls are enforced and tested
 - backup/restore/upgrade playbooks have been executed successfully
-

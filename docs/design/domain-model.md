@@ -61,6 +61,15 @@ It describes the primary entities, their responsibilities, key relationships, li
 - ChannelMessage
 - ChannelVoiceSession
 
+### 3.6 Production Readiness Evidence
+
+- ReleaseCandidate
+- RuntimeE2EEvidence
+- DeploymentPreflightResult
+- RestoreSmokeResult
+- SoakTestResult
+- ComplianceEvidence
+
 ## 4. Core Entities
 
 ### 4.1 Tenant
@@ -881,6 +890,97 @@ Invariants:
 - Meeting or native-call sessions must not imply FreeSWITCH call control unless
   explicitly bridged through a supported SIP or runtime adapter.
 
+## 9.6 Production Readiness Evidence Entities
+
+These entities may be persisted, generated as release artifacts, or represented
+as structured documents. They are part of the production-readiness domain even
+when not stored in application tables.
+
+### ReleaseCandidate
+
+Represents a proposed production release.
+
+Key fields:
+
+- `version`
+- `gitSha`
+- `createdAt`
+- `status`
+- `evidenceRefs`
+- `goNoGoDecision`
+- `rollbackPlanRef`
+
+Invariants:
+
+- A production release candidate cannot be approved without required evidence.
+- Release evidence must reference immutable artifacts or committed docs.
+
+### RuntimeE2EEvidence
+
+Represents proof that the real runtime loop worked for a candidate.
+
+Required evidence:
+
+- directory lookup
+- dialplan lookup
+- SIP registration or documented equivalent
+- IVR runtime callback
+- Go agent event ingestion
+- observability timeline query
+- rollback verification
+- sanitized runtime logs
+
+### DeploymentPreflightResult
+
+Represents proof that a production-like deployment satisfies required config and
+network assumptions.
+
+Required evidence:
+
+- production secrets are set and not defaults
+- runtime endpoints are private or allowlisted
+- PostgreSQL and ESL are not publicly exposed
+- health/readiness pass
+- FreeSWITCH reachability is verified
+
+### RestoreSmokeResult
+
+Represents proof that backup and restore preserve desired state and media
+references.
+
+Required evidence:
+
+- migrations applied
+- tenant desired state restored
+- active published versions restored
+- routes and prompts restored
+- media references validated or orphaned references reported
+
+### SoakTestResult
+
+Represents load or soak evidence for production-critical paths.
+
+Required evidence:
+
+- runtime lookup latency
+- call-event ingestion lag
+- timeline query behavior
+- webhook retry/DLQ behavior
+- observability summary freshness
+- redaction verification under load
+
+### ComplianceEvidence
+
+Represents tenant-isolation, audit, export, privacy, and support-bundle evidence.
+
+Required evidence:
+
+- cross-tenant denial matrix
+- platform-admin audit behavior
+- export tenant boundary
+- support-bundle redaction
+- recording/voicemail/CDR retention behavior where implemented
+
 ## 10. Relationship Summary
 
 At a high level:
@@ -911,6 +1011,7 @@ Tenant
   -> ChannelAccount
   -> ChannelMessage
   -> ChannelVoiceSession
+  -> ComplianceEvidence
 
 IVRFlow
   -> FlowVersion
@@ -930,6 +1031,13 @@ ChannelAccount
 
 Recording
   -> RecordingAnalysisRequest
+
+ReleaseCandidate
+  -> RuntimeE2EEvidence
+  -> DeploymentPreflightResult
+  -> RestoreSmokeResult
+  -> SoakTestResult
+  -> ComplianceEvidence
 ```
 
 ## 11. Lifecycle Rules
@@ -973,6 +1081,9 @@ Suggested lifecycle:
 - Live observability snapshots are derived views, not canonical domain entities
 - External provider outputs are inputs to domain workflows, not direct authority
 - Provider capabilities must be explicit before channel-specific actions are accepted
+- Production release candidates require evidence artifacts before production tagging
+- Evidence artifacts must not contain secrets, raw SIP credentials, runtime tokens,
+  JWTs, webhook secrets, raw provider payloads, or raw recording media
 
 ## 13. Mapping Guidance
 
