@@ -128,32 +128,18 @@ export class IvrFlowRepository {
   async createVersion(input: {
     tenant_id: string;
     flow_id: string;
+    version_number: number;
     definition: Record<string, unknown>;
     created_by?: string;
   }): Promise<FlowVersion> {
     const client = await this.db.connect();
     try {
       await client.query('BEGIN');
-
-      // Lock the flow row so MAX(version_number) + INSERT is atomic. Without
-      // this lock two concurrent createVersion calls can read the same MAX and
-      // both try to insert the same version_number, hitting the UNIQUE constraint.
-      await client.query(
-        `SELECT id FROM ivr_flows WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
-        [input.flow_id, input.tenant_id],
-      );
-
-      const maxR = await client.query<{ max: number | null }>(
-        `SELECT MAX(version_number) AS max FROM flow_versions WHERE flow_id = $1`,
-        [input.flow_id],
-      );
-      const version_number = (maxR.rows[0]?.max ?? 0) + 1;
-
       const versionR = await client.query<FlowVersion>(
         `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by)
          VALUES ($1, $2, $3, 'draft', $4, $5)
          RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
-        [input.tenant_id, input.flow_id, version_number, JSON.stringify(input.definition), input.created_by ?? null],
+        [input.tenant_id, input.flow_id, input.version_number, JSON.stringify(input.definition), input.created_by ?? null],
       );
       const version = versionR.rows[0]!;
       await client.query(
@@ -256,9 +242,9 @@ export class IvrFlowRepository {
         [tenantId, flowId],
       ),
       this.db.query<FlowAuditHistoryEntry>(
-        `SELECT id, actor_type, actor_id, action, metadata_json AS metadata, created_at
-         FROM tenant_audit_log
-         WHERE tenant_id = $1 AND resource_type = 'ivr_flow' AND resource_id = $2::text
+        `SELECT id, actor_type, actor_id, action, metadata, created_at
+         FROM audit_events
+         WHERE tenant_id = $1 AND object_type = 'ivr_flow' AND object_id = $2
          ORDER BY created_at DESC
          LIMIT 50`,
         [tenantId, flowId],
@@ -374,16 +360,6 @@ export class IvrFlowRepository {
     try {
       await client.query('BEGIN');
 
-      // Lock the target version row so concurrent publish calls are serialized.
-      // If the version does not exist (wrong tenant/id), the lock returns no rows
-      // and subsequent updates will no-op, keeping the transaction clean.
-      await client.query(
-        `SELECT id FROM flow_versions
-         WHERE id = $1 AND flow_id = $2 AND tenant_id = $3
-         FOR UPDATE`,
-        [input.version_id, input.flow_id, input.tenant_id],
-      );
-
       // Supersede the current active version (if any)
       await client.query(
         `UPDATE flow_versions SET state = 'superseded'
@@ -414,10 +390,10 @@ export class IvrFlowRepository {
         [input.tenant_id, input.flow_id, input.version_id, input.triggered_by_id],
       );
 
-      // Audit event (unified audit log — written inside transaction for atomicity)
+      // Audit event
       await client.query(
-        `INSERT INTO tenant_audit_log (tenant_id, actor_id, actor_type, action, resource_type, resource_id)
-         VALUES ($1, $2, 'user', 'ivr_flow.published', 'ivr_flow', $3)`,
+        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
+         VALUES ($1, 'user', $2, 'publish', 'ivr_flow', $3)`,
         [input.tenant_id, input.triggered_by_id, input.flow_id],
       );
 
@@ -439,12 +415,6 @@ export class IvrFlowRepository {
     const client = await this.db.connect();
     try {
       await client.query('BEGIN');
-
-      // Lock the flow row to serialize concurrent rollback attempts.
-      await client.query(
-        `SELECT id FROM ivr_flows WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
-        [input.flow_id, input.tenant_id],
-      );
 
       // Find the most recent superseded version
       const targetR = await client.query<FlowVersion>(
@@ -476,15 +446,15 @@ export class IvrFlowRepository {
         [target.id, input.flow_id],
       );
 
-      // Publish record + audit (unified audit log — inside transaction for atomicity)
+      // Publish record + audit
       await client.query(
         `INSERT INTO publish_records (tenant_id, object_type, object_id, version_id, action_type, triggered_by_type, triggered_by_id, result)
          VALUES ($1, 'ivr_flow', $2, $3, 'rollback', 'user', $4, 'success')`,
         [input.tenant_id, input.flow_id, target.id, input.triggered_by_id],
       );
       await client.query(
-        `INSERT INTO tenant_audit_log (tenant_id, actor_id, actor_type, action, resource_type, resource_id)
-         VALUES ($1, $2, 'user', 'ivr_flow.rollback', 'ivr_flow', $3)`,
+        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
+         VALUES ($1, 'user', $2, 'rollback', 'ivr_flow', $3)`,
         [input.tenant_id, input.triggered_by_id, input.flow_id],
       );
 
@@ -505,10 +475,6 @@ export class IvrFlowRepository {
     );
     return (r.rows[0]?.max ?? 0) + 1;
   }
-
-  // Kept for callers that still need a preview of the next number outside a
-  // transaction. createVersion() no longer uses this — it reads MAX inside its
-  // own locked transaction.
 
   async findActiveExtensionIds(tenantId: string, ids: string[]): Promise<Set<string>> {
     if (ids.length === 0) return new Set();

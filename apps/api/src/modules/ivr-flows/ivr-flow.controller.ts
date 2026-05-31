@@ -266,7 +266,6 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/:id/simulate',
     {
-      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE),
       schema: {
         params: UuidParamsSchema,
@@ -288,7 +287,6 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/:id/versions/:vid/simulate',
     {
-      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
       preHandler: requireCapability(CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE),
       schema: {
         params: idVidParams,

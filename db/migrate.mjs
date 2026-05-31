@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -27,70 +26,21 @@ const migrationFiles = readdirSync(migrationsDir)
 
 const client = new pg.Client({ connectionString: databaseUrl });
 const isStatusMode = process.argv.includes("--status");
-const isVerifyMode = process.argv.includes("--verify");
-
-// Compute SHA-256 of a migration file's content.
-// Line endings are normalised to LF before hashing so the digest is identical
-// on Windows (CRLF) and Linux/macOS (LF).
-function hashContent(content) {
-  return createHash("sha256").update(content.replace(/\r\n/g, "\n")).digest("hex");
-}
 
 try {
   await client.connect();
   await ensureMigrationTable(client);
 
   const appliedRows = await client.query(
-    "SELECT filename, applied_at, sha256_hex FROM schema_migrations ORDER BY filename"
+    "SELECT filename, applied_at FROM schema_migrations ORDER BY filename"
   );
-  const applied = new Map(
-    appliedRows.rows.map((row) => [row.filename, { applied_at: row.applied_at, sha256_hex: row.sha256_hex }])
-  );
+  const applied = new Map(appliedRows.rows.map((row) => [row.filename, row.applied_at]));
 
-  // ── --status mode ─────────────────────────────────────────────────────────────
   if (isStatusMode) {
     printStatus(migrationFiles, applied);
     process.exit(0);
   }
 
-  // ── --verify mode ─────────────────────────────────────────────────────────────
-  // For every applied migration that has a stored sha256_hex, verify the file on
-  // disk still matches. Exits with code 1 on first mismatch.
-  if (isVerifyMode) {
-    let tampered = 0;
-    let checked = 0;
-
-    for (const [filename, { sha256_hex }] of applied.entries()) {
-      if (!sha256_hex) continue; // pre-0037 migration, no checksum recorded
-
-      const filepath = path.join(migrationsDir, filename);
-      if (!existsSync(filepath)) {
-        console.error(`MISSING: ${filename} is in schema_migrations but not on disk`);
-        tampered++;
-        continue;
-      }
-
-      const diskHash = hashContent(readFileSync(filepath, "utf8"));
-      if (diskHash !== sha256_hex) {
-        console.error(
-          `TAMPERED: ${filename} — stored hash ${sha256_hex} does not match disk hash ${diskHash}`
-        );
-        tampered++;
-      } else {
-        checked++;
-      }
-    }
-
-    if (tampered > 0) {
-      console.error(`\nVerification FAILED: ${tampered} tampered migration(s) detected.`);
-      process.exit(1);
-    }
-
-    console.log(`Migration checksum verification: OK (${checked} migration(s) verified)`);
-    process.exit(0);
-  }
-
-  // ── apply mode ────────────────────────────────────────────────────────────────
   const pending = migrationFiles.filter((filename) => !applied.has(filename));
 
   if (pending.length === 0) {
@@ -98,29 +48,16 @@ try {
     process.exit(0);
   }
 
-  const appliedBy =
-    process.env["CI_PIPELINE_ID"] ??
-    process.env["GITHUB_RUN_ID"] ??
-    process.env["USER"] ??
-    "unknown";
-
   for (const filename of pending) {
     const migrationPath = path.join(migrationsDir, filename);
     const sql = readFileSync(migrationPath, "utf8");
-    const sha256 = hashContent(sql);
 
     console.log(`Applying ${filename}...`);
     await client.query("BEGIN");
     await client.query(sql);
-
-    // Store checksum and actor so the --verify mode can detect future tampering.
-    // The INSERT uses ON CONFLICT DO NOTHING so re-applying a migration that was
-    // already recorded (e.g. in a retry scenario) does not error.
     await client.query(
-      `INSERT INTO schema_migrations (filename, sha256_hex, applied_by)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (filename) DO NOTHING`,
-      [filename, sha256, appliedBy]
+      "INSERT INTO schema_migrations (filename) VALUES ($1)",
+      [filename]
     );
     await client.query("COMMIT");
     console.log(`Applied ${filename}`);
@@ -207,19 +144,10 @@ function requireFromWorkspace(packageName) {
 async function ensureMigrationTable(dbClient) {
   await dbClient.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
-      filename   text PRIMARY KEY,
+      filename text PRIMARY KEY,
       applied_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  // Idempotently add columns introduced in 0037 so the runner can always
-  // SELECT sha256_hex without failing on databases that haven't applied
-  // 0037 yet. The migration itself repeats these ALTERs with IF NOT EXISTS.
-  await dbClient.query(
-    `ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS sha256_hex text`
-  );
-  await dbClient.query(
-    `ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS applied_by text`
-  );
 }
 
 function printStatus(files, applied) {
@@ -231,18 +159,16 @@ function printStatus(files, applied) {
   const fileSet = new Set(files);
 
   for (const filename of files) {
-    const record = applied.get(filename);
-    if (record) {
-      const checkmark = record.sha256_hex ? "✓" : "~";
-      console.log(`applied${checkmark}\t${filename}\t${record.applied_at.toISOString()}`);
+    if (applied.has(filename)) {
+      console.log(`applied\t${filename}\t${applied.get(filename).toISOString()}`);
     } else {
-      console.log(`pending \t${filename}`);
+      console.log(`pending\t${filename}`);
     }
   }
 
-  for (const [filename, { applied_at }] of applied.entries()) {
+  for (const [filename, appliedAt] of applied.entries()) {
     if (!fileSet.has(filename)) {
-      console.log(`applied-missing\t${filename}\t${applied_at.toISOString()}`);
+      console.log(`applied-missing\t${filename}\t${appliedAt.toISOString()}`);
     }
   }
 }

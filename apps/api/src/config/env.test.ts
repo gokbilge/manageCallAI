@@ -4,7 +4,7 @@ const originalEnv = { ...process.env };
 
 function resetEnv(overrides: NodeJS.ProcessEnv): void {
   for (const key of Object.keys(process.env)) {
-    Reflect.deleteProperty(process.env, key);
+    delete process.env[key];
   }
 
   Object.assign(process.env, originalEnv, {
@@ -25,22 +25,24 @@ async function loadConfig(overrides: NodeJS.ProcessEnv = {}) {
 afterEach(() => {
   vi.resetModules();
   for (const key of Object.keys(process.env)) {
-    Reflect.deleteProperty(process.env, key);
+    delete process.env[key];
   }
   Object.assign(process.env, originalEnv);
 });
 
 describe('config', () => {
-  it('identifies production environment', async () => {
-    const { config } = await loadConfig({ APP_ENV: 'production' });
-
-    expect(config.isProduction).toBe(true);
-  });
-
-  it('identifies non-production environment', async () => {
+  it('allows runtime token fallback outside production by default', async () => {
     const { config } = await loadConfig({ APP_ENV: 'development' });
 
     expect(config.isProduction).toBe(false);
+    expect(config.allowRuntimeTokenFallback).toBe(true);
+  });
+
+  it('disables runtime token fallback in production by default', async () => {
+    const { config } = await loadConfig({ APP_ENV: 'production' });
+
+    expect(config.isProduction).toBe(true);
+    expect(config.allowRuntimeTokenFallback).toBe(false);
   });
 
   it('rejects sample API secrets in production', async () => {

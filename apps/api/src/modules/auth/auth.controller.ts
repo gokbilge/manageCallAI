@@ -6,7 +6,6 @@ import { AuthRepository } from './auth.repository.js';
 import { AuthError, AuthService } from './auth.service.js';
 import type { Role } from './capabilities.js';
 import { sendAlreadyExists, sendUnauthenticated } from '../../errors/index.js';
-import { fireAuditEvent } from '../audit/fire-audit.js';
 
 const service = new AuthService(new AuthRepository(db));
 
@@ -14,7 +13,6 @@ export const authController: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/register',
     {
-      config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
       schema: { body: RegisterBodySchema },
     },
     async (req, reply) => {
@@ -42,7 +40,6 @@ export const authController: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/login',
     {
-      config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
       schema: { body: LoginBodySchema },
     },
     async (req, reply) => {
@@ -57,21 +54,9 @@ export const authController: FastifyPluginAsyncZod = async (app) => {
           email: result.email,
           role,
         });
-        fireAuditEvent({
-          tenant_id: result.tenant_id,
-          actor_id: result.id,
-          actor_type: 'user',
-          action: 'auth.login',
-          resource_type: 'user',
-          resource_id: result.id,
-          metadata: { role },
-        });
         return { token };
       } catch (err) {
         if (err instanceof AuthError) {
-          // Login failures cannot be written to tenant_audit_log because we
-          // don't have a valid tenant_id (the tenant slug may not resolve).
-          // The rate-limit + application log provide the audit trail here.
           return sendUnauthenticated(reply, err.message);
         }
         throw err;

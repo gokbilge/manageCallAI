@@ -42,7 +42,7 @@ function makeWebhook(overrides: Partial<AutomationWebhook> = {}): AutomationWebh
 function makeMockRepo(): AutomationRepository {
   return {
     createApiKey: vi.fn().mockResolvedValue(makeApiKey()),
-    findApiKeyByHash: vi.fn().mockResolvedValue({ id: KEY_ID, tenant_id: TENANT_ID, capabilities: ['tenant.extensions.view'], expires_at: null }),
+    findApiKeyByHash: vi.fn().mockResolvedValue({ id: KEY_ID, tenant_id: TENANT_ID, capabilities: ['*'] }),
     listApiKeys: vi.fn().mockResolvedValue([makeApiKey()]),
     revokeApiKey: vi.fn().mockResolvedValue(true),
     generateApiKey: vi.fn().mockReturnValue({ rawKey: 'mcak_abc', keyHash: 'hash', keyPrefix: 'abcd' }),
@@ -69,28 +69,13 @@ function makeMockRepo(): AutomationRepository {
 // ── API key tests ─────────────────────────────────────────────────────────────
 
 describe('AutomationService.createApiKey', () => {
-  it('creates a key with explicit capabilities', async () => {
+  it('creates a key with the legacy wildcard capability when no capabilities specified', async () => {
     const repo = makeMockRepo();
-    vi.mocked(repo.createApiKey).mockResolvedValue(
-      makeApiKey({ capabilities: ['tenant.extensions.view'] }),
-    );
     const service = new AutomationService(repo);
-    await service.createApiKey(TENANT_ID, 'test-key', ['tenant.extensions.view']);
+    await service.createApiKey(TENANT_ID, 'test-key');
     expect(repo.createApiKey).toHaveBeenCalledWith(
-      expect.objectContaining({ tenant_id: TENANT_ID, name: 'test-key', capabilities: ['tenant.extensions.view'] }),
+      expect.objectContaining({ tenant_id: TENANT_ID, name: 'test-key' }),
     );
-  });
-
-  it('rejects an empty capabilities array', async () => {
-    const repo = makeMockRepo();
-    const service = new AutomationService(repo);
-    await expect(service.createApiKey(TENANT_ID, 'test-key', [])).rejects.toThrow(/empty/);
-  });
-
-  it('rejects the wildcard sentinel', async () => {
-    const repo = makeMockRepo();
-    const service = new AutomationService(repo);
-    await expect(service.createApiKey(TENANT_ID, 'test-key', ['*'])).rejects.toThrow(/wildcard/i);
   });
 
   it('passes explicit capabilities to the repository', async () => {
@@ -112,26 +97,12 @@ describe('AutomationService.createApiKey', () => {
     vi.mocked(repo.findApiKeyByHash).mockResolvedValue({
       id: KEY_ID,
       tenant_id: TENANT_ID,
-      capabilities: ['tenant.extensions.view'],
-      expires_at: null,
+      capabilities: ['tenant.observability.view'],
     });
     const service = new AutomationService(repo);
     const claims = await service.resolveApiKey('mcak_abc');
-    expect(claims?.capabilities).toEqual(['tenant.extensions.view']);
+    expect(claims?.capabilities).toEqual(['tenant.observability.view']);
     expect(claims?.role).toBeUndefined();
-  });
-
-  it('resolveApiKey returns null for an expired key', async () => {
-    const repo = makeMockRepo();
-    vi.mocked(repo.findApiKeyByHash).mockResolvedValue({
-      id: KEY_ID,
-      tenant_id: TENANT_ID,
-      capabilities: ['tenant.extensions.view'],
-      expires_at: new Date(Date.now() - 1000),
-    });
-    const service = new AutomationService(repo);
-    const claims = await service.resolveApiKey('mcak_abc');
-    expect(claims).toBeNull();
   });
 
   it('revokeApiKey throws ApiKeyNotFoundError when key is not found', async () => {

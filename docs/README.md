@@ -28,9 +28,6 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [freeswitch-runtime-integration.md](freeswitch-runtime-integration.md)
   Runtime integration boundaries and expected roles for stock FreeSWITCH, the adapter service, and Lua helpers.
 
-- [ops/runtime-edge-security.md](ops/runtime-edge-security.md)
-  Production boundary for SIP/TDoS edge controls and FreeSWITCH-facing runtime HTTP protection.
-
 - [integration-test-plan.md](integration-test-plan.md)
   First end-to-end architecture proof plan from extension creation to event visibility.
 

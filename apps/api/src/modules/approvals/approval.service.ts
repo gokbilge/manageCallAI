@@ -36,10 +36,7 @@ export class ApprovalService {
     const publishRecord = await this.approvalRepo.findAssociatedPublishRecord(id);
     if (!publishRecord) throw new ApprovalPublishRecordMissingError(id);
 
-    // Atomic compare-and-swap: only the first concurrent caller wins (WHERE status='pending').
-    // If we lose the race the approval was already decided by another request.
-    const won = await this.approvalRepo.markApproved(id, tenantId);
-    if (!won) throw new ApprovalAlreadyDecidedError('approved');
+    await this.approvalRepo.markApproved(id, tenantId);
 
     if (publishRecord.action_type === 'publish') {
       await this.ivrFlowRepo.publish({
@@ -57,6 +54,13 @@ export class ApprovalService {
     }
 
     await this.approvalRepo.updatePublishRecordResult(id, 'success');
+    await this.approvalRepo.writeAuditEvent({
+      tenant_id: tenantId,
+      actor_id: approverId,
+      action: 'approve',
+      object_type: 'approval_request',
+      object_id: id,
+    });
 
     const updated = await this.approvalRepo.findById(id, tenantId);
     return {
@@ -66,7 +70,7 @@ export class ApprovalService {
     };
   }
 
-  async reject(id: string, tenantId: string, _rejecterId: string): Promise<ApprovalDecisionResult> {
+  async reject(id: string, tenantId: string, rejecterId: string): Promise<ApprovalDecisionResult> {
     const request = await this.approvalRepo.findById(id, tenantId);
     if (!request) throw new ApprovalNotFoundError(id);
     if (request.status !== 'pending') throw new ApprovalAlreadyDecidedError(request.status);
@@ -79,6 +83,14 @@ export class ApprovalService {
     if (publishRecord) {
       await this.approvalRepo.updatePublishRecordResult(id, 'failed');
     }
+
+    await this.approvalRepo.writeAuditEvent({
+      tenant_id: tenantId,
+      actor_id: rejecterId,
+      action: 'reject',
+      object_type: 'approval_request',
+      object_id: id,
+    });
 
     const refreshed = await this.approvalRepo.findById(id, tenantId);
     return {

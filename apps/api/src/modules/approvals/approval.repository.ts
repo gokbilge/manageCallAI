@@ -55,7 +55,7 @@ export class ApprovalRepository {
   async markApproved(id: string, tenantId: string): Promise<boolean> {
     const r = await this.db.query(
       `UPDATE approval_requests
-       SET status = 'approved', decision_at = NOW()
+       SET status = 'approved'
        WHERE id = $1 AND tenant_id = $2 AND status = 'pending'`,
       [id, tenantId],
     );
@@ -65,7 +65,7 @@ export class ApprovalRepository {
   async markRejected(id: string, tenantId: string): Promise<boolean> {
     const r = await this.db.query(
       `UPDATE approval_requests
-       SET status = 'rejected', decision_at = NOW()
+       SET status = 'rejected'
        WHERE id = $1 AND tenant_id = $2 AND status = 'pending'`,
       [id, tenantId],
     );
@@ -87,8 +87,8 @@ export class ApprovalRepository {
     object_id: string;
   }): Promise<void> {
     await this.db.query(
-      `INSERT INTO tenant_audit_log (tenant_id, actor_id, actor_type, action, resource_type, resource_id)
-       VALUES ($1, $2, 'user', $3, $4, $5)`,
+      `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
+       VALUES ($1, 'user', $2, $3, $4, $5)`,
       [input.tenant_id, input.actor_id, input.action, input.object_type, input.object_id],
     );
   }

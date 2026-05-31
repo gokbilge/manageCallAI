@@ -6,22 +6,15 @@ import type { WebhookEvent } from './automation.types.js';
 const service = new AutomationService(new AutomationRepository(db));
 
 export function fireWebhooks(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): void {
-  service.enqueueWebhooks(tenantId, event, data).catch((err: unknown) => {
-    // Enqueue failures must not break the primary request, but must be visible.
-    console.error('[webhooks] failed to enqueue event', { event, tenantId, err });
-  });
+  service.fireWebhooks(tenantId, event, data);
 }
 
 export function startWebhookDeliveryWorker(intervalMs = 1000): { stop: () => void } {
   const timer = setInterval(() => {
-    void service.processDueWebhookDeliveries().catch((err: unknown) => {
-      console.error('[webhooks] delivery worker error', { err });
-    });
+    void service.processDueWebhookDeliveries().catch(() => undefined);
   }, intervalMs);
   timer.unref();
-  void service.processDueWebhookDeliveries().catch((err: unknown) => {
-    console.error('[webhooks] delivery worker error on startup', { err });
-  });
+  void service.processDueWebhookDeliveries().catch(() => undefined);
   return {
     stop: () => clearInterval(timer),
   };

@@ -1,6 +1,5 @@
 import formbody from '@fastify/formbody';
 import jwt from '@fastify/jwt';
-import rateLimit from '@fastify/rate-limit';
 import type { FastifyJWTOptions } from '@fastify/jwt';
 import Fastify, { type FastifyInstance, type FastifyPluginCallback } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
@@ -91,8 +90,11 @@ function registerIntegrationModules(app: FastifyInstance): void {
   app.register(automationController, { prefix: '/api/v1/automation' });
   app.register(webhooksController, { prefix: '/api/v1/webhooks' });
   app.register(channelAccountController, { prefix: '/api/v1/channel-accounts' });
+  app.register(channelAccountController, { prefix: '/api/v1/channels/accounts' });
+  app.register(channelMessageController, { prefix: '/api/v1/channel' });
   app.register(channelMessageController, { prefix: '/api/v1/channels' });
   app.register(meetingSessionController, { prefix: '/api/v1/meeting-sessions' });
+  app.register(meetingSessionController, { prefix: '/api/v1/channels/voice-sessions' });
   app.register(exportController, { prefix: '/api/v1/export' });
 }
 
@@ -157,16 +159,6 @@ export function buildApp() {
   app.register(jwtPlugin, {
     secret: config.jwtSecret,
     sign: { expiresIn: '24h' },
-  });
-
-  // Rate limiting: opt-in per route via config.rateLimit.
-  // errorResponseBuilder is intentionally omitted — the default 429 from
-  // @fastify/rate-limit works correctly with fastify-type-provider-zod;
-  // a custom builder conflicts with the Zod serializer on schema-less routes.
-  void app.register(rateLimit, {
-    global: false,
-    max: 300,
-    timeWindow: '1 minute',
   });
 
   app.register(healthController, { prefix: '/health' });

@@ -96,8 +96,6 @@ Do not place business logic in Lua.
 - `event_socket` configured for the adapter
 - `xml_curl` requests must include the runtime token
 - production deployments should prefer the runtime token in a header over query parameters
-- production deployments should route runtime HTTP traffic through an internal
-  runtime edge boundary with node-specific signed requests and per-node limits
 
 ## Interaction Flow
 
@@ -115,21 +113,8 @@ Do not place business logic in Lua.
 - `MANAGECALLAI_TENANT_ID` must be a real tenant UUID for MVP event forwarding.
 - `RUNTIME_API_TOKEN` must be shared by FreeSWITCH `xml_curl`, the adapter, and the API for runtime-only endpoints.
 - query/body runtime tokens are acceptable for local MVP compatibility, but production deployments should avoid query-token logging exposure and prefer header transport where possible.
-- shared runtime-token auth is the MVP compatibility layer; the production target
-  is cryptographic node identity with timestamp, nonce, source-network checks,
-  endpoint capabilities, and per-node rate limits.
 - n8n-facing extension creation should propagate a user JWT to the API rather than bypass auth.
 - MCP read tools may need a JWT for protected resources such as extensions.
-
-## Runtime Edge Protection
-
-Do not expose `mod_xml_curl`, runtime advance, polling, or ingest endpoints
-directly to the public internet.
-
-SIP scanner filtering and TDoS controls belong at the SIP edge before FreeSWITCH
-handles signaling. Runtime HTTP controls protect the API from spoofed nodes,
-replayed requests, abusive polling, and internal endpoint scraping. See
-`docs/ops/runtime-edge-security.md`.
 
 ## Startup Order
 

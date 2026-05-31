@@ -127,8 +127,6 @@ Issues and linked back to the audit record.
 - Delegates in-switch call helper logic to Lua where needed
 - Shields the domain core from switch-specific runtime details
 - Keeps project-specific logic outside stock FreeSWITCH
-- Authenticates to runtime HTTP endpoints with a node-specific identity rather
-  than relying only on a shared runtime token
 
 For MVP, Lua should be limited to:
 
@@ -148,18 +146,6 @@ Lua should not contain business logic.
 - Consumes generated configuration state
 - Produces events and call execution outcomes
 - Remains otherwise stock FreeSWITCH
-
-### 5.10 Runtime Edge Boundary
-
-- Internal gateway or private network boundary for FreeSWITCH-facing HTTP paths
-- Verifies FreeSWITCH node identity, request signatures, nonce replay, timestamp
-  freshness, source network, endpoint capability, and per-node rate limits
-- Keeps `/api/v1/freeswitch/*`, `/api/v1/runtime/*`, and internal ingest paths
-  away from direct public internet exposure
-- Emits security events and metrics for blocked callers and limit breaches
-
-SIP scanner and TDoS controls live outside this HTTP boundary at the SIP edge,
-using firewall rules, ACLs, fail2ban, SBCs, Kamailio, or OpenSIPS where needed.
 
 Example Lua action payload:
 
@@ -196,10 +182,6 @@ This is the minimum slice that demonstrates control-plane state, runtime consump
 3. Validation and simulation may execute before publication.
 4. Publish activates a version.
 5. The adapter layer exposes the active version to stock FreeSWITCH through `mod_xml_curl`, `ESL` / `mod_event_socket`, and minimal Lua helpers.
-
-Production deployments route this runtime HTTP traffic through an internal edge
-boundary that authenticates the specific FreeSWITCH node and rate-limits by node
-and endpoint family.
 
 ### 6.3 Runtime Observation Flow
 
