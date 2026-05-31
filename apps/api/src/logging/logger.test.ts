@@ -12,6 +12,11 @@ describe('redactSensitiveUrl', () => {
       .toBe('/api/v1/runtime/ivr/sessions?access_token=%5BREDACTED%5D&signing_secret=%5BREDACTED%5D&call_id=c1');
   });
 
+  it('redacts secret-containing query parameters even without token keys', () => {
+    expect(redactSensitiveUrl('/api/v1/hooks/events?webhook_secret=shh&event_id=e1'))
+      .toBe('/api/v1/hooks/events?webhook_secret=%5BREDACTED%5D&event_id=e1');
+  });
+
   it('leaves URLs without sensitive query parameters unchanged', () => {
     expect(redactSensitiveUrl('/api/v1/call-events?call_id=c1')).toBe('/api/v1/call-events?call_id=c1');
   });
