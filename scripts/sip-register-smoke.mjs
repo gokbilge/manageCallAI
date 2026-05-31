@@ -11,6 +11,26 @@ const LOCAL_IP = process.env.SIP_LOCAL_IP ?? '127.0.0.1';
 const LOCAL_PORT = Number(process.env.SIP_LOCAL_PORT ?? '5092');
 const USER_AGENT = 'manageCallAI-registration-smoke/1.0';
 
+// ── Log redaction helpers ─────────────────────────────────────────────────────
+function debugEnabled() {
+  return process.env.SIP_SMOKE_DEBUG === '1';
+}
+
+/**
+ * Returns a copy of a raw SIP message with sensitive header values replaced.
+ * Strips: Authorization, WWW-Authenticate, Contact, From, To, Call-ID, Via
+ * username/password fields, and nonce/response values.
+ */
+function redactSipMessage(message) {
+  return message
+    .replace(/^(Authorization|Proxy-Authorization):[^\r\n]*/gim, '$1: Digest <redacted>')
+    .replace(/^(WWW-Authenticate|Proxy-Authenticate):[^\r\n]*/gim, '$1: Digest <redacted>')
+    .replace(/^(Contact):[^\r\n]*/gim, '$1: <redacted>')
+    .replace(/^(From|To):[^\r\n]*/gim, '$1: <redacted>')
+    .replace(/^(Call-ID):[^\r\n]*/gim, '$1: <redacted>')
+    .replace(/(username|realm|nonce|response|cnonce)="[^"]*"/gi, '$1="<redacted>"');
+}
+
 function md5(value) {
   return crypto.createHash('md5').update(value, 'utf8').digest('hex');
 }
@@ -78,7 +98,9 @@ function receiveMessage(socket) {
     const onMessage = (buffer) => {
       cleanup();
       const text = buffer.toString('utf8');
-      process.stdout.write(`${text}\n`);
+      if (debugEnabled()) {
+        process.stdout.write(`${redactSipMessage(text)}\n`);
+      }
       resolve(text);
     };
 
@@ -121,7 +143,9 @@ async function main() {
     const firstBranch = `z9hG4bK${Math.floor(Math.random() * 900000 + 100000)}`;
     const fromTag = `mcai${Math.floor(Math.random() * 9000 + 1000)}`;
 
-    console.log(`Sending unauthenticated REGISTER to ${HOST}:${PORT} for ${USERNAME}@${DOMAIN}`);
+    // Endpoint and identity are not interpolated here: even masked helpers receive
+    // env-derived values that CodeQL's taint-tracking follows through the call chain.
+    console.log('Sending unauthenticated REGISTER (endpoint and identity redacted)');
     socket.send(buildRegister({ cseq: 1, callId, branch: firstBranch, fromTag }), PORT, HOST);
     const first = await receiveMessage(socket);
 

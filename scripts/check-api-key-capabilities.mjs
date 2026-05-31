@@ -41,13 +41,13 @@ const { CAPABILITIES } = await import(apiCapabilitiesPath).catch((err) => {
 const contractSet = new Set(API_KEY_CAPABILITIES);
 const apiValues = new Set(Object.values(CAPABILITIES));
 
-const missingInContracts = [];
-const missingInApi = [];
+let missingInContractsCount = 0;
+let missingInApiCount = 0;
 
 // Every API capability must appear in contracts (so no capability is silently unaccepted).
 for (const cap of apiValues) {
   if (!contractSet.has(cap)) {
-    missingInContracts.push(cap);
+    missingInContractsCount += 1;
   }
 }
 
@@ -55,22 +55,19 @@ for (const cap of apiValues) {
 for (const cap of contractSet) {
   if (cap === '*') continue;
   if (!apiValues.has(cap)) {
-    missingInApi.push(cap);
+    missingInApiCount += 1;
   }
 }
 
-const failureCount = missingInContracts.length + missingInApi.length;
+const failureCount = missingInContractsCount + missingInApiCount;
+
 if (failureCount > 0) {
-  console.error(`API key capability alignment check FAILED (${failureCount} issue(s))`);
-  if (missingInContracts.length > 0) {
-    console.error(
-      `Capabilities present in API CAPABILITIES but missing from API_KEY_CAPABILITIES: ${missingInContracts.length}`,
-    );
+  console.error('API key capability alignment check FAILED');
+  if (missingInContractsCount > 0) {
+    console.error(`Capabilities in API CAPABILITIES but missing from API_KEY_CAPABILITIES: ${missingInContractsCount}`);
   }
-  if (missingInApi.length > 0) {
-    console.error(
-      `Capabilities present in API_KEY_CAPABILITIES but missing from API CAPABILITIES (excluding '*'): ${missingInApi.length}`,
-    );
+  if (missingInApiCount > 0) {
+    console.error(`Capabilities in API_KEY_CAPABILITIES but missing from API CAPABILITIES: ${missingInApiCount}`);
   }
   process.exit(1);
 } else {
