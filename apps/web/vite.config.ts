@@ -17,5 +17,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     globals: true,
+    coverage: {
+      thresholds: {
+        statements: 52,
+        branches: 70,
+        functions: 58,
+        lines: 52,
+      },
+    },
   },
 });

@@ -89,6 +89,27 @@ func TestNormalizeMVPChannelHangup(t *testing.T) {
 	}
 }
 
+func TestNormalizeMVPChannelHangupComplete(t *testing.T) {
+	event, ok := NormalizeMVP(map[string]string{
+		"Event-Name":    "CHANNEL_HANGUP_COMPLETE",
+		"Unique-ID":     "uuid-hangup-complete",
+		"Hangup-Cause":  "NORMAL_CLEARING",
+		"variable_uuid": "ignored-uuid",
+	}, "tenant-1")
+	if !ok {
+		t.Fatal("expected CHANNEL_HANGUP_COMPLETE to normalize")
+	}
+	if event.EventType != "channel_hangup_complete" {
+		t.Fatalf("expected channel_hangup_complete, got %q", event.EventType)
+	}
+	if event.CallID != "uuid-hangup-complete" {
+		t.Fatalf("expected uuid-hangup-complete, got %q", event.CallID)
+	}
+	if event.Payload["Hangup-Cause"] != "NORMAL_CLEARING" {
+		t.Fatalf("expected hangup cause in payload, got %q", event.Payload["Hangup-Cause"])
+	}
+}
+
 func TestNormalizeMVPSofiaUnregister(t *testing.T) {
 	event, ok := NormalizeMVP(map[string]string{
 		"Event-Name":     "CUSTOM",

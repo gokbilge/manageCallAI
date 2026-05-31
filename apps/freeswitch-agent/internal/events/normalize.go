@@ -26,6 +26,8 @@ func NormalizeMVP(headers map[string]string, tenantID string) (NormalizedEvent, 
 		return fromHeaders("channel_answer", headers, tenantID), true
 	case "CHANNEL_HANGUP":
 		return fromHeaders("channel_hangup", headers, tenantID), true
+	case "CHANNEL_HANGUP_COMPLETE":
+		return fromHeaders("channel_hangup_complete", headers, tenantID), true
 	case "sofia::register":
 		return fromHeaders("registration_seen", headers, tenantID), true
 	case "sofia::unregister", "sofia::expire":

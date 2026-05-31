@@ -10,5 +10,13 @@ export default defineConfig({
     poolOptions: {
       forks: { singleFork: true },
     },
+    coverage: {
+      thresholds: {
+        statements: 66,
+        branches: 78,
+        functions: 69,
+        lines: 66,
+      },
+    },
   },
 });

@@ -29,6 +29,12 @@
     "runtime:down": "docker compose --profile freeswitch down",
     "runtime:smoke": "powershell -ExecutionPolicy Bypass -File ./scripts/live-runtime-smoke.ps1",
     "test": "pnpm -r test",
+    "test:coverage": "pnpm coverage:api && pnpm coverage:web && pnpm coverage:mcp && pnpm coverage:sdk && pnpm coverage:freeswitch-agent",
+    "coverage:api": "pnpm --filter @managecallai/api test:coverage",
+    "coverage:web": "pnpm --filter @managecallai/web test:coverage",
+    "coverage:mcp": "pnpm --filter @managecallai/mcp test:coverage",
+    "coverage:sdk": "pnpm --filter @managecallai/sdk test:coverage",
+    "coverage:freeswitch-agent": "cd apps/freeswitch-agent && go test ./... -cover",
     "generate:openapi": "node scripts/generate-openapi.mjs",
     "generate:web-types": "node scripts/generate-web-types.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
@@ -37,6 +43,7 @@
     "check:webhook-payloads": "node scripts/check-webhook-payloads.mjs",
     "check:api-key-capabilities": "node scripts/check-api-key-capabilities.mjs",
     "check:ivr-simulation": "node scripts/check-ivr-simulation.mjs",
-    "check:freeswitch-profile": "node scripts/check-freeswitch-profile.mjs"
+    "check:freeswitch-profile": "node scripts/check-freeswitch-profile.mjs",
+    "check:coverage-ignores": "node scripts/check-coverage-ignores.mjs"
   }
 }
