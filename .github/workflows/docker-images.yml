@@ -24,6 +24,9 @@ jobs:
           - image: managecallai-worker
             context: .
             dockerfile: apps/worker/Dockerfile
+          - image: managecallai-mcp
+            context: .
+            dockerfile: apps/mcp/Dockerfile
           - image: managecallai-mcp-server
             context: .
             dockerfile: apps/mcp-server/Dockerfile

@@ -1,21 +1,16 @@
+import { mcpToolInputSchemas } from '@managecallai/contracts';
 import { apiCall } from '../api-client.js';
 
 export const PROMPT_TOOLS = [
   {
     name: 'list_prompts',
     description: 'List all prompt assets for this tenant. Prompts are referenced by play_prompt and play_collect IVR nodes.',
-    inputSchema: { type: 'object' as const, properties: {} },
+    inputSchema: mcpToolInputSchemas.list_prompts,
   },
   {
     name: 'get_prompt',
     description: 'Get a single prompt asset by ID including its storage_uri status.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['prompt_id'],
-      properties: {
-        prompt_id: { type: 'string', description: 'UUID of the prompt asset' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.get_prompt,
   },
 ] as const;
 

@@ -1,6 +1,1 @@
--- Compatibility shim.
---
--- The active inbound-route uniqueness change was renumbered to
--- 0007_relax_inbound_route_match_uniqueness.sql so the current migration tree
--- has unique numeric ordering. This file remains as a no-op because some
--- existing databases have already recorded this filename in schema_migrations.
+-- noop — see 0005_explicit_sip_trunk_fields.sql (context) and 0007_relax_inbound_route_match_uniqueness.sql (actual change). Retained to preserve schema_migrations history.

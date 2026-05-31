@@ -1,0 +1,60 @@
+{
+  "name": "ManageCallAI - Route Rollback Announced",
+  "meta": {
+    "templateId": "managecallai-route-rollback",
+    "templateCredsSetupCompleted": true
+  },
+  "nodes": [
+    {
+      "id": "e0040000-0004-0004-0004-000000000001",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "managecall-route-rollback",
+        "responseMode": "onReceived",
+        "options": { "rawBody": true }
+      },
+      "notes": "Subscribe to: ivr_flow.rollback_completed"
+    },
+    {
+      "id": "e0040000-0004-0004-0004-000000000002",
+      "name": "Verify Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst item = $input.first().json;\nconst h = item.headers ?? {};\nconst ts = parseInt(h['x-managecall-timestamp'] ?? '0', 10);\nif (Math.abs(Date.now() / 1000 - ts) > 300) throw new Error('timestamp_expired');\nconst body = typeof item.body === 'string' ? item.body : JSON.stringify(item.body ?? {});\nconst expected = 'sha256=' + crypto.createHmac('sha256', $env.MANAGECALL_WEBHOOK_SECRET).update(`${ts}.${body}`).digest('hex');\nif (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(h['x-managecall-signature-256'] ?? ''))) throw new Error('invalid_signature');\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "e0040000-0004-0004-0004-000000000003",
+      "name": "Announce Rollback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ALERT_WEBHOOK_URL }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "title": "Route rollback completed",
+          "tenant_id": "={{ $json.body.tenant_id }}",
+          "flow_id": "={{ $json.body.data.flow_id }}",
+          "active_version_id": "={{ $json.body.data.active_version_id }}",
+          "event_id": "={{ $json.body.event_id }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [[{ "node": "Verify Signature", "type": "main", "index": 0 }]] },
+    "Verify Signature": { "main": [[{ "node": "Announce Rollback", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "e0040000-0004-0004-0004-000000000099"
+}

@@ -1,0 +1,137 @@
+{
+  "name": "ManageCallAI — Recording Analysis Compliance Check",
+  "meta": {
+    "templateId": "managecallai-recording-analysis",
+    "templateCredsSetupCompleted": true
+  },
+  "nodes": [
+    {
+      "id": "d4e5f6a7-0004-0004-0004-000000000001",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "d4e5f6a7-0004-0004-0004-000000000002",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "managecall-recordings",
+        "responseMode": "onReceived",
+        "options": { "rawBody": true }
+      },
+      "notes": "Subscribe to: recording.analysis_completed"
+    },
+    {
+      "id": "d4e5f6a7-0004-0004-0004-000000000003",
+      "name": "Verify Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nfunction verify(item, secret, tol = 300) {\n  const h = item.headers ?? {};\n  const ts = parseInt(h['x-managecall-timestamp'] ?? '0', 10);\n  if (Math.abs(Date.now() / 1000 - ts) > tol) throw new Error('timestamp_expired');\n  const body = typeof item.body === 'string' ? item.body : JSON.stringify(item.body ?? {});\n  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(`${ts}.${body}`).digest('hex');\n  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(h['x-managecall-signature-256'] ?? ''))) throw new Error('invalid_signature');\n}\nverify($input.first(), $env.MANAGECALL_WEBHOOK_SECRET);\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "d4e5f6a7-0004-0004-0004-000000000004",
+      "name": "Fetch Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.MANAGECALL_API_URL }}/api/v1/recording-analysis/{{ $json.body.data.analysis_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "managecall-api-key", "name": "ManageCallAI API Key" }
+      }
+    },
+    {
+      "id": "d4e5f6a7-0004-0004-0004-000000000005",
+      "name": "Scan Transcript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "parameters": {
+        "jsCode": "// Configure blocked phrases via COMPLIANCE_KEYWORDS env var (comma-separated).\n// Example: COMPLIANCE_KEYWORDS=\"guaranteed return,no risk,off the books\"\nconst keywordEnv = $env.COMPLIANCE_KEYWORDS ?? '';\nconst keywords = keywordEnv.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);\n\nconst analysis = $input.first().json.data ?? {};\nconst transcript = (analysis.transcript_text ?? '').toLowerCase();\n\nconst matched = keywords.filter(kw => transcript.includes(kw));\nconst triggered = matched.length > 0;\n\nreturn [{\n  json: {\n    triggered,\n    matched_keywords: matched,\n    analysis_id: analysis.id,\n    recording_id: analysis.recording_id,\n    transcript_excerpt: transcript.slice(0, 500),\n    tenant_id: $('Webhook Trigger').item.json.body?.tenant_id,\n  }\n}];"
+      },
+      "notes": "Set COMPLIANCE_KEYWORDS in n8n environment as a comma-separated list of flagged phrases."
+    },
+    {
+      "id": "d4e5f6a7-0004-0004-0004-000000000006",
+      "name": "Keyword Match?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 300],
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "id": "keyword-check",
+              "leftValue": "={{ $json.triggered }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal" }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d4e5f6a7-0004-0004-0004-000000000007",
+      "name": "File Compliance Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.COMPLIANCE_ENDPOINT_URL }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "source": "managecallai",
+          "tenant_id": "={{ $json.tenant_id }}",
+          "recording_id": "={{ $json.recording_id }}",
+          "analysis_id": "={{ $json.analysis_id }}",
+          "matched_keywords": "={{ $json.matched_keywords }}",
+          "transcript_excerpt": "={{ $json.transcript_excerpt }}",
+          "flagged_at": "={{ $now.toISO() }}"
+        },
+        "options": {}
+      },
+      "notes": "Set COMPLIANCE_ENDPOINT_URL to your compliance or case management system."
+    },
+    {
+      "id": "d4e5f6a7-0004-0004-0004-000000000008",
+      "name": "No Action",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1340, 400],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [[{ "node": "Verify Signature", "type": "main", "index": 0 }]]
+    },
+    "Verify Signature": {
+      "main": [[{ "node": "Fetch Analysis", "type": "main", "index": 0 }]]
+    },
+    "Fetch Analysis": {
+      "main": [[{ "node": "Scan Transcript", "type": "main", "index": 0 }]]
+    },
+    "Scan Transcript": {
+      "main": [[{ "node": "Keyword Match?", "type": "main", "index": 0 }]]
+    },
+    "Keyword Match?": {
+      "main": [
+        [{ "node": "File Compliance Report", "type": "main", "index": 0 }],
+        [{ "node": "No Action", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}

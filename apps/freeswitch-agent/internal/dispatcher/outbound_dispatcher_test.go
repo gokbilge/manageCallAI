@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/config"
-	"log/slog"
-	"io"
 )
 
 type mockDialer struct {
@@ -27,7 +27,7 @@ func (m *mockDialer) Originate(_ context.Context, dialNumber, _, _ string) error
 
 func newTestDispatcher(baseURL string, dialer ESLDialer) *OutboundDispatcher {
 	return NewOutboundDispatcher(
-		config.Config{APIBaseURL: baseURL, RuntimeToken: "tok"},
+		config.Config{APIBaseURL: baseURL, RuntimeToken: "tok", TenantID: "tenant-1"},
 		dialer,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)
@@ -160,5 +160,64 @@ func TestPollSetsAuthorizationHeader(t *testing.T) {
 
 	if gotAuth != "Bearer tok" {
 		t.Errorf("expected Bearer tok, got %q", gotAuth)
+	}
+}
+
+func TestPollSetsTenantHeader(t *testing.T) {
+	var gotTenant string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotTenant = r.Header.Get("X-Tenant-ID")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(listResponse{Data: []outboundRequest{}})
+	}))
+	defer server.Close()
+
+	d := newTestDispatcher(server.URL, &mockDialer{})
+	d.poll(context.Background())
+
+	if gotTenant != "tenant-1" {
+		t.Errorf("expected tenant-1, got %q", gotTenant)
+	}
+}
+
+func TestPollRejectsUnsafeDialNumber(t *testing.T) {
+	statusReported := ""
+	claimCalled := false
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v1/runtime/outbound/pending":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(listResponse{
+				Data: []outboundRequest{{ID: "req-bad", DialNumber: "+90555;bgapi"}},
+			})
+		case "/api/v1/runtime/outbound/req-bad/claim":
+			claimCalled = true
+			w.WriteHeader(http.StatusOK)
+		case "/api/v1/runtime/outbound/req-bad/status":
+			body, _ := io.ReadAll(r.Body)
+			var m map[string]string
+			_ = json.Unmarshal(body, &m)
+			statusReported = m["status"]
+			w.WriteHeader(http.StatusOK)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	dialer := &mockDialer{}
+	d := newTestDispatcher(server.URL, dialer)
+	d.poll(context.Background())
+
+	if dialer.callCount != 0 {
+		t.Errorf("expected unsafe dial number to skip originate, got %d calls", dialer.callCount)
+	}
+	if claimCalled {
+		t.Fatal("unsafe dial number should not be claimed")
+	}
+	if statusReported != "failed" {
+		t.Errorf("expected failed status report, got %q", statusReported)
 	}
 }

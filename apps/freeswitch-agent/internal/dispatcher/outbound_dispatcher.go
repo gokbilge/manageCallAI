@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -25,6 +26,8 @@ type outboundRequest struct {
 type listResponse struct {
 	Data []outboundRequest `json:"data"`
 }
+
+var e164DialNumberPattern = regexp.MustCompile(`^\+[1-9][0-9]{7,14}$`)
 
 // ESLDialer sends originate commands over ESL.
 type ESLDialer interface {
@@ -104,6 +107,15 @@ func (d *OutboundDispatcher) poll(ctx context.Context) {
 }
 
 func (d *OutboundDispatcher) dispatch(ctx context.Context, r outboundRequest) {
+	if !isSafeDialNumber(r.DialNumber) {
+		d.logger.Warn("outbound dispatcher: rejected unsafe dial number",
+			slog.String("id", r.ID),
+			slog.String("dial_number", r.DialNumber),
+		)
+		_ = d.reportStatus(ctx, r.ID, "failed", "invalid dial number")
+		return
+	}
+
 	if err := d.claim(ctx, r.ID); err != nil {
 		d.logger.Warn("outbound dispatcher: claim failed", slog.String("id", r.ID), slog.String("error", err.Error()))
 		return
@@ -136,6 +148,9 @@ func (d *OutboundDispatcher) claim(ctx context.Context, id string) error {
 	if d.cfg.RuntimeToken != "" {
 		req.Header.Set("Authorization", "Bearer "+d.cfg.RuntimeToken)
 	}
+	if d.cfg.TenantID != "" {
+		req.Header.Set("X-Tenant-ID", d.cfg.TenantID)
+	}
 	resp, err := d.client.Do(req)
 	if err != nil {
 		return err
@@ -160,10 +175,17 @@ func (d *OutboundDispatcher) reportStatus(ctx context.Context, id, status, reaso
 	if d.cfg.RuntimeToken != "" {
 		req.Header.Set("Authorization", "Bearer "+d.cfg.RuntimeToken)
 	}
+	if d.cfg.TenantID != "" {
+		req.Header.Set("X-Tenant-ID", d.cfg.TenantID)
+	}
 	resp, err := d.client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 	return nil
+}
+
+func isSafeDialNumber(dialNumber string) bool {
+	return e164DialNumberPattern.MatchString(strings.TrimSpace(dialNumber))
 }

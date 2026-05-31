@@ -1,0 +1,61 @@
+name: SDK Publish
+
+# Publishes @managecallai/sdk to GitHub Packages (npm registry) on version tags.
+# The SDK types are generated from docs/api/openapi.yaml which must be committed
+# and up-to-date before tagging (enforced by the pre-release checklist in RELEASING.md).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (build and pack, do not publish)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-sdk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          # Configures npm to use GitHub Packages for the @managecallai scope.
+          registry-url: https://npm.pkg.github.com
+          scope: "@managecallai"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build contracts first — SDK generate step reads docs/api/openapi.yaml which
+      # is committed, but contracts must be built so the SDK tsconfig can resolve types.
+      - name: Build contracts
+        run: pnpm --filter @managecallai/contracts build
+
+      # generate runs openapi-typescript against the committed openapi.yaml, then tsc.
+      - name: Build SDK
+        run: pnpm --filter @managecallai/sdk build
+
+      - name: Verify SDK types compile
+        run: pnpm --filter @managecallai/sdk exec tsc --noEmit
+
+      - name: Pack (dry run inspection)
+        working-directory: packages/sdk
+        run: npm pack --dry-run
+
+      - name: Publish to GitHub Packages
+        if: ${{ github.event_name == 'push' || inputs.dry_run == false }}
+        run: pnpm --filter @managecallai/sdk publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

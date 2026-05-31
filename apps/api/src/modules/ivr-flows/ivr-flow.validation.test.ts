@@ -1,5 +1,6 @@
+import { BPMN_ONLY_NODE_TYPES, GRAPH_MODEL_VERSION, IVR_NODE_CATEGORY_MAP, IVR_NODE_TYPES } from '@managecallai/contracts';
 import { describe, expect, it } from 'vitest';
-import { computeReachableBranches, defaultIvrGraph, validateIvrGraph } from './ivr-flow.validation.js';
+import { computeReachableBranches, defaultIvrGraph, getNodeCategory, validateIvrGraph } from './ivr-flow.validation.js';
 
 describe('validateIvrGraph', () => {
   it('passes a valid minimal graph', () => {
@@ -207,5 +208,173 @@ describe('computeReachableBranches', () => {
   it('returns empty set for invalid graph', () => {
     const ids = computeReachableBranches(null);
     expect(ids.size).toBe(0);
+  });
+});
+
+describe('BPMN-inspired graph model marker (SLICE-35)', () => {
+  it('defaultIvrGraph includes the graph_model marker', () => {
+    const g = defaultIvrGraph();
+    expect(g.graph_model).toBe(GRAPH_MODEL_VERSION);
+  });
+
+  it('passes when graph_model is the expected version', () => {
+    const result = validateIvrGraph({
+      graph_model: 'ivr-bpmn-v1',
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('passed');
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('passes (backward-compat) when graph_model is absent', () => {
+    const result = validateIvrGraph({
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('passed');
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('fails when graph_model is an unrecognised value', () => {
+    const result = validateIvrGraph({
+      graph_model: 'bpmn-2.0',
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('failed');
+    expect(result.errors.some((e) => e.field === 'graph_json.graph_model')).toBe(true);
+    expect(result.errors.some((e) => e.message.includes('ivr-bpmn-v1'))).toBe(true);
+  });
+
+  it('fails when graph_model is an empty string', () => {
+    const result = validateIvrGraph({
+      graph_model: '',
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('failed');
+    expect(result.errors.some((e) => e.field === 'graph_json.graph_model')).toBe(true);
+  });
+});
+
+describe('BPMN-inspired node category mapping (SLICE-35)', () => {
+  it('every supported node type has an entry in IVR_NODE_CATEGORY_MAP', () => {
+    for (const type of IVR_NODE_TYPES) {
+      expect(IVR_NODE_CATEGORY_MAP[type], `missing category for type "${type}"`).toBeDefined();
+    }
+  });
+
+  it('getNodeCategory returns correct category for each node type', () => {
+    expect(getNodeCategory('start')).toBe('start');
+    expect(getNodeCategory('play_prompt')).toBe('task');
+    expect(getNodeCategory('play_collect')).toBe('task');
+    expect(getNodeCategory('set_variable')).toBe('task');
+    expect(getNodeCategory('switch')).toBe('gateway');
+    expect(getNodeCategory('business_hours')).toBe('gateway');
+    expect(getNodeCategory('caller_id_match')).toBe('gateway');
+    expect(getNodeCategory('hangup')).toBe('end');
+    expect(getNodeCategory('transfer_extension')).toBe('end');
+    expect(getNodeCategory('queue')).toBe('end');
+    expect(getNodeCategory('voicemail_drop')).toBe('end');
+  });
+
+  it('getNodeCategory returns undefined for an unknown node type', () => {
+    expect(getNodeCategory('unknown_node')).toBeUndefined();
+  });
+
+  it('IVR_NODE_CATEGORY_MAP uses only the four canonical categories', () => {
+    const allowed = new Set(['start', 'task', 'gateway', 'end']);
+    for (const [type, category] of Object.entries(IVR_NODE_CATEGORY_MAP)) {
+      expect(allowed.has(category), `type "${type}" has unexpected category "${category}"`).toBe(true);
+    }
+  });
+});
+
+describe('Unsupported BPMN construct rejection (SLICE-35)', () => {
+  it('rejects graph with bpmn_xml field', () => {
+    const result = validateIvrGraph({
+      graph_model: 'ivr-bpmn-v1',
+      bpmn_xml: '<definitions>...</definitions>',
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('failed');
+    expect(result.errors.some((e) => e.field === 'graph_json.bpmn_xml')).toBe(true);
+    expect(result.errors.some((e) => e.message.includes('bpmn_xml'))).toBe(true);
+  });
+
+  it('rejects graph with lanes field', () => {
+    const result = validateIvrGraph({
+      lanes: [],
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('failed');
+    expect(result.errors.some((e) => e.field === 'graph_json.lanes')).toBe(true);
+  });
+
+  it('rejects graph with pools field', () => {
+    const result = validateIvrGraph({
+      pools: [],
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'end' },
+        { id: 'end', type: 'hangup' },
+      ],
+    });
+    expect(result.status).toBe('failed');
+    expect(result.errors.some((e) => e.field === 'graph_json.pools')).toBe(true);
+  });
+
+  it.each(BPMN_ONLY_NODE_TYPES)(
+    'rejects node with BPMN-only type "%s" with a specific BPMN construct message',
+    (bpmnType) => {
+      const result = validateIvrGraph({
+        entry_node_id: 'start',
+        nodes: [
+          { id: 'start', type: 'start', next_node_id: 'n' },
+          { id: 'n', type: bpmnType },
+        ],
+      });
+      expect(result.status).toBe('failed');
+      expect(
+        result.errors.some((e) => e.message.includes('Unsupported BPMN construct')),
+        `expected BPMN construct message for type "${bpmnType}"`,
+      ).toBe(true);
+    },
+  );
+
+  it('rejects parallelGateway with specific BPMN construct error (spot-check)', () => {
+    const result = validateIvrGraph({
+      entry_node_id: 'start',
+      nodes: [
+        { id: 'start', type: 'start', next_node_id: 'gw' },
+        { id: 'gw', type: 'parallelGateway' },
+      ],
+    });
+    expect(result.status).toBe('failed');
+    const err = result.errors.find((e) => e.field.includes('nodes[1].type'));
+    expect(err).toBeDefined();
+    expect(err?.message).toContain('parallelGateway');
+    expect(err?.message).toContain('ivr-bpmn-v1');
   });
 });

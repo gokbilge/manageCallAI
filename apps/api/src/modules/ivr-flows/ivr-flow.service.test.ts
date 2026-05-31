@@ -349,6 +349,79 @@ describe('IvrFlowService.publish', () => {
   });
 });
 
+// ── dryRunPublish (SLICE-42) ──────────────────────────────────────────────────
+
+describe('IvrFlowService.dryRunPublish', () => {
+  it('returns would_become=published when version is valid and no policy', async () => {
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(makeVersion('v1', 'validated'));
+    vi.mocked(mockRepo.getActivePublishPolicy).mockResolvedValue(null);
+
+    const result = await service.dryRunPublish(FLOW_ID, 'v1', TENANT_ID, 'user');
+    expect(result.dry_run).toBe(true);
+    expect(result.would_become).toBe('published');
+    expect(result.require_approval).toBe(false);
+    expect(result.version_state_valid).toBe(true);
+    expect(result.actor_type).toBe('user');
+    expect(mockRepo.publish).not.toHaveBeenCalled();
+    expect(mockRepo.createApprovalRequest).not.toHaveBeenCalled();
+  });
+
+  it('returns would_become=pending_approval when policy requires approval', async () => {
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(makeVersion('v1', 'simulated'));
+    vi.mocked(mockRepo.getActivePublishPolicy).mockResolvedValue({ require_approval: true });
+
+    const result = await service.dryRunPublish(FLOW_ID, 'v1', TENANT_ID, 'ai_agent', 'tenant_admin');
+    expect(result.dry_run).toBe(true);
+    expect(result.would_become).toBe('pending_approval');
+    expect(result.require_approval).toBe(true);
+    expect(result.actor_type).toBe('ai_agent');
+    // No side effects — approval not created, publish not called.
+    expect(mockRepo.createApprovalRequest).not.toHaveBeenCalled();
+    expect(mockRepo.publish).not.toHaveBeenCalled();
+  });
+
+  it('returns version_state_valid=false when version is not in a publishable state', async () => {
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(makeVersion('v1', 'draft'));
+    vi.mocked(mockRepo.getActivePublishPolicy).mockResolvedValue(null);
+
+    const result = await service.dryRunPublish(FLOW_ID, 'v1', TENANT_ID, 'workflow');
+    expect(result.version_state_valid).toBe(false);
+    expect(mockRepo.publish).not.toHaveBeenCalled();
+  });
+
+  it('returns version_state_valid=false when version is not found', async () => {
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(null);
+    vi.mocked(mockRepo.getActivePublishPolicy).mockResolvedValue(null);
+
+    const result = await service.dryRunPublish(FLOW_ID, 'v1', TENANT_ID, 'ai_agent');
+    expect(result.version_state_valid).toBe(false);
+  });
+
+  it('dry-run and apply-mode share the same policy check path', async () => {
+    const policy = { require_approval: true };
+    const version = makeVersion('v1', 'validated');
+    const approval = makeApproval();
+    const flowWithVersions = makeFlow({ versions: [version] });
+
+    // Dry-run
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
+    vi.mocked(mockRepo.getActivePublishPolicy).mockResolvedValue(policy);
+    const dryResult = await service.dryRunPublish(FLOW_ID, 'v1', TENANT_ID, 'user', 'tenant_admin');
+
+    // Real publish
+    vi.mocked(mockRepo.createApprovalRequest).mockResolvedValue(approval);
+    vi.mocked(mockRepo.storePendingPublishRecord).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.findById).mockResolvedValue(flowWithVersions);
+    const realResult = await service.publish(FLOW_ID, 'v1', TENANT_ID, USER_ID, 'tenant_admin');
+
+    // Both paths produce the same outcome type.
+    expect(dryResult.would_become).toBe('pending_approval');
+    expect(realResult.status).toBe('pending_approval');
+    // But dry-run has NO side effects.
+    expect(dryResult.dry_run).toBe(true);
+  });
+});
+
 // ── rollback ─────────────────────────────────────────────────────────────────
 
 describe('IvrFlowService.rollback', () => {

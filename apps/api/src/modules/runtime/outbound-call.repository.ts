@@ -94,16 +94,19 @@ export class OutboundCallRepository {
   async resolveRouteForNumber(tenantId: string, dialNumber: string): Promise<{
     route_id: string;
     sip_trunk_id: string;
+    max_calls_per_minute: number | null;
     allowed_destination_prefixes_json: string[] | null;
     blocked_destination_prefixes_json: string[] | null;
   } | null> {
     const r = await this.db.query<{
       route_id: string;
       sip_trunk_id: string;
+      max_calls_per_minute: number | null;
       allowed_destination_prefixes_json: string[] | null;
       blocked_destination_prefixes_json: string[] | null;
     }>(
-      `SELECT id AS route_id, sip_trunk_id, allowed_destination_prefixes_json, blocked_destination_prefixes_json
+      `SELECT id AS route_id, sip_trunk_id, max_calls_per_minute,
+              allowed_destination_prefixes_json, blocked_destination_prefixes_json
        FROM outbound_routes
        WHERE tenant_id = $1
          AND status = 'active'
@@ -118,16 +121,19 @@ export class OutboundCallRepository {
   async findActiveRouteById(tenantId: string, routeId: string): Promise<{
     id: string;
     sip_trunk_id: string;
+    max_calls_per_minute: number | null;
     allowed_destination_prefixes_json: string[] | null;
     blocked_destination_prefixes_json: string[] | null;
   } | null> {
     const r = await this.db.query<{
       id: string;
       sip_trunk_id: string;
+      max_calls_per_minute: number | null;
       allowed_destination_prefixes_json: string[] | null;
       blocked_destination_prefixes_json: string[] | null;
     }>(
-      `SELECT id, sip_trunk_id, allowed_destination_prefixes_json, blocked_destination_prefixes_json
+      `SELECT id, sip_trunk_id, max_calls_per_minute,
+              allowed_destination_prefixes_json, blocked_destination_prefixes_json
        FROM outbound_routes WHERE id = $1 AND tenant_id = $2 AND status = 'active'`,
       [routeId, tenantId],
     );
@@ -140,5 +146,19 @@ export class OutboundCallRepository {
       [trunkId, tenantId],
     );
     return r.rows[0] ?? null;
+  }
+
+  async countRecentAttempts(tenantId: string, routeId: string, trunkId: string, windowSeconds: number): Promise<number> {
+    const r = await this.db.query<{ count: string }>(
+      `SELECT count(*)::text AS count
+       FROM outbound_call_requests
+       WHERE tenant_id = $1
+         AND route_id = $2
+         AND sip_trunk_id = $3
+         AND created_at >= NOW() - ($4::text || ' seconds')::interval
+         AND status NOT IN ('failed', 'expired')`,
+      [tenantId, routeId, trunkId, windowSeconds],
+    );
+    return Number.parseInt(r.rows[0]?.count ?? '0', 10);
   }
 }

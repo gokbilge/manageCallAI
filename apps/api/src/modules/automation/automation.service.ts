@@ -105,7 +105,13 @@ export class AutomationService {
   }
 
   async enqueueWebhooks(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): Promise<WebhookDeliveryQueueItem[]> {
-    const payload = { event, tenant_id: tenantId, data, timestamp: new Date().toISOString() };
+    const payload = {
+      event,
+      tenant_id: tenantId,
+      timestamp: new Date().toISOString(),
+      version: 1,
+      data,
+    };
     try {
       return await this.repo.enqueueWebhookDeliveries({ tenant_id: tenantId, event, payload_json: payload });
     } catch {
@@ -153,7 +159,8 @@ export class AutomationService {
     url: string;
   }): Promise<boolean> {
     const payload = JSON.stringify(delivery.payload_json);
-    const sig = AutomationRepository.signPayload(delivery.signing_secret, payload);
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const sig = AutomationRepository.signPayload(delivery.signing_secret, `${timestamp}.${payload}`);
     const start = Date.now();
     let status: 'success' | 'failed' = 'failed';
     let responseCode: number | null = null;
@@ -165,9 +172,12 @@ export class AutomationService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-ManageCall-Signature': `sha256=${sig}`,
+          'X-ManageCall-Signature-256': `sha256=${sig}`,
           'X-ManageCall-Event': delivery.event,
-          ...(eventId ? { 'Webhook-Event-Id': eventId } : {}),
+          'X-ManageCall-Timestamp': timestamp,
+          'X-ManageCall-Tenant': delivery.tenant_id,
+          'X-ManageCall-Version': '1',
+          ...(eventId ? { 'X-ManageCall-Delivery': eventId } : {}),
         },
         body: payload,
         signal: AbortSignal.timeout(10_000),

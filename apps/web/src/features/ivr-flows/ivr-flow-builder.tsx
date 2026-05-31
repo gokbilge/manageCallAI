@@ -43,6 +43,8 @@ type IvrFlowBuilderProps = {
   voicemailBoxes: VoicemailBoxOption[];
   onSave: (graph_json: Record<string, unknown>) => Promise<void>;
   isSaving: boolean;
+  /** Node IDs returned by the last simulation run — highlighted in the graph. */
+  simulatedPath?: string[];
 };
 
 export function IvrFlowBuilder({
@@ -54,6 +56,7 @@ export function IvrFlowBuilder({
   voicemailBoxes,
   onSave,
   isSaving,
+  simulatedPath = [],
 }: IvrFlowBuilderProps) {
   const [nodes, setNodes] = useState<Node<BuilderNodeData>[]>(() => graphToBuilderNodes(sanitizeBuilderGraph(version.graph_json)));
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -66,6 +69,18 @@ export function IvrFlowBuilder({
   }, [version.id, version.graph_json]);
 
   const edges = useMemo(() => graphToBuilderEdges(builderStateToGraph(nodes)), [nodes]);
+
+  // Apply simulated-path highlighting: nodes in the last simulation run get a
+  // distinct ring so operators can visually trace the execution without switching tabs.
+  const highlightedNodes = useMemo(() => {
+    if (simulatedPath.length === 0) return nodes;
+    const pathSet = new Set(simulatedPath);
+    return nodes.map((node) =>
+      pathSet.has(node.id)
+        ? { ...node, style: { ...node.style, boxShadow: '0 0 0 3px var(--color-primary, #0891b2)', borderRadius: 12 } }
+        : node,
+    );
+  }, [nodes, simulatedPath]);
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId) ?? null,
     [nodes, selectedNodeId],
@@ -119,6 +134,11 @@ export function IvrFlowBuilder({
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${isDirty ? 'bg-[var(--color-warning)]/12 text-[var(--color-warning)]' : 'bg-[var(--color-success)]/12 text-[var(--color-success)]'}`}>
               {isDirty ? 'Unsaved changes' : 'Draft saved'}
             </span>
+            {simulatedPath.length > 0 && (
+              <span className="rounded-full bg-[var(--color-primary)]/12 px-3 py-1 text-xs font-medium text-[var(--color-primary)]" aria-live="polite">
+                Simulation path: {simulatedPath.length} node{simulatedPath.length !== 1 ? 's' : ''} highlighted
+              </span>
+            )}
             <Button
               disabled={!isDirty || isSaving}
               onClick={() => void onSave(builderStateToGraph(nodes))}
@@ -135,7 +155,7 @@ export function IvrFlowBuilder({
             edges={edges}
             fitView
             minZoom={0.5}
-            nodes={nodes}
+            nodes={highlightedNodes}
             nodeTypes={nodeTypes}
             onConnect={(connection) => {
               if (!connection.source || !connection.target) return;
