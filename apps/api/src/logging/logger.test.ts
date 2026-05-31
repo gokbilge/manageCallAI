@@ -20,4 +20,12 @@ describe('redactSensitiveUrl', () => {
   it('leaves URLs without sensitive query parameters unchanged', () => {
     expect(redactSensitiveUrl('/api/v1/call-events?call_id=c1')).toBe('/api/v1/call-events?call_id=c1');
   });
+
+  it('leaves URLs without a query string unchanged', () => {
+    expect(redactSensitiveUrl('/api/v1/health')).toBe('/api/v1/health');
+  });
+
+  it('leaves URLs with an empty query string unchanged', () => {
+    expect(redactSensitiveUrl('/api/v1/health?')).toBe('/api/v1/health?');
+  });
 });
