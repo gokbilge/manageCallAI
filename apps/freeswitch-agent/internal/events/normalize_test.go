@@ -256,3 +256,87 @@ func TestFirstNonEmptyAllEmpty(t *testing.T) {
 		t.Fatalf("expected empty string, got %q", got)
 	}
 }
+
+// RECORD_START and RECORD_STOP are subscribed to but not yet normalized.
+// They should return false from NormalizeMVP until a handler is added.
+func TestNormalizeMVPRecordStartReturnsFalse(t *testing.T) {
+	_, ok := NormalizeMVP(map[string]string{
+		"Event-Name": "RECORD_START",
+		"Unique-ID":  "uuid-rec-1",
+	}, "tenant-1")
+	if ok {
+		t.Fatal("RECORD_START should not normalize yet (no handler added)")
+	}
+}
+
+func TestNormalizeMVPRecordStopReturnsFalse(t *testing.T) {
+	_, ok := NormalizeMVP(map[string]string{
+		"Event-Name": "RECORD_STOP",
+		"Unique-ID":  "uuid-rec-2",
+	}, "tenant-1")
+	if ok {
+		t.Fatal("RECORD_STOP should not normalize yet (no handler added)")
+	}
+}
+
+func TestNormalizeMVPHeartbeatReturnsFalse(t *testing.T) {
+	_, ok := NormalizeMVP(map[string]string{"Event-Name": "HEARTBEAT"}, "tenant-1")
+	if ok {
+		t.Fatal("HEARTBEAT should return false")
+	}
+}
+
+func TestNormalizeMVPCallIDPriorityOrder(t *testing.T) {
+	// Unique-ID takes precedence over Channel-Call-UUID and variable_sip_call_id
+	event, ok := NormalizeMVP(map[string]string{
+		"Event-Name":           "CHANNEL_CREATE",
+		"Unique-ID":            "primary-uuid",
+		"Channel-Call-UUID":    "secondary-uuid",
+		"variable_sip_call_id": "tertiary-id",
+	}, "tenant-1")
+	if !ok {
+		t.Fatal("expected channel create to normalize")
+	}
+	if event.CallID != "primary-uuid" {
+		t.Fatalf("Unique-ID should take priority, got %q", event.CallID)
+	}
+}
+
+func TestNormalizeMVPEventTimeFallsBackToCallerChannelCreatedTime(t *testing.T) {
+	event, ok := NormalizeMVP(map[string]string{
+		"Event-Name":                   "CHANNEL_CREATE",
+		"Unique-ID":                    "uuid-1",
+		"Caller-Channel-Created-Time":  "1000000000000000",
+	}, "tenant-1")
+	if !ok {
+		t.Fatal("expected channel create to normalize")
+	}
+	parsed, err := time.Parse(time.RFC3339Nano, event.EventTime)
+	if err != nil {
+		t.Fatalf("EventTime is not RFC3339Nano: %v", err)
+	}
+	if parsed.Unix() != 1000000000 {
+		t.Fatalf("expected unix 1000000000, got %d", parsed.Unix())
+	}
+}
+
+func TestNormalizeMVPEventTimeDefaultsToNowWhenNoTimestamp(t *testing.T) {
+	before := time.Now().UTC().Add(-time.Second)
+	event, ok := NormalizeMVP(map[string]string{
+		"Event-Name": "CHANNEL_HANGUP",
+		"Unique-ID":  "uuid-1",
+		// no Event-Date-Timestamp, no Caller-Channel-Created-Time
+	}, "tenant-1")
+	if !ok {
+		t.Fatal("expected channel hangup to normalize")
+	}
+	after := time.Now().UTC().Add(time.Second)
+
+	parsed, err := time.Parse(time.RFC3339Nano, event.EventTime)
+	if err != nil {
+		t.Fatalf("EventTime is not RFC3339Nano: %v", err)
+	}
+	if parsed.Before(before) || parsed.After(after) {
+		t.Fatalf("EventTime %s is outside expected now range [%s, %s]", parsed, before, after)
+	}
+}

@@ -189,3 +189,76 @@ func TestForwardEventTrailingSlashStripped(t *testing.T) {
 		t.Errorf("path with trailing slash in base URL: got %q, want %q", gotPath, want)
 	}
 }
+
+func TestForwardEvent2xxVariantsSucceed(t *testing.T) {
+	for _, status := range []int{http.StatusOK, http.StatusCreated, http.StatusAccepted} {
+		code := status
+		t.Run(http.StatusText(code), func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(code)
+			}))
+			defer server.Close()
+
+			err := newTestForwarder(server.URL, "tok").ForwardEvent(context.Background(), testEvent())
+			if err != nil {
+				t.Fatalf("status %d should succeed, got error: %v", code, err)
+			}
+		})
+	}
+}
+
+func TestForwardEventFallsBackToConfigTenantIDWhenEventTenantEmpty(t *testing.T) {
+	var gotTenant string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotTenant = r.Header.Get("X-Tenant-ID")
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer server.Close()
+
+	eventWithNoTenant := events.NormalizedEvent{
+		TenantID:  "",
+		CallID:    "call-1",
+		EventType: "channel_create",
+		Source:    "freeswitch-esl",
+		Payload:   map[string]interface{}{},
+	}
+
+	_ = newTestForwarder(server.URL, "tok").ForwardEvent(context.Background(), eventWithNoTenant)
+
+	if gotTenant != "configured-tenant" {
+		t.Errorf("X-Tenant-ID: expected config fallback %q, got %q", "configured-tenant", gotTenant)
+	}
+}
+
+func TestForwardEventContextCancellationReturnsError(t *testing.T) {
+	// Server that blocks indefinitely to simulate a slow backend
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	err := newTestForwarder(server.URL, "tok").ForwardEvent(ctx, testEvent())
+	if err == nil {
+		t.Fatal("expected error when context is already cancelled")
+	}
+}
+
+func TestForwardEventRuntimeTokenNotInErrorMessage(t *testing.T) {
+	secret := "super-secret-runtime-token"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"error":"unauthorized"}`))
+	}))
+	defer server.Close()
+
+	err := newTestForwarder(server.URL, secret).ForwardEvent(context.Background(), testEvent())
+	if err == nil {
+		t.Fatal("expected error on 401")
+	}
+	if strings.Contains(err.Error(), secret) {
+		t.Errorf("runtime token must not appear in error messages: %v", err)
+	}
+}

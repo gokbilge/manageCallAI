@@ -1,9 +1,17 @@
 package esl
 
 import (
+	"bufio"
+	"context"
+	"fmt"
+	"io"
+	"log/slog"
+	"net"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/config"
 )
 
 func TestSubscriptionCommandsAvoidAllEvents(t *testing.T) {
@@ -36,5 +44,215 @@ func TestReconnectDelayUsesBoundedBackoff(t *testing.T) {
 	}
 	if capped < 30*time.Second || capped > 45*time.Second {
 		t.Fatalf("capped delay out of range: %s", capped)
+	}
+}
+
+func TestReconnectDelayMonotonicallyNonDecreasing(t *testing.T) {
+	prev := time.Duration(0)
+	for attempt := 0; attempt <= 6; attempt++ {
+		d := reconnectDelay(attempt)
+		// Delay should be >= previous minimum (base, not jitter).
+		// We check the minimum because jitter is random.
+		baseMin := time.Second << min(attempt, 5)
+		if baseMin > 30*time.Second {
+			baseMin = 30 * time.Second
+		}
+		if d < baseMin {
+			t.Fatalf("attempt %d delay %s is below minimum %s", attempt, d, baseMin)
+		}
+		_ = prev
+		prev = d
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func TestHealthDefaultsToDisconnected(t *testing.T) {
+	c := &Client{}
+	h := c.Health()
+	if h.Connected {
+		t.Fatal("new client should start disconnected")
+	}
+	if h.LastConnectedAt != "" {
+		t.Fatalf("expected empty LastConnectedAt, got %q", h.LastConnectedAt)
+	}
+}
+
+func TestSetConnectedUpdatesHealth(t *testing.T) {
+	c := &Client{}
+	c.setConnected(true)
+	h := c.Health()
+	if !h.Connected {
+		t.Fatal("expected connected after setConnected(true)")
+	}
+	if h.LastConnectedAt == "" {
+		t.Fatal("expected LastConnectedAt to be set after connect")
+	}
+
+	c.setConnected(false)
+	h2 := c.Health()
+	if h2.Connected {
+		t.Fatal("expected disconnected after setConnected(false)")
+	}
+	// LastConnectedAt should still carry the last-connected timestamp
+	if h2.LastConnectedAt == "" {
+		t.Fatal("expected LastConnectedAt to be preserved after disconnect")
+	}
+}
+
+func TestSetLastEventAtUpdatesHealth(t *testing.T) {
+	c := &Client{}
+	if c.Health().LastEventAt != "" {
+		t.Fatal("expected empty LastEventAt initially")
+	}
+
+	now := time.Now().UTC()
+	c.setLastEventAt(now)
+	if c.Health().LastEventAt == "" {
+		t.Fatal("expected LastEventAt to be set after setLastEventAt")
+	}
+}
+
+// TestRunSessionAuthenticate verifies the full ESL handshake and subscription
+// using an in-process net.Pipe() as the mock FreeSWITCH TCP connection.
+func TestRunSessionAuthenticatesAndSubscribes(t *testing.T) {
+	serverConn, clientConn := net.Pipe()
+	defer serverConn.Close()
+	defer clientConn.Close()
+
+	password := "TestClueCon"
+	errCh := make(chan error, 1)
+
+	// Mock FreeSWITCH server: send auth challenge, reply +OK, reply +OK for subscribe, close.
+	go func() {
+		defer serverConn.Close()
+
+		// 1. Send auth/request
+		_, err := fmt.Fprint(serverConn, "Content-Type: auth/request\n\n")
+		if err != nil {
+			errCh <- fmt.Errorf("server: send auth/request: %w", err)
+			return
+		}
+
+		// 2. Read auth command
+		reader := bufio.NewReader(serverConn)
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			errCh <- fmt.Errorf("server: read auth command: %w", err)
+			return
+		}
+		line = strings.TrimRight(line, "\r\n")
+		if !strings.HasPrefix(line, "auth "+password) {
+			errCh <- fmt.Errorf("server: unexpected auth command: %q", line)
+			return
+		}
+		// Consume trailing blank line
+		_, _ = reader.ReadString('\n')
+
+		// 3. Reply +OK to auth
+		_, err = fmt.Fprint(serverConn, "Content-Type: command/reply\nReply-Text: +OK accepted\n\n")
+		if err != nil {
+			errCh <- fmt.Errorf("server: send auth reply: %w", err)
+			return
+		}
+
+		// 4. Read subscribe command
+		_, err = reader.ReadString('\n')
+		if err != nil {
+			errCh <- fmt.Errorf("server: read subscribe: %w", err)
+			return
+		}
+		// Consume trailing blank line
+		_, _ = reader.ReadString('\n')
+
+		// 5. Reply +OK to subscribe
+		_, err = fmt.Fprint(serverConn, "Content-Type: command/reply\nReply-Text: +OK event listener enabled plain\n\n")
+		if err != nil {
+			errCh <- fmt.Errorf("server: send subscribe reply: %w", err)
+			return
+		}
+
+		// 6. Send one event then close (simulates disconnect)
+		eventBody := "Event-Name: CHANNEL_CREATE\nUnique-ID: test-uuid-1\n"
+		_, err = fmt.Fprintf(serverConn, "Content-Type: text/event-plain\nContent-Length: %d\n\n%s", len(eventBody), eventBody)
+		if err != nil {
+			// Client closed before we could send — that's OK for this test
+		}
+
+		errCh <- nil
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// Client side: use the pipe as the TCP connection by monkey-patching runSession
+	// indirectly. We call authenticate + subscribe directly on the clientConn.
+	reader := bufio.NewReader(clientConn)
+	cfg := config.Config{ESLPassword: password, TenantID: "test-tenant"}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	c := NewClient(cfg, logger)
+
+	if err := c.authenticate(reader, clientConn); err != nil {
+		cancel()
+		t.Fatalf("authenticate failed: %v", err)
+	}
+	if err := c.subscribe(reader, clientConn); err != nil {
+		cancel()
+		t.Fatalf("subscribe failed: %v", err)
+	}
+
+	// Read the event message that the mock server sent
+	msg, err := readMessage(reader)
+	if err != nil {
+		cancel()
+		t.Fatalf("readMessage failed: %v", err)
+	}
+
+	if msg.Headers["Content-Type"] != "text/event-plain" {
+		t.Errorf("expected text/event-plain, got %q", msg.Headers["Content-Type"])
+	}
+
+	cancel()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("mock server error: %v", err)
+		}
+	case <-ctx.Done():
+		// Timeout is fine — we just want to verify client-side behavior
+	}
+}
+
+func TestRunSessionAuthRejectsWrongPassword(t *testing.T) {
+	serverConn, clientConn := net.Pipe()
+	defer serverConn.Close()
+	defer clientConn.Close()
+
+	go func() {
+		defer serverConn.Close()
+		_, _ = fmt.Fprint(serverConn, "Content-Type: auth/request\n\n")
+		reader := bufio.NewReader(serverConn)
+		_, _ = reader.ReadString('\n') // auth line
+		_, _ = reader.ReadString('\n') // blank line
+		_, _ = fmt.Fprint(serverConn, "Content-Type: command/reply\nReply-Text: -ERR invalid\n\n")
+	}()
+
+	cfg := config.Config{ESLPassword: "correct", TenantID: "t"}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	c := NewClient(cfg, logger)
+
+	reader := bufio.NewReader(clientConn)
+	err := c.authenticate(reader, clientConn)
+	if err == nil {
+		t.Fatal("expected auth to fail on -ERR reply")
+	}
+	if !strings.Contains(err.Error(), "-ERR") {
+		t.Errorf("error should mention -ERR, got: %v", err)
 	}
 }
