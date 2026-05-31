@@ -15,6 +15,9 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [release-plan.md](release-plan.md)
   Release roadmap, execution order, dependency graph, and parallel work tracks.
 
+- [production-readiness-roadmap.md](production-readiness-roadmap.md)
+  Public alpha, beta, and production readiness gates mapped to the next slices.
+
 - [post-release-roadmap.md](post-release-roadmap.md)
   Seven post-release expansion workstreams that now map to explicit follow-on slices.
 
@@ -156,6 +159,15 @@ If a planning document conflicts with the architecture docs, architecture wins.
   P2 production-readiness lane for rate limits, audit immutability, webhook
   signing, API-key scopes, observability, deployment guidance, backup/restore,
   migration playbooks, and outbound fraud prevention.
+
+- [slices/SLICE-49-public-alpha-readiness.md](slices/SLICE-49-public-alpha-readiness.md)
+  Public alpha readiness, CodeQL/security triage, alpha positioning, and clean-clone verification.
+
+- [slices/SLICE-50-self-hosted-freeswitch-smoke-ci.md](slices/SLICE-50-self-hosted-freeswitch-smoke-ci.md)
+  Self-hosted FreeSWITCH runtime smoke CI for beta and release-candidate gates.
+
+- [slices/SLICE-51-release-grade-product-coverage-and-runbooks.md](slices/SLICE-51-release-grade-product-coverage-and-runbooks.md)
+  Release-grade operator surfaces, coverage, MCP/n8n/SDK docs, and production runbooks.
 
 ## Reading Order
 

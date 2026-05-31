@@ -60,6 +60,19 @@ manageCallAI replaces low-level telecom administration with safe business-level 
 
 ## Current Status
 
+**Alpha candidate. Not production-ready.**
+
+manageCallAI is suitable for local demos, internal evaluation, and contributor
+testing. Production deployment is not recommended until the beta/production
+gates in the release docs are complete.
+
+Release readiness references:
+
+- [docs/release/public-alpha-readiness.md](docs/release/public-alpha-readiness.md)
+- [docs/deployment/local-alpha.md](docs/deployment/local-alpha.md)
+- [docs/planning/production-readiness-roadmap.md](docs/planning/production-readiness-roadmap.md)
+- [docs/release/release-checklist.md](docs/release/release-checklist.md)
+
 All core API domains are implemented and passing CI (327 tests, 97 OpenAPI operations).
 
 ### Implemented

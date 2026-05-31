@@ -84,6 +84,9 @@ Last audited: 2026-05-30.
 | `SLICE-42` | planned |
 | `SLICE-43` | completed |
 | `SLICE-44` | completed outside SLICE-42 tracing dependency |
+| `SLICE-49` | planned |
+| `SLICE-50` | planned |
+| `SLICE-51` | planned |
 
 The original v1 release-plan slices are closed. The next release-candidate feature
 set is now explicit as `SLICE-25` through `SLICE-32`. Contract generation,
@@ -252,6 +255,12 @@ SLICE-00 Current Baseline
 - `SLICE-43`
 - `SLICE-44`
 
+### Track H - Public Alpha To Production
+
+- `SLICE-49`
+- `SLICE-50`
+- `SLICE-51`
+
 ## 6. Recommended Execution Order
 
 ### Stage 1 - Close product gaps around the current IVR foundation
@@ -320,6 +329,12 @@ SLICE-00 Current Baseline
 41. `SLICE-43` MVP Demonstrable Reliability
 42. `SLICE-44` Production Readiness Hardening
 
+### Stage 9 - Public Alpha To Production
+
+43. `SLICE-49` Public Alpha Readiness And Security Triage
+44. `SLICE-50` Self-Hosted FreeSWITCH Smoke CI
+45. `SLICE-51` Release-Grade Product Surfaces, Coverage, And Runbooks
+
 ## 7. Minimal Release Gate
 
 The product is ready for the first release only when all of these are true:
@@ -377,3 +392,6 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-42](slices/SLICE-42-ai-dry-run-audit-identity-and-tracing.md)
 - [SLICE-43](slices/SLICE-43-mvp-demonstrable-reliability.md)
 - [SLICE-44](slices/SLICE-44-production-readiness-hardening.md)
+- [SLICE-49](slices/SLICE-49-public-alpha-readiness.md)
+- [SLICE-50](slices/SLICE-50-self-hosted-freeswitch-smoke-ci.md)
+- [SLICE-51](slices/SLICE-51-release-grade-product-coverage-and-runbooks.md)
