@@ -12,29 +12,6 @@ const LOCAL_PORT = Number(process.env.SIP_LOCAL_PORT ?? '5092');
 const USER_AGENT = 'manageCallAI-registration-smoke/1.0';
 
 // ── Log redaction helpers ─────────────────────────────────────────────────────
-// SIP smoke logs are redacted to satisfy CodeQL js/clear-text-logging and to
-// avoid leaking operational identifiers (usernames, domains, hosts, nonces,
-// Call-IDs, Authorization headers) into CI or operator logs.
-
-/** Returns the first `visible` chars of `value` followed by asterisks. */
-function mask(value, visible = 2) {
-  if (!value || value.length <= visible) return '***';
-  return value.slice(0, visible) + '*'.repeat(Math.min(value.length - visible, 6));
-}
-
-/** Redacts an IP/hostname to its first octet/label only. */
-function safeEndpoint(host, port) {
-  const safeHost = String(host).split('.')[0] + '.*.*.*';
-  return `${safeHost}:${port}`;
-}
-
-/** Redacts a SIP identity to masked user + masked domain. */
-function safeSipIdentity(username, domain) {
-  const safeDomain = String(domain).split('.')[0] + '.*';
-  return `${mask(username)}@${safeDomain}`;
-}
-
-/** True only when SIP_SMOKE_DEBUG=1. */
 function debugEnabled() {
   return process.env.SIP_SMOKE_DEBUG === '1';
 }
@@ -166,7 +143,9 @@ async function main() {
     const firstBranch = `z9hG4bK${Math.floor(Math.random() * 900000 + 100000)}`;
     const fromTag = `mcai${Math.floor(Math.random() * 9000 + 1000)}`;
 
-    console.log(`Sending unauthenticated REGISTER to ${safeEndpoint(HOST, PORT)} for ${safeSipIdentity(USERNAME, DOMAIN)}`);
+    // Endpoint and identity are not interpolated here: even masked helpers receive
+    // env-derived values that CodeQL's taint-tracking follows through the call chain.
+    console.log('Sending unauthenticated REGISTER (endpoint and identity redacted)');
     socket.send(buildRegister({ cseq: 1, callId, branch: firstBranch, fromTag }), PORT, HOST);
     const first = await receiveMessage(socket);
 
