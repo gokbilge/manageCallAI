@@ -92,6 +92,7 @@ export type FlowSimulationResponse = {
   outcome: {
     status: string;
     path: string[];
+    steps: Array<{ node_id: string; category: 'start' | 'task' | 'gateway' | 'end'; edge_id?: string }>;
     final_action: Record<string, unknown> | null;
     errors: unknown[];
   };
