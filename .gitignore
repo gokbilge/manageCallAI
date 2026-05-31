@@ -14,16 +14,17 @@ coverage/
 *.ogg
 *.m4a
 *.pcap
-recordings/
-voicemail/
-media/private/
-customer-data/
-call-data/
-cdr-exports/
+/recordings/
+/voicemail/
+/media/private/
+/customer-data/
+/call-data/
+/cdr-exports/
 sip-credentials*
 trunk-credentials*
 jwt-secret*
 runtime-token*
+!docs/security/runtime-token-hardening.md
 
 # Local AI context files - not for version control
 CLAUDE.md

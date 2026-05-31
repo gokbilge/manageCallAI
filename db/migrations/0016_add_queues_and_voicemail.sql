@@ -1,3 +1,9 @@
+-- Migration 0016a: Add queues, queue_members, and voicemail_boxes tables.
+--
+-- Companion shim: 0016_outbound_call_requests.sql is a noop kept only to
+-- preserve schema_migrations history. The outbound-call-requests content it
+-- originally contained was renumbered to 0022_outbound_call_requests.sql.
+
 CREATE TABLE IF NOT EXISTS queues (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,

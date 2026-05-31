@@ -51,15 +51,15 @@ describe('get_approval', () => {
 });
 
 describe('decide_approval', () => {
-  it('calls approve endpoint for approve decision', async () => {
+  it('calls approve endpoint for approved decision', async () => {
     mockApiCall.mockResolvedValueOnce(ok({ data: { id: 'a1', status: 'approved' } }));
-    await handleApprovalTool('decide_approval', { approval_id: 'a1', decision: 'approve' });
+    await handleApprovalTool('decide_approval', { approval_id: 'a1', decision: 'approved' });
     expect(mockApiCall).toHaveBeenCalledWith('POST', '/api/v1/approvals/a1/approve', {});
   });
 
-  it('calls reject endpoint for reject decision', async () => {
+  it('calls reject endpoint for rejected decision', async () => {
     mockApiCall.mockResolvedValueOnce(ok({ data: {} }));
-    await handleApprovalTool('decide_approval', { approval_id: 'a1', decision: 'reject', note: 'not ready' });
+    await handleApprovalTool('decide_approval', { approval_id: 'a1', decision: 'rejected', note: 'not ready' });
     expect(mockApiCall).toHaveBeenCalledWith('POST', '/api/v1/approvals/a1/reject', { note: 'not ready' });
   });
 });

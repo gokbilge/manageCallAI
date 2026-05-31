@@ -1,3 +1,9 @@
+-- Migration 0015a: Add ivr_flow_session_steps table.
+--
+-- Companion shim: 0015_outbound_routes.sql is a noop kept only to preserve
+-- schema_migrations history. The outbound-routes content it originally
+-- contained was renumbered to 0021_outbound_routes.sql.
+
 CREATE TABLE IF NOT EXISTS ivr_flow_session_steps (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,

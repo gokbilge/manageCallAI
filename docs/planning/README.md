@@ -148,6 +148,15 @@ If a planning document conflicts with the architecture docs, architecture wins.
   Focused follow-on for AI dry-run mutation mode, distinct AI/MCP audit identity,
   and OpenTelemetry tracing.
 
+- [slices/SLICE-43-mvp-demonstrable-reliability.md](slices/SLICE-43-mvp-demonstrable-reliability.md)
+  P1 reliability lane for FreeSWITCH E2E profile, publish/rollback smoke tests,
+  SDK-backed tests, XML golden coverage, n8n examples, and visual IVR completion.
+
+- [slices/SLICE-44-production-readiness-hardening.md](slices/SLICE-44-production-readiness-hardening.md)
+  P2 production-readiness lane for rate limits, audit immutability, webhook
+  signing, API-key scopes, observability, deployment guidance, backup/restore,
+  migration playbooks, and outbound fraud prevention.
+
 ## Reading Order
 
 1. Read [release-plan.md](release-plan.md)

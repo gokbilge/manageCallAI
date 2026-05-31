@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@managecallai/contracts": "workspace:*",
     "fastify": "^5.2.0"
   },
   "devDependencies": {

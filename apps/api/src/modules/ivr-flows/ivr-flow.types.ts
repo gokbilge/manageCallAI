@@ -124,9 +124,16 @@ export interface SimulationFinalAction {
   voicemail_box_id?: string;
 }
 
+export interface SimulationStep {
+  node_id: string;
+  category: 'start' | 'task' | 'gateway' | 'end';
+  edge_id: string | undefined;
+}
+
 export interface SimulationOutcome {
   status: 'passed' | 'failed';
   path: string[];
+  steps: SimulationStep[];
   final_action: SimulationFinalAction | null;
   errors: ValidationError[];
 }
@@ -152,6 +159,14 @@ export interface PublishAttemptResult {
   status: 'published' | 'pending_approval';
   flow: IvrFlow;
   approval_request_id?: string;
+}
+
+export interface DryRunPublishResult {
+  dry_run: true;
+  would_become: 'published' | 'pending_approval';
+  require_approval: boolean;
+  version_state_valid: boolean;
+  actor_type: 'user' | 'workflow' | 'ai_agent' | 'system';
 }
 
 export interface FlowValidationHistoryEntry {

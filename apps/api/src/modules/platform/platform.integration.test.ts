@@ -110,7 +110,7 @@ describe('Platform API integration', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  it('GET /platform/runtime/health → 200 with services array, healthy api + unreachable worker', async () => {
+  it('GET /platform/runtime/health → 200 with services array, healthy api + unreachable worker and FreeSWITCH agent', async () => {
     const fetchMock = vi.fn(async (url: RequestInfo | URL) => {
       if (String(url).includes('3000')) {
         return new Response('{"status":"ok","db":"ok"}', { status: 200 });
@@ -132,13 +132,15 @@ describe('Platform API integration', () => {
       expect(res.statusCode).toBe(200);
       const body = res.json<{ data: { services: { name: string; status: string; url: string; detail: string }[] } }>();
       expect(Array.isArray(body.data.services)).toBe(true);
-      expect(body.data.services).toHaveLength(2);
+      expect(body.data.services).toHaveLength(3);
 
       const api = body.data.services.find((s) => s.name === 'api');
       const worker = body.data.services.find((s) => s.name === 'worker');
+      const freeswitchAgent = body.data.services.find((s) => s.name === 'freeswitch-agent');
 
       expect(api).toMatchObject({ name: 'api', status: 'healthy', url: expect.any(String), detail: expect.any(String) });
       expect(worker).toMatchObject({ name: 'worker', status: 'unreachable', url: expect.any(String), detail: 'connection failed' });
+      expect(freeswitchAgent).toMatchObject({ name: 'freeswitch-agent', status: 'unreachable', url: expect.any(String), detail: 'connection failed' });
     } finally {
       vi.unstubAllGlobals();
     }

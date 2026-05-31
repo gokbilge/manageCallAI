@@ -1,6 +1,8 @@
+import { assertCanPublish, VersionStateError } from '../domain-assertions.js';
 import type { IvrFlowRepository } from './ivr-flow.repository.js';
 import type {
   CreateIvrFlowInput,
+  DryRunPublishResult,
   FlowHistory,
   FlowVersion,
   FlowSimulationResult,
@@ -10,18 +12,20 @@ import type {
   PublishAttemptResult,
   SimulationOutcome,
   SimulationScenario,
+  SimulationStep,
   UpdateIvrFlowInput,
 } from './ivr-flow.types.js';
 import { defaultIvrGraph, validateIvrGraph } from './ivr-flow.validation.js';
+import { buildPlannerGraph, resolveNextNode } from './ivr-graph-planner.js';
 import type { Role } from '../auth/capabilities.js';
 import { isInBusinessHours } from '../schedules/schedule.util.js';
 
-type ScheduleRef = {
+interface ScheduleRef {
   id: string;
   timezone: string;
   weekly_rules_json: unknown;
   holiday_overrides_json: unknown;
-};
+}
 
 export class IvrFlowNotFoundError extends Error {
   constructor(id: string) { super(`IVR flow not found: ${id}`); this.name = 'IvrFlowNotFoundError'; }
@@ -62,30 +66,6 @@ function getCollectedDigitsForNode(nodeId: string, scenario: SimulationScenario)
   return normalizeDigits(scenario);
 }
 
-function resolveSwitchInput(
-  node: Record<string, unknown>,
-  context: {
-    lastDigits?: string;
-    callerNumber?: string;
-    scenarioHour?: string;
-    variables: Record<string, string>;
-  },
-): string | undefined {
-  const rawInput = typeof node.input === 'string' ? node.input : '{{last_digits}}';
-  const tokenMatch = rawInput.match(/^\{\{(.+)\}\}$/);
-  if (!tokenMatch) {
-    return rawInput;
-  }
-
-  const token = tokenMatch[1]?.trim();
-  if (!token) return undefined;
-  if (token === 'last_digits') return context.lastDigits;
-  if (token === 'caller_number') return context.callerNumber;
-  if (token === 'now.hour') return context.scenarioHour;
-  if (token.startsWith('var.')) return context.variables[token.slice(4)];
-  return context.variables[token];
-}
-
 function toSimulationError(field: string, message: string) {
   return { field, message };
 }
@@ -103,173 +83,115 @@ function simulateGraph(
 ): SimulationOutcome {
   const baseValidation = validateIvrGraph(graph);
   if (baseValidation.status === 'failed') {
-    return {
-      status: 'failed',
-      path: [],
-      final_action: null,
-      errors: baseValidation.errors,
-    };
+    return { status: 'failed', path: [], steps: [], final_action: null, errors: baseValidation.errors };
   }
 
-  const entryNodeId = graph.entry_node_id;
-  const nodesValue = graph.nodes;
-  if (typeof entryNodeId !== 'string' || !Array.isArray(nodesValue)) {
+  const planner = buildPlannerGraph(graph);
+  if (!planner.entryNodeId) {
     return {
       status: 'failed',
       path: [],
+      steps: [],
       final_action: null,
       errors: [toSimulationError('graph_json', 'Graph is missing a valid entry point or nodes array')],
     };
   }
 
-  const nodes = new Map<string, Record<string, unknown>>();
-  for (const node of nodesValue) {
-    if (typeof node === 'object' && node !== null && !Array.isArray(node) && typeof (node as Record<string, unknown>).id === 'string') {
-      nodes.set((node as Record<string, unknown>).id as string, node as Record<string, unknown>);
-    }
-  }
-
   const path: string[] = [];
-  let currentId: string | undefined = entryNodeId;
-  let steps = 0;
+  const traceSteps: SimulationStep[] = [];
+  let currentId: string | undefined = planner.entryNodeId;
+  let guard = 0;
   let lastDigits = normalizeDigits(scenario);
   const variables: Record<string, string> = { ...(scenario.variables ?? {}) };
   const callerNumber = scenario.caller_number;
   const scenarioHour = resolveScenarioHour(scenario.now);
+  let prevEdgeId: string | undefined;
 
-  while (currentId && steps < 100) {
-    steps += 1;
+  while (currentId && guard < 100) {
+    guard += 1;
     path.push(currentId);
-    const node = nodes.get(currentId);
-    if (!node) {
+    const plannerNode = planner.nodes.get(currentId);
+    if (!plannerNode) {
       return {
         status: 'failed',
         path,
+        steps: traceSteps,
         final_action: null,
         errors: [toSimulationError(`graph_json.nodes.${currentId}`, 'Referenced node could not be loaded during simulation')],
       };
     }
 
-    const type = String(node.type ?? '');
-    if (type === 'start') {
-      currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
-      continue;
-    }
+    traceSteps.push({
+      node_id: currentId,
+      category: plannerNode.category ?? 'task',
+      edge_id: prevEdgeId,
+    });
 
-    if (type === 'play_prompt') {
-      currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
-      continue;
-    }
+    const type = plannerNode.type;
 
-    if (type === 'play_collect') {
-      if (hasNodeFlag(currentId, scenario.force_timeout, scenario.force_timeout_nodes)) {
-        currentId = typeof node.timeout_node_id === 'string' ? node.timeout_node_id : undefined;
-        continue;
-      }
-      const collectedDigits = getCollectedDigitsForNode(currentId, scenario);
-      if (hasNodeFlag(currentId, scenario.force_invalid, scenario.force_invalid_nodes) || !collectedDigits) {
-        currentId = typeof node.invalid_node_id === 'string'
-          ? node.invalid_node_id
-          : typeof node.default_node_id === 'string'
-            ? node.default_node_id
-            : undefined;
-        continue;
-      }
-      lastDigits = collectedDigits;
-      variables.last_digits = collectedDigits;
-      variables[`node.${currentId}.digits`] = collectedDigits;
-      currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
-      continue;
-    }
-
-    if (type === 'switch') {
-      const cases = node.cases;
-      const lookup = typeof cases === 'object' && cases !== null && !Array.isArray(cases)
-        ? (cases as Record<string, unknown>)
-        : {};
-      const resolvedInput = resolveSwitchInput(node, { lastDigits, callerNumber, scenarioHour, variables });
-      const selected = resolvedInput ? lookup[resolvedInput] : undefined;
-      currentId = typeof selected === 'string'
-        ? selected
-        : typeof node.default_node_id === 'string'
-          ? node.default_node_id
-          : undefined;
-      continue;
-    }
-
-    if (type === 'set_variable') {
-      const variableName = typeof node.variable_name === 'string' ? node.variable_name : '';
-      const value = typeof node.value === 'string' ? node.value : '';
-      if (variableName) {
-        variables[variableName] = value;
-      }
-      currentId = typeof node.next_node_id === 'string' ? node.next_node_id : undefined;
-      continue;
-    }
-
+    // ── Terminal nodes (emit final_action and return) ────────────────────────
     if (type === 'transfer_extension') {
       return {
         status: 'passed',
         path,
+        steps: traceSteps,
         final_action: {
           type: 'transfer_extension',
-          extension_id: typeof node.extension_id === 'string' ? node.extension_id : undefined,
-          extension_number: typeof node.extension_number === 'string' ? node.extension_number : undefined,
+          extension_id: typeof plannerNode.raw.extension_id === 'string' ? plannerNode.raw.extension_id : undefined,
+          extension_number: typeof plannerNode.raw.extension_number === 'string' ? plannerNode.raw.extension_number : undefined,
         },
         errors: [],
       };
     }
-
     if (type === 'queue') {
       return {
         status: 'passed',
         path,
-        final_action: {
-          type: 'queue',
-          queue_id: typeof node.queue_id === 'string' ? node.queue_id : undefined,
-        },
+        steps: traceSteps,
+        final_action: { type: 'queue', queue_id: typeof plannerNode.raw.queue_id === 'string' ? plannerNode.raw.queue_id : undefined },
         errors: [],
       };
     }
-
     if (type === 'voicemail_drop') {
       return {
         status: 'passed',
         path,
-        final_action: {
-          type: 'voicemail',
-          voicemail_box_id: typeof node.voicemail_box_id === 'string' ? node.voicemail_box_id : undefined,
-        },
+        steps: traceSteps,
+        final_action: { type: 'voicemail', voicemail_box_id: typeof plannerNode.raw.voicemail_box_id === 'string' ? plannerNode.raw.voicemail_box_id : undefined },
         errors: [],
       };
     }
-
     if (type === 'hangup') {
-      return {
-        status: 'passed',
-        path,
-        final_action: { type: 'hangup' },
-        errors: [],
-      };
+      return { status: 'passed', path, steps: traceSteps, final_action: { type: 'hangup' }, errors: [] };
     }
 
-    if (type === 'caller_id_match') {
-      const prefixes = Array.isArray(node.prefixes) ? (node.prefixes as string[]) : [];
-      const callerNum = callerNumber ?? '';
-      const matched = prefixes.some((p) => typeof p === 'string' && callerNum.startsWith(p));
-      currentId = matched
-        ? (typeof node.match_node_id === 'string' ? node.match_node_id : undefined)
-        : (typeof node.no_match_node_id === 'string' ? node.no_match_node_id : undefined);
-      continue;
+    // ── play_collect: determine outcome kind before calling planner ──────────
+    let collectOutcome: { kind: 'timeout' | 'invalid' | 'digits'; digits?: string } | undefined;
+    if (type === 'play_collect') {
+      if (hasNodeFlag(currentId, scenario.force_timeout, scenario.force_timeout_nodes)) {
+        collectOutcome = { kind: 'timeout' };
+      } else {
+        const collected = getCollectedDigitsForNode(currentId, scenario);
+        if (hasNodeFlag(currentId, scenario.force_invalid, scenario.force_invalid_nodes) || !collected) {
+          collectOutcome = { kind: 'invalid' };
+        } else {
+          lastDigits = collected;
+          variables.last_digits = collected;
+          variables[`node.${currentId}.digits`] = collected;
+          collectOutcome = { kind: 'digits', digits: collected };
+        }
+      }
     }
 
+    // ── business_hours: async schedule lookup; handled before planner call ───
     if (type === 'business_hours') {
-      const scheduleId = typeof node.schedule_id === 'string' ? node.schedule_id : '';
+      const scheduleId = typeof plannerNode.raw.schedule_id === 'string' ? plannerNode.raw.schedule_id : '';
       const schedule = schedules.get(scheduleId);
       if (!schedule) {
         return {
           status: 'failed',
           path,
+          steps: traceSteps,
           final_action: null,
           errors: [toSimulationError(`graph_json.nodes.${currentId}.schedule_id`, `Schedule not found or not active: ${scheduleId}`)],
         };
@@ -283,23 +205,41 @@ function simulateGraph(
         },
         evalAt,
       );
-      currentId = typeof (inHours ? node.in_hours_node_id : node.out_of_hours_node_id) === 'string'
-        ? (inHours ? node.in_hours_node_id : node.out_of_hours_node_id) as string
-        : undefined;
+      const ctx = { lastDigits, callerNumber, scenarioHour, variables, resolveBusinessHours: () => inHours };
+      const { nextNodeId, edgeId } = resolveNextNode(plannerNode, ctx);
+      prevEdgeId = edgeId;
+      currentId = nextNodeId;
       continue;
     }
 
-    return {
-      status: 'failed',
-      path,
-      final_action: null,
-      errors: [toSimulationError(`graph_json.nodes.${currentId}.type`, `Unsupported runtime node type: ${type}`)],
-    };
+    // ── set_variable: mutate context before resolving next ───────────────────
+    if (type === 'set_variable') {
+      const variableName = typeof plannerNode.raw.variable_name === 'string' ? plannerNode.raw.variable_name : '';
+      const value = typeof plannerNode.raw.value === 'string' ? plannerNode.raw.value : '';
+      if (variableName) variables[variableName] = value;
+    }
+
+    const ctx = { lastDigits, callerNumber, scenarioHour, variables };
+    const { nextNodeId, edgeId } = resolveNextNode(plannerNode, ctx, collectOutcome);
+
+    if (nextNodeId === undefined && plannerNode.category !== 'end') {
+      return {
+        status: 'failed',
+        path,
+        steps: traceSteps,
+        final_action: null,
+        errors: [toSimulationError(`graph_json.nodes.${currentId}.type`, `Unsupported runtime node type: ${type}`)],
+      };
+    }
+
+    prevEdgeId = edgeId;
+    currentId = nextNodeId;
   }
 
   return {
     status: 'failed',
     path,
+    steps: traceSteps,
     final_action: null,
     errors: [toSimulationError('graph_json', 'Simulation exceeded maximum traversal steps or hit an unresolved dead end')],
   };
@@ -538,11 +478,41 @@ export class IvrFlowService {
     return this.simulate(flowId, versionId, tenantId, scenario);
   }
 
+  /**
+   * Dry-run a publish request: run all pre-checks and return what WOULD happen
+   * without writing any database rows, emitting webhooks, or creating approvals.
+   * Identical validation path to publish() — only side effects are skipped.
+   */
+  async dryRunPublish(
+    flowId: string,
+    versionId: string,
+    tenantId: string,
+    actorType: 'user' | 'workflow' | 'ai_agent' | 'system' = 'user',
+    actorRole?: Role,
+  ): Promise<DryRunPublishResult> {
+    const version = await this.repo.findVersionById(versionId, flowId, tenantId);
+    const versionStateValid = !!version && ['validated', 'simulated'].includes(version.state);
+    const policy = await this.repo.getActivePublishPolicy(tenantId);
+    const requireApproval = !!(policy?.require_approval && actorRole !== 'platform_admin');
+    return {
+      dry_run: true,
+      would_become: requireApproval ? 'pending_approval' : 'published',
+      require_approval: requireApproval,
+      version_state_valid: versionStateValid,
+      actor_type: actorType,
+    };
+  }
+
   async publish(flowId: string, versionId: string, tenantId: string, triggeredById: string, actorRole?: Role): Promise<PublishAttemptResult> {
     const version = await this.repo.findVersionById(versionId, flowId, tenantId);
     if (!version) throw new FlowVersionNotFoundError(versionId);
-    if (!['validated', 'simulated'].includes(version.state)) {
-      throw new FlowVersionStateError(`Version must be in 'validated' or 'simulated' state to publish; current state: ${version.state}`);
+    try {
+      assertCanPublish(version, ['validated', 'simulated']);
+    } catch (err) {
+      if (err instanceof VersionStateError) {
+        throw new FlowVersionStateError(err.message);
+      }
+      throw err;
     }
 
     const policy = await this.repo.getActivePublishPolicy(tenantId);

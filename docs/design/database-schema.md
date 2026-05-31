@@ -99,6 +99,9 @@ Practical design direction:
   - `transport`
   - `username`
   - `auth_username`
+  - `dtmf_mode`
+  - `codec_prefs`
+  - `srtp_policy`
 - Store secret material in dedicated encrypted columns:
   - `auth_password_ciphertext`
   - `auth_password_key_id`

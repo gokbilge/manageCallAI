@@ -19,6 +19,7 @@ export class PlatformService {
     const checks = [
       { name: 'api', url: config.platformApiHealthUrl },
       { name: 'worker', url: config.platformWorkerHealthUrl },
+      { name: 'freeswitch-agent', url: config.platformFreeswitchAgentHealthUrl },
     ];
     const services = await Promise.all(checks.map(checkService));
     return { services };

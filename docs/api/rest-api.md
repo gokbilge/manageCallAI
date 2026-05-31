@@ -58,7 +58,10 @@ Authorization: Bearer <RUNTIME_API_TOKEN>
 x-managecallai-runtime-token: <RUNTIME_API_TOKEN>
 ```
 
-The `runtime_token` query/body fallback is controlled by `ALLOW_RUNTIME_TOKEN_FALLBACK`.
+Runtime endpoints accept Bearer runtime tokens or `x-managecallai-runtime-token`.
+FreeSWITCH `mod_xml_curl` should use HTTP Basic Auth with the runtime token as
+the password. The `runtime_token` query/body fallback is controlled by
+`ALLOW_RUNTIME_TOKEN_FALLBACK` and must stay disabled in production.
 It defaults on outside production and off when `APP_ENV=production`. Prefer headers
 for all callers, and only enable the fallback on an isolated compatibility path for
 `mod_xml_curl` setups that cannot send custom headers.
@@ -315,7 +318,10 @@ Example response:
       "port": 5060,
       "transport": "udp",
       "username": "tenant-200",
-      "auth_username": "carrier-user"
+      "auth_username": "carrier-user",
+      "dtmf_mode": "rfc2833",
+      "codec_prefs": null,
+      "srtp_policy": "disabled"
     }
   ]
 }
@@ -339,7 +345,10 @@ Example request:
   "transport": "udp",
   "username": "tenant-200",
   "auth_username": "carrier-user",
-  "auth_password": "CarrierPass123!"
+  "auth_password": "CarrierPass123!",
+  "dtmf_mode": "rfc2833",
+  "codec_prefs": ["PCMU", "PCMA"],
+  "srtp_policy": "optional"
 }
 ```
 
@@ -364,7 +373,10 @@ Example response:
     "port": 5060,
     "transport": "udp",
     "username": "tenant-200",
-    "auth_username": "carrier-user"
+    "auth_username": "carrier-user",
+    "dtmf_mode": "rfc2833",
+    "codec_prefs": ["PCMU", "PCMA"],
+    "srtp_policy": "optional"
   }
 }
 ```

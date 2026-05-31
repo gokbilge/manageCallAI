@@ -1935,9 +1935,12 @@ paths:
       description: |
         **Runtime-internal endpoint.** Called by FreeSWITCH `mod_xml_curl` for
         SIP registration and authentication. Returns FreeSWITCH XML.
-        Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
-        or query param `runtime_token=<token>` (local/dev compatibility only).
+        Auth: `Authorization: Basic base64(fs:<RUNTIME_API_TOKEN>)`
+        for `mod_xml_curl`, `Authorization: Bearer <RUNTIME_API_TOKEN>`, or
+        `x-managecallai-runtime-token: <token>`. Query/body token fallback is
+        only available when explicitly enabled for local compatibility.
       security:
+        - runtimeTokenBasic: []
         - runtimeTokenHeader: []
         - runtimeTokenBearer: []
       parameters:
@@ -1951,11 +1954,6 @@ paths:
           schema:
             type: string
           description: SIP domain
-        - name: runtime_token
-          in: query
-          schema:
-            type: string
-          description: Dev-only token fallback. Prefer Authorization header.
       responses:
         "200":
           description: FreeSWITCH XML directory response
@@ -1991,8 +1989,6 @@ paths:
                 user:
                   type: string
                 domain:
-                  type: string
-                runtime_token:
                   type: string
       responses:
         "200":
@@ -2052,8 +2048,8 @@ paths:
         **Runtime-internal endpoint.** Called by FreeSWITCH `mod_xml_curl` for
         inbound DID routing. Returns FreeSWITCH XML dialplan for active inbound
         routes that currently resolve to an `extension` target.
-        Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>`
-        or `x-managecallai-runtime-token: <token>`.
+        Auth: `Authorization: Bearer <RUNTIME_API_TOKEN>` or
+        `x-managecallai-runtime-token: <token>`.
       security:
         - runtimeTokenHeader: []
         - runtimeTokenBearer: []
@@ -2078,11 +2074,6 @@ paths:
           schema:
             type: string
           description: Alternate tenant domain field
-        - name: runtime_token
-          in: query
-          schema:
-            type: string
-          description: Dev-only token fallback. Prefer Authorization header.
       responses:
         "200":
           description: FreeSWITCH XML dialplan response
@@ -2117,8 +2108,6 @@ paths:
                   type: string
                 domain_name:
                   type: string
-                runtime_token:
-                  type: string
       responses:
         "200":
           description: FreeSWITCH XML dialplan response
@@ -2139,6 +2128,10 @@ components:
       type: http
       scheme: bearer
       description: RUNTIME_API_TOKEN as Bearer token (preferred)
+    runtimeTokenBasic:
+      type: http
+      scheme: basic
+      description: RUNTIME_API_TOKEN as the Basic Auth password for FreeSWITCH mod_xml_curl
     runtimeTokenHeader:
       type: apiKey
       in: header
@@ -2480,7 +2473,7 @@ components:
             - bidirectional
         status:
           type: string
-          enum: &a5
+          enum: &a7
             - active
             - inactive
         username:
@@ -2501,6 +2494,28 @@ components:
             - tls
         auth_username:
           type: string
+        dtmf_mode:
+          type: string
+          enum: &a5
+            - rfc2833
+            - info
+            - inband
+            - auto
+        codec_prefs:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+            minLength: 1
+            maxLength: 32
+          maxItems: 16
+        srtp_policy:
+          type: string
+          enum: &a6
+            - disabled
+            - optional
+            - required
         created_at:
           type: string
           format: date-time
@@ -2519,6 +2534,9 @@ components:
         - port
         - transport
         - auth_username
+        - dtmf_mode
+        - codec_prefs
+        - srtp_policy
         - created_at
         - updated_at
     CreateSipTrunkBody:
@@ -2549,6 +2567,21 @@ components:
         auth_password:
           type: string
           minLength: 1
+        dtmf_mode:
+          type: string
+          enum: *a5
+        codec_prefs:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+            minLength: 1
+            maxLength: 32
+          maxItems: 16
+        srtp_policy:
+          type: string
+          enum: *a6
       required:
         - name
         - direction
@@ -2567,7 +2600,7 @@ components:
           enum: *a3
         status:
           type: string
-          enum: *a5
+          enum: *a7
         username:
           type:
             - string
@@ -2591,6 +2624,21 @@ components:
         auth_password:
           type: string
           minLength: 1
+        dtmf_mode:
+          type: string
+          enum: *a5
+        codec_prefs:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+            minLength: 1
+            maxLength: 32
+          maxItems: 16
+        srtp_policy:
+          type: string
+          enum: *a6
     PhoneNumber:
       type: object
       properties:
@@ -2608,7 +2656,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a7
+          enum: &a9
             - active
             - inactive
         trunk_id:
@@ -2620,7 +2668,7 @@ components:
           type:
             - string
             - "null"
-          enum: &a6
+          enum: &a8
             - inbound_route
             - flow
             - extension
@@ -2675,7 +2723,7 @@ components:
           type:
             - string
             - "null"
-          enum: *a6
+          enum: *a8
         assigned_target_id:
           type:
             - string
@@ -2683,7 +2731,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: *a7
+          enum: *a9
     PromptAsset:
       type: object
       properties:
@@ -2711,7 +2759,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a8
+          enum: &a10
             - active
             - inactive
         created_at:
@@ -2774,7 +2822,7 @@ components:
             - "null"
         status:
           type: string
-          enum: *a8
+          enum: *a10
     CallGroupMember:
       type: object
       properties:
@@ -2825,12 +2873,12 @@ components:
             - "null"
         strategy:
           type: string
-          enum: &a9
+          enum: &a11
             - simultaneous
             - sequential
         status:
           type: string
-          enum: &a10
+          enum: &a12
             - active
             - inactive
         created_at:
@@ -2869,7 +2917,7 @@ components:
           type: string
         strategy:
           type: string
-          enum: *a9
+          enum: *a11
       required:
         - name
     UpdateCallGroupBody:
@@ -2884,10 +2932,10 @@ components:
             - "null"
         strategy:
           type: string
-          enum: *a9
+          enum: *a11
         status:
           type: string
-          enum: *a10
+          enum: *a12
     AddCallGroupMemberBody:
       type: object
       properties:
@@ -2948,7 +2996,7 @@ components:
             - "null"
         strategy:
           type: string
-          enum: &a11
+          enum: &a13
             - simultaneous
             - sequential
         ring_timeout_seconds:
@@ -2978,7 +3026,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: &a12
+          enum: &a14
             - active
             - inactive
         created_at:
@@ -3023,7 +3071,7 @@ components:
           type: string
         strategy:
           type: string
-          enum: *a11
+          enum: *a13
         ring_timeout_seconds:
           type: integer
         retry_delay_seconds:
@@ -3063,7 +3111,7 @@ components:
             - "null"
         strategy:
           type: string
-          enum: *a11
+          enum: *a13
         ring_timeout_seconds:
           type: integer
         retry_delay_seconds:
@@ -3091,7 +3139,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: *a12
+          enum: *a14
     AddQueueMemberBody:
       type: object
       properties:
@@ -3134,7 +3182,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a13
+          enum: &a15
             - active
             - inactive
         created_at:
@@ -3194,7 +3242,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: *a13
+          enum: *a15
     RouteVersion:
       type: object
       properties:
@@ -3268,7 +3316,7 @@ components:
           type: string
         match_type:
           type: string
-          enum: &a14
+          enum: &a16
             - did
             - trunk
             - pattern
@@ -3281,7 +3329,7 @@ components:
           format: uuid
         target_type:
           type: string
-          enum: &a15
+          enum: &a17
             - flow
             - extension
             - call_group
@@ -3377,10 +3425,11 @@ components:
           minLength: 1
         match_type:
           type: string
-          enum: *a14
+          enum: *a16
         match_value:
           type: string
           minLength: 1
+          maxLength: 200
         phone_number_id:
           type:
             - string
@@ -3388,7 +3437,7 @@ components:
           format: uuid
         target_type:
           type: string
-          enum: *a15
+          enum: *a17
         target_id:
           type: string
           format: uuid
@@ -3405,10 +3454,11 @@ components:
           minLength: 1
         match_type:
           type: string
-          enum: *a14
+          enum: *a16
         match_value:
           type: string
           minLength: 1
+          maxLength: 200
         phone_number_id:
           type:
             - string
@@ -3416,7 +3466,7 @@ components:
           format: uuid
         target_type:
           type: string
-          enum: *a15
+          enum: *a17
         target_id:
           type:
             - string
@@ -3500,7 +3550,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a16
+          enum: &a18
             - draft
             - active
             - inactive
@@ -3635,6 +3685,23 @@ components:
           format: uuid
       required:
         - type
+    SimulationStep:
+      type: object
+      properties:
+        node_id:
+          type: string
+        category:
+          type: string
+          enum:
+            - start
+            - task
+            - gateway
+            - end
+        edge_id:
+          type: string
+      required:
+        - node_id
+        - category
     SimulationOutcome:
       type: object
       properties:
@@ -3647,6 +3714,10 @@ components:
           type: array
           items:
             type: string
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/SimulationStep"
         final_action:
           allOf:
             - $ref: "#/components/schemas/SimulationFinalAction"
@@ -3660,6 +3731,7 @@ components:
       required:
         - status
         - path
+        - steps
         - final_action
         - errors
     FlowSimulationResult:
@@ -3691,6 +3763,35 @@ components:
       required:
         - status
         - flow
+    DryRunPublishResult:
+      type: object
+      properties:
+        dry_run:
+          type: boolean
+          enum:
+            - true
+        would_become:
+          type: string
+          enum:
+            - published
+            - pending_approval
+        require_approval:
+          type: boolean
+        version_state_valid:
+          type: boolean
+        actor_type:
+          type: string
+          enum:
+            - user
+            - workflow
+            - ai_agent
+            - system
+      required:
+        - dry_run
+        - would_become
+        - require_approval
+        - version_state_valid
+        - actor_type
     FlowValidationHistoryEntry:
       type: object
       properties:
@@ -3914,7 +4015,7 @@ components:
             - "null"
         status:
           type: string
-          enum: *a16
+          enum: *a18
     CreateFlowVersionBody:
       type: object
       properties:
@@ -4056,6 +4157,76 @@ components:
           type: array
           items:
             type: string
+            enum: &a19
+              - platform.tenants.view
+              - platform.runtime.view
+              - platform.audit.view
+              - tenant.dashboard.view
+              - tenant.calls.view
+              - tenant.extensions.view
+              - tenant.extensions.create
+              - tenant.extensions.update
+              - tenant.extensions.deactivate
+              - tenant.directory_smoke_test.run
+              - tenant.phone_numbers.view
+              - tenant.phone_numbers.create
+              - tenant.phone_numbers.update
+              - tenant.phone_numbers.deactivate
+              - tenant.inbound_routes.view
+              - tenant.inbound_routes.create
+              - tenant.inbound_routes.update
+              - tenant.inbound_routes.activate
+              - tenant.inbound_routes.deactivate
+              - tenant.inbound_routes.test
+              - tenant.prompts.view
+              - tenant.prompts.create
+              - tenant.prompts.update
+              - tenant.prompts.deactivate
+              - tenant.ivr_flows.view
+              - tenant.ivr_flows.create
+              - tenant.ivr_flows.update
+              - tenant.ivr_flows.validate
+              - tenant.ivr_flows.simulate
+              - tenant.ivr_flows.publish
+              - tenant.ivr_flows.rollback
+              - tenant.approvals.view
+              - tenant.approvals.decide
+              - tenant.call_groups.view
+              - tenant.call_groups.create
+              - tenant.call_groups.update
+              - tenant.call_groups.deactivate
+              - tenant.queues.view
+              - tenant.queues.create
+              - tenant.queues.update
+              - tenant.queues.deactivate
+              - tenant.voicemail_boxes.view
+              - tenant.voicemail_boxes.create
+              - tenant.voicemail_boxes.update
+              - tenant.voicemail_boxes.deactivate
+              - tenant.automation.keys.view
+              - tenant.automation.keys.manage
+              - tenant.automation.webhooks.view
+              - tenant.automation.webhooks.manage
+              - tenant.schedules.view
+              - tenant.schedules.create
+              - tenant.schedules.update
+              - tenant.outbound_routes.view
+              - tenant.outbound_routes.create
+              - tenant.outbound_routes.update
+              - tenant.outbound_calls.create
+              - tenant.outbound_calls.view
+              - tenant.channel_accounts.view
+              - tenant.channel_accounts.manage
+              - tenant.channel_messages.view
+              - tenant.channel_messages.send
+              - tenant.meeting_sessions.view
+              - tenant.meeting_sessions.manage
+              - tenant.audit_log.view
+              - tenant.recordings.view
+              - tenant.export.run
+              - tenant.users.view
+              - tenant.users.manage
+              - "*"
         created_by:
           type:
             - string
@@ -4258,6 +4429,416 @@ components:
         - last_error
         - created_at
         - updated_at
+    WebhookPayloadEnvelope:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event:
+          type: string
+          enum: &a20
+            - ivr_flow.published
+            - ivr_flow.publish_pending
+            - ivr_flow.rollback_completed
+            - ivr_flow.validation_failed
+            - approval.requested
+            - approval.approved
+            - approval.rejected
+            - call.completed
+            - call.started
+            - voicemail.recording_available
+            - outbound_call.dispatched
+            - outbound_call.completed
+            - outbound_call.failed
+            - extension.registered
+            - extension.expired
+            - recording.analysis_completed
+            - recording.analysis_failed
+        tenant_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: number
+          enum:
+            - 1
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+        - id
+        - event
+        - tenant_id
+        - timestamp
+        - version
+        - data
+    IvrFlowPublishedPayload:
+      type: object
+      properties:
+        flow_id:
+          type: string
+          format: uuid
+        flow_name:
+          type: string
+        version_id:
+          type: string
+          format: uuid
+        version_number:
+          type: integer
+        triggered_by_type:
+          type: string
+          enum:
+            - user
+            - workflow
+            - ai_agent
+            - system
+        triggered_by_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+      required:
+        - flow_id
+        - flow_name
+        - version_id
+        - version_number
+        - triggered_by_type
+        - triggered_by_id
+    IvrFlowPublishPendingPayload:
+      type: object
+      properties:
+        flow_id:
+          type: string
+          format: uuid
+        flow_name:
+          type: string
+        version_id:
+          type: string
+          format: uuid
+        version_number:
+          type: integer
+        approval_request_id:
+          type: string
+          format: uuid
+        triggered_by_type:
+          type: string
+          enum:
+            - user
+            - workflow
+            - ai_agent
+            - system
+        triggered_by_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+      required:
+        - flow_id
+        - flow_name
+        - version_id
+        - version_number
+        - approval_request_id
+        - triggered_by_type
+        - triggered_by_id
+    IvrFlowRollbackCompletedPayload:
+      type: object
+      properties:
+        flow_id:
+          type: string
+          format: uuid
+        flow_name:
+          type: string
+        rolled_back_to_version_id:
+          type: string
+          format: uuid
+        triggered_by_type:
+          type: string
+          enum:
+            - user
+            - workflow
+            - ai_agent
+            - system
+        triggered_by_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+      required:
+        - flow_id
+        - flow_name
+        - rolled_back_to_version_id
+        - triggered_by_type
+        - triggered_by_id
+    IvrFlowValidationFailedPayload:
+      type: object
+      properties:
+        flow_id:
+          type: string
+          format: uuid
+        flow_name:
+          type: string
+        version_id:
+          type: string
+          format: uuid
+        error_count:
+          type: integer
+      required:
+        - flow_id
+        - flow_name
+        - version_id
+        - error_count
+    ApprovalRequestedPayload:
+      type: object
+      properties:
+        approval_id:
+          type: string
+          format: uuid
+        object_type:
+          type: string
+        object_id:
+          type: string
+          format: uuid
+        requested_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+      required:
+        - approval_id
+        - object_type
+        - object_id
+        - requested_by
+    ApprovalApprovedPayload:
+      type: object
+      properties:
+        approval_id:
+          type: string
+          format: uuid
+        object_type:
+          type: string
+        object_id:
+          type: string
+          format: uuid
+        decided_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+      required:
+        - approval_id
+        - object_type
+        - object_id
+        - decided_by
+    ApprovalRejectedPayload:
+      type: object
+      properties:
+        approval_id:
+          type: string
+          format: uuid
+        object_type:
+          type: string
+        object_id:
+          type: string
+          format: uuid
+        decided_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+        note:
+          type:
+            - string
+            - "null"
+      required:
+        - approval_id
+        - object_type
+        - object_id
+        - decided_by
+        - note
+    CallCompletedPayload:
+      type: object
+      properties:
+        call_id:
+          type: string
+        direction:
+          type: string
+          enum:
+            - inbound
+            - outbound
+        from_number:
+          type:
+            - string
+            - "null"
+        to_number:
+          type:
+            - string
+            - "null"
+        duration_seconds:
+          type:
+            - integer
+            - "null"
+        disposition:
+          type:
+            - string
+            - "null"
+      required:
+        - call_id
+        - direction
+        - from_number
+        - to_number
+        - duration_seconds
+        - disposition
+    CallStartedPayload:
+      type: object
+      properties:
+        call_id:
+          type: string
+        direction:
+          type: string
+          enum:
+            - inbound
+            - outbound
+        from_number:
+          type:
+            - string
+            - "null"
+        to_number:
+          type:
+            - string
+            - "null"
+      required:
+        - call_id
+        - direction
+        - from_number
+        - to_number
+    VoicemailRecordingAvailablePayload:
+      type: object
+      properties:
+        recording_id:
+          type: string
+          format: uuid
+        mailbox_id:
+          type: string
+          format: uuid
+        call_id:
+          type:
+            - string
+            - "null"
+        duration_seconds:
+          type:
+            - integer
+            - "null"
+      required:
+        - recording_id
+        - mailbox_id
+        - call_id
+        - duration_seconds
+    OutboundCallDispatchedPayload:
+      type: object
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        extension_id:
+          type: string
+          format: uuid
+        dial_number:
+          type: string
+      required:
+        - request_id
+        - extension_id
+        - dial_number
+    OutboundCallCompletedPayload:
+      type: object
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        call_id:
+          type:
+            - string
+            - "null"
+        duration_seconds:
+          type:
+            - integer
+            - "null"
+      required:
+        - request_id
+        - call_id
+        - duration_seconds
+    OutboundCallFailedPayload:
+      type: object
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        failure_reason:
+          type:
+            - string
+            - "null"
+      required:
+        - request_id
+        - failure_reason
+    ExtensionRegisteredPayload:
+      type: object
+      properties:
+        extension_id:
+          type: string
+          format: uuid
+        extension_number:
+          type: string
+      required:
+        - extension_id
+        - extension_number
+    ExtensionExpiredPayload:
+      type: object
+      properties:
+        extension_id:
+          type: string
+          format: uuid
+        extension_number:
+          type: string
+      required:
+        - extension_id
+        - extension_number
+    RecordingAnalysisCompletedPayload:
+      type: object
+      properties:
+        analysis_id:
+          type: string
+          format: uuid
+        recording_id:
+          type: string
+          format: uuid
+        has_transcript:
+          type: boolean
+        has_summary:
+          type: boolean
+      required:
+        - analysis_id
+        - recording_id
+        - has_transcript
+        - has_summary
+    RecordingAnalysisFailedPayload:
+      type: object
+      properties:
+        analysis_id:
+          type: string
+          format: uuid
+        recording_id:
+          type: string
+          format: uuid
+        error_message:
+          type:
+            - string
+            - "null"
+      required:
+        - analysis_id
+        - recording_id
+        - error_message
     CreateApiKeyBody:
       type: object
       properties:
@@ -4269,6 +4850,7 @@ components:
           type: array
           items:
             type: string
+            enum: *a19
       required:
         - name
     CreateAutomationWebhookBody:
@@ -4286,24 +4868,7 @@ components:
           type: array
           items:
             type: string
-            enum:
-              - ivr_flow.published
-              - ivr_flow.publish_pending
-              - ivr_flow.rollback_completed
-              - ivr_flow.validation_failed
-              - approval.requested
-              - approval.approved
-              - approval.rejected
-              - call.completed
-              - call.started
-              - voicemail.recording_available
-              - outbound_call.dispatched
-              - outbound_call.completed
-              - outbound_call.failed
-              - extension.registered
-              - extension.expired
-              - recording.analysis_completed
-              - recording.analysis_failed
+            enum: *a20
           minItems: 1
       required:
         - name
@@ -4410,7 +4975,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a17
+          enum: &a21
             - active
             - inactive
         timezone:
@@ -4478,7 +5043,7 @@ components:
             $ref: "#/components/schemas/HolidayOverride"
         status:
           type: string
-          enum: *a17
+          enum: *a21
     OutboundRoute:
       type: object
       properties:
@@ -4492,7 +5057,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a18
+          enum: &a22
             - active
             - inactive
         match_prefix:
@@ -4676,7 +5241,7 @@ components:
             type: string
         status:
           type: string
-          enum: *a18
+          enum: *a22
     ResolveOutboundRouteBody:
       type: object
       properties:
@@ -4704,7 +5269,7 @@ components:
           type: string
         role:
           type: string
-          enum: &a19
+          enum: &a23
             - tenant_admin
             - tenant_operator
             - tenant_viewer
@@ -4744,7 +5309,7 @@ components:
           maxLength: 255
         role:
           type: string
-          enum: *a19
+          enum: *a23
         password:
           type: string
           minLength: 8
@@ -4763,7 +5328,7 @@ components:
           maxLength: 255
         role:
           type: string
-          enum: *a19
+          enum: *a23
     ChangePasswordBody:
       type: object
       properties:
@@ -4842,7 +5407,7 @@ components:
           type: array
           items:
             type: string
-            enum: &a20
+            enum: &a24
               - transcript
               - summary
         language_hint:
@@ -4948,7 +5513,7 @@ components:
           type: array
           items:
             type: string
-            enum: *a20
+            enum: *a24
           minItems: 1
         language_hint:
           type:
@@ -5007,7 +5572,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a21
+          enum: &a25
             - running
             - completed
             - failed
@@ -5109,7 +5674,7 @@ components:
             - "null"
         resulting_status:
           type: string
-          enum: *a21
+          enum: *a25
         variables_json:
           type: object
           additionalProperties:
@@ -5408,7 +5973,7 @@ components:
           format: uuid
         provider_type:
           type: string
-          enum: &a22
+          enum: &a26
             - whatsapp
             - telegram
             - google_meet
@@ -5448,7 +6013,7 @@ components:
       properties:
         provider_type:
           type: string
-          enum: *a22
+          enum: *a26
         name:
           type: string
           minLength: 1
@@ -5494,7 +6059,7 @@ components:
             - outbound
         message_type:
           type: string
-          enum: &a23
+          enum: &a27
             - text
             - voice_message
             - meeting
@@ -5559,7 +6124,7 @@ components:
           type: string
         message_type:
           type: string
-          enum: *a23
+          enum: *a27
         body:
           type:
             - string
@@ -5634,7 +6199,7 @@ components:
           format: uuid
         message_type:
           type: string
-          enum: *a23
+          enum: *a27
         external_id:
           type: string
         sender_id:
@@ -5666,7 +6231,7 @@ components:
           minLength: 1
         message_type:
           type: string
-          enum: *a23
+          enum: *a27
         body:
           type: string
         media_reference:
@@ -5733,7 +6298,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a24
+          enum: &a28
             - scheduled
             - active
             - completed
@@ -5802,7 +6367,7 @@ components:
       properties:
         status:
           type: string
-          enum: *a24
+          enum: *a28
         meeting_url:
           type: string
         participant_count:
@@ -5850,7 +6415,7 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: &a25
+          enum: &a29
             - auto
             - openai
             - elevenlabs
@@ -5859,7 +6424,7 @@ components:
             - custom
         status:
           type: string
-          enum: &a26
+          enum: &a30
             - queued
             - processing
             - completed
@@ -5960,10 +6525,10 @@ components:
             type: string
         provider_hint:
           type: string
-          enum: *a25
+          enum: *a29
         status:
           type: string
-          enum: *a26
+          enum: *a30
         processor_id:
           type:
             - string
@@ -6052,7 +6617,7 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a25
+          enum: *a29
         metadata:
           type: object
           additionalProperties: {}
@@ -6122,7 +6687,7 @@ components:
           minItems: 1
         provider_hint:
           type: string
-          enum: *a25
+          enum: *a29
         metadata:
           type: object
           additionalProperties: {}
@@ -6659,3 +7224,149 @@ components:
           additionalProperties: {}
       required:
         - matched
+    RunningSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        call_id:
+          type: string
+        flow_id:
+          type: string
+          format: uuid
+        caller_number:
+          type:
+            - string
+            - "null"
+        current_node_id:
+          type:
+            - string
+            - "null"
+        started_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - call_id
+        - flow_id
+        - caller_number
+        - current_node_id
+        - started_at
+    QueueDepth:
+      type: object
+      properties:
+        queue_id:
+          type: string
+          format: uuid
+        queue_name:
+          type: string
+        member_count:
+          type: integer
+      required:
+        - queue_id
+        - queue_name
+        - member_count
+    WebhookBacklog:
+      type: object
+      properties:
+        pending:
+          type: integer
+        processing:
+          type: integer
+        failed:
+          type: integer
+        abandoned:
+          type: integer
+      required:
+        - pending
+        - processing
+        - failed
+        - abandoned
+    LiveSnapshot:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        active_session_count:
+          type: integer
+        running_sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunningSession"
+        queue_depths:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueDepth"
+        webhook_backlog:
+          $ref: "#/components/schemas/WebhookBacklog"
+        recent_call_events_5m:
+          type: integer
+        recent_session_failures_1h:
+          type: integer
+        pending_approvals:
+          type: integer
+        generated_at:
+          type: string
+          format: date-time
+      required:
+        - tenant_id
+        - active_session_count
+        - running_sessions
+        - queue_depths
+        - webhook_backlog
+        - recent_call_events_5m
+        - recent_session_failures_1h
+        - pending_approvals
+        - generated_at
+    LiveSnapshotResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/LiveSnapshot"
+      required:
+        - data
+    StreamEvent:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - live
+            - degraded
+        data:
+          allOf:
+            - $ref: "#/components/schemas/LiveSnapshot"
+            - type:
+                - object
+                - "null"
+        generated_at:
+          type: string
+          format: date-time
+      required:
+        - status
+        - data
+        - generated_at
+    PlatformHealthSnapshot:
+      type: object
+      properties:
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceHealth"
+        active_sessions_total:
+          type: integer
+        completed_sessions_24h:
+          type: integer
+        failed_sessions_24h:
+          type: integer
+        generated_at:
+          type: string
+          format: date-time
+      required:
+        - services
+        - active_sessions_total
+        - completed_sessions_24h
+        - failed_sessions_24h
+        - generated_at

@@ -8,7 +8,23 @@ real time.
 
 ## Status
 
-**PLANNED**
+**COMPLETED**
+
+Audited 2026-05-30. All exit criteria are met:
+
+- SSE stream emits `StreamEvent { status: 'live' | 'degraded', data, generated_at }` so clients can
+  distinguish healthy vs degraded stream state; degraded events are emitted instead of silently pinging.
+- `StreamEventSchema` and `PlatformHealthSnapshotSchema` added to contracts.
+- `GET /api/v1/observability/platform-health` added (requires `PLATFORM_RUNTIME_VIEW` capability);
+  returns aggregate service health + session counters without per-tenant or cross-tenant data.
+- `ObservabilityService.getPlatformHealth()` delegates to configurable service health checks.
+- `ObservabilityRepository.getPlatformRuntimeSummary()` adds DB-level platform counters (all tenants aggregate).
+- `useObservabilityStream` hook added to web lib; uses fetch-based SSE with Authorization header for
+  proper auth; exposes `streamStatus: 'live' | 'degraded' | 'offline'` for UI badge.
+- 8 new observability service unit tests covering: tenant isolation, snapshot field safety (no secrets),
+  service health check aggregation (healthy/degraded/unreachable), platform health data boundary.
+- No provider secrets, raw switch payloads, or cross-tenant data in any stream path (verified by test).
+- `pnpm build` and `pnpm lint` clean across contracts, API, and web packages.
 
 ## Context
 
