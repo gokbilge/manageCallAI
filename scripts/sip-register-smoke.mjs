@@ -31,11 +31,10 @@ function redactSipMessage(message) {
     .replace(/(username|realm|nonce|response|cnonce)="[^"]*"/gi, '$1="<redacted>"');
 }
 
-// MD5 is required here by the SIP Digest Authentication protocol (RFC 3261 §22.4).
-// This is NOT password storage — it computes the challenge-response hash that
-// FreeSWITCH expects in the Authorization header.  Replacing MD5 with a stronger
-// algorithm would produce an invalid SIP response and cause the registration to fail.
-// CodeQL js/insufficient-password-hash is a false positive in this context.
+// MD5 is required here by SIP Digest Authentication (RFC 3261 section 22.4).
+// This is NOT password storage; it computes the challenge-response that
+// FreeSWITCH expects. CodeQL js/insufficient-password-hash is a false positive
+// for this protocol-specific helper.
 function md5(value) {
   return crypto.createHash('md5').update(value, 'utf8').digest('hex');
 }
