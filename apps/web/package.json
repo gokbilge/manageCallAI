@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests --coverage.reporter=text-summary --coverage.reporter=json-summary"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.9",

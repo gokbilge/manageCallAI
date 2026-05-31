@@ -93,6 +93,16 @@ jobs:
           go install github.com/boumenot/gocover-cobertura@v1.4.0
           "$(go env GOPATH)/bin/gocover-cobertura" < coverage/go/coverage.out > coverage/go/coverage.xml
 
+      - name: Enforce coverage ignore governance
+        run: pnpm check:coverage-ignores
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage/
+          if-no-files-found: error
+
       - name: Upload API coverage
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/upload-code-coverage@v1

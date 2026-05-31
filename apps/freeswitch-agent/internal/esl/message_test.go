@@ -58,6 +58,28 @@ func TestReadMessageInvalidContentLength(t *testing.T) {
 	}
 }
 
+func TestReadMessageShortBodyReturnsError(t *testing.T) {
+	raw := "Content-Length: 10\n\nshort"
+	_, err := readMessage(bufio.NewReader(strings.NewReader(raw)))
+	if err == nil {
+		t.Fatal("expected error when body is shorter than Content-Length")
+	}
+}
+
+func TestReadMessageIgnoresMalformedHeaderLines(t *testing.T) {
+	raw := "Content-Type: text/event-plain\nMalformed-Header\nReply-Text: +OK\n\n"
+	msg, err := readMessage(bufio.NewReader(strings.NewReader(raw)))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, ok := msg.Headers["Malformed-Header"]; ok {
+		t.Fatal("malformed header line should be ignored")
+	}
+	if msg.Headers["Reply-Text"] != "+OK" {
+		t.Fatalf("expected Reply-Text +OK, got %q", msg.Headers["Reply-Text"])
+	}
+}
+
 func TestParsePlainEventBasic(t *testing.T) {
 	body := "Event-Name: CHANNEL_ANSWER\nUnique-ID: call-uuid-1\n"
 	fields := parsePlainEvent(body)
@@ -93,6 +115,14 @@ func TestParsePlainEventValueWithColonPreserved(t *testing.T) {
 	fields := parsePlainEvent(body)
 	if fields["some-key"] != "value:with:colons" {
 		t.Fatalf("expected %q, got %q", "value:with:colons", fields["some-key"])
+	}
+}
+
+func TestParsePlainEventLastRepeatedHeaderWins(t *testing.T) {
+	body := "Event-Name: CHANNEL_CREATE\nEvent-Name: CHANNEL_ANSWER\nUnique-ID: uuid-1\n"
+	fields := parsePlainEvent(body)
+	if fields["Event-Name"] != "CHANNEL_ANSWER" {
+		t.Fatalf("expected last repeated Event-Name to win, got %q", fields["Event-Name"])
 	}
 }
 

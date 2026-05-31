@@ -59,6 +59,7 @@ export const TOOL_RISK_MAP: Record<string, ToolRisk> = {
 
   // Export tools
   export_call_events: 'read',
+  export_sessions: 'read',
   export_ivr_sessions: 'read',
 };
 
