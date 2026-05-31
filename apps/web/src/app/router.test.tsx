@@ -9,6 +9,7 @@ import { CAPABILITIES } from '@/lib/permissions/capabilities';
 import { getWorkspaceFromPath } from '@/lib/routes/workspace';
 import type { SessionState } from '@/lib/auth/session';
 import type { ContextType } from 'react';
+import type { Capability } from '@/lib/permissions/capabilities';
 
 // ── Workspace utility ─────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ function makeSession(role: SessionState['claims']['role']): SessionState {
 function renderGuardedRoute(
   authCtx: ContextType<typeof AuthContext>,
   path = '/protected',
-  capability = CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH,
+  capability: Capability = CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH,
 ) {
   return render(
     <MemoryRouter initialEntries={[path]}>
