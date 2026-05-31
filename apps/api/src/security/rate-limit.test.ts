@@ -18,13 +18,39 @@ describe('InMemoryRateLimiter', () => {
 });
 
 describe('policyForPath', () => {
-  it('classifies protected edge surfaces', () => {
+  it('classifies specific edge surfaces', () => {
     expect(policyForPath('POST', '/api/v1/auth/login')?.name).toBe('auth');
+    expect(policyForPath('GET', '/api/v1/auth/register')?.name).toBe('auth');
     expect(policyForPath('GET', '/api/v1/freeswitch/directory')?.name).toBe('runtime');
     expect(policyForPath('POST', '/api/v1/runtime/ivr/sessions')?.name).toBe('runtime');
     expect(policyForPath('POST', '/api/v1/call-events')?.name).toBe('runtime');
     expect(policyForPath('POST', '/api/v1/runtime/outbound')?.name).toBe('outbound');
     expect(policyForPath('POST', '/api/v1/webhooks/')?.name).toBe('webhook');
+  });
+
+  it('applies api fallback to authenticated DB-backed routes', () => {
+    expect(policyForPath('GET', '/api/v1/sip-trunks')?.name).toBe('api');
+    expect(policyForPath('POST', '/api/v1/sip-trunks')?.name).toBe('api');
+    expect(policyForPath('GET', '/api/v1/extensions')?.name).toBe('api');
+    expect(policyForPath('GET', '/api/v1/recordings')?.name).toBe('api');
+    expect(policyForPath('GET', '/api/v1/platform/tenants')?.name).toBe('api');
+    expect(policyForPath('GET', '/api/v1/platform/runtime/health')?.name).toBe('api');
+    expect(policyForPath('GET', '/api/v1/ivr-flows')?.name).toBe('api');
+    expect(policyForPath('PUT', '/api/v1/inbound-routes/abc-123')?.name).toBe('api');
+  });
+
+  it('applies scrape policy to /metrics', () => {
+    expect(policyForPath('GET', '/metrics')?.name).toBe('scrape');
+  });
+
+  it('returns null for non-API paths', () => {
     expect(policyForPath('GET', '/health')).toBeNull();
+    expect(policyForPath('GET', '/')).toBeNull();
+    expect(policyForPath('GET', '/docs')).toBeNull();
+  });
+
+  it('strips query strings before matching', () => {
+    expect(policyForPath('GET', '/api/v1/sip-trunks?page=2')?.name).toBe('api');
+    expect(policyForPath('POST', '/api/v1/auth/login?redirect=home')?.name).toBe('auth');
   });
 });
