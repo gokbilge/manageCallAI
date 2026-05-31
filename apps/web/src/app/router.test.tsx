@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthContext } from '@/lib/auth/auth-context';
