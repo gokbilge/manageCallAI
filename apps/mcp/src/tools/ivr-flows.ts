@@ -1,4 +1,4 @@
-import { SimulationScenarioMcpSchema } from '@managecallai/contracts';
+import { mcpToolInputSchemas } from '@managecallai/contracts';
 import { apiCall } from '../api-client.js';
 
 export const IVR_FLOW_TOOLS = [
@@ -6,112 +6,49 @@ export const IVR_FLOW_TOOLS = [
     name: 'list_ivr_flows',
     description:
       'List all IVR flows for this tenant. Returns id, name, status, and version pointers.',
-    inputSchema: { type: 'object' as const, properties: {} },
+    inputSchema: mcpToolInputSchemas.list_ivr_flows,
   },
   {
     name: 'get_ivr_flow',
     description:
       'Get a single IVR flow with all its versions and the draft graph definition.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['flow_id'],
-      properties: {
-        flow_id: { type: 'string', description: 'UUID of the IVR flow' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.get_ivr_flow,
   },
   {
     name: 'create_ivr_flow',
     description:
       'Create a new IVR flow with an empty or supplied graph definition. Returns the flow and its draft version.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['name'],
-      properties: {
-        name:        { type: 'string', description: 'Display name for the flow' },
-        description: { type: 'string', description: 'Optional description' },
-        definition:  { type: 'object', description: 'Optional initial graph_json (nodes/edges)' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.create_ivr_flow,
   },
   {
     name: 'update_flow_definition',
     description:
       'Replace the graph definition of a draft flow version. Use this to iteratively build the IVR flow.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['flow_id', 'version_id', 'definition'],
-      properties: {
-        flow_id:    { type: 'string', description: 'UUID of the IVR flow' },
-        version_id: { type: 'string', description: 'UUID of the draft version to update' },
-        definition: { type: 'object', description: 'New graph_json object (nodes/edges/entry_node_id)' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.update_flow_definition,
   },
   {
     name: 'validate_flow',
     description:
       'Validate the current draft version of a flow. Returns passed/failed with errors and warnings.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['flow_id'],
-      properties: {
-        flow_id: { type: 'string', description: 'UUID of the IVR flow' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.validate_flow,
   },
   {
     name: 'simulate_flow',
     description:
       'Simulate the current draft version with a caller scenario. Returns the execution path and final action.',
-    // inputSchema is derived from SimulationScenarioSchema in packages/contracts so
-    // that adding a new scenario field automatically updates the MCP tool description.
-    inputSchema: {
-      type: 'object' as const,
-      required: ['flow_id'],
-      properties: {
-        flow_id: { type: 'string', description: 'UUID of the IVR flow' },
-        ...(SimulationScenarioMcpSchema['properties'] as Record<string, unknown> ?? {}),
-      },
-    },
+    inputSchema: mcpToolInputSchemas.simulate_flow,
   },
   {
     name: 'request_publish',
     description:
       'Submit a validated flow version for publish. Returns immediately as published, or pending_approval if the tenant policy requires a human to approve first.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['flow_id', 'version_id'],
-      properties: {
-        flow_id:    { type: 'string', description: 'UUID of the IVR flow' },
-        version_id: { type: 'string', description: 'UUID of the validated version to publish' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.request_publish,
   },
   {
     name: 'run_simulation_suite',
     description:
       'Run multiple simulation scenarios against the current draft of a flow in one call. Returns pass/fail and execution path for each scenario. Use this for regression checks before requesting publish.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['flow_id', 'scenarios'],
-      properties: {
-        flow_id: { type: 'string', description: 'UUID of the IVR flow' },
-        scenarios: {
-          type: 'array',
-          description: 'Array of simulation scenarios to run',
-          items: {
-            type: 'object',
-            properties: {
-              label: { type: 'string', description: 'Human-readable name for this scenario' },
-              caller_number: { type: 'string' },
-              digits: { type: 'array', items: { type: 'string' } },
-              now: { type: 'string', description: 'ISO 8601 datetime override' },
-            },
-          },
-        },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.run_simulation_suite,
   },
 ] as const;
 

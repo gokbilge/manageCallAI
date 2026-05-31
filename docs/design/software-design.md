@@ -87,13 +87,6 @@ Responsibilities:
 - Keep adapter-specific logic isolated from the core domain model
 - Keep project-specific logic outside stock FreeSWITCH
 
-Security responsibilities:
-
-- Authenticate runtime HTTP calls with a node-specific identity
-- Sign runtime requests with timestamp and nonce replay protection
-- Respect per-node polling and ingest rate limits
-- Keep SIP scanner and TDoS filtering outside the adapter in SIP edge controls
-
 For MVP, Lua should act only as a thin command executor for:
 
 - `play_collect`
@@ -129,23 +122,25 @@ Responsibilities:
 - Accept approved automation entry points
 - Bridge external workflow systems to control-plane operations
 
-### 3.7.1 Runtime Edge Protection
+### 3.7.1 Repository Governance Layer
 
 Implementation direction:
 
-- Internal runtime gateway or middleware in front of FreeSWITCH-facing HTTP paths
-- FreeSWITCH node registry with node status, allowed networks, token metadata,
-  endpoint capabilities, and rate-limit policies
+- GitHub Issues for execution tracking
+- GitHub Projects and milestones for roadmap coordination
+- Protected branches, pull requests, CODEOWNERS, and required CI for changes
+- Audit records under `docs/audit/audits/` for evidence
 
 Responsibilities:
 
-- Deny unauthenticated or disabled runtime callers
-- Verify signed node requests before directory, dialplan, IVR, polling, or ingest
-  handlers run
-- Reject stale timestamps and replayed nonces
-- Limit polling and ingest by node id, tenant, and endpoint family
-- Emit audit/security events and metrics for blocked callers and limit breaches
-- Keep runtime endpoints private in production deployment guidance
+- Keep `main` protected from the normal direct-commit path
+- Require branch-based PR workflow for code, docs, CI, and architecture changes
+- Map unresolved audit findings to GitHub Issues with severity, risk, area, and
+  milestone metadata
+- Link each unresolved finding to the issue that tracks execution
+- Close or update linked issues when the finding is fixed or accepted
+- Keep PR summaries, issue comments, commit messages, and audit issue bodies under
+  the configured maintainer or contributor identity without AI-agent attribution
 
 ### 3.8 Provider Adapter Layer
 

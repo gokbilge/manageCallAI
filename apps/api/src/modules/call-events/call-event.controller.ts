@@ -7,7 +7,7 @@ import { requireCapability } from '../auth/require-capability.js';
 import { CallEventRepository } from './call-event.repository.js';
 import { CallEventService } from './call-event.service.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
-import { sendPermissionDenied } from '../../errors/index.js';
+import { sendInvalidArgument, sendPermissionDenied } from '../../errors/index.js';
 import { IngestCallEventBodySchema } from '@managecallai/contracts';
 
 const service = new CallEventService(new CallEventRepository(db));
@@ -42,6 +42,14 @@ export const callEventController: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req, reply) => {
+      const runtimeTenantId = req.runtime?.tenant_id;
+      if (!runtimeTenantId) {
+        return sendPermissionDenied(reply, 'Runtime tenant identity is required');
+      }
+      if (runtimeTenantId !== req.body.tenant_id) {
+        return sendInvalidArgument(reply, 'Runtime tenant identity does not match event tenant_id');
+      }
+
       const event = await service.ingest(req.body);
       return reply.code(201).send({ data: event });
     },

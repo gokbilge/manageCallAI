@@ -144,4 +144,29 @@ describe('hasCapability', () => {
       expect(hasCapability('bad-role', CAPABILITIES.PLATFORM_TENANTS_VIEW)).toBe(false);
     });
   });
+
+  // ── TENANT_USERS_MANAGE fail-closed ─────────────────────────────────────────
+  // Explicitly tests that user management is restricted to tenant_admin only.
+  // These assertions mirror the RBAC gate on POST/PATCH/DELETE /api/v1/users.
+  describe('TENANT_USERS_MANAGE fail-closed', () => {
+    it('tenant_admin has TENANT_USERS_MANAGE', () => {
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_USERS_MANAGE)).toBe(true);
+    });
+
+    it('tenant_operator does not have TENANT_USERS_MANAGE', () => {
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_USERS_MANAGE)).toBe(false);
+    });
+
+    it('tenant_viewer does not have TENANT_USERS_MANAGE', () => {
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_USERS_MANAGE)).toBe(false);
+    });
+
+    it('unknown role returns false for TENANT_USERS_MANAGE', () => {
+      expect(hasCapability('some-unknown-role', CAPABILITIES.TENANT_USERS_MANAGE)).toBe(false);
+    });
+
+    it('undefined role returns false for TENANT_USERS_MANAGE', () => {
+      expect(hasCapability(undefined, CAPABILITIES.TENANT_USERS_MANAGE)).toBe(false);
+    });
+  });
 });

@@ -98,6 +98,10 @@ No user class, especially AI agents, should be given unrestricted access to Free
 
 The platform should model the intended telecom configuration as desired state stored in the application database, then render that state into FreeSWITCH-facing runtime artifacts.
 
+The canonical terminology for desired state, runtime state, lifecycle state,
+rollback, business-level events, and runtime-generated artifacts is defined in
+`publishable-object-lifecycle.md`.
+
 ### 6.3 Validate Before Publish
 
 Configuration should be validated structurally and behaviorally before becoming active.
@@ -135,6 +139,9 @@ Project-specific logic should live in external services and minimal integration 
   FreeSWITCH.
 - Runtime HTTP protection belongs at an internal gateway/API boundary with
   cryptographic FreeSWITCH node identity, replay protection, and per-node limits.
+
+The detailed API, Go agent, Lua, FreeSWITCH, MCP, and n8n boundary rules are
+defined in `runtime-boundaries.md`.
 
 ### 6.10 Provider-Neutral Integrations
 
@@ -536,6 +543,10 @@ Avoid API designs centered on:
 ## 14. MCP Design Rules
 
 MCP tooling must stay narrower than the REST API.
+
+n8n and workflow automation surfaces follow the same safety rule: they operate
+on business events and approved API workflows, not raw FreeSWITCH, raw XML, raw
+ESL, or shell-like runtime control.
 
 Initial MCP categories:
 

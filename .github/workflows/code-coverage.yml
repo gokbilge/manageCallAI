@@ -1,0 +1,134 @@
+name: Code Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  code-quality: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: managecallai
+          POSTGRES_USER: managecallai
+          POSTGRES_PASSWORD: managecallai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U managecallai -d managecallai"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://managecallai:managecallai@localhost:5432/managecallai
+      JWT_SECRET: ci-jwt-secret
+      RUNTIME_API_TOKEN: ci-runtime-token
+      SIP_SECRET_MASTER_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      SIP_SECRET_KEY_ID: ci-v1
+      MANAGECALLAI_TENANT_ID: 00000000-0000-0000-0000-000000000001
+      API_BASE_URL: http://localhost:3000
+      WORKER_PORT: 3400
+      FREESWITCH_ESL_HOST: 127.0.0.1
+      FREESWITCH_ESL_PORT: 8021
+      FREESWITCH_ESL_PASSWORD: ClueCon
+      LOG_LEVEL: info
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..20}; do
+            pg_isready -h localhost -p 5432 -U managecallai -d managecallai && exit 0
+            sleep 2
+          done
+          exit 1
+
+      - name: Build TypeScript packages
+        run: pnpm build
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Generate JavaScript coverage
+        run: |
+          pnpm --filter @managecallai/api exec vitest run --coverage --coverage.reporter=cobertura --coverage.reportsDirectory=../../coverage/api
+          pnpm --filter @managecallai/web exec vitest run --coverage --passWithNoTests --coverage.reporter=cobertura --coverage.reportsDirectory=../../coverage/web
+          pnpm --filter @managecallai/mcp exec vitest run --coverage --coverage.reporter=cobertura --coverage.reportsDirectory=../../coverage/mcp
+          pnpm --filter @managecallai/sdk exec vitest run --coverage --passWithNoTests --coverage.reporter=cobertura --coverage.reportsDirectory=../../coverage/sdk
+
+      - name: Generate Go coverage
+        run: |
+          mkdir -p coverage/go
+          cd apps/freeswitch-agent
+          go test -coverprofile=../../coverage/go/coverage.out ./...
+          cd ../..
+          go install github.com/boumenot/gocover-cobertura@v1.4.0
+          "$(go env GOPATH)/bin/gocover-cobertura" < coverage/go/coverage.out > coverage/go/coverage.xml
+
+      - name: Upload API coverage
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: coverage/api/cobertura-coverage.xml
+          language: JavaScript
+          label: code-coverage/api
+
+      - name: Upload web coverage
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: coverage/web/cobertura-coverage.xml
+          language: JavaScript
+          label: code-coverage/web
+
+      - name: Upload MCP coverage
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: coverage/mcp/cobertura-coverage.xml
+          language: JavaScript
+          label: code-coverage/mcp
+
+      - name: Upload SDK coverage
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: coverage/sdk/cobertura-coverage.xml
+          language: JavaScript
+          label: code-coverage/sdk
+
+      - name: Upload Go coverage
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: coverage/go/coverage.xml
+          language: Go
+          label: code-coverage/freeswitch-agent

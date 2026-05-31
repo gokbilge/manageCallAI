@@ -1,3 +1,4 @@
+import { assertCanPublish, assertValidRouteTarget, RouteTargetInvalidError, VersionStateError } from '../domain-assertions.js';
 import type { InboundRouteRepository } from './inbound-route.repository.js';
 import type {
   CreateInboundRouteInput,
@@ -7,6 +8,9 @@ import type {
   UpdateInboundRouteInput,
   ValidationOutcome,
 } from './inbound-route.types.js';
+
+const MAX_PATTERN_MATCH_VALUE_LENGTH = 200;
+const NESTED_QUANTIFIER_PATTERN = /\((?:[^()\\]|\\.)*[+*](?:[^()\\]|\\.)*\)[+*{]/;
 
 export class InboundRouteNotFoundError extends Error {
   constructor(id: string) { super(`Inbound route not found: ${id}`); this.name = 'InboundRouteNotFoundError'; }
@@ -106,6 +110,7 @@ export class InboundRouteService {
 
   async create(input: CreateInboundRouteInput): Promise<InboundRouteWithVersions> {
     const normalized = await this.normalizePhoneNumberBinding(input.tenant_id, input);
+    validateMatchValue(input.match_type, normalized.match_value);
     return this.repo.create({
       ...input,
       match_value: normalized.match_value,
@@ -134,6 +139,11 @@ export class InboundRouteService {
         phone_number_id: normalized.phone_number_id,
       };
     }
+
+    validateMatchValue(
+      normalizedInput.match_type ?? current.match_type,
+      normalizedInput.match_value ?? current.match_value,
+    );
 
     const route = await this.repo.update(id, tenantId, normalizedInput);
     if (!route) throw new InboundRouteNotFoundError(id);
@@ -169,8 +179,13 @@ export class InboundRouteService {
   async publish(routeId: string, versionId: string, tenantId: string, triggeredById: string): Promise<InboundRoute> {
     const version = await this.repo.findVersionById(versionId, routeId, tenantId);
     if (!version) throw new RouteVersionNotFoundError(versionId);
-    if (version.state !== 'validated') {
-      throw new RouteVersionStateError(`Version must be in 'validated' state to publish; current state: ${version.state}`);
+    try {
+      assertCanPublish(version, ['validated']);
+    } catch (err) {
+      if (err instanceof VersionStateError) {
+        throw new RouteVersionStateError(err.message);
+      }
+      throw err;
     }
     return this.repo.publish({ tenant_id: tenantId, route_id: routeId, version_id: versionId, triggered_by_id: triggeredById });
   }
@@ -187,15 +202,20 @@ export class InboundRouteService {
     const route = await this.repo.findById(id, tenantId);
     if (!route) throw new InboundRouteNotFoundError(id);
 
-    if (!route.target_id) {
-      throw new InboundRouteInputError('Route must have a target_id to be activated');
-    }
-
-    const targetExists = await this.repo.targetExists(route.target_type, route.target_id, tenantId);
-    if (!targetExists) {
-      throw new InboundRouteInputError(
-        `Target ${route.target_type} '${route.target_id}' does not exist or is not active`,
-      );
+    const targetExists = route.target_id
+      ? await this.repo.targetExists(route.target_type, route.target_id, tenantId)
+      : false;
+    try {
+      assertValidRouteTarget(route.target_type, route.target_id, targetExists);
+    } catch (err) {
+      if (err instanceof RouteTargetInvalidError) {
+        throw new InboundRouteInputError(
+          route.target_id
+            ? err.message
+            : 'Route must have a target_id to be activated',
+        );
+      }
+      throw err;
     }
 
     const hasConflict = await this.repo.hasConflictingActiveRoute(tenantId, route.match_type, route.match_value, id);
@@ -217,4 +237,56 @@ export class InboundRouteService {
     if (!updated) throw new InboundRouteNotFoundError(id);
     return updated;
   }
+}
+
+function validateMatchValue(matchType: InboundRoute['match_type'], matchValue: string): void {
+  if (matchType !== 'pattern') return;
+
+  if (matchValue.length > MAX_PATTERN_MATCH_VALUE_LENGTH) {
+    throw new InboundRouteInputError(`Pattern match_value must be ${MAX_PATTERN_MATCH_VALUE_LENGTH} characters or fewer`);
+  }
+
+  if (!hasSupportedPatternSyntax(matchValue)) {
+    throw new InboundRouteInputError('Pattern match_value must be a valid regular expression');
+  }
+
+  if (NESTED_QUANTIFIER_PATTERN.test(matchValue)) {
+    throw new InboundRouteInputError('Pattern match_value contains a nested quantified expression');
+  }
+}
+
+function hasSupportedPatternSyntax(pattern: string): boolean {
+  let escaped = false;
+  let bracketDepth = 0;
+  let groupDepth = 0;
+
+  for (const char of pattern) {
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (char < ' ') return false;
+    if (char === '[') {
+      bracketDepth += 1;
+      continue;
+    }
+    if (char === ']') {
+      bracketDepth -= 1;
+      if (bracketDepth < 0) return false;
+      continue;
+    }
+    if (bracketDepth > 0) continue;
+    if (char === '(') {
+      groupDepth += 1;
+    } else if (char === ')') {
+      groupDepth -= 1;
+      if (groupDepth < 0) return false;
+    }
+  }
+
+  return !escaped && bracketDepth === 0 && groupDepth === 0;
 }

@@ -335,14 +335,14 @@ describe('API integration', () => {
     const wrongToken = await app.inject({
       method: 'GET',
       url: `/api/v1/freeswitch/directory?user=300&domain=${domain}`,
-      headers: { 'x-managecallai-runtime-token': 'wrong-token' },
+      headers: { authorization: 'Basic ' + Buffer.from('fs:wrong-token').toString('base64') },
     });
     expect(wrongToken.statusCode).toBe(401);
 
     const wrongDomain = await app.inject({
       method: 'GET',
-      url: `/api/v1/freeswitch/directory?user=300&domain=wrong.managecallai.local`,
-      headers: { 'x-managecallai-runtime-token': runtimeToken },
+      url: '/api/v1/freeswitch/directory?user=300&domain=wrong.managecallai.local',
+      headers: { authorization: 'Basic ' + Buffer.from(`fs:${runtimeToken}`).toString('base64') },
     });
     expect(wrongDomain.statusCode).toBe(404);
     expect(wrongDomain.body).toContain('<groups />');
@@ -350,7 +350,7 @@ describe('API integration', () => {
     const success = await app.inject({
       method: 'GET',
       url: `/api/v1/freeswitch/directory?user=300&domain=${domain}`,
-      headers: { 'x-managecallai-runtime-token': runtimeToken },
+      headers: { authorization: 'Basic ' + Buffer.from(`fs:${runtimeToken}`).toString('base64') },
     });
     expect(success.statusCode).toBe(200);
     expect(success.body).toContain('DirPass123!');
@@ -408,7 +408,7 @@ describe('API integration', () => {
     const ingest = await app.inject({
       method: 'POST',
       url: '/api/v1/call-events/internal/ingest',
-      headers: { authorization: `Bearer ${runtimeToken}` },
+      headers: { authorization: `Bearer ${runtimeToken}`, 'x-tenant-id': tenantId },
       payload: {
         tenant_id: tenantId,
         call_id: 'call-1',
@@ -416,6 +416,18 @@ describe('API integration', () => {
       },
     });
     expect(ingest.statusCode).toBe(201);
+
+    const mismatchedTenant = await app.inject({
+      method: 'POST',
+      url: '/api/v1/call-events/internal/ingest',
+      headers: { authorization: `Bearer ${runtimeToken}`, 'x-tenant-id': randomUUID() },
+      payload: {
+        tenant_id: tenantId,
+        call_id: 'call-2',
+        event_type: 'channel_create',
+      },
+    });
+    expect(mismatchedTenant.statusCode).toBe(400);
 
     const forbiddenTenant = await app.inject({
       method: 'GET',

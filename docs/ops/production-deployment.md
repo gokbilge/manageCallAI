@@ -21,6 +21,11 @@ Every required variable is documented in `apps/api/src/config/env.ts`. Minimum r
 | `SIP_SECRET_KEY_ID` | Label for the active key version. |
 | `APP_ENV` | Set to `production`. Enables secret validation and disables token fallback. |
 | `PLATFORM_OPERATOR_EMAILS` | Comma-separated list of emails that receive `platform_admin` role at login. |
+| `RATE_LIMIT_WINDOW_MS` | Rate-limit window. Default `60000`. |
+| `RATE_LIMIT_AUTH_MAX` | Auth requests per window per client key. Default `100`. |
+| `RATE_LIMIT_RUNTIME_MAX` | Runtime and FreeSWITCH requests per window per client key. Default `1200`. |
+| `RATE_LIMIT_WEBHOOK_MAX` | Webhook-management requests per window per client key. Default `300`. |
+| `RATE_LIMIT_OUTBOUND_MAX` | Outbound call-initiation requests per window per client key. Default `60`. |
 
 The FreeSWITCH agent requires:
 
@@ -41,34 +46,18 @@ admin credentials exist. The registration endpoint is rate-limited in production
 If `PLATFORM_OPERATOR_EMAILS` includes the registering email, the JWT will carry
 `role=platform_admin`. This is the recommended bootstrap path for the platform operator.
 
-## Runtime edge security
+## Edge rate limits and TDoS controls
 
-Runtime HTTP endpoints used by FreeSWITCH and adapter agents must not be exposed
-directly to the public internet in production.
+The API applies in-process rate limits to auth, runtime/FreeSWITCH, webhook
+management, and outbound call-initiation endpoints. For FreeSWITCH nodes, the client
+key includes the source IP plus a one-way hash of the runtime credential and tenant
+header, so leaked logs do not expose bearer tokens.
 
-Protect these paths behind an internal network boundary or runtime edge gateway:
-
-- `/api/v1/freeswitch/*`
-- `/api/v1/runtime/*`
-- internal event, CDR, registration, recording, and provider-work ingest paths
-
-The production target is node-specific authentication, not only a shared runtime
-token. Each FreeSWITCH node should have:
-
-- node id
-- active/next token key id for rotation
-- allowed source CIDRs
-- allowed runtime endpoint capabilities
-- per-endpoint-family rate limits
-
-Signed runtime requests should include node id, timestamp, nonce, and signature
-headers. The verifier should reject disabled nodes, invalid signatures, stale
-timestamps, replayed nonces, wrong source networks, and capability mismatches.
-
-SIP scanner and TDoS controls belong at the SIP edge before traffic reaches
-FreeSWITCH. Use firewall rules, FreeSWITCH ACLs, fail2ban-style blocking, or an
-SBC/Kamailio/OpenSIPS front door for exposed SIP ports. See
-`docs/ops/runtime-edge-security.md`.
+Production deployments should still place `/api/v1/freeswitch/*` and
+`/api/v1/runtime/*` behind a private network, reverse proxy, or API gateway. Enforce
+TLS, allowlist FreeSWITCH node IPs, block known SIP scanner paths at the edge, and
+ensure access logs redact `Authorization`, `x-managecallai-runtime-token`, and any
+legacy `runtime_token` query parameter.
 
 ## Database migrations
 
@@ -103,9 +92,10 @@ For deployments behind NAT:
 ### SRTP
 
 Enable SRTP by adding `inbound-late-negotiation=true` and `rtp-secure-media=true` to
-the FreeSWITCH sofia profile. The manageCallAI API exposes `dtmf_mode` and `codec_prefs`
-per trunk but does not yet expose SRTP policy as a per-trunk field. Add SRTP config to
-the FreeSWITCH profile directly for now.
+the FreeSWITCH sofia profile. The manageCallAI API exposes `srtp_policy` per trunk:
+`disabled`, `optional`, or `required`. Treat `required` as an operational contract
+that the selected FreeSWITCH profile or gateway must be SRTP-capable before traffic
+is enabled.
 
 ## DTMF modes
 

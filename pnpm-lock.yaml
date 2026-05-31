@@ -18,6 +18,9 @@ importers:
       '@managecallai/contracts':
         specifier: workspace:*
         version: link:packages/contracts
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@22.19.19)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0)(tsx@4.22.3)(yaml@2.9.0))
       yaml:
         specifier: ^2.8.0
         version: 2.9.0
@@ -30,9 +33,6 @@ importers:
       '@fastify/jwt':
         specifier: ^10.1.0
         version: 10.1.0
-      '@fastify/rate-limit':
-        specifier: ^10.3.0
-        version: 10.3.0
       '@managecallai/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -67,9 +67,6 @@ importers:
       '@types/pg':
         specifier: ^8.11.0
         version: 8.20.0
-      '@vitest/coverage-v8':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4(@types/node@22.19.19)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0)(tsx@4.22.3)(yaml@2.9.0))
       eslint:
         specifier: ^9.0.0
         version: 9.39.4(jiti@2.7.0)
@@ -214,6 +211,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@managecallai/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       fastify:
         specifier: ^5.2.0
         version: 5.8.5
@@ -249,7 +249,7 @@ importers:
         specifier: ^3.25.0
         version: 3.25.76
       zod-to-json-schema:
-        specifier: ^3.25.2
+        specifier: ^3.24.0
         version: 3.25.2(zod@3.25.76)
     devDependencies:
       '@eslint/js':
@@ -802,9 +802,6 @@ packages:
 
   '@fastify/proxy-addr@5.1.0':
     resolution: {integrity: sha512-INS+6gh91cLUjB+PVHfu1UqcB76Sqtpyp7bnL+FYojhjygvOPA9ctiD/JDKsyD9Xgu4hUhCSJBPig/w7duNajw==}
-
-  '@fastify/rate-limit@10.3.0':
-    resolution: {integrity: sha512-eIGkG9XKQs0nyynatApA3EVrojHOuq4l6fhB4eeCk4PIOeadvOJz9/4w3vGI44Go17uaXOWEcPkaD8kuKm7g6Q==}
 
   '@hono/node-server@1.19.14':
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
@@ -3523,12 +3520,6 @@ snapshots:
     dependencies:
       '@fastify/forwarded': 3.0.1
       ipaddr.js: 2.4.0
-
-  '@fastify/rate-limit@10.3.0':
-    dependencies:
-      '@lukeed/ms': 2.0.2
-      fastify-plugin: 5.1.0
-      toad-cache: 3.7.1
 
   '@hono/node-server@1.19.14(hono@4.12.23)':
     dependencies:

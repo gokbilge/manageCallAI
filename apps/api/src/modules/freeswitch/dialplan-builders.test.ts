@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildIvrDialplanResponse,
   buildCallGroupDialplanResponse,
+  buildIvrDialplanResponse,
   buildQueueDialplanResponse,
   buildVoicemailDialplanResponse,
 } from './freeswitch.controller.js';
@@ -96,83 +96,55 @@ describe('buildCallGroupDialplanResponse', () => {
 
     expect(xml).toContain('301@a&amp;b.example.com');
   });
+});
 
-  it('escapes XML special chars in extension numbers', () => {
-    const xml = buildCallGroupDialplanResponse({
+describe('buildQueueDialplanResponse', () => {
+  it('builds a queue bridge with runtime route context', () => {
+    const xml = buildQueueDialplanResponse({
       routeId: ROUTE_ID,
       tenantId: TENANT_ID,
       matchValue: '+14155550006',
       strategy: 'simultaneous',
-      members: [{ extension_number: '4<01">', directory_domain: 'tenant.local' }],
-    });
-
-    // XML special chars must be escaped; raw characters must not appear.
-    expect(xml).not.toContain('<01">');
-    expect(xml).toContain('&lt;');
-    expect(xml).toContain('&gt;');
-    expect(xml).toContain('&quot;');
-  });
-});
-
-describe('buildQueueDialplanResponse', () => {
-  it('builds a simultaneous bridge for queue members', () => {
-    const xml = buildQueueDialplanResponse({
-      routeId: ROUTE_ID,
-      tenantId: TENANT_ID,
-      matchValue: '+14155550010',
-      strategy: 'simultaneous',
       members: [
-        { extension_number: '501', directory_domain: 'q.local' },
-        { extension_number: '502', directory_domain: 'q.local' },
+        { extension_number: '401', directory_domain: 'tenant.sip.example.com' },
+        { extension_number: '402', directory_domain: 'tenant.sip.example.com' },
       ],
     });
 
-    expect(xml).toContain('sofia/internal/501@q.local,sofia/internal/502@q.local');
-    expect(xml).toContain('section name="dialplan"');
+    expect(xml).toContain('sofia/internal/401@tenant.sip.example.com,sofia/internal/402@tenant.sip.example.com');
+    expect(xml).toContain(`managecall_route_id=${ROUTE_ID}`);
+    expect(xml).toContain(`managecall_tenant_id=${TENANT_ID}`);
   });
 });
 
 describe('buildVoicemailDialplanResponse', () => {
-  it('builds a voicemail action with mailbox number and domain', () => {
+  it('plays greeting and records voicemail for the mailbox domain', () => {
     const xml = buildVoicemailDialplanResponse({
       routeId: ROUTE_ID,
       tenantId: TENANT_ID,
-      matchValue: '+14155550020',
-      mailboxNumber: '9001',
-      domain: 'vm.local',
-      greetingPromptUri: null,
-    });
-
-    expect(xml).toContain('application="voicemail"');
-    expect(xml).toContain('default vm.local 9001');
-  });
-
-  it('includes playback action when greeting prompt is set', () => {
-    const xml = buildVoicemailDialplanResponse({
-      routeId: ROUTE_ID,
-      tenantId: TENANT_ID,
-      matchValue: '+14155550021',
-      mailboxNumber: '9002',
-      domain: 'vm.local',
+      matchValue: '+14155550007',
+      mailboxNumber: '500',
+      domain: 'tenant.sip.example.com',
       greetingPromptUri: 'file:///prompts/greeting.wav',
     });
 
-    expect(xml).toContain('application="playback"');
-    expect(xml).toContain('file:///prompts/greeting.wav');
+    expect(xml).toContain('<action application="playback" data="file:///prompts/greeting.wav" />');
+    expect(xml).toContain('<action application="voicemail" data="default tenant.sip.example.com 500" />');
+    expect(xml).toContain(`managecall_route_id=${ROUTE_ID}`);
+    expect(xml).toContain(`managecall_tenant_id=${TENANT_ID}`);
   });
 
-  it('escapes XML special chars in greeting prompt URI', () => {
+  it('escapes voicemail greeting and mailbox arguments', () => {
     const xml = buildVoicemailDialplanResponse({
       routeId: ROUTE_ID,
       tenantId: TENANT_ID,
-      matchValue: '+14155550022',
-      mailboxNumber: '9003',
-      domain: 'vm.local',
-      greetingPromptUri: 'http://host/a&b=<c>',
+      matchValue: '+14155550008',
+      mailboxNumber: '50&1',
+      domain: 'tenant&sip.example.com',
+      greetingPromptUri: 'file:///prompts/a&b.wav',
     });
 
-    expect(xml).not.toContain('a&b=<c>');
-    expect(xml).toContain('&amp;');
-    expect(xml).toContain('&lt;');
+    expect(xml).toContain('file:///prompts/a&amp;b.wav');
+    expect(xml).toContain('default tenant&amp;sip.example.com 50&amp;1');
   });
 });

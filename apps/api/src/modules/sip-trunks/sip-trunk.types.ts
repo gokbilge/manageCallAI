@@ -2,6 +2,7 @@ export type SipTrunkStatus = 'active' | 'inactive';
 export type SipTrunkDirection = 'inbound' | 'outbound' | 'bidirectional';
 export type SipTrunkTransport = 'udp' | 'tcp' | 'tls';
 export type SipTrunkDtmfMode = 'rfc2833' | 'info' | 'inband' | 'auto';
+export type SipTrunkSrtpPolicy = 'disabled' | 'optional' | 'required';
 
 export interface SipTrunk {
   id: string;
@@ -17,6 +18,7 @@ export interface SipTrunk {
   auth_username: string;
   dtmf_mode: SipTrunkDtmfMode;
   codec_prefs: string[] | null;
+  srtp_policy: SipTrunkSrtpPolicy;
   created_at: Date;
   updated_at: Date;
 }
@@ -32,6 +34,9 @@ export interface CreateSipTrunkBody {
   transport?: SipTrunkTransport;
   auth_username: string;
   auth_password: string;
+  dtmf_mode?: SipTrunkDtmfMode;
+  codec_prefs?: string[] | null;
+  srtp_policy?: SipTrunkSrtpPolicy;
 }
 
 export type CreateSipTrunkInput = CreateSipTrunkBody & { tenant_id: string };
@@ -50,6 +55,7 @@ export interface CreateSipTrunkRepoInput {
   auth_password_key_id: string;
   dtmf_mode?: SipTrunkDtmfMode;
   codec_prefs?: string[] | null;
+  srtp_policy?: SipTrunkSrtpPolicy;
 }
 
 export interface UpdateSipTrunkInput {
@@ -65,6 +71,7 @@ export interface UpdateSipTrunkInput {
   auth_password?: string;
   dtmf_mode?: SipTrunkDtmfMode;
   codec_prefs?: string[] | null;
+  srtp_policy?: SipTrunkSrtpPolicy;
 }
 
 export interface UpdateSipTrunkRepoInput {
@@ -81,4 +88,5 @@ export interface UpdateSipTrunkRepoInput {
   auth_password_key_id?: string;
   dtmf_mode?: SipTrunkDtmfMode;
   codec_prefs?: string[] | null;
+  srtp_policy?: SipTrunkSrtpPolicy;
 }

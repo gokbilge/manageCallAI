@@ -24,16 +24,9 @@ export class AutomationService {
   async createApiKey(
     tenantId: string,
     name: string,
-    capabilities: string[],
+    capabilities?: string[],
     createdBy?: string,
-    expiresAt?: Date | null,
   ): Promise<ApiKeyCreated> {
-    if (capabilities.length === 0) {
-      throw new Error('capabilities must not be empty — specify at least one capability');
-    }
-    if (capabilities.includes('*')) {
-      throw new Error("capabilities must not contain the wildcard '*' — specify explicit capability names");
-    }
     const { rawKey, keyHash, keyPrefix } = AutomationRepository.generateApiKey();
     const record = await this.repo.createApiKey({
       tenant_id: tenantId,
@@ -41,7 +34,6 @@ export class AutomationService {
       key_prefix: keyPrefix,
       key_hash: keyHash,
       capabilities,
-      expires_at: expiresAt,
       created_by: createdBy,
     });
     return { ...record, key: rawKey };
@@ -60,7 +52,6 @@ export class AutomationService {
     const keyHash = AutomationRepository.hashKey(rawKey);
     const record = await this.repo.findApiKeyByHash(keyHash);
     if (!record) return null;
-    if (record.expires_at !== null && record.expires_at <= new Date()) return null;
     return {
       sub: record.id,
       tenant_id: record.tenant_id,
@@ -109,9 +100,23 @@ export class AutomationService {
     return this.repo.findDeliveryQueueForWebhook(webhookId, tenantId);
   }
 
+  fireWebhooks(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): void {
+    void this.enqueueWebhooks(tenantId, event, data);
+  }
+
   async enqueueWebhooks(tenantId: string, event: WebhookEvent, data: Record<string, unknown>): Promise<WebhookDeliveryQueueItem[]> {
-    const payload = { event, tenant_id: tenantId, data, timestamp: new Date().toISOString() };
-    return this.repo.enqueueWebhookDeliveries({ tenant_id: tenantId, event, payload_json: payload });
+    const payload = {
+      event,
+      tenant_id: tenantId,
+      timestamp: new Date().toISOString(),
+      version: 1,
+      data,
+    };
+    try {
+      return await this.repo.enqueueWebhookDeliveries({ tenant_id: tenantId, event, payload_json: payload });
+    } catch {
+      return [];
+    }
   }
 
   listAbandonedDeliveries(tenantId: string, limit?: number): Promise<WebhookDeliveryQueueItem[]> {
@@ -154,7 +159,8 @@ export class AutomationService {
     url: string;
   }): Promise<boolean> {
     const payload = JSON.stringify(delivery.payload_json);
-    const sig = AutomationRepository.signPayload(delivery.signing_secret, payload);
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const sig = AutomationRepository.signPayload(delivery.signing_secret, `${timestamp}.${payload}`);
     const start = Date.now();
     let status: 'success' | 'failed' = 'failed';
     let responseCode: number | null = null;
@@ -166,9 +172,12 @@ export class AutomationService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-ManageCall-Signature': `sha256=${sig}`,
+          'X-ManageCall-Signature-256': `sha256=${sig}`,
           'X-ManageCall-Event': delivery.event,
-          ...(eventId ? { 'Webhook-Event-Id': eventId } : {}),
+          'X-ManageCall-Timestamp': timestamp,
+          'X-ManageCall-Tenant': delivery.tenant_id,
+          'X-ManageCall-Version': '1',
+          ...(eventId ? { 'X-ManageCall-Delivery': eventId } : {}),
         },
         body: payload,
         signal: AbortSignal.timeout(10_000),

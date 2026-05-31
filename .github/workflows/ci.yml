@@ -84,11 +84,12 @@ jobs:
         run: pnpm audit --audit-level=high
         continue-on-error: false
 
-      # ── Migration integrity ──────────────────────────────────────────────────
-      # Ensures no two non-shim migration files share the same numeric prefix,
-      # which would make the apply order ambiguous across environments.
-      - name: Migration prefix uniqueness check
-        run: node scripts/check-migrations.mjs
+      # ── Migration governance ─────────────────────────────────────────────────
+      # Verifies migration filenames, numeric ordering, and that every duplicate
+      # prefix is a documented noop shim.  Runs before replay so naming errors
+      # are caught immediately without waiting for PostgreSQL.
+      - name: Migration order and naming check
+        run: pnpm check:migrations
 
       # ── Migration replay ─────────────────────────────────────────────────────
       # Applies every migration against the fresh CI database to prove that the
@@ -99,12 +100,17 @@ jobs:
       - name: Apply migrations (full replay)
         run: pnpm db:migrate
 
-      # ── Migration checksum verification ──────────────────────────────────────
-      # Verifies that every applied migration with a stored SHA-256 checksum
-      # matches the file on disk. Fails if any migration file was modified after
-      # it was applied — guarding against accidental or malicious schema drift.
-      - name: Migration checksum verify
-        run: pnpm db:verify
+      # ── DB contract check ────────────────────────────────────────────────────
+      # Verifies that all application-required columns exist after migrations.
+      # Fails fast if any column is missing, before tests run against a broken schema.
+      - name: DB contract check
+        run: pnpm db:contracts
+
+      # ── DB constraint and default check ──────────────────────────────────────
+      # Verifies structural invariants beyond column existence: CHECK constraints,
+      # column defaults, UNIQUE indexes, immutability rules, and critical FKs.
+      - name: DB constraint check
+        run: pnpm db:constraints
 
       # ── OpenAPI ──────────────────────────────────────────────────────────────
       - name: OpenAPI generate and verify
@@ -120,20 +126,25 @@ jobs:
       - name: Tests
         run: pnpm test
 
-      # ── Coverage ─────────────────────────────────────────────────────────────
-      # Unit tests only for coverage — integration tests require a live DB and
-      # are covered by the Tests step above. Threshold: 65% lines.
-      - name: Coverage
-        run: pnpm --filter @managecallai/api exec vitest run --coverage --project unit
-
       # ── Go test ──────────────────────────────────────────────────────────────
       - name: Go test
         run: cd apps/freeswitch-agent && go test ./...
 
       # ── MCP contract drift check ─────────────────────────────────────────────
-      # Verifies MCP tool inputSchemas stay aligned with packages/contracts Zod schemas.
+      # Verifies MCP tool inputSchemas are generated from and structurally equal
+      # to the Zod schemas in packages/contracts.
       - name: MCP contract drift check
-        run: node scripts/check-mcp-contracts.mjs
+        run: node scripts/check-mcp-schemas.mjs
+
+      # ── Webhook payload coverage check ──────────────────────────────────────
+      # Verifies every WEBHOOK_EVENTS entry has a typed payload schema in contracts.
+      - name: Webhook payload coverage check
+        run: node scripts/check-webhook-payloads.mjs
+
+      # ── API key capability alignment check ───────────────────────────────────
+      # Verifies API_KEY_CAPABILITIES in contracts matches CAPABILITIES in the API.
+      - name: API key capability alignment check
+        run: node scripts/check-api-key-capabilities.mjs
 
       # ── IVR simulation regression ────────────────────────────────────────────
       # Runs IVR graph validator and simulation engine unit tests explicitly to

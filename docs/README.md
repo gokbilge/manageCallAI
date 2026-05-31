@@ -43,6 +43,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [development/first-vertical-slice.md](development/first-vertical-slice.md)
   Fresh-checkout smoke test for the MVP path: tenant registration, encrypted SIP credential storage, and FreeSWITCH directory XML lookup.
 
+- [development/github-workflow.md](development/github-workflow.md)
+  Protected-branch GitHub workflow for branches, draft PRs, CI, CODEOWNERS review, audit issues, and maintainer identity.
+
 - [development/live-freeswitch-registration.md](development/live-freeswitch-registration.md)
   Full local runtime proof: stock FreeSWITCH startup, containerized ESL agent, real SIP REGISTER, and persisted `registration_seen` event.
 

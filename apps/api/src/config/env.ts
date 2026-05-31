@@ -20,6 +20,23 @@ const defaultRuntimeApiToken = 'change-me-runtime-token';
 const defaultSipSecretMasterKey =
   '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
+function parseBoolean(key: string, defaultValue: boolean): boolean {
+  const value = process.env[key];
+  if (value === undefined || value.trim() === '') return defaultValue;
+
+  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
+}
+
+function parsePositiveInt(key: string, defaultValue: number): number {
+  const raw = process.env[key];
+  if (raw === undefined || raw.trim() === '') return defaultValue;
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${key} must be a positive integer`);
+  }
+  return value;
+}
+
 function assertProductionSecret(
   name: string,
   value: string,
@@ -45,14 +62,22 @@ const configValues = {
   runtimeApiToken: required('RUNTIME_API_TOKEN'),
   sipSecretMasterKey: required('SIP_SECRET_MASTER_KEY'),
   sipSecretKeyId: required('SIP_SECRET_KEY_ID'),
+  allowRuntimeTokenFallback: parseBoolean('ALLOW_RUNTIME_TOKEN_FALLBACK', !isProduction),
   platformOperatorEmails: (process.env['PLATFORM_OPERATOR_EMAILS'] ?? '')
     .split(',')
     .map((e) => e.trim())
     .filter(Boolean),
   platformApiHealthUrl: process.env['PLATFORM_API_HEALTH_URL'] ?? 'http://localhost:3000/health',
   platformWorkerHealthUrl: process.env['PLATFORM_WORKER_HEALTH_URL'] ?? 'http://localhost:3400/health',
+  platformFreeswitchAgentHealthUrl:
+    process.env['PLATFORM_FREESWITCH_AGENT_HEALTH_URL'] ?? 'http://localhost:3500/health',
   webhookWorkerIntervalMs: parseInt(process.env['WEBHOOK_WORKER_INTERVAL_MS'] ?? '1000', 10),
   recordingStorageRoot: resolve(process.env['RECORDING_STORAGE_ROOT'] ?? 'recordings'),
+  rateLimitWindowMs: parsePositiveInt('RATE_LIMIT_WINDOW_MS', 60_000),
+  rateLimitAuthMax: parsePositiveInt('RATE_LIMIT_AUTH_MAX', 100),
+  rateLimitRuntimeMax: parsePositiveInt('RATE_LIMIT_RUNTIME_MAX', 1_200),
+  rateLimitWebhookMax: parsePositiveInt('RATE_LIMIT_WEBHOOK_MAX', 300),
+  rateLimitOutboundMax: parsePositiveInt('RATE_LIMIT_OUTBOUND_MAX', 60),
 } as const;
 
 if (configValues.isProduction) {
