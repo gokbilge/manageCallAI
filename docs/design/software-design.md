@@ -137,6 +137,8 @@ Responsibilities:
 - Require branch-based PR workflow for code, docs, CI, and architecture changes
 - Map unresolved audit findings to GitHub Issues with severity, risk, area, and
   milestone metadata
+- Link each unresolved finding to the issue that tracks execution
+- Close or update linked issues when the finding is fixed or accepted
 - Keep PR summaries, issue comments, commit messages, and audit issue bodies under
   the configured maintainer or contributor identity without AI-agent attribution
 
