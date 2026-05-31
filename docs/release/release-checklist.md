@@ -2,6 +2,18 @@
 
 Use this checklist before promoting manageCallAI beyond development or staging.
 
+## Release Classification
+
+| Release | Status | Minimum Gate |
+|---|---|---|
+| Internal alpha | Allowed | Main CI green, demo loop works locally, runtime proof verified manually |
+| Public alpha | Conditional | `docs/release/public-alpha-readiness.md` checklist complete |
+| Public beta | Blocked | Self-hosted FreeSWITCH smoke CI, usable visual IVR/HUD, broader isolation/runtime tests |
+| Production | Blocked | Runtime E2E release gate, tested deployment/backup/restore/upgrade, fraud controls, soak testing |
+
+Do not describe manageCallAI as production-ready until the production checklist
+and release smoke evidence are complete.
+
 ## Required Gates
 
 - `pnpm install --frozen-lockfile`
