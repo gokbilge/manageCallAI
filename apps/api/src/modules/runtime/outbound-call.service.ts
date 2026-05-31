@@ -63,11 +63,9 @@ export class OutboundCallService {
       throw new OutboundCallValidationError('No active outbound route matches the dial number');
     }
 
-    if (trunkId) {
-      const trunk = await this.repo.findActiveTrunk(input.tenant_id, trunkId);
-      if (!trunk) {
-        throw new OutboundCallValidationError(`Resolved SIP trunk is not active: ${trunkId}`);
-      }
+    const trunk = await this.repo.findActiveTrunk(input.tenant_id, trunkId);
+    if (!trunk) {
+      throw new OutboundCallValidationError(`Resolved SIP trunk is not active: ${trunkId}`);
     }
 
     await this.assertOutboundRateAllowed(input.tenant_id, routeId, trunkId, maxCallsPerMinute);

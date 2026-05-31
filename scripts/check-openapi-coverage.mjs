@@ -78,11 +78,17 @@ for (const { lineIdx, path, method } of operations) {
       // Could be next method — check if it's an HTTP method
       const nextMethod = l.match(/^    (get|post|put|patch|delete|head|options):\s*$/);
       if (nextMethod) break;
+      if (inResponses) inResponses = false;
     }
     if (/^  \//.test(l) || /^[a-zA-Z]/.test(l)) break;
 
     if (/^      responses:\s*$/.test(l)) {
       inResponses = true;
+      continue;
+    }
+
+    if (inResponses && /^      [^ ]/.test(l) && !/^      default\s*:/.test(l)) {
+      inResponses = false;
     }
 
     if (inResponses && /^\s+default\s*:/.test(l)) {
