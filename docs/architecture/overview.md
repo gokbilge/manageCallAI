@@ -40,6 +40,12 @@ External systems such as FreeSWITCH, browsers, AI agents, and workflow engines i
 
 manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSWITCH through supported extension interfaces and keeps project-specific logic outside the switch runtime.
 
+The repository itself is operated through GitHub as a protected collaboration
+boundary. `main` is not the normal write path. Changes flow through focused
+branches, draft pull requests, required CI/security checks, CODEOWNERS review,
+and GitHub merge. Audit findings that remain unresolved are tracked as GitHub
+Issues and linked back to the audit record.
+
 ## 4.1 Responsibility Split
 
 - Business logic: manageCallAI backend
@@ -252,6 +258,7 @@ These may run as separate services or a small number of deployable units dependi
 - Boundary E: Control plane to FreeSWITCH and runtime event sources
 - Boundary F: Control plane to external provider adapters and provider APIs
 - Boundary G: Browser live-observability stream to control plane
+- Boundary H: Contributor or automation changes to protected GitHub branches
 
 Each boundary requires authentication, authorization, input validation, and operational logging where applicable.
 
@@ -314,5 +321,9 @@ Each boundary requires authentication, authorization, input validation, and oper
 ## 15. Relationship to Other Documents
 
 - `source-of-truth.md` defines canonical direction and boundaries
+- `runtime-boundaries.md` defines what belongs in the API, Go agent, Lua, and FreeSWITCH
+- `publishable-object-lifecycle.md` defines desired state, runtime state, lifecycle states, rollback, business events, and runtime-generated artifacts
+- `architecture-review-checklist.md` is the contributor checklist for boundary-sensitive changes
+- `architecture-drift-risks.md` identifies high-risk drift areas across API, web, MCP, n8n, Go agent, Lua, contracts, and DB
 - `../requirements/srs.md` defines what the system must do
 - `../design/software-design.md` defines how the software is logically decomposed

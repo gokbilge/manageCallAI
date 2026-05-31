@@ -89,9 +89,17 @@ export const SimulationFinalActionSchema = z.object({
 }).openapi('SimulationFinalAction');
 export type SimulationFinalAction = z.infer<typeof SimulationFinalActionSchema>;
 
+export const SimulationStepSchema = z.object({
+  node_id: z.string(),
+  category: z.enum(['start', 'task', 'gateway', 'end']),
+  edge_id: z.string().optional(),
+}).openapi('SimulationStep');
+export type SimulationStep = z.infer<typeof SimulationStepSchema>;
+
 export const SimulationOutcomeSchema = z.object({
   status: z.enum(['passed', 'failed']),
   path: z.array(z.string()),
+  steps: z.array(SimulationStepSchema),
   final_action: SimulationFinalActionSchema.nullable(),
   errors: z.array(FlowValidationErrorSchema),
 }).openapi('SimulationOutcome');
@@ -110,6 +118,19 @@ export const PublishAttemptResultSchema = z.object({
   approval_request_id: z.string().uuid().optional(),
 }).openapi('PublishAttemptResult');
 export type PublishAttemptResult = z.infer<typeof PublishAttemptResultSchema>;
+
+// ── Dry-run publish result ────────────────────────────────────────────────────
+// Returned when dry_run=true on a publish request. No state is mutated.
+// Contains the same policy/validation outcome that a real publish would produce.
+
+export const DryRunPublishResultSchema = z.object({
+  dry_run: z.literal(true),
+  would_become: z.enum(['published', 'pending_approval']),
+  require_approval: z.boolean(),
+  version_state_valid: z.boolean(),
+  actor_type: z.enum(['user', 'workflow', 'ai_agent', 'system']),
+}).openapi('DryRunPublishResult');
+export type DryRunPublishResult = z.infer<typeof DryRunPublishResultSchema>;
 
 export const FlowValidationHistoryEntrySchema = z.object({
   id: z.string().uuid(),
@@ -204,3 +225,49 @@ export const IVR_NODE_TYPES = [
 ] as const;
 
 export type IvrNodeType = (typeof IVR_NODE_TYPES)[number];
+
+// ── BPMN-inspired graph model ─────────────────────────────────────────────────
+
+export const GRAPH_MODEL_VERSION = 'ivr-bpmn-v1' as const;
+export type GraphModelVersion = typeof GRAPH_MODEL_VERSION;
+
+export const IVR_NODE_CATEGORIES = ['start', 'task', 'gateway', 'end'] as const;
+export type IvrNodeCategory = (typeof IVR_NODE_CATEGORIES)[number];
+
+// Maps each supported node type to its BPMN-inspired execution category.
+// start → single graph entry; task → action with continuation; gateway → exclusive branch; end → terminal.
+export const IVR_NODE_CATEGORY_MAP: Record<IvrNodeType, IvrNodeCategory> = {
+  start: 'start',
+  play_prompt: 'task',
+  play_collect: 'task',
+  set_variable: 'task',
+  switch: 'gateway',
+  business_hours: 'gateway',
+  caller_id_match: 'gateway',
+  transfer_extension: 'end',
+  queue: 'end',
+  voicemail_drop: 'end',
+  hangup: 'end',
+} as const;
+
+// Known BPMN-only node type names that are explicitly unsupported. These appear
+// in raw BPMN 2.0 XML exports and must never be present in ivr-bpmn-v1 graphs.
+export const BPMN_ONLY_NODE_TYPES = [
+  'parallelGateway',
+  'inclusiveGateway',
+  'eventBasedGateway',
+  'compensateBoundaryEvent',
+  'subProcess',
+  'callActivity',
+  'humanTask',
+  'userTask',
+  'serviceTask',
+  'messageStartEvent',
+  'timerStartEvent',
+  'errorBoundaryEvent',
+  'intermediateCatchEvent',
+  'intermediateThrowEvent',
+  'terminateEndEvent',
+] as const;
+
+export type BpmnOnlyNodeType = (typeof BPMN_ONLY_NODE_TYPES)[number];

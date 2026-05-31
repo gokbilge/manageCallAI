@@ -122,22 +122,25 @@ Responsibilities:
 - Accept approved automation entry points
 - Bridge external workflow systems to control-plane operations
 
-### 3.7.1 Audit and Issue Tracking
+### 3.7.1 Repository Governance Layer
 
 Implementation direction:
 
-- Markdown audit records in `docs/audit/audits/`
-- GitHub Issues and Projects for unresolved audit work
+- GitHub Issues for execution tracking
+- GitHub Projects and milestones for roadmap coordination
+- Protected branches, pull requests, CODEOWNERS, and required CI for changes
+- Audit records under `docs/audit/audits/` for evidence
 
 Responsibilities:
 
-- Keep audit records as the evidence trail for what was reviewed
-- Create or update GitHub issues for audit findings that remain unresolved
+- Keep `main` protected from the normal direct-commit path
+- Require branch-based PR workflow for code, docs, CI, and architecture changes
+- Map unresolved audit findings to GitHub Issues with severity, risk, area, and
+  milestone metadata
 - Link each unresolved finding to the issue that tracks execution
-- Use area, type, priority, and risk labels so audit debt enters normal triage
 - Close or update linked issues when the finding is fixed or accepted
-- Keep commits, pushes, PRs, and issue comments under the configured maintainer
-  or contributor identity, without AI-agent names or generated-by markers
+- Keep PR summaries, issue comments, commit messages, and audit issue bodies under
+  the configured maintainer or contributor identity without AI-agent attribution
 
 ### 3.8 Provider Adapter Layer
 

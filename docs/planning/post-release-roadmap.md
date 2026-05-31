@@ -190,3 +190,16 @@ that reduce operational risk or complete already-started workflows.
 - `SLICE-30` Automation Operator Tools
 - `SLICE-31` Prompt and IVR AI Integration Contracts
 - `SLICE-32` Omnichannel Messaging and Meeting Adapters
+
+### Reliability and production readiness lanes
+
+- `SLICE-43` MVP Demonstrable Reliability
+- `SLICE-44` Production Readiness Hardening
+
+`SLICE-43` is P1 and should be treated as release-confidence work: FreeSWITCH E2E
+profile, publish/rollback smoke tests, generated SDK usage in tests, expanded XML
+golden coverage, importable n8n examples, and visual IVR completion.
+
+`SLICE-44` is P2 and should follow the reliability lane: rate limits, audit
+immutability, webhook signing, API-key scopes, observability, SIP/TLS/SRTP/NAT
+guidance, backup/restore and migration playbooks, and outbound fraud prevention.

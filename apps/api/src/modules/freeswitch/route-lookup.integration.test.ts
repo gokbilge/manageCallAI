@@ -466,9 +466,12 @@ describe('Route Lookup API integration', () => {
     const domain = `tenant-${suffix}.managecallai.local`;
     const res = await app.inject({
       method: 'POST',
-      url: `/api/v1/freeswitch/dialplan?runtime_token=test-runtime-token`,
+      url: '/api/v1/freeswitch/dialplan',
       payload: `Caller-Destination-Number=%2B15554440002&domain=${encodeURIComponent(domain)}`,
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: 'Basic ' + Buffer.from('fs:test-runtime-token').toString('base64'),
+      },
     });
     expect(res.statusCode).toBe(200);
     expect(res.body).toContain('sofia/internal/5002@');

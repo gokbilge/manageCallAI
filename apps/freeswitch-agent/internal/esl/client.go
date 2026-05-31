@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/config"
@@ -18,6 +20,14 @@ type Client struct {
 	config    config.Config
 	logger    *slog.Logger
 	forwarder *forwarder.APIForwarder
+	mu        sync.RWMutex
+	health    HealthStatus
+}
+
+type HealthStatus struct {
+	Connected       bool   `json:"esl_connected"`
+	LastConnectedAt string `json:"last_connected_at,omitempty"`
+	LastEventAt     string `json:"last_event_at,omitempty"`
 }
 
 func NewClient(cfg config.Config, logger *slog.Logger) *Client {
@@ -30,23 +40,31 @@ func NewClient(cfg config.Config, logger *slog.Logger) *Client {
 
 func (c *Client) Connect(ctx context.Context) error {
 	address := fmt.Sprintf("%s:%d", c.config.ESLHost, c.config.ESLPort)
+	attempt := 0
 
 	for {
 		if ctx.Err() != nil {
 			return nil
 		}
 
+		started := time.Now()
 		if err := c.runSession(ctx, address); err != nil {
 			c.logger.Warn("esl session ended",
 				slog.String("address", address),
 				slog.String("error", err.Error()),
 			)
 		}
+		if time.Since(started) > time.Minute {
+			attempt = 0
+		}
+
+		delay := reconnectDelay(attempt)
+		attempt++
 
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(3 * time.Second):
+		case <-time.After(delay):
 		}
 	}
 }
@@ -74,6 +92,8 @@ func (c *Client) runSession(ctx context.Context, address string) error {
 	if err := c.subscribe(reader, conn); err != nil {
 		return err
 	}
+	c.setConnected(true)
+	defer c.setConnected(false)
 
 	c.logger.Info("esl subscription active", slog.String("address", address))
 
@@ -91,6 +111,7 @@ func (c *Client) runSession(ctx context.Context, address string) error {
 		if !isEventMessage(msg.Headers) {
 			continue
 		}
+		c.setLastEventAt(time.Now().UTC())
 
 		payload := parsePlainEvent(msg.Body)
 		normalized, ok := events.NormalizeMVP(payload, c.config.TenantID)
@@ -145,9 +166,7 @@ func (c *Client) authenticate(reader *bufio.Reader, conn net.Conn) error {
 }
 
 func (c *Client) subscribe(reader *bufio.Reader, conn net.Conn) error {
-	commands := []string{
-		"events plain all",
-	}
+	commands := subscriptionCommands()
 
 	for _, command := range commands {
 		if _, err := fmt.Fprintf(conn, "%s\n\n", command); err != nil {
@@ -165,6 +184,53 @@ func (c *Client) subscribe(reader *bufio.Reader, conn net.Conn) error {
 	}
 
 	return nil
+}
+
+func (c *Client) Health() HealthStatus {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.health
+}
+
+func (c *Client) setConnected(connected bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.health.Connected = connected
+	if connected {
+		c.health.LastConnectedAt = time.Now().UTC().Format(time.RFC3339Nano)
+	}
+}
+
+func (c *Client) setLastEventAt(t time.Time) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.health.LastEventAt = t.Format(time.RFC3339Nano)
+}
+
+func subscriptionCommands() []string {
+	return []string{
+		"event plain CHANNEL_CREATE CHANNEL_ANSWER CHANNEL_HANGUP CUSTOM RECORD_START RECORD_STOP",
+	}
+}
+
+func reconnectDelay(attempt int) time.Duration {
+	if attempt < 0 {
+		attempt = 0
+	}
+	if attempt > 5 {
+		attempt = 5
+	}
+
+	base := time.Second << attempt
+	if base > 30*time.Second {
+		base = 30 * time.Second
+	}
+
+	jitterCap := int64(base / 2)
+	if jitterCap <= 0 {
+		return base
+	}
+	return base + time.Duration(rand.Int63n(jitterCap+1))
 }
 
 func isEventMessage(headers map[string]string) bool {

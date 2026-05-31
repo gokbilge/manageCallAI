@@ -40,8 +40,8 @@ An audit covers all of:
 7. Grep for `SELECT \*`, `RETURNING \*`, `console\.`, `TODO`, `FIXME`, `sip_password[^_]`.
 8. Verify every route that should require auth has a preHandler; spot-check with a curl with no token.
 9. Produce a findings list and write it to `docs/audit/audits/<YYYY-MM-DD>-<slug>.md`.
-10. For each finding that remains `open`, `in-progress`, or `accepted`, create or
-    update a GitHub issue before closing the audit session.
+10. For each finding that remains `open`, `in-progress`, or `accepted`, create
+    or update a GitHub issue before closing the audit session.
 
 ## Audit document format
 
@@ -70,7 +70,7 @@ Finding IDs use the format `AUD-YYYY-MM-DD-NNN` (three-digit sequence within the
 
 ## GitHub issue tracking
 
-Audit records are the canonical evidence trail, but GitHub issues are the
+Audit records are the canonical evidence trail, but GitHub Issues are the
 execution tracker for unresolved work.
 
 For every audit finding that is not resolved in the same session:

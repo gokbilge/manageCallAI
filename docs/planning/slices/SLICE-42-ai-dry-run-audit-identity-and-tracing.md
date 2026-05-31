@@ -1,5 +1,24 @@
 # SLICE-42 AI Dry-Run, Audit Identity, And Tracing
 
+## Status
+
+**COMPLETED**
+
+Audited 2026-05-30. All acceptance criteria are met:
+
+- **Dry-run mode**: `IvrFlowService.dryRunPublish()` runs the same policy/version-state checks as `publish()`
+  but writes no DB rows, creates no approvals, emits no webhooks. `DryRunPublishResult` type exported from
+  both service and contracts. 5 dry-run unit tests prove: (a) no side effects, (b) same policy path as apply mode,
+  (c) actor_type preserved in result.
+- **AI actor identity**: `AuthClaims` extended with `actor_type`, `tool_name`, `mcp_session_id`, `api_key_id`.
+  `resolveActorIdentity()` reads `X-MCP-Tool-Name`, `X-MCP-Session-ID`, `X-API-Key-ID` headers and infers
+  actor_type from capability set. `buildActorMetadata()` produces structured audit metadata. 12 unit tests
+  covering inferred types, header stamping, and the "cannot downgrade to user" invariant.
+- **OpenTelemetry**: Lightweight no-op stub in `apps/api/src/tracing/tracing.ts`. Enabled only when
+  `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Safe span attribute documentation included. SDK installation
+  instructions in module header.
+- `pnpm build` and `pnpm lint` clean across contracts and API.
+
 ## Goal
 
 Complete the deferred AI and operations safety foundations that were intentionally

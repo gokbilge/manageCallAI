@@ -1,3 +1,4 @@
+import { mcpToolInputSchemas } from '@managecallai/contracts';
 import { apiCall } from '../api-client.js';
 
 export const RUNTIME_TOOLS = [
@@ -5,28 +6,13 @@ export const RUNTIME_TOOLS = [
     name: 'list_sessions',
     description:
       'List IVR runtime sessions for this tenant. Filter by status to see running, completed, or failed sessions.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        status: {
-          type: 'string',
-          enum: ['running', 'completed', 'failed'],
-          description: 'Optional status filter',
-        },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.list_sessions,
   },
   {
     name: 'get_session',
     description:
       'Get the full replay for a runtime session: session state, step-by-step node traversal, and associated call events.',
-    inputSchema: {
-      type: 'object' as const,
-      required: ['session_id'],
-      properties: {
-        session_id: { type: 'string', description: 'UUID of the runtime session' },
-      },
-    },
+    inputSchema: mcpToolInputSchemas.get_session,
   },
 ] as const;
 
