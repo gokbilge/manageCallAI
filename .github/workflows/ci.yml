@@ -84,6 +84,13 @@ jobs:
         run: pnpm audit --audit-level=high
         continue-on-error: false
 
+      # ── Migration governance ─────────────────────────────────────────────────
+      # Verifies migration filenames, numeric ordering, and that every duplicate
+      # prefix is a documented noop shim.  Runs before replay so naming errors
+      # are caught immediately without waiting for PostgreSQL.
+      - name: Migration order and naming check
+        run: pnpm check:migrations
+
       # ── Migration replay ─────────────────────────────────────────────────────
       # Applies every migration against the fresh CI database to prove that the
       # migration chain is coherent and all SQL is valid.
@@ -92,6 +99,18 @@ jobs:
 
       - name: Apply migrations (full replay)
         run: pnpm db:migrate
+
+      # ── DB contract check ────────────────────────────────────────────────────
+      # Verifies that all application-required columns exist after migrations.
+      # Fails fast if any column is missing, before tests run against a broken schema.
+      - name: DB contract check
+        run: pnpm db:contracts
+
+      # ── DB constraint and default check ──────────────────────────────────────
+      # Verifies structural invariants beyond column existence: CHECK constraints,
+      # column defaults, UNIQUE indexes, immutability rules, and critical FKs.
+      - name: DB constraint check
+        run: pnpm db:constraints
 
       # ── OpenAPI ──────────────────────────────────────────────────────────────
       - name: OpenAPI generate and verify

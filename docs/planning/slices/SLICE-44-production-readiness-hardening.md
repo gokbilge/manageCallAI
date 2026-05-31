@@ -4,6 +4,19 @@
 
 P2 - important
 
+## Status
+
+**COMPLETED OUTSIDE SLICE-42 TRACING DEPENDENCY**
+
+Audited 2026-05-30. Production secret enforcement, capability-scoped API keys,
+outbound allow/block safety, webhook signing headers, idempotent webhook event IDs,
+health/readiness endpoints, Prometheus metrics, support bundles, production
+deployment guidance, backup/restore guidance, and migration playbook material are
+in place. Final close-out added webhook replay-window verification tests, per-trunk
+SRTP policy, outbound per-route rate-cap enforcement, additional SDK-backed
+runtime reliability coverage, and n8n import templates. OpenTelemetry tracing
+remains intentionally owned by SLICE-42.
+
 ## Goal
 
 Move the product from a reliable MVP into a production-ready telecom control plane

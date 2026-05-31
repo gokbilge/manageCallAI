@@ -97,9 +97,11 @@ registry.register('FlowValidationOutcome', ivrFlows.FlowValidationOutcomeSchema)
 registry.register('FlowValidationResult', ivrFlows.FlowValidationResultSchema);
 registry.register('SimulationScenario', ivrFlows.SimulationScenarioSchema);
 registry.register('SimulationFinalAction', ivrFlows.SimulationFinalActionSchema);
+registry.register('SimulationStep', ivrFlows.SimulationStepSchema);
 registry.register('SimulationOutcome', ivrFlows.SimulationOutcomeSchema);
 registry.register('FlowSimulationResult', ivrFlows.FlowSimulationResultSchema);
 registry.register('PublishAttemptResult', ivrFlows.PublishAttemptResultSchema);
+registry.register('DryRunPublishResult', ivrFlows.DryRunPublishResultSchema);
 registry.register('FlowValidationHistoryEntry', ivrFlows.FlowValidationHistoryEntrySchema);
 registry.register('FlowSimulationHistoryEntry', ivrFlows.FlowSimulationHistoryEntrySchema);
 registry.register('FlowPublishHistoryEntry', ivrFlows.FlowPublishHistoryEntrySchema);
@@ -268,3 +270,13 @@ registry.register('TenantListResponse', responses.TenantListResponseSchema);
 registry.register('RuntimeHealthResponse', responses.RuntimeHealthResponseSchema);
 registry.register('PlatformRuntimeSummaryResponse', responses.PlatformRuntimeSummaryResponseSchema);
 registry.register('RouteLookupResponse', responses.RouteLookupResponseSchema);
+
+// observability
+import * as observability from './observability.js';
+registry.register('RunningSession', observability.RunningSessionSchema);
+registry.register('QueueDepth', observability.QueueDepthSchema);
+registry.register('WebhookBacklog', observability.WebhookBacklogSchema);
+registry.register('LiveSnapshot', observability.LiveSnapshotSchema);
+registry.register('LiveSnapshotResponse', observability.LiveSnapshotResponseSchema);
+registry.register('StreamEvent', observability.StreamEventSchema);
+registry.register('PlatformHealthSnapshot', observability.PlatformHealthSnapshotSchema);

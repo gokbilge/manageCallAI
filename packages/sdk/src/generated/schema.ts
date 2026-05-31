@@ -3993,6 +3993,11 @@ export interface components {
             /** @enum {string} */
             transport: "udp" | "tcp" | "tls";
             auth_username: string;
+            /** @enum {string} */
+            dtmf_mode: "rfc2833" | "info" | "inband" | "auto";
+            codec_prefs: string[] | null;
+            /** @enum {string} */
+            srtp_policy: "disabled" | "optional" | "required";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -4010,6 +4015,11 @@ export interface components {
             transport?: "udp" | "tcp" | "tls";
             auth_username: string;
             auth_password: string;
+            /** @enum {string} */
+            dtmf_mode?: "rfc2833" | "info" | "inband" | "auto";
+            codec_prefs?: string[] | null;
+            /** @enum {string} */
+            srtp_policy?: "disabled" | "optional" | "required";
         };
         UpdateSipTrunkBody: {
             name?: string;
@@ -4025,6 +4035,11 @@ export interface components {
             transport?: "udp" | "tcp" | "tls";
             auth_username?: string;
             auth_password?: string;
+            /** @enum {string} */
+            dtmf_mode?: "rfc2833" | "info" | "inband" | "auto";
+            codec_prefs?: string[] | null;
+            /** @enum {string} */
+            srtp_policy?: "disabled" | "optional" | "required";
         };
         PhoneNumber: {
             /** Format: uuid */
@@ -4433,10 +4448,17 @@ export interface components {
             /** Format: uuid */
             voicemail_box_id?: string;
         };
+        SimulationStep: {
+            node_id: string;
+            /** @enum {string} */
+            category: "start" | "task" | "gateway" | "end";
+            edge_id?: string;
+        };
         SimulationOutcome: {
             /** @enum {string} */
             status: "passed" | "failed";
             path: string[];
+            steps: components["schemas"]["SimulationStep"][];
             final_action: components["schemas"]["SimulationFinalAction"] & (Record<string, never> | null);
             errors: components["schemas"]["FlowValidationError"][];
         };
@@ -4451,6 +4473,16 @@ export interface components {
             flow: components["schemas"]["IvrFlow"];
             /** Format: uuid */
             approval_request_id?: string;
+        };
+        DryRunPublishResult: {
+            /** @enum {boolean} */
+            dry_run: true;
+            /** @enum {string} */
+            would_become: "published" | "pending_approval";
+            require_approval: boolean;
+            version_state_valid: boolean;
+            /** @enum {string} */
+            actor_type: "user" | "workflow" | "ai_agent" | "system";
         };
         FlowValidationHistoryEntry: {
             /** Format: uuid */
@@ -5737,6 +5769,60 @@ export interface components {
             target?: {
                 [key: string]: unknown;
             } | null;
+        };
+        RunningSession: {
+            /** Format: uuid */
+            id: string;
+            call_id: string;
+            /** Format: uuid */
+            flow_id: string;
+            caller_number: string | null;
+            current_node_id: string | null;
+            /** Format: date-time */
+            started_at: string;
+        };
+        QueueDepth: {
+            /** Format: uuid */
+            queue_id: string;
+            queue_name: string;
+            member_count: number;
+        };
+        WebhookBacklog: {
+            pending: number;
+            processing: number;
+            failed: number;
+            abandoned: number;
+        };
+        LiveSnapshot: {
+            /** Format: uuid */
+            tenant_id: string;
+            active_session_count: number;
+            running_sessions: components["schemas"]["RunningSession"][];
+            queue_depths: components["schemas"]["QueueDepth"][];
+            webhook_backlog: components["schemas"]["WebhookBacklog"];
+            recent_call_events_5m: number;
+            recent_session_failures_1h: number;
+            pending_approvals: number;
+            /** Format: date-time */
+            generated_at: string;
+        };
+        LiveSnapshotResponse: {
+            data: components["schemas"]["LiveSnapshot"];
+        };
+        StreamEvent: {
+            /** @enum {string} */
+            status: "live" | "degraded";
+            data: components["schemas"]["LiveSnapshot"] & (Record<string, never> | null);
+            /** Format: date-time */
+            generated_at: string;
+        };
+        PlatformHealthSnapshot: {
+            services: components["schemas"]["ServiceHealth"][];
+            active_sessions_total: number;
+            completed_sessions_24h: number;
+            failed_sessions_24h: number;
+            /** Format: date-time */
+            generated_at: string;
         };
     };
     responses: {

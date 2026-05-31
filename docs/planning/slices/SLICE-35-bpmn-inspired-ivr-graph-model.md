@@ -8,7 +8,20 @@ same predictable execution semantics.
 
 ## Status
 
-**PLANNED**
+**COMPLETED**
+
+Audited 2026-05-30. All exit criteria are met:
+
+- `GRAPH_MODEL_VERSION = "ivr-bpmn-v1"` constant exported from `packages/contracts`.
+- `IVR_NODE_CATEGORY_MAP` maps every implemented node type to `start | task | gateway | end`.
+- `BPMN_ONLY_NODE_TYPES` list exported from contracts; validation gives a distinct error message for each.
+- `validateIvrGraph` checks `graph_model` (absent = backward-compat pass; wrong value = error) and rejects
+  raw BPMN graph-level fields (`bpmn_xml`, `lanes`, `pools`, `collaboration`, `xml`).
+- `getNodeCategory()` exported from the validation module for use by simulation and runtime planner.
+- `defaultIvrGraph()` now includes `graph_model: "ivr-bpmn-v1"`.
+- 58 focused tests pass (including all new BPMN graph model marker, category mapping, and construct-rejection tests).
+- `pnpm build` and `pnpm lint` clean across contracts and API packages.
+- `graph_json` remains the canonical API field; raw BPMN XML is never the runtime format.
 
 ## Context
 

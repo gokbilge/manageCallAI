@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarClock,
   ClipboardCheck,
+  FileAudio,
   GitBranch,
   Hash,
   LayoutDashboard,
@@ -13,6 +14,7 @@ import {
   Phone,
   PhoneCall,
   RadioTower,
+  ScanEye,
   TestTube2,
   Workflow,
   Zap,
@@ -43,6 +45,7 @@ const platformNav: NavItem[] = [
 
 const tenantNav: NavItem[] = [
   { to: '/tenant/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/tenant/cockpit', label: 'Live Cockpit', icon: ScanEye, capability: CAPABILITIES.TENANT_DASHBOARD_VIEW },
   { to: '/tenant/extensions', label: 'Extensions', icon: Phone },
   { to: '/tenant/numbers', label: 'Phone Numbers', icon: Hash, capability: CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW },
   { to: '/tenant/routes/inbound', label: 'Inbound Routes', icon: GitBranch, capability: CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW },
@@ -53,6 +56,7 @@ const tenantNav: NavItem[] = [
   { to: '/tenant/prompts', label: 'Prompts', icon: Mic, capability: CAPABILITIES.TENANT_PROMPTS_VIEW },
   { to: '/tenant/runtime/sessions', label: 'Sessions', icon: MonitorPlay, capability: CAPABILITIES.TENANT_IVR_FLOWS_VIEW },
   { to: '/tenant/calls', label: 'Call Events', icon: PhoneCall },
+  { to: '/tenant/recordings', label: 'Recordings', icon: FileAudio, capability: CAPABILITIES.TENANT_RECORDINGS_VIEW },
   { to: '/tenant/schedules', label: 'Schedules', icon: CalendarClock, capability: CAPABILITIES.TENANT_SCHEDULES_VIEW },
   { to: '/tenant/webhooks', label: 'Webhooks', icon: Zap, capability: CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW },
   { to: '/tenant/integrations/directory-smoke-test', label: 'Smoke Test', icon: TestTube2 },

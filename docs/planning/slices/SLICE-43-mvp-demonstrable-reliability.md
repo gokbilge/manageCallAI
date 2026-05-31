@@ -4,6 +4,17 @@
 
 P1 - MVP critical
 
+## Status
+
+**COMPLETED**
+
+Audited 2026-05-30. CI and local scripts include telecom safety gates, MCP contract
+checks, IVR simulation regression, XML golden-file coverage, Docker build checks,
+and a local FreeSWITCH profile smoke script. The SDK package has generated-client
+coverage. Final close-out added broader SDK-backed IVR/publish/runtime client
+coverage and importable n8n workflow JSON examples for missed calls, voicemail,
+publish failure, rollback, and recording transcription workflows.
+
 ## Goal
 
 Make the MVP demonstrably reliable by proving the runtime, publish lifecycle,

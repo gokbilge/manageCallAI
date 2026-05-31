@@ -4,6 +4,7 @@ import type {
   QueueTransferReference,
   VoicemailBoxReference,
 } from '../ivr-flows/ivr-flow.types.js';
+import { buildPlannerGraph, resolveSwitchInput } from '../ivr-flows/ivr-graph-planner.js';
 import { isInBusinessHours } from '../schedules/schedule.util.js';
 import type { IvrRuntimeRepository } from './ivr-runtime.repository.js';
 import type {
@@ -51,43 +52,6 @@ function isGraphNode(value: unknown): value is GraphNode {
     && !Array.isArray(value)
     && typeof (value as Record<string, unknown>).id === 'string'
     && typeof (value as Record<string, unknown>).type === 'string';
-}
-
-function mapNodes(graph: Record<string, unknown>): { entryNodeId: string; nodes: Map<string, GraphNode> } {
-  const entryNodeId = typeof graph.entry_node_id === 'string' ? graph.entry_node_id : '';
-  const rawNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
-  const nodes = new Map<string, GraphNode>();
-
-  for (const rawNode of rawNodes) {
-    if (isGraphNode(rawNode)) {
-      nodes.set(rawNode.id, rawNode);
-    }
-  }
-
-  return { entryNodeId, nodes };
-}
-
-function resolveSwitchInput(
-  node: GraphNode,
-  context: {
-    lastDigits?: string | null;
-    callerNumber?: string | null;
-    variables: Record<string, string>;
-  },
-): string | undefined {
-  const rawInput = typeof node.input === 'string' ? node.input : '{{last_digits}}';
-  const tokenMatch = rawInput.match(/^\{\{(.+)\}\}$/);
-  if (!tokenMatch) {
-    return rawInput;
-  }
-
-  const token = tokenMatch[1]?.trim();
-  if (!token) return undefined;
-  if (token === 'last_digits') return context.lastDigits ?? undefined;
-  if (token === 'caller_number') return context.callerNumber ?? undefined;
-  if (token === 'now.hour') return new Date().getHours().toString().padStart(2, '0');
-  if (token.startsWith('var.')) return context.variables[token.slice(4)];
-  return context.variables[token];
 }
 
 export class IvrRuntimeService {
@@ -256,7 +220,13 @@ export class IvrRuntimeService {
     last_digits: string | null;
     variables: Record<string, string>;
   }> {
-    const { entryNodeId, nodes } = mapNodes(input.graph_json);
+    const planner = buildPlannerGraph(input.graph_json);
+    const entryNodeId = planner.entryNodeId;
+    // Build a GraphNode map from planner raw nodes for backward-compatible access.
+    const nodes = new Map<string, GraphNode>();
+    for (const [id, pNode] of planner.nodes) {
+      if (isGraphNode(pNode.raw)) nodes.set(id, pNode.raw);
+    }
     let nextNodeId = input.entry_node_id_override ?? entryNodeId;
     let lastDigits = input.last_digits;
     const variables = { ...input.variables };
@@ -331,9 +301,12 @@ export class IvrRuntimeService {
         const cases = typeof node.cases === 'object' && node.cases !== null && !Array.isArray(node.cases)
           ? (node.cases as Record<string, unknown>)
           : {};
-        const selectedInput = resolveSwitchInput(node, {
+        const currentHour = new Date().getHours().toString().padStart(2, '0');
+        const plannerNodeForSwitch = planner.nodes.get(nextNodeId) ?? { id: node.id, type: node.type, category: undefined as never, raw: node };
+        const selectedInput = resolveSwitchInput(plannerNodeForSwitch, {
           lastDigits,
           callerNumber: input.caller_number,
+          scenarioHour: currentHour,
           variables,
         });
         const selectedNodeId = selectedInput ? cases[selectedInput] : undefined;

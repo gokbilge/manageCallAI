@@ -22,6 +22,7 @@ export class SipTrunkRepository {
     st.auth_username,
     st.dtmf_mode,
     st.codec_prefs,
+    st.srtp_policy,
     st.created_at,
     st.updated_at
   `;
@@ -40,6 +41,7 @@ export class SipTrunkRepository {
     auth_username,
     dtmf_mode,
     codec_prefs,
+    srtp_policy,
     created_at,
     updated_at
   `;
@@ -70,8 +72,8 @@ export class SipTrunkRepository {
       `INSERT INTO sip_trunks
          (tenant_id, name, direction, username, realm, proxy, port, transport,
           auth_username, auth_password_ciphertext, auth_password_key_id,
-          dtmf_mode, codec_prefs)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          dtmf_mode, codec_prefs, srtp_policy)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING ${this.returningColumns}`,
       [
         input.tenant_id,
@@ -87,6 +89,7 @@ export class SipTrunkRepository {
         input.auth_password_key_id,
         input.dtmf_mode ?? 'rfc2833',
         input.codec_prefs ?? null,
+        input.srtp_policy ?? 'disabled',
       ],
     );
     return result.rows[0]!;
@@ -111,6 +114,7 @@ export class SipTrunkRepository {
       'auth_password_key_id',
       'dtmf_mode',
       'codec_prefs',
+      'srtp_policy',
     ] as const;
 
     for (const col of updateable) {

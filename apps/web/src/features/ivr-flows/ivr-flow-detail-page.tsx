@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { FlaskConical, RefreshCcw, Rocket, ShieldCheck, Workflow } from 'lucide-react';
+import { RefreshCcw, ShieldCheck, Workflow } from 'lucide-react';
+import { ValidationPanel } from '@/features/ivr-builder/components/ValidationPanel';
+import { SimulationPanel } from '@/features/ivr-builder/components/SimulationPanel';
+import type { SimulationScenario } from '@/features/ivr-builder/components/SimulationPanel';
+import { PublishPanel } from '@/features/ivr-builder/components/PublishPanel';
+import { useBuilderCapability } from '@/features/ivr-builder/hooks/use-builder-capability';
 import { PageHeader } from '@/components/layout/page-header';
 import { DataCard } from '@/components/data/data-card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +31,8 @@ import { IvrFlowBuilder } from './ivr-flow-builder';
 
 export function IvrFlowDetailPage() {
   const { flowId = '' } = useParams();
+  const caps = useBuilderCapability();
+  const [simulatedPath, setSimulatedPath] = useState<string[]>([]);
   const flowQuery = useIvrFlow(flowId);
   const versionsQuery = useFlowVersions(flowId);
   const historyQuery = useFlowHistory(flowId);
@@ -67,31 +74,13 @@ export function IvrFlowDetailPage() {
               Refresh
             </Button>
             <Button
-              disabled={!flowQuery.data?.draft_version_id || validateDraft.isPending}
+              disabled={!flowQuery.data?.draft_version_id || validateDraft.isPending || !caps.canValidate}
+              aria-disabled={!caps.canValidate}
               onClick={() => void validateDraft.mutateAsync()}
               variant="secondary"
             >
               <ShieldCheck className="size-4" aria-hidden="true" />
-              {validateDraft.isPending ? 'Validating...' : 'Validate Draft'}
-            </Button>
-            <Button
-              disabled={!flowQuery.data?.draft_version_id || simulateDraft.isPending}
-              onClick={() => void simulateDraft.mutateAsync({
-                digits: ['1'],
-                caller_number: '+905551112233',
-                now: '2026-05-27T10:00:00+03:00',
-              })}
-              variant="secondary"
-            >
-              <FlaskConical className="size-4" aria-hidden="true" />
-              {simulateDraft.isPending ? 'Simulating...' : 'Simulate Draft'}
-            </Button>
-            <Button
-              disabled={!draftVersion || !['validated', 'simulated'].includes(draftVersion.state) || publishFlowVersion.isPending}
-              onClick={() => draftVersion && void publishFlowVersion.mutateAsync(draftVersion.id)}
-            >
-              <Rocket className="size-4" aria-hidden="true" />
-              {publishFlowVersion.isPending ? 'Publishing...' : 'Publish Draft'}
+              {validateDraft.isPending ? 'Validating…' : 'Validate Draft'}
             </Button>
           </div>
         )}
@@ -111,18 +100,6 @@ export function IvrFlowDetailPage() {
                 <MetaItem label="Draft Version" value={flowQuery.data.draft_version_id ?? 'none'} mono />
                 <MetaItem label="Active Version" value={flowQuery.data.active_version_id ?? 'none'} mono />
                 <MetaItem label="Description" value={flowQuery.data.description ?? 'No description'} />
-                <MetaItem
-                  label="Rollback"
-                  value={flowQuery.data.active_version_id ? (
-                    <Button
-                      disabled={rollbackFlow.isPending}
-                      onClick={() => void rollbackFlow.mutateAsync()}
-                      variant="secondary"
-                    >
-                      {rollbackFlow.isPending ? 'Rolling back...' : 'Rollback'}
-                    </Button>
-                  ) : 'Not available yet'}
-                />
               </dl>
             ) : (
               <ErrorState message="Flow not found." />
@@ -158,18 +135,44 @@ export function IvrFlowDetailPage() {
             )}
           </DataCard>
 
-          <DataCard title="Validation Result" description="Structural and semantic checks run against the current draft version.">
-            {validateDraft.data ? (
-              <ResultBlock
-                details={validateDraft.data.outcome.errors}
-                emptyMessage="No validation errors detected."
-                status={validateDraft.data.outcome.status === 'passed' ? 'validated' : 'warning'}
-                title={validateDraft.data.outcome.status === 'passed' ? 'Draft validation passed' : 'Draft validation failed'}
-                warnings={validateDraft.data.outcome.warnings}
-              />
-            ) : (
-              <p className="text-sm text-[var(--color-muted-fg)]">No validation result yet. Save the draft, then validate it.</p>
-            )}
+          <DataCard title="Validation" description="Structural and semantic checks against the current draft.">
+            <ValidationPanel result={validateDraft.data ?? null} isLoading={validateDraft.isPending} />
+          </DataCard>
+
+          <DataCard title="Simulation" description="Trace a sample input path without mutating live runtime state.">
+            <SimulationPanel
+              result={simulateDraft.data ?? null}
+              isLoading={simulateDraft.isPending}
+              canSimulate={caps.canSimulate}
+              highlightedPath={simulatedPath}
+              onSimulate={(scenario: SimulationScenario) => {
+                const digits = scenario.digits.split(',').map((d) => d.trim()).filter(Boolean);
+                void simulateDraft.mutateAsync({
+                  digits: digits.length > 0 ? digits : undefined,
+                  caller_number: scenario.callerNumber || undefined,
+                  now: scenario.now ? new Date(scenario.now).toISOString() : undefined,
+                  force_timeout: scenario.forceTimeout || undefined,
+                  force_invalid: scenario.forceInvalid || undefined,
+                }).then((result) => { setSimulatedPath(result.outcome.path); });
+              }}
+            />
+          </DataCard>
+
+          <DataCard title="Publish" description="Publish is backend-enforced and approval-aware.">
+            <PublishPanel
+              draftVersion={draftVersion}
+              validationResult={validateDraft.data ?? null}
+              simulationResult={simulateDraft.data ?? null}
+              publishResult={publishFlowVersion.data ?? null}
+              rollbackResult={rollbackFlow.data ?? null}
+              isPublishing={publishFlowVersion.isPending}
+              isRollingBack={rollbackFlow.isPending}
+              canPublish={caps.canPublish}
+              canRollback={caps.canRollback}
+              hasActiveVersion={Boolean(flowQuery.data?.active_version_id)}
+              onPublish={() => draftVersion && void publishFlowVersion.mutateAsync(draftVersion.id)}
+              onRollback={() => void rollbackFlow.mutateAsync()}
+            />
           </DataCard>
 
           <DataCard title="Flow History" description="Validation, simulation, publish, and audit events for operator review.">
@@ -236,6 +239,7 @@ export function IvrFlowDetailPage() {
                 prompts={promptsQuery.data ?? []}
                 queues={queuesQuery.data ?? []}
                 schedules={schedulesQuery.data ?? []}
+                simulatedPath={simulatedPath}
                 voicemailBoxes={voicemailBoxesQuery.data ?? []}
                 version={draftVersion}
               />
@@ -246,67 +250,18 @@ export function IvrFlowDetailPage() {
             )}
           </DataCard>
 
-          <DataCard title="Simulation Result" description="Simulation follows a sample input path without mutating live runtime state.">
-            {simulateDraft.data ? (
-              <div className="space-y-4 text-sm">
-                <div className="flex items-center gap-3">
-                  <StatusBadge status={simulateDraft.data.outcome.status === 'passed' ? 'validated' : 'warning'} />
-                  <span className="font-medium">
-                    {simulateDraft.data.outcome.status === 'passed' ? 'Draft simulation passed' : 'Draft simulation failed'}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.1em] text-[var(--color-muted-fg)]">Path</p>
-                  <p className="mt-1 font-mono text-xs text-[var(--color-fg)]">
-                    {simulateDraft.data.outcome.path.length > 0 ? simulateDraft.data.outcome.path.join(' -> ') : 'No path produced'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.1em] text-[var(--color-muted-fg)]">Final Action</p>
-                  <pre className="mt-1 overflow-x-auto rounded-[var(--radius-md)] bg-[#0f172a] p-3 text-xs text-slate-100">
-                    <code>{JSON.stringify(simulateDraft.data.outcome.final_action, null, 2)}</code>
-                  </pre>
-                </div>
-                {simulateDraft.data.outcome.errors.length > 0 ? (
-                  <ul className="space-y-2 text-[var(--color-danger)]">
-                    {simulateDraft.data.outcome.errors.map((error, index) => (
-                      <li key={`sim-${index}`} className="rounded-[var(--radius-md)] bg-[var(--color-danger)]/10 px-3 py-2">
-                        {JSON.stringify(error)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-[var(--color-muted-fg)]">No simulation errors detected.</p>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-[var(--color-muted-fg)]">No simulation result yet. Simulate the saved draft before publish.</p>
-            )}
-          </DataCard>
-
-          <DataCard title="Publish State" description="Publish and rollback remain approval-aware and visible on the same operator surface.">
-            {publishFlowVersion.data?.status === 'pending_approval' ? (
-              <p className="text-sm text-[var(--color-warning)]">
-                Publish request queued for approval: {publishFlowVersion.data.approval_request_id}
-              </p>
-            ) : rollbackFlow.data?.status === 'pending_approval' ? (
-              <p className="text-sm text-[var(--color-warning)]">
-                Rollback request queued for approval: {rollbackFlow.data.approval_request_id}
-              </p>
-            ) : (
-              <p className="text-sm text-[var(--color-muted-fg)]">
-                No pending approval request. Direct publish remains available when policy permits it.
-              </p>
-            )}
-          </DataCard>
-
-          <DataCard title="Fallback Debug View" description="The raw graph remains visible for diagnostics, but normal authoring should stay visual.">
+          <DataCard title="Raw Graph (diagnostic)" description="Fallback JSON view for diagnostics. Normal authoring should stay visual.">
             {draftVersion ? (
-              <pre className="overflow-x-auto rounded-[var(--radius-md)] bg-[#0f172a] p-4 text-xs text-slate-100">
-                <code>{JSON.stringify(draftVersion.graph_json, null, 2)}</code>
-              </pre>
+              <details>
+                <summary className="cursor-pointer text-sm text-[var(--color-muted-fg)] hover:text-[var(--color-fg)]">
+                  Show raw graph_json
+                </summary>
+                <pre className="mt-3 overflow-x-auto rounded-[var(--radius-md)] bg-[#0f172a] p-4 text-xs text-slate-100">
+                  <code>{JSON.stringify(draftVersion.graph_json, null, 2)}</code>
+                </pre>
+              </details>
             ) : (
-              <p className="text-sm text-[var(--color-muted-fg)]">No draft version found for this flow.</p>
+              <p className="text-sm text-[var(--color-muted-fg)]">No draft version found.</p>
             )}
             <Link className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-[var(--color-tenant)] hover:underline" to={paths.tenant.ivrFlows}>
               <Workflow className="size-4" aria-hidden="true" />
@@ -362,45 +317,3 @@ function ErrorState({ message }: { message: string }) {
   );
 }
 
-function ResultBlock({
-  status,
-  title,
-  details,
-  warnings,
-  emptyMessage,
-}: {
-  status: string;
-  title: string;
-  details: unknown[];
-  warnings?: unknown[];
-  emptyMessage: string;
-}) {
-  return (
-    <div className="space-y-4 text-sm">
-      <div className="flex items-center gap-3">
-        <StatusBadge status={status} />
-        <span className="font-medium">{title}</span>
-      </div>
-      {details.length > 0 ? (
-        <ul className="space-y-2 text-[var(--color-danger)]">
-          {details.map((detail, index) => (
-            <li key={`detail-${index}`} className="rounded-[var(--radius-md)] bg-[var(--color-danger)]/10 px-3 py-2">
-              {JSON.stringify(detail)}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-[var(--color-muted-fg)]">{emptyMessage}</p>
-      )}
-      {warnings && warnings.length > 0 ? (
-        <ul className="space-y-2 text-[var(--color-warning)]">
-          {warnings.map((warning, index) => (
-            <li key={`warning-${index}`} className="rounded-[var(--radius-md)] bg-[var(--color-warning)]/10 px-3 py-2">
-              {JSON.stringify(warning)}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
-  );
-}

@@ -1,31 +1,39 @@
+import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { db } from '../../db/client.js';
-import { authenticateRuntime } from '../runtime/runtime-auth.js';
+import { sendFailedPrecondition, sendNotFound, sendPermissionDenied } from '../../errors/index.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
-import { sendNotFound } from '../../errors/index.js';
+import { ResourceInactiveError, TenantScopeError } from '../domain-assertions.js';
+import { authenticateRuntime } from '../runtime/runtime-auth.js';
+import { VoicemailMessageRepository } from './voicemail-message.repository.js';
+import {
+  VoicemailMailboxNotFoundError,
+  VoicemailMessageNotFoundError,
+  VoicemailMessageService,
+} from './voicemail-message.service.js';
 
-interface VoicemailMessage {
-  id: string;
-  tenant_id: string;
-  voicemail_box_id: string;
-  call_id: string;
-  storage_path: string;
-  duration_secs: number | null;
-  size_bytes: number | null;
-  read_at: Date | null;
-  deleted_at: Date | null;
-  recorded_at: Date;
-  created_at: Date;
-}
+const service = new VoicemailMessageService(new VoicemailMessageRepository(db));
 
 const UuidParams = z.object({ id: z.string().uuid() });
 const BoxUuidParams = z.object({ boxId: z.string().uuid() });
 
+function handleVoicemailMessageError(err: unknown, reply: FastifyReply): void {
+  if (err instanceof VoicemailMessageNotFoundError || err instanceof VoicemailMailboxNotFoundError) {
+    return sendNotFound(reply, err.message);
+  }
+  if (err instanceof TenantScopeError) {
+    return sendPermissionDenied(reply, err.message);
+  }
+  if (err instanceof ResourceInactiveError) {
+    return sendFailedPrecondition(reply, err.message);
+  }
+  throw err;
+}
+
 export const voicemailMessageController: FastifyPluginAsyncZod = async (app) => {
-  // Runtime ingest — called by FreeSWITCH adapter after voicemail recording completes.
   app.post(
     '/:boxId/messages',
     {
@@ -42,26 +50,18 @@ export const voicemailMessageController: FastifyPluginAsyncZod = async (app) => 
       },
     },
     async (req, reply) => {
-      const r = await db.query<VoicemailMessage>(
-        `INSERT INTO voicemail_messages
-           (tenant_id, voicemail_box_id, call_id, storage_path, duration_secs, size_bytes)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, tenant_id, voicemail_box_id, call_id, storage_path,
-                   duration_secs, size_bytes, read_at, deleted_at, recorded_at, created_at`,
-        [
-          req.body.tenant_id,
-          req.params.boxId,
-          req.body.call_id,
-          req.body.storage_path,
-          req.body.duration_secs ?? null,
-          req.body.size_bytes ?? null,
-        ],
-      );
-      return reply.code(201).send({ data: r.rows[0] });
+      try {
+        const message = await service.ingest({
+          ...req.body,
+          voicemail_box_id: req.params.boxId,
+        });
+        return reply.code(201).send({ data: message });
+      } catch (err) {
+        return handleVoicemailMessageError(err, reply);
+      }
     },
   );
 
-  // List messages in a mailbox.
   app.get(
     '/:boxId/messages',
     {
@@ -76,24 +76,15 @@ export const voicemailMessageController: FastifyPluginAsyncZod = async (app) => 
     },
     async (req) => {
       const user = req.user as AuthClaims;
-      const unreadOnly = req.query.unread_only === 'true';
-      const r = await db.query<VoicemailMessage>(
-        `SELECT id, tenant_id, voicemail_box_id, call_id, storage_path,
-                duration_secs, size_bytes, read_at, deleted_at, recorded_at, created_at
-         FROM voicemail_messages
-         WHERE tenant_id = $1
-           AND voicemail_box_id = $2
-           AND deleted_at IS NULL
-           ${unreadOnly ? 'AND read_at IS NULL' : ''}
-         ORDER BY recorded_at DESC
-         LIMIT $3`,
-        [user.tenant_id, req.params.boxId, req.query.limit],
-      );
-      return { data: r.rows };
+      return {
+        data: await service.listByMailbox(user.tenant_id, req.params.boxId, {
+          unreadOnly: req.query.unread_only === 'true',
+          limit: req.query.limit,
+        }),
+      };
     },
   );
 
-  // Mark message as read.
   app.post(
     '/messages/:id/read',
     {
@@ -102,20 +93,14 @@ export const voicemailMessageController: FastifyPluginAsyncZod = async (app) => 
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
-      const r = await db.query<VoicemailMessage>(
-        `UPDATE voicemail_messages
-         SET read_at = COALESCE(read_at, NOW())
-         WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
-         RETURNING id, tenant_id, voicemail_box_id, call_id, storage_path,
-                   duration_secs, size_bytes, read_at, deleted_at, recorded_at, created_at`,
-        [req.params.id, user.tenant_id],
-      );
-      if (!r.rows[0]) return sendNotFound(reply, `Voicemail message not found: ${req.params.id}`);
-      return { data: r.rows[0] };
+      try {
+        return { data: await service.markRead(req.params.id, user.tenant_id) };
+      } catch (err) {
+        return handleVoicemailMessageError(err, reply);
+      }
     },
   );
 
-  // Soft-delete a message.
   app.delete(
     '/messages/:id',
     {
@@ -124,14 +109,12 @@ export const voicemailMessageController: FastifyPluginAsyncZod = async (app) => 
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
-      const r = await db.query<{ id: string }>(
-        `UPDATE voicemail_messages SET deleted_at = NOW()
-         WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
-         RETURNING id`,
-        [req.params.id, user.tenant_id],
-      );
-      if (!r.rows[0]) return sendNotFound(reply, `Voicemail message not found: ${req.params.id}`);
-      return reply.code(204).send();
+      try {
+        await service.delete(req.params.id, user.tenant_id);
+        return reply.code(204).send();
+      } catch (err) {
+        return handleVoicemailMessageError(err, reply);
+      }
     },
   );
 };

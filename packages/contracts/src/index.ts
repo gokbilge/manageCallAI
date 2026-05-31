@@ -1,4 +1,5 @@
 export { registry, z } from './registry.js';
+export * from './schemas/observability.js';
 export { OpenApiGeneratorV31, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
 export { mcpToolInputSchemas, mcpToolZodSchemas } from './mcp-schemas.js';
 export type { McpToolName } from './mcp-schemas.js';
