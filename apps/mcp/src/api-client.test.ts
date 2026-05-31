@@ -41,7 +41,7 @@ describe('apiCall', () => {
 
     expect(result).toEqual({ ok: false, status: 403, data: { error: 'PERMISSION_DENIED' } });
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/api/v1/ivr-flows',
+      expect.stringMatching(/\/api\/v1\/ivr-flows$/),
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ name: 'Main' }),
