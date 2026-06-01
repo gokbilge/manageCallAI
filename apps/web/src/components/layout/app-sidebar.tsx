@@ -1,6 +1,7 @@
 import { NavLink, type NavLinkRenderProps } from 'react-router-dom';
 import {
   Activity,
+  AlertTriangle,
   ArrowUpRight,
   Building2,
   CalendarClock,
@@ -15,6 +16,7 @@ import {
   PhoneCall,
   RadioTower,
   ScanEye,
+  ShieldCheck,
   TestTube2,
   Workflow,
   Zap,
@@ -59,6 +61,8 @@ const tenantNav: NavItem[] = [
   { to: '/tenant/recordings', label: 'Recordings', icon: FileAudio, capability: CAPABILITIES.TENANT_RECORDINGS_VIEW },
   { to: '/tenant/schedules', label: 'Schedules', icon: CalendarClock, capability: CAPABILITIES.TENANT_SCHEDULES_VIEW },
   { to: '/tenant/webhooks', label: 'Webhooks', icon: Zap, capability: CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW },
+  { to: '/tenant/security-alerts', label: 'Security Alerts', icon: AlertTriangle, capability: CAPABILITIES.TENANT_SECURITY_ALERTS_VIEW },
+  { to: '/tenant/compliance', label: 'Compliance', icon: ShieldCheck, capability: CAPABILITIES.TENANT_COMPLIANCE_ADMIN },
   { to: '/tenant/integrations/directory-smoke-test', label: 'Smoke Test', icon: TestTube2 },
 ];
 
