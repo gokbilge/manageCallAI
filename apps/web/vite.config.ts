@@ -20,8 +20,6 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx,mts}'],
     exclude: ['dist/**', 'node_modules/**'],
     coverage: {
-      include: ['src/**/*.{ts,tsx,mts}'],
-      exclude: ['dist/**', 'node_modules/**', 'src/**/*.{test,spec}.{ts,tsx,mts}'],
       thresholds: {
         statements: 70,
         branches: 75,
