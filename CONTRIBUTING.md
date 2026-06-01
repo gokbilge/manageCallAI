@@ -1,5 +1,7 @@
 # Contributing
 
+Please read the [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
+
 ## Principles
 
 - Keep business logic in the `manageCallAI` backend.

@@ -1,32 +1,42 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './layout';
 import { AuthPage } from '@/features/auth/auth-page';
-import { PlatformHomePage } from '@/features/platform/platform-home-page';
-import { PlatformTenantsPage } from '@/features/platform/platform-tenants-page';
-import { RuntimeHealthPage } from '@/features/platform/runtime-health-page';
-import { TenantDashboardPage } from '@/features/tenant/tenant-dashboard-page';
 import { ExtensionsPage } from '@/features/extensions/extensions-page';
-import { NumbersPage } from '@/features/numbers/numbers-page';
-import { InboundRoutesPage } from '@/features/inbound-routes/inbound-routes-page';
-import { ApprovalsPage } from '@/features/approvals/approvals-page';
-import { IvrFlowDetailPage } from '@/features/ivr-flows/ivr-flow-detail-page';
-import { IvrFlowsPage } from '@/features/ivr-flows/ivr-flows-page';
+import { TenantDashboardPage } from '@/features/tenant/tenant-dashboard-page';
 import { CallsPage } from '@/features/calls/calls-page';
-import { DirectorySmokeTestPage } from '@/features/integrations/directory-smoke-test-page';
-import { WebhooksPage } from '@/features/integrations/webhooks-page';
-import { PromptsPage } from '@/features/prompts/prompts-page';
-import { ObservabilityCockpitPage } from '@/features/observability/observability-cockpit-page';
-import { RuntimeSessionsPage } from '@/features/runtime/runtime-sessions-page';
-import { RuntimeSessionDetailPage } from '@/features/runtime/runtime-session-detail-page';
-import { SchedulesPage } from '@/features/schedules/schedules-page';
-import { OutboundRoutesPage } from '@/features/outbound-routes/outbound-routes-page';
-import { OutboundCallsPage } from '@/features/outbound-calls/outbound-calls-page';
-import { RecordingsPage } from '@/features/recordings/recordings-page';
-import { SecurityAlertsPage } from '@/features/security-alerts/security-alerts-page';
-import { CompliancePage } from '@/features/compliance/compliance-page';
 import { RequireSession } from '@/lib/auth/require-session';
 import { RequireCapability } from '@/lib/auth/require-capability';
 import { CAPABILITIES } from '@/lib/permissions/capabilities';
+
+// Lazy-loaded pages — split from the initial bundle to reduce load time.
+// Platform admin pages (platform_admin role only):
+const PlatformHomePage = lazy(() => import('@/features/platform/platform-home-page').then(m => ({ default: m.PlatformHomePage })));
+const PlatformTenantsPage = lazy(() => import('@/features/platform/platform-tenants-page').then(m => ({ default: m.PlatformTenantsPage })));
+const RuntimeHealthPage = lazy(() => import('@/features/platform/runtime-health-page').then(m => ({ default: m.RuntimeHealthPage })));
+// IVR flows and builder (heavy — includes graph/builder components):
+const IvrFlowsPage = lazy(() => import('@/features/ivr-flows/ivr-flows-page').then(m => ({ default: m.IvrFlowsPage })));
+const IvrFlowDetailPage = lazy(() => import('@/features/ivr-flows/ivr-flow-detail-page').then(m => ({ default: m.IvrFlowDetailPage })));
+// Other tenant pages:
+const NumbersPage = lazy(() => import('@/features/numbers/numbers-page').then(m => ({ default: m.NumbersPage })));
+const InboundRoutesPage = lazy(() => import('@/features/inbound-routes/inbound-routes-page').then(m => ({ default: m.InboundRoutesPage })));
+const ApprovalsPage = lazy(() => import('@/features/approvals/approvals-page').then(m => ({ default: m.ApprovalsPage })));
+const DirectorySmokeTestPage = lazy(() => import('@/features/integrations/directory-smoke-test-page').then(m => ({ default: m.DirectorySmokeTestPage })));
+const WebhooksPage = lazy(() => import('@/features/integrations/webhooks-page').then(m => ({ default: m.WebhooksPage })));
+const PromptsPage = lazy(() => import('@/features/prompts/prompts-page').then(m => ({ default: m.PromptsPage })));
+const ObservabilityCockpitPage = lazy(() => import('@/features/observability/observability-cockpit-page').then(m => ({ default: m.ObservabilityCockpitPage })));
+const RuntimeSessionsPage = lazy(() => import('@/features/runtime/runtime-sessions-page').then(m => ({ default: m.RuntimeSessionsPage })));
+const RuntimeSessionDetailPage = lazy(() => import('@/features/runtime/runtime-session-detail-page').then(m => ({ default: m.RuntimeSessionDetailPage })));
+const SchedulesPage = lazy(() => import('@/features/schedules/schedules-page').then(m => ({ default: m.SchedulesPage })));
+const OutboundRoutesPage = lazy(() => import('@/features/outbound-routes/outbound-routes-page').then(m => ({ default: m.OutboundRoutesPage })));
+const OutboundCallsPage = lazy(() => import('@/features/outbound-calls/outbound-calls-page').then(m => ({ default: m.OutboundCallsPage })));
+const RecordingsPage = lazy(() => import('@/features/recordings/recordings-page').then(m => ({ default: m.RecordingsPage })));
+const SecurityAlertsPage = lazy(() => import('@/features/security-alerts/security-alerts-page').then(m => ({ default: m.SecurityAlertsPage })));
+const CompliancePage = lazy(() => import('@/features/compliance/compliance-page').then(m => ({ default: m.CompliancePage })));
+
+function PageLoader() {
+  return <div className="flex items-center justify-center p-8 text-[var(--color-muted)]" aria-label="Loading" />;
+}
 
 const router = createBrowserRouter([
   {
@@ -44,95 +54,95 @@ const router = createBrowserRouter([
           {
             element: <RequireCapability capability={CAPABILITIES.PLATFORM_TENANTS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'platform', element: <PlatformHomePage /> },
-              { path: 'platform/tenants', element: <PlatformTenantsPage /> },
-              { path: 'platform/runtime', element: <RuntimeHealthPage /> },
+              { path: 'platform', element: <Suspense fallback={<PageLoader />}><PlatformHomePage /></Suspense> },
+              { path: 'platform/tenants', element: <Suspense fallback={<PageLoader />}><PlatformTenantsPage /></Suspense> },
+              { path: 'platform/runtime', element: <Suspense fallback={<PageLoader />}><RuntimeHealthPage /></Suspense> },
             ],
           },
           { path: 'tenant', element: <Navigate to="/tenant/extensions" replace /> },
           { path: 'tenant/dashboard', element: <TenantDashboardPage /> },
-          { path: 'tenant/cockpit', element: <ObservabilityCockpitPage /> },
+          { path: 'tenant/cockpit', element: <Suspense fallback={<PageLoader />}><ObservabilityCockpitPage /></Suspense> },
           { path: 'tenant/extensions', element: <ExtensionsPage /> },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_PHONE_NUMBERS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/numbers', element: <NumbersPage /> },
+              { path: 'tenant/numbers', element: <Suspense fallback={<PageLoader />}><NumbersPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/routes/inbound', element: <InboundRoutesPage /> },
+              { path: 'tenant/routes/inbound', element: <Suspense fallback={<PageLoader />}><InboundRoutesPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_IVR_FLOWS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/ivr-flows', element: <IvrFlowsPage /> },
-              { path: 'tenant/ivr-flows/:flowId', element: <IvrFlowDetailPage /> },
+              { path: 'tenant/ivr-flows', element: <Suspense fallback={<PageLoader />}><IvrFlowsPage /></Suspense> },
+              { path: 'tenant/ivr-flows/:flowId', element: <Suspense fallback={<PageLoader />}><IvrFlowDetailPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_APPROVALS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/approvals', element: <ApprovalsPage /> },
+              { path: 'tenant/approvals', element: <Suspense fallback={<PageLoader />}><ApprovalsPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_PROMPTS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/prompts', element: <PromptsPage /> },
+              { path: 'tenant/prompts', element: <Suspense fallback={<PageLoader />}><PromptsPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_IVR_FLOWS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/runtime/sessions', element: <RuntimeSessionsPage /> },
-              { path: 'tenant/runtime/sessions/:sessionId', element: <RuntimeSessionDetailPage /> },
+              { path: 'tenant/runtime/sessions', element: <Suspense fallback={<PageLoader />}><RuntimeSessionsPage /></Suspense> },
+              { path: 'tenant/runtime/sessions/:sessionId', element: <Suspense fallback={<PageLoader />}><RuntimeSessionDetailPage /></Suspense> },
             ],
           },
           { path: 'tenant/calls', element: <CallsPage /> },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_RECORDINGS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/recordings', element: <RecordingsPage /> },
+              { path: 'tenant/recordings', element: <Suspense fallback={<PageLoader />}><RecordingsPage /></Suspense> },
             ],
           },
-          { path: 'tenant/integrations/directory-smoke-test', element: <DirectorySmokeTestPage /> },
+          { path: 'tenant/integrations/directory-smoke-test', element: <Suspense fallback={<PageLoader />}><DirectorySmokeTestPage /></Suspense> },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/webhooks', element: <WebhooksPage /> },
+              { path: 'tenant/webhooks', element: <Suspense fallback={<PageLoader />}><WebhooksPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_SCHEDULES_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/schedules', element: <SchedulesPage /> },
+              { path: 'tenant/schedules', element: <Suspense fallback={<PageLoader />}><SchedulesPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_OUTBOUND_ROUTES_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/routes/outbound', element: <OutboundRoutesPage /> },
+              { path: 'tenant/routes/outbound', element: <Suspense fallback={<PageLoader />}><OutboundRoutesPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_OUTBOUND_CALLS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/outbound-calls', element: <OutboundCallsPage /> },
+              { path: 'tenant/outbound-calls', element: <Suspense fallback={<PageLoader />}><OutboundCallsPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_SECURITY_ALERTS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/security-alerts', element: <SecurityAlertsPage /> },
+              { path: 'tenant/security-alerts', element: <Suspense fallback={<PageLoader />}><SecurityAlertsPage /></Suspense> },
             ],
           },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_COMPLIANCE_ADMIN} redirectTo="/tenant/extensions" />,
             children: [
-              { path: 'tenant/compliance', element: <CompliancePage /> },
+              { path: 'tenant/compliance', element: <Suspense fallback={<PageLoader />}><CompliancePage /></Suspense> },
             ],
           },
         ],
