@@ -1,0 +1,33 @@
+{
+  "_note": "Fill in all fields for your deployment. The validator rejects missing RPO/RTO, unencrypted backup policy, and missing offsite requirements. See docs/ops/backup-retention.md.",
+
+  "policy_version": "1.0",
+  "effective_date": "<ISO-8601 date, e.g. 2026-06-01>",
+  "operator": "<name or role of the person who approved this policy>",
+  "environment": "<development | staging | production>",
+
+  "database": {
+    "frequency": "<hourly | daily | weekly>",
+    "retention_days": 0,
+    "encrypted_at_rest": false,
+    "offsite_copy": false,
+    "restore_rehearsal_interval_days": 30
+  },
+
+  "recordings": {
+    "frequency": "<hourly | daily | weekly>",
+    "retention_days": 0,
+    "encrypted_at_rest": false
+  },
+
+  "secrets": {
+    "stored_separately_from_database": false,
+    "secrets_manager": "<name of secrets manager, e.g. HashiCorp Vault, AWS Secrets Manager>"
+  },
+
+  "rpo_minutes": 0,
+  "rto_minutes": 0,
+
+  "legal_notes": "",
+  "notes": ""
+}

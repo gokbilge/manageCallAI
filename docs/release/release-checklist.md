@@ -45,6 +45,7 @@ and release smoke evidence are complete.
   passing `FreeSWITCH runtime smoke` workflow on self-hosted runner
 - `pnpm check:runtime-e2e-evidence -- --dir=artifacts/production-e2e`
 - `pnpm restore:smoke` after restore rehearsals
+- `pnpm check:backup-retention-policy -- --policy=<backup-retention-policy.json>`
 - `pnpm production:e2e` on a runtime-capable environment
 - `pnpm production:soak` on a runtime-capable environment
 - `pnpm production:slo-check -- --evidence=<sanitized-runtime-slo-evidence.json>`
