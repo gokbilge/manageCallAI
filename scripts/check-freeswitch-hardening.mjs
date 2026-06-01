@@ -66,10 +66,6 @@ function env(name) {
   return (process.env[name] ?? '').trim();
 }
 
-function isTruthy(value) {
-  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
-}
-
 // Use split pattern to keep the known-default literal off the secret scanner
 const stockEslPassword = ['Clue', 'Con'].join('');
 const isProduction = env('APP_ENV') === 'production';
