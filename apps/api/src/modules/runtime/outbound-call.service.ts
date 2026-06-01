@@ -1,4 +1,5 @@
 import { fireAuditEvent } from '../audit/fire-audit.js';
+import type { FraudService } from '../fraud/fraud.service.js';
 import type { OutboundCallRepository } from './outbound-call.repository.js';
 import type { CreateOutboundCallInput, OutboundCallRequest, OutboundCallStatus } from './outbound-call.types.js';
 
@@ -21,7 +22,10 @@ type RouteSafetyPolicy = {
 };
 
 export class OutboundCallService {
-  constructor(private readonly repo: OutboundCallRepository) {}
+  constructor(
+    private readonly repo: OutboundCallRepository,
+    private readonly fraud?: FraudService,
+  ) {}
 
   async create(input: CreateOutboundCallInput): Promise<OutboundCallRequest> {
     const dialNumber = input.dial_number.trim();
@@ -30,6 +34,23 @@ export class OutboundCallService {
     }
 
     assertGloballyAllowedDestination(dialNumber);
+
+    // Tenant-level fraud policy check (SLICE-45)
+    if (this.fraud) {
+      const fraudResult = await this.fraud.checkOutboundCall(input.tenant_id, dialNumber);
+      if (!fraudResult.allowed) {
+        fireAuditEvent({
+          tenant_id: input.tenant_id,
+          actor_id: null,
+          action: 'outbound_call.blocked',
+          resource_type: 'outbound_call_request',
+          metadata: { dial_number: dialNumber, block_reason: fraudResult.reason },
+        });
+        throw new OutboundCallValidationError(
+          `Outbound call blocked by fraud policy: ${fraudResult.reason}`,
+        );
+      }
+    }
 
     const extension = await this.repo.findActiveExtension(input.tenant_id, input.extension_id);
     if (!extension) {

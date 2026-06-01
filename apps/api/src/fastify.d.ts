@@ -5,6 +5,7 @@ import type { AuthClaims } from './modules/auth/auth-claims.js';
 interface RuntimeClaims {
   tenant_id?: string;
   auth_type: 'bearer' | 'basic' | 'header' | 'fallback';
+  node_id?: string; // SLICE-43: set when authenticated via node HMAC
 }
 
 declare module '@fastify/jwt' {

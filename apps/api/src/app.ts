@@ -38,6 +38,8 @@ import { channelAccountController } from './modules/channel-accounts/channel-acc
 import { channelMessageController } from './modules/channel-messages/channel-message.controller.js';
 import { meetingSessionController } from './modules/meeting-sessions/meeting-session.controller.js';
 import { observabilityController } from './modules/observability/observability.controller.js';
+import { fraudController } from './modules/fraud/fraud.controller.js';
+import { nodeRegistryController } from './modules/runtime/node-registry.controller.js';
 import { registerErrorHandler } from './errors/index.js';
 import { redactSensitiveUrl, registerLoggingHooks } from './logging/logger.js';
 import { idempotencyPlugin } from './modules/idempotency/idempotency.plugin.js';
@@ -112,8 +114,10 @@ function registerObservabilityModules(app: FastifyInstance): void {
 function registerPlatformModules(app: FastifyInstance): void {
   app.register(authController, { prefix: '/api/v1/auth' });
   app.register(platformController, { prefix: '/api/v1/platform' });
+  app.register(nodeRegistryController, { prefix: '/api/v1/platform' });
   app.register(auditController, { prefix: '/api/v1/audit' });
   app.register(userController, { prefix: '/api/v1/users' });
+  app.register(fraudController, { prefix: '/api/v1/fraud' });
 }
 
 // ── App factory ───────────────────────────────────────────────────────────────

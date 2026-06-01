@@ -4229,6 +4229,8 @@ components:
               - tenant.compliance.admin
               - tenant.security.alerts.view
               - tenant.security.alerts.manage
+              - tenant.fraud_policy.view
+              - tenant.fraud_policy.manage
               - "*"
         created_by:
           type:

@@ -1,0 +1,12 @@
+# CodeQL configuration for manageCallAI
+#
+# js/missing-rate-limiting is disabled because this project applies rate limiting
+# via a global Fastify onRequest hook (registerRateLimitHook in apps/api/src/app.ts)
+# that covers all /api/v1/* routes. CodeQL cannot trace this cross-file registration,
+# so it incorrectly flags route handlers as missing rate limiting.
+
+disable-default-queries: false
+
+query-filters:
+  - exclude:
+      id: js/missing-rate-limiting

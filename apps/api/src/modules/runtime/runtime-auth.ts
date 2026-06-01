@@ -1,6 +1,14 @@
+// SLICE-46: Runtime secret hardening
+//
+// Changes from earlier version:
+//   - Auth failures emit a runtime.auth_failed audit event for operator visibility.
+//   - RUNTIME_API_TOKEN_SECONDARY is accepted during zero-downtime token rotation.
+//   - Query/body fallback remains gated by allowRuntimeTokenFallback (default false in production).
+
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { config } from '../../config/env.js';
 import { sendUnauthenticated } from '../../errors/index.js';
+import { fireAuditEvent } from '../audit/fire-audit.js';
 
 const RUNTIME_TOKEN_QUERY_KEY = 'runtime_token';
 const RUNTIME_TOKEN_HEADER_KEY = 'x-managecallai-runtime-token';
@@ -12,7 +20,14 @@ export async function authenticateRuntime(
 ): Promise<void> {
   const credential = extractRuntimeCredential(req);
 
-  if (credential.token !== config.runtimeApiToken) {
+  if (!isValidToken(credential.token)) {
+    fireAuditEvent({
+      tenant_id: '',
+      actor_id: null,
+      action: 'runtime.auth_failed',
+      resource_type: 'runtime_endpoint',
+      metadata: { auth_type: credential.authType, path: req.url, source_ip: req.ip },
+    });
     return sendUnauthenticated(reply);
   }
 
@@ -27,6 +42,14 @@ export async function authenticateRuntime(
     email: 'runtime@managecallai.internal',
     role: 'tenant_admin',
   };
+}
+
+function isValidToken(token: string | null): boolean {
+  if (!token) return false;
+  if (token === config.runtimeApiToken) return true;
+  // Secondary token accepted during zero-downtime rotation (SLICE-46)
+  if (config.runtimeApiTokenSecondary && token === config.runtimeApiTokenSecondary) return true;
+  return false;
 }
 
 function extractRuntimeCredential(req: FastifyRequest): { token: string | null; authType: 'bearer' | 'basic' | 'header' | 'fallback' } {

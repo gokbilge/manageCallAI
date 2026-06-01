@@ -60,6 +60,9 @@ const configValues = {
   databaseUrl: required('DATABASE_URL'),
   jwtSecret: required('JWT_SECRET'),
   runtimeApiToken: required('RUNTIME_API_TOKEN'),
+  // Optional secondary token accepted during zero-downtime rotation (SLICE-46).
+  // Set to the new token, roll it out to nodes, then promote to primary and clear this.
+  runtimeApiTokenSecondary: process.env['RUNTIME_API_TOKEN_SECONDARY'] ?? null,
   sipSecretMasterKey: required('SIP_SECRET_MASTER_KEY'),
   sipSecretKeyId: required('SIP_SECRET_KEY_ID'),
   allowRuntimeTokenFallback: parseBoolean('ALLOW_RUNTIME_TOKEN_FALLBACK', !isProduction),
