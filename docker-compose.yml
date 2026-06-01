@@ -53,9 +53,19 @@ services:
       MANAGECALLAI_API_BASE: ${MANAGECALLAI_API_BASE:-http://api:3000/api/v1}
       APP_ENV: ${APP_ENV:-development}
       RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN:-change-me-runtime-token}
+      # IMPORTANT: override FREESWITCH_ESL_PASSWORD before any non-development use
       FREESWITCH_ESL_PASSWORD: ${FREESWITCH_ESL_PASSWORD:-ClueCon}
+      # Hardening declarations — set these in production deployments
+      FREESWITCH_ANONYMOUS_CALLS: ${FREESWITCH_ANONYMOUS_CALLS:-disabled}
+      FREESWITCH_MOD_XML_RPC: ${FREESWITCH_MOD_XML_RPC:-disabled}
+      FREESWITCH_LOG_LEVEL: ${FREESWITCH_LOG_LEVEL:-warning}
+      # TLS/SRTP/NAT — enable and set public IPs for production
+      FREESWITCH_TLS_ENABLED: ${FREESWITCH_TLS_ENABLED:-false}
+      FREESWITCH_EXT_SIP_IP: ${FREESWITCH_EXT_SIP_IP:-}
+      FREESWITCH_EXT_RTP_IP: ${FREESWITCH_EXT_RTP_IP:-}
     ports:
       - "5060:5060/udp"
+      - "5061:5061/tcp"
       - "5080:5080/tcp"
       - "5080:5080/udp"
       - "8021:8021/tcp"
