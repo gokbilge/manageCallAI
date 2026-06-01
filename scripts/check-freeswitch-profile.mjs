@@ -21,7 +21,7 @@
  *   FREESWITCH_ESL_HOST  (default: 127.0.0.1)
  *   FREESWITCH_ESL_PORT  (default: 8021)
  *   FREESWITCH_ESL_PASSWORD  (required, must not be the vendor default in non-dev environments)
- *   FREESWITCH_ESL_TIMEOUT_MS  (default: 60000)
+ *   FREESWITCH_ESL_TIMEOUT_MS  (default: 120000)
  *
  * Exit code 0 = FreeSWITCH is reachable and sofia internal profile is loaded.
  * Non-zero = connection failed or profile not found.
@@ -46,13 +46,15 @@ if (password === defaultEslPassword && process.env.APP_ENV === 'production') {
 
 console.log(`Connecting to FreeSWITCH ESL at ${host}:${port}...`);
 
-const TIMEOUT_MS = parseInt(process.env.FREESWITCH_ESL_TIMEOUT_MS ?? '60000', 10);
+const TIMEOUT_MS = parseInt(process.env.FREESWITCH_ESL_TIMEOUT_MS ?? '120000', 10);
+const ATTEMPT_TIMEOUT_MS = parseInt(process.env.FREESWITCH_ESL_ATTEMPT_TIMEOUT_MS ?? '5000', 10);
 const RETRY_DELAY_MS = 1_000;
 const deadline = Date.now() + TIMEOUT_MS;
 
 let buffer = '';
 let authenticated = false;
 let done = false;
+let retryPending = false;
 let client;
 
 const timer = setTimeout(() => {
@@ -66,13 +68,21 @@ const timer = setTimeout(() => {
 function connect() {
   buffer = '';
   authenticated = false;
+  retryPending = false;
   client = net.createConnection({ host, port });
+  client.setTimeout(ATTEMPT_TIMEOUT_MS);
 
   client.on('data', onData);
   client.on('error', onError);
+  client.on('timeout', onAttemptTimeout);
+  client.on('close', onClose);
 }
 
 function retry(reason) {
+  if (retryPending) {
+    return true;
+  }
+  retryPending = true;
   client?.destroy();
 
   if (!done && Date.now() + RETRY_DELAY_MS < deadline) {
@@ -82,6 +92,10 @@ function retry(reason) {
   }
 
   return false;
+}
+
+function onAttemptTimeout() {
+  retry(`ESL attempt did not complete within ${ATTEMPT_TIMEOUT_MS}ms`);
 }
 
 function onData(data) {
@@ -146,6 +160,12 @@ function onError(err) {
   console.error('Is FreeSWITCH running? Try: pnpm runtime:up');
   clearTimeout(timer);
   process.exit(1);
+}
+
+function onClose() {
+  if (!done && !retryPending) {
+    retry('ESL connection closed before profile check completed');
+  }
 }
 
 connect();
