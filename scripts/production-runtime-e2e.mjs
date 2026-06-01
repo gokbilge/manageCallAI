@@ -149,7 +149,7 @@ async function run() {
     entry_node_id: 'start',
     nodes: [
       { id: 'start', type: 'start', next_node_id: 'menu' },
-      { id: 'menu', type: 'play_collect', next_node_id: 'route', timeout_node_id: 'end', invalid_node_id: 'end' },
+      { id: 'menu', type: 'play_collect', prompt_id: prompt.id, next_node_id: 'route', timeout_node_id: 'end', invalid_node_id: 'end' },
       { id: 'route', type: 'switch', cases: { '1': 'reception' }, default_node_id: 'end' },
       { id: 'reception', type: 'transfer_extension', extension_number: '1001' },
       { id: 'end', type: 'hangup' },
