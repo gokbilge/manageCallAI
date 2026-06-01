@@ -48,7 +48,8 @@ services:
       args:
         FREESWITCH_VERSION: ${FREESWITCH_VERSION:-v1.10.12}
     environment:
-      MANAGECALLAI_DIRECTORY_URL: ${MANAGECALLAI_DIRECTORY_URL:-http://api:3000/api/v1/freeswitch/directory}
+      MANAGECALLAI_DIRECTORY_URL: ${MANAGECALLAI_DIRECTORY_URL:-http://freeswitch:__RUNTIME_API_TOKEN__@api:3000/api/v1/freeswitch/directory}
+      MANAGECALLAI_DIALPLAN_URL: ${MANAGECALLAI_DIALPLAN_URL:-http://freeswitch:__RUNTIME_API_TOKEN__@api:3000/api/v1/freeswitch/dialplan}
       MANAGECALLAI_API_BASE: ${MANAGECALLAI_API_BASE:-http://api:3000/api/v1}
       APP_ENV: ${APP_ENV:-development}
       RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN:-change-me-runtime-token}
