@@ -50,8 +50,9 @@ Goal: prepare real operators to deploy, operate, recover, and secure the system.
 
 Required slices:
 
-- extend `SLICE-44` with production verification evidence
-- complete deployment/runbook work from `SLICE-51`
+- `SLICE-52`: production runtime E2E gate
+- `SLICE-53`: production deployment and network hardening
+- `SLICE-54`: backup, restore, upgrade, and DR
 - add future slices for load/soak, multi-instance rate limiting, and carrier interop
 
 Exit criteria:
@@ -71,6 +72,9 @@ Exit criteria:
 | `SLICE-49` | Public alpha | misleading release posture, unresolved security findings |
 | `SLICE-50` | Public beta | untested real FreeSWITCH runtime integration |
 | `SLICE-51` | Public beta/production | operator UX, coverage, deployment/runbook gaps |
+| `SLICE-52` | Production | missing release-grade runtime E2E evidence |
+| `SLICE-53` | Production | unsafe deployment defaults and network exposure |
+| `SLICE-54` | Production | untested restore, upgrade, and DR procedures |
 
 ## Do Not Reclassify As Production Until
 
@@ -80,4 +84,3 @@ Exit criteria:
 - MCP/n8n remain narrower than REST and are drift-checked
 - outbound toll-fraud controls are enforced and tested
 - backup/restore/upgrade playbooks have been executed successfully
-

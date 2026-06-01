@@ -3,6 +3,7 @@ node_modules/
 .pnpm-store/
 dist/
 coverage/
+artifacts/
 .runlogs/
 .runtime/
 *.exe
@@ -29,3 +30,4 @@ runtime-token*
 # Local AI context files - not for version control
 CLAUDE.md
 AGENTS.md
+.local-prompts/

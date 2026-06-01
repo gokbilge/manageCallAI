@@ -46,6 +46,19 @@ admin credentials exist. The registration endpoint is rate-limited in production
 If `PLATFORM_OPERATOR_EMAILS` includes the registering email, the JWT will carry
 `role=platform_admin`. This is the recommended bootstrap path for the platform operator.
 
+## Production preflight
+
+Before starting production traffic, run:
+
+```sh
+pnpm production:preflight
+```
+
+This blocks known unsafe defaults such as non-production `APP_ENV`, weak JWT or
+runtime secrets, malformed SIP master keys, and the stock FreeSWITCH ESL
+password. Treat warnings as deployment review items before enabling live SIP
+traffic. See `docs/ops/production-preflight.md`.
+
 ## Edge rate limits and TDoS controls
 
 The API applies in-process rate limits to auth, runtime/FreeSWITCH, webhook
@@ -140,8 +153,10 @@ becomes an orphaned reference.
 1. Take a PostgreSQL snapshot before any migration.
 2. Deploy the new API version with `APP_ENV=production`.
 3. Run `node db/migrate.mjs` against the database.
-4. Verify `GET /health` returns `{ status: "ok" }`.
-5. Roll back: restore the snapshot and redeploy the previous API version.
+4. Run `pnpm db:contracts`, `pnpm db:constraints`, and `pnpm production:preflight`.
+5. Verify `GET /health` returns `{ status: "ok" }`.
+6. Run `pnpm production:e2e` on a runtime-capable deployment before promoting.
+7. Roll back: restore the snapshot and redeploy the previous API version.
    Migrations are not automatically reversible — write a rollback migration if needed.
 
 ## SLOs for runtime lookup endpoints
