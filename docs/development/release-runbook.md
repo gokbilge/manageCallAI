@@ -180,6 +180,23 @@ Build the MCP server first: `pnpm --filter @managecallai/mcp build`
 
 ---
 
+## Release notes and tags
+
+Before creating a release tag, follow `docs/release/release-notes-policy.md`.
+
+Checklist:
+
+1. Move completed `CHANGELOG.md` entries from `Unreleased` to the target version.
+2. Verify every release-note claim against code, tests, docs, or CI evidence.
+3. State the SDK package status: not published, publish dry run passed, or published.
+4. Attach or link runtime smoke evidence for beta, release-candidate, and production tags.
+5. Mark alpha and beta releases as pre-release in GitHub.
+
+Do not create or move public tags from experimental branches. Failed release
+candidates require a new numbered tag.
+
+---
+
 ## Upgrade procedure
 
 1. Pull the new code: `git pull origin main`

@@ -27,7 +27,7 @@ XML/runtime foundations are implemented. The project is suitable for local
 demos, internal evaluation, and contributor testing.
 
 Production deployment is not recommended until full FreeSWITCH smoke CI,
-deployment hardening, visual IVR builder polish, observability HUD polish, and
+deployment hardening, observability HUD polish, and
 expanded tenant-isolation/runtime tests are complete.
 
 ## What Is Ready
@@ -115,16 +115,19 @@ public alpha still needs a simpler deployment entry point that tells evaluators
 what is supported, what is not, and how to run a clean local/single-server
 evaluation without implying production readiness.
 
-### Blocker 3: visual IVR and observability are not release-grade product surfaces
+### Blocker 3: observability and beta workflow proof are not release-grade product surfaces
 
 The backend lifecycle is strong. Product readiness still depends on the
 operator-facing surfaces being usable by non-developers:
 
-- visual IVR authoring
 - live observability HUD
 - approval/publish/rollback workflows
 - error/loading/empty states
 - accessibility and role-aware navigation
+
+The visual IVR builder is usable for the alpha authoring loop: draft editing,
+validation, simulation, publish request, and read-only states for published or
+non-editable versions. Beta still needs broader operator workflow evidence.
 
 ### Blocker 4: active CodeQL/security findings must be closed or triaged
 
@@ -144,7 +147,7 @@ alpha labeling. Production cannot.
 |---|---|---|
 | Internal alpha | Ready | Main CI green, demo loop works locally, runtime proof verified manually |
 | Public alpha | Almost ready | CodeQL triage, alpha docs, known limitations, clean-clone demo verification |
-| Public beta | Not ready | Self-hosted FreeSWITCH smoke CI, usable visual builder/HUD, broader isolation/runtime tests |
+| Public beta | Not ready | Self-hosted FreeSWITCH smoke CI, usable observability HUD, broader isolation/runtime tests |
 | Production | Not ready | Runtime E2E CI, deployment hardening, backup/restore/upgrade tests, fraud controls, soak testing |
 
 ## Public Alpha Checklist
@@ -167,7 +170,7 @@ alpha labeling. Production cannot.
 ## Beta Checklist
 
 - [ ] Self-hosted FreeSWITCH smoke CI.
-- [ ] First usable visual IVR builder release surface.
+- [x] First usable visual IVR builder release surface. -- Alpha route supports draft editing, validation, simulation, publish request, and read-only states for non-editable versions.
 - [ ] First usable observability HUD release surface.
 - [ ] Tenant isolation matrix tests across major domains.
 - [ ] Runtime actor boundary tests.
