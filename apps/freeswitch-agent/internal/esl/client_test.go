@@ -1,4 +1,4 @@
-package esl
+﻿package esl
 
 import (
 	"bufio"
@@ -7,6 +7,9 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -181,7 +184,7 @@ func TestRunSessionAuthenticatesAndSubscribes(t *testing.T) {
 		eventBody := "Event-Name: CHANNEL_CREATE\nUnique-ID: test-uuid-1\n"
 		_, err = fmt.Fprintf(serverConn, "Content-Type: text/event-plain\nContent-Length: %d\n\n%s", len(eventBody), eventBody)
 		if err != nil {
-			// Client closed before we could send — that's OK for this test
+			// Client closed before we could send â€” that's OK for this test
 		}
 
 		errCh <- nil
@@ -225,7 +228,7 @@ func TestRunSessionAuthenticatesAndSubscribes(t *testing.T) {
 			t.Fatalf("mock server error: %v", err)
 		}
 	case <-ctx.Done():
-		// Timeout is fine — we just want to verify client-side behavior
+		// Timeout is fine â€” we just want to verify client-side behavior
 	}
 }
 
@@ -254,5 +257,154 @@ func TestRunSessionAuthRejectsWrongPassword(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "-ERR") {
 		t.Errorf("error should mention -ERR, got: %v", err)
+	}
+}
+
+// TestConnectExitsOnPreCancelledContext verifies Connect returns nil immediately
+// when the context is already cancelled before any connection attempt.
+func TestConnectExitsOnPreCancelledContext(t *testing.T) {
+	cfg := config.Config{ESLHost: "127.0.0.1", ESLPort: 59990}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	c := NewClient(cfg, logger)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	start := time.Now()
+	err := c.Connect(ctx)
+	if err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+	if time.Since(start) > 200*time.Millisecond {
+		t.Fatal("Connect should return immediately on pre-cancelled context")
+	}
+}
+
+// TestConnectRetriesAndExitsOnContextCancel verifies the reconnect loop runs
+// at least one failed attempt before exiting on context cancellation.
+func TestConnectRetriesAndExitsOnContextCancel(t *testing.T) {
+	cfg := config.Config{ESLHost: "127.0.0.1", ESLPort: 59991}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	c := NewClient(cfg, logger)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- c.Connect(ctx) }()
+
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("expected nil, got %v", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("Connect did not exit after context cancellation")
+	}
+}
+
+type mockESLServer struct {
+	ln       net.Listener
+	password string
+	events   []string
+}
+
+func newMockESLServer(t *testing.T, password string, events []string) *mockESLServer {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	s := &mockESLServer{ln: ln, password: password, events: events}
+	go s.serveOne(t)
+	return s
+}
+
+func (s *mockESLServer) addr() string { return s.ln.Addr().String() }
+
+func (s *mockESLServer) serveOne(t *testing.T) {
+	t.Helper()
+	conn, err := s.ln.Accept()
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+	_ = s.ln.Close()
+
+	reader := bufio.NewReader(conn)
+	_, _ = fmt.Fprint(conn, "Content-Type: auth/request\n\n")
+	line, _ := reader.ReadString('\n')
+	line = strings.TrimRight(line, "\r\n")
+	if !strings.HasPrefix(line, "auth "+s.password) {
+		return
+	}
+	_, _ = reader.ReadString('\n')
+	_, _ = fmt.Fprint(conn, "Content-Type: command/reply\nReply-Text: +OK accepted\n\n")
+	_, _ = reader.ReadString('\n')
+	_, _ = reader.ReadString('\n')
+	_, _ = fmt.Fprint(conn, "Content-Type: command/reply\nReply-Text: +OK event listener enabled plain\n\n")
+	for _, body := range s.events {
+		_, _ = fmt.Fprintf(conn, "Content-Type: text/event-plain\nContent-Length: %d\n\n%s", len(body), body)
+	}
+}
+
+// TestRunSessionFullHandshakeAndEventDelivery exercises the full runSession path.
+func TestRunSessionFullHandshakeAndEventDelivery(t *testing.T) {
+	eventBody := "Event-Name: CHANNEL_CREATE\nUnique-ID: call-uuid-test\n"
+	srv := newMockESLServer(t, "testpass", []string{eventBody})
+
+	var forwarded int
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		forwarded++
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer apiServer.Close()
+
+	host, portStr, _ := net.SplitHostPort(srv.addr())
+	port, _ := strconv.Atoi(portStr)
+	cfg := config.Config{ESLHost: host, ESLPort: port, ESLPassword: "testpass", TenantID: "tenant-1", APIBaseURL: apiServer.URL}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	c := NewClient(cfg, logger)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := c.runSession(ctx, srv.addr())
+	if err == nil {
+		t.Fatal("expected non-nil error when server closes connection")
+	}
+	h := c.Health()
+	if h.Connected {
+		t.Error("expected disconnected after runSession returns")
+	}
+	if h.LastConnectedAt == "" {
+		t.Error("expected LastConnectedAt to be set")
+	}
+	if forwarded == 0 {
+		t.Error("expected at least one event to be forwarded")
+	}
+}
+
+// TestRunSessionHandlesNonEventMessages verifies non-event messages do not panic.
+func TestRunSessionHandlesNonEventMessages(t *testing.T) {
+	srv := newMockESLServer(t, "testpass", []string{})
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer apiServer.Close()
+
+	host, portStr, _ := net.SplitHostPort(srv.addr())
+	port, _ := strconv.Atoi(portStr)
+	cfg := config.Config{ESLHost: host, ESLPort: port, ESLPassword: "testpass", TenantID: "tenant-1", APIBaseURL: apiServer.URL}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	c := NewClient(cfg, logger)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := c.runSession(ctx, srv.addr())
+	if err == nil {
+		t.Fatal("expected non-nil error when server closes connection")
 	}
 }

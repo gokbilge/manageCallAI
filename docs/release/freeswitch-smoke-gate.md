@@ -1,18 +1,21 @@
-# FreeSWITCH Smoke Release Gate
+﻿# FreeSWITCH Smoke Release Gate
 
 The FreeSWITCH smoke gate is the required runtime proof for public beta and
 production release candidates.
 
-## Required Status Check
+## Repository Ruleset
 
-Configure branch protection or repository rulesets for these branch patterns:
+The `Release and RC smoke gate` ruleset is active on this repository and targets:
 
-- `release/**`
-- `rc/**`
+- `refs/heads/release/**`
+- `refs/heads/rc/**`
 
-Required status check:
+It requires the `FreeSWITCH runtime smoke` status check to pass before any push
+or PR targeting those branches is accepted. The ruleset is visible at:
 
-- `FreeSWITCH runtime smoke`
+```
+https://github.com/gokbilge/manageCallAI/rules
+```
 
 The check is produced by `.github/workflows/freeswitch-smoke.yml`. A pending,
 skipped, cancelled, or failed check blocks release promotion.
@@ -53,6 +56,27 @@ The workflow verifies:
 - SIP REGISTER smoke passes
 - Go agent ESL smoke passes
 - smoke evidence is uploaded with secrets redacted
+
+## Capturing Evidence For The Release Bundle
+
+After the smoke workflow passes on an RC or release branch:
+
+1. Retrieve the run URL:
+   ```sh
+   gh run list --workflow=freeswitch-smoke.yml --branch=rc/<version> --json url --jq '.[0].url'
+   ```
+2. Download the uploaded `freeswitch-smoke-<run_id>` artifact from the run.
+3. Add the run URL to `freeswitch_smoke_run_url` in the release evidence manifest.
+4. Add the E2E evidence path to `artifact_files.freeswitch_smoke_evidence`.
+
+See `docs/release/release-evidence-bundle.md` for the manifest format.
+
+## Infrastructure Requirement
+
+This gate requires a self-hosted runner registered with labels `[self-hosted, freeswitch]`.
+Until that runner is provisioned, `release/**` and `rc/**` branches will be blocked by the
+pending smoke check. Document the missing runner as a release blocker; do not disable or
+bypass the ruleset.
 
 ## Local Equivalent
 
