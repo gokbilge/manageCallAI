@@ -37,6 +37,7 @@ and release smoke evidence are complete.
 - `pnpm check:api-key-capabilities`
 - `pnpm check:coverage-ignores`
 - `pnpm check:production-readiness`
+- `pnpm check:log-redaction`
 - `pnpm production:preflight`
 - `pnpm check:network-config`
 - `pnpm check:freeswitch-hardening`

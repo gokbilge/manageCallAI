@@ -58,6 +58,7 @@
     "check:freeswitch-profile": "node scripts/check-freeswitch-profile.mjs",
     "check:freeswitch-hardening": "node scripts/check-freeswitch-hardening.mjs",
     "check:coverage-ignores": "node scripts/check-coverage-ignores.mjs",
+    "check:log-redaction": "node scripts/check-log-redaction.mjs",
     "check:network-config": "node scripts/check-production-network-config.mjs",
     "check:sip-tls-srtp-nat-evidence": "node scripts/check-sip-tls-srtp-nat-evidence.mjs",
     "check:runtime-token-rotation": "node scripts/check-runtime-token-rotation.mjs",
