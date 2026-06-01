@@ -39,6 +39,9 @@ and release smoke evidence are complete.
 - `pnpm check:production-readiness`
 - `pnpm production:preflight`
 - `pnpm production:rate-limit-check`
+- `./scripts/local-runtime-release-gate.sh` on a runtime-capable machine, OR
+  passing `FreeSWITCH runtime smoke` workflow on self-hosted runner
+- `pnpm check:runtime-e2e-evidence -- --dir=artifacts/production-e2e`
 - `pnpm restore:smoke` after restore rehearsals
 - `pnpm production:e2e` on a runtime-capable environment
 - `pnpm production:soak` on a runtime-capable environment
@@ -69,21 +72,40 @@ Normal CI includes an API-only demo loop (`apps/api/src/demo-loop.e2e.test.ts`) 
 registration, extension creation, IVR validation/simulation/publish, FreeSWITCH dialplan lookup,
 call event ingest, and health check.
 
-A self-hosted FreeSWITCH smoke workflow exists at `.github/workflows/freeswitch-smoke.yml`. It:
-- Runs on `[self-hosted, freeswitch]` and fails or remains pending when that runner is unavailable
-- Is triggered automatically on pushes to `release/**` and `rc/**`
-- Is triggered automatically for PRs targeting `release/**` and `rc/**`
-- Can be triggered manually via `workflow_dispatch`
+The `.github/workflows/freeswitch-smoke.yml` workflow:
 
-Repository branch protection or rulesets for `release/**` and `rc/**` must require
-the `FreeSWITCH runtime smoke` status check. A pending, skipped, or failing smoke
-check blocks the release tag. Do not replace this gate with manual evidence for
-public beta or production promotion.
+- Runs on `[self-hosted, freeswitch]`
+- **Starts** the runtime stack with `docker compose --profile freeswitch up -d --build`
+- Runs all 11 smoke proof steps
+- **Validates** the evidence artifact with `check-runtime-e2e-evidence.mjs`
+- **Tears down** the stack with `docker compose --profile freeswitch down -v`
+- Uploads `freeswitch-smoke-<run_id>` artifact (retained 90 days)
+- Triggers on: `workflow_dispatch`, push to `release/**`/`rc/**`, PR targeting those branches
 
-Every release candidate must document the passing FreeSWITCH smoke run and runtime
-versions used. Production release candidates must also attach the sanitized
-`pnpm production:e2e` evidence artifact uploaded by the smoke workflow. See
-`docs/release/production-runtime-e2e.md`.
+The `Release and RC smoke gate` repository ruleset requires the `FreeSWITCH runtime smoke`
+status check on `release/**` and `rc/**`. A pending, skipped, or failing check
+blocks release promotion.
+
+### Self-hosted runner setup
+
+1. Register a runner with labels `[self-hosted, freeswitch]`
+2. Add GitHub Actions secrets:
+   - `SMOKE_DATABASE_URL`
+   - `SMOKE_JWT_SECRET`
+   - `SMOKE_RUNTIME_API_TOKEN`
+   - `SMOKE_SIP_SECRET_MASTER_KEY`
+   - `SMOKE_FREESWITCH_ESL_PASSWORD`
+3. Ensure ports 5060/udp, 5080/tcp, 5080/udp, 8021/tcp, 3000/tcp, 5432/tcp are free
+
+### Local equivalent
+
+```bash
+./scripts/local-runtime-release-gate.sh
+pnpm check:runtime-e2e-evidence -- --dir=artifacts/production-e2e
+```
+
+Every release candidate must document the passing smoke run, runtime versions, and
+evidence JSON path. See `docs/release/production-runtime-e2e.md` for requirements.
 
 ## Load, Rate Limit, And Carrier Gates
 

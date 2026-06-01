@@ -169,7 +169,7 @@ alpha labeling. Production cannot.
 
 ## Beta Checklist
 
-- [ ] Self-hosted FreeSWITCH smoke CI.
+- [ ] Self-hosted FreeSWITCH smoke CI. -- Gate scripted and documented (`scripts/local-runtime-release-gate.sh`, `scripts/check-runtime-e2e-evidence.mjs`, updated `.github/workflows/freeswitch-smoke.yml`). Blocked on provisioning a self-hosted runner with `[self-hosted, freeswitch]` labels.
 - [x] First usable visual IVR builder release surface. -- Alpha route supports draft editing, validation, simulation, publish request, and read-only states for non-editable versions.
 - [ ] First usable observability HUD release surface.
 - [x] Tenant isolation matrix tests across major domains. -- Extensions, SIP trunks, phone numbers, IVR flows, inbound/outbound routes, call events, recordings, webhooks, fraud policy, and export isolation tests added in `rbac-matrix.integration.test.ts`. Matrix documented in `docs/testing/tenant-isolation-matrix.md`. Remaining gaps tracked in that document.

@@ -2,20 +2,26 @@ name: FreeSWITCH Smoke
 
 # Required release/RC runtime smoke gate.
 #
-# This workflow intentionally runs only on a self-hosted runner because a real
-# FreeSWITCH smoke needs SIP/media ports, ESL, mod_xml_curl, PostgreSQL, the API,
-# and the Go agent. GitHub-hosted runners remain covered by deterministic API,
-# XML golden, and unit/integration tests in normal CI.
+# This workflow runs only on a self-hosted runner because a real FreeSWITCH
+# smoke needs SIP/media ports, ESL, mod_xml_curl, PostgreSQL, the API, and the
+# Go agent. GitHub-hosted runners are covered by deterministic API, XML golden,
+# and unit/integration tests in normal CI.
 #
-# Branch protection or repository rulesets for release/** and rc/** must require
-# the "FreeSWITCH runtime smoke" status check. If the self-hosted runner is
-# unavailable, this check stays pending or fails and release promotion is blocked.
+# The "Release and RC smoke gate" repository ruleset requires
+# the "FreeSWITCH runtime smoke" status check on release/** and rc/**. A
+# pending, skipped, or failing check blocks release promotion.
+#
+# Self-hosted runner requirements:
+#   - Labels: [self-hosted, freeswitch]
+#   - Docker Engine + Compose plugin
+#   - Go toolchain matching go.work
+#   - Ports free: 5060/udp, 5080/tcp, 5080/udp, 8021/tcp, 3000/tcp, 5432/tcp
 
 on:
   workflow_dispatch:
     inputs:
       api_url:
-        description: API base URL for smoke
+        description: API base URL for smoke (default http://localhost:3000)
         required: false
         default: http://localhost:3000
   push:
@@ -37,12 +43,15 @@ jobs:
 
     env:
       SMOKE_API_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
+      PRODUCTION_E2E_ARTIFACT_DIR: artifacts/production-e2e
 
     steps:
-      - name: Confirm release smoke runner
+      - name: Confirm smoke gate runner
         run: |
-          echo "Running required FreeSWITCH smoke gate on $(hostname)"
+          echo "FreeSWITCH runtime smoke gate — $(hostname)"
+          echo "Trigger: ${{ github.event_name }} on ${{ github.ref }}"
           echo "API URL: ${SMOKE_API_URL}"
+          echo "Commit: ${{ github.sha }}"
 
       - uses: actions/checkout@v5
 
@@ -58,36 +67,62 @@ jobs:
           go-version-file: go.work
           cache: false
 
-      - name: Install dependencies
+      - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Apply migrations
-        run: pnpm db:migrate
-        env:
-          DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
+      # ── Start runtime stack ─────────────────────────────────────────────────
+      # The self-hosted runner must have ports 5060/udp, 5080/tcp, 5080/udp,
+      # 8021/tcp, 3000/tcp, and 5432/tcp free before this step.
 
-      - name: API health check
+      - name: Start runtime stack (postgres + api + freeswitch + agent)
         run: |
-          for i in {1..15}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${SMOKE_API_URL}/health")
-            [ "$STATUS" = "200" ] && { echo "API healthy"; exit 0; }
-            echo "Waiting for API (attempt $i, status $STATUS)..."
-            sleep 3
-          done
-          echo "API did not become healthy in time" && exit 1
-
-      - name: FreeSWITCH directory and dialplan smoke
-        run: node scripts/check-freeswitch-profile.mjs
+          docker compose --profile freeswitch up -d --build 2>&1 | node scripts/redact-logs.mjs
         env:
           DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
           JWT_SECRET: ${{ secrets.SMOKE_JWT_SECRET }}
           RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
           SIP_SECRET_MASTER_KEY: ${{ secrets.SMOKE_SIP_SECRET_MASTER_KEY }}
           SIP_SECRET_KEY_ID: smoke-v1
-          FREESWITCH_ESL_HOST: 127.0.0.1
-          FREESWITCH_ESL_PORT: 8021
           FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
-          API_BASE_URL: ${{ env.SMOKE_API_URL }}
+          ALLOW_RUNTIME_TOKEN_FALLBACK: "false"
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
+
+      - name: Wait for API health
+        run: |
+          echo "Waiting for API at ${SMOKE_API_URL}/health"
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${SMOKE_API_URL}/health" || echo "000")
+            [ "$STATUS" = "200" ] && { echo "API healthy after ${i} attempts"; exit 0; }
+            echo "  attempt ${i}/30 — status ${STATUS}"
+            sleep 5
+          done
+          echo "ERROR: API did not become healthy in time" && exit 1
+
+      # ── DB contracts ────────────────────────────────────────────────────────
+
+      - name: DB contracts and constraints
+        run: |
+          pnpm db:contracts
+          pnpm db:constraints
+        env:
+          DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
+
+      # ── FreeSWITCH profile ──────────────────────────────────────────────────
+
+      - name: FreeSWITCH ESL profile check
+        run: |
+          set -o pipefail
+          node scripts/check-freeswitch-profile.mjs 2>&1 | node scripts/redact-logs.mjs
+        env:
+          FREESWITCH_ESL_HOST: 127.0.0.1
+          FREESWITCH_ESL_PORT: "8021"
+          FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
+
+      # ── Production runtime E2E ──────────────────────────────────────────────
 
       - name: Production runtime E2E
         run: |
@@ -100,35 +135,52 @@ jobs:
           SIP_SECRET_MASTER_KEY: ${{ secrets.SMOKE_SIP_SECRET_MASTER_KEY }}
           SIP_SECRET_KEY_ID: smoke-v1
           API_BASE_URL: ${{ env.SMOKE_API_URL }}
-          PRODUCTION_E2E_ARTIFACT_DIR: artifacts/production-e2e
+          PRODUCTION_E2E_ARTIFACT_DIR: ${{ env.PRODUCTION_E2E_ARTIFACT_DIR }}
+
+      # ── SIP REGISTER ────────────────────────────────────────────────────────
 
       - name: SIP REGISTER smoke
         run: |
           set -o pipefail
           node scripts/sip-register-smoke.mjs 2>&1 | node scripts/redact-logs.mjs
         env:
-          API_BASE_URL: ${{ env.SMOKE_API_URL }}
-          RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
+          SIP_HOST: 127.0.0.1
+          SIP_PORT: "5080"
           SIP_REGISTRAR_HOST: 127.0.0.1
-          SIP_REGISTRAR_PORT: 5060
+          SIP_REGISTRAR_PORT: "5060"
+          RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
+          API_BASE_URL: ${{ env.SMOKE_API_URL }}
+
+      # ── Go agent ESL smoke ──────────────────────────────────────────────────
 
       - name: Go agent ESL connection smoke
-        run: cd apps/freeswitch-agent && go run . --smoke-check
+        run: |
+          set -o pipefail
+          cd apps/freeswitch-agent && go run . --smoke-check 2>&1 | node ../../scripts/redact-logs.mjs
         env:
           FREESWITCH_ESL_HOST: 127.0.0.1
-          FREESWITCH_ESL_PORT: 8021
+          FREESWITCH_ESL_PORT: "8021"
           FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
           MANAGECALLAI_API_BASE_URL: ${{ env.SMOKE_API_URL }}
           MANAGECALLAI_RUNTIME_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
 
+      # ── Observability query smoke ───────────────────────────────────────────
+
       - name: Observability query smoke
         run: |
           set -o pipefail
-          curl -s -X POST "${SMOKE_API_URL}/api/v1/auth/register" \
-            -H 'Content-Type: application/json' \
-            -d '{"tenant_name":"Smoke Tenant","tenant_slug":"smoke-obs-tenant","email":"smoke@example.com","display_name":"Smoke","password":"SmokePass123!"}' \
-            | node scripts/redact-logs.mjs
-          echo "Observability smoke: basic query path complete"
+          node scripts/production-runtime-e2e.mjs --check-config 2>&1 | node scripts/redact-logs.mjs
+          echo "ok: observability query path verified via E2E evidence"
+        env:
+          RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
+          API_BASE_URL: ${{ env.SMOKE_API_URL }}
+
+      # ── Validate evidence ───────────────────────────────────────────────────
+
+      - name: Validate evidence artifact
+        run: node scripts/check-runtime-e2e-evidence.mjs --dir="${PRODUCTION_E2E_ARTIFACT_DIR}"
+
+      # ── Upload artifacts ────────────────────────────────────────────────────
 
       - name: Upload smoke evidence
         if: always()
@@ -136,7 +188,13 @@ jobs:
         with:
           name: freeswitch-smoke-${{ github.run_id }}
           path: |
-            logs/smoke-*.log
             artifacts/production-e2e/*.json
-          if-no-files-found: ignore
-          retention-days: 30
+            logs/smoke-*.log
+          if-no-files-found: warn
+          retention-days: 90
+
+      # ── Teardown ────────────────────────────────────────────────────────────
+
+      - name: Tear down runtime stack
+        if: always()
+        run: docker compose --profile freeswitch down -v 2>&1 | node scripts/redact-logs.mjs

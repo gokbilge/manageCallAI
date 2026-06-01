@@ -88,12 +88,46 @@ docs/development/demo-loop.md
 
 ## Runtime Verification
 
-When local FreeSWITCH runtime support is needed:
+### Quick runtime smoke
 
 ```sh
 pnpm runtime:up
 pnpm runtime:smoke
 ```
+
+### Full local release gate (all 11 proof steps)
+
+The local release gate runs every required smoke step in sequence and writes a
+validated evidence artifact:
+
+```sh
+cp .env.example .env
+# Edit .env — set non-sample values for DATABASE_URL, JWT_SECRET,
+# RUNTIME_API_TOKEN, SIP_SECRET_MASTER_KEY, SIP_SECRET_KEY_ID
+set -a && source .env && set +a
+./scripts/local-runtime-release-gate.sh
+```
+
+Required ports (must be free):
+
+| Port | Protocol | Service |
+|---|---|---|
+| 5432 | TCP | PostgreSQL |
+| 3000 | TCP | API |
+| 8021 | TCP | FreeSWITCH ESL |
+| 5060 | UDP | SIP (external) |
+| 5080 | TCP/UDP | SIP (internal) |
+
+Evidence is written to `artifacts/production-e2e/*.json`.
+
+To clean up the runtime stack after the gate:
+
+```sh
+pnpm runtime:down
+# or: CLEANUP=true ./scripts/local-runtime-release-gate.sh
+```
+
+See `docs/release/production-runtime-e2e.md` for full details.
 
 If SIP registration is not available on the host, run the smoke without SIP
 registration and document that limitation in the release notes.
