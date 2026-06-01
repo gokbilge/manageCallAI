@@ -9,20 +9,35 @@
   "database": {
     "frequency": "<hourly | daily | weekly>",
     "retention_days": 0,
+    "wal_retention_days": 0,
     "encrypted_at_rest": false,
     "offsite_copy": false,
+    "offsite_location": "<separate region/account/object storage>",
+    "encryption_algorithm": "<AES-256-GCM | provider-managed KMS>",
+    "encryption_key_rotation_days": 90,
     "restore_rehearsal_interval_days": 30
   },
 
   "recordings": {
     "frequency": "<hourly | daily | weekly>",
     "retention_days": 0,
-    "encrypted_at_rest": false
+    "encrypted_at_rest": false,
+    "offsite_copy": false,
+    "offsite_location": "<separate region/account/object storage>",
+    "encryption_algorithm": "<AES-256-GCM | provider-managed KMS>"
   },
 
   "secrets": {
     "stored_separately_from_database": false,
-    "secrets_manager": "<name of secrets manager, e.g. HashiCorp Vault, AWS Secrets Manager>"
+    "secrets_manager": "<name of secrets manager, e.g. HashiCorp Vault, AWS Secrets Manager>",
+    "rotation_interval_days": 90
+  },
+
+  "alerting": {
+    "backup_failure_after_minutes": 0,
+    "missed_backup_threshold": 0,
+    "restore_rehearsal_overdue_days": 0,
+    "contact": "<team or rotation>"
   },
 
   "rpo_minutes": 0,

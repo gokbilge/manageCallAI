@@ -75,11 +75,26 @@ pipeline before log data leaves the deployment environment.
 
 ## Evidence Template
 
-See `docs/ops/templates/log-redaction-evidence-template.json`. Validate with:
+See `docs/ops/templates/log-redaction-evidence-template.json`. Validate a
+filled evidence file with:
 
 ```sh
 pnpm check:log-redaction -- --evidence=<path>
 ```
+
+For beta and production gates, generate evidence from a real redacted log
+bundle instead of hand-filling the template:
+
+```sh
+pnpm check:log-redaction -- \
+  --scan-dir=artifacts/log-redaction/live-log-bundle \
+  --output=artifacts/log-redaction/log-redaction-evidence-<timestamp>.json
+```
+
+The scan fails if API, runtime, FreeSWITCH, agent, or support-bundle logs still
+contain raw authorization headers, runtime token headers, secret environment
+variables, secret query parameters, JSON secret fields, or database URL
+passwords.
 
 ## Related Documents
 

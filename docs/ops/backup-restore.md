@@ -7,6 +7,14 @@ This is an alpha-stage operational guide. Adapt it to your deployment topology.
 Production deployments should add automated snapshots, off-site replication,
 and RTO/RPO tracking.
 
+The canonical production-candidate retention policy is
+`docs/ops/backup-retention-policy.json`. Validate it before restore rehearsals:
+
+```sh
+pnpm check:backup-retention-policy -- \
+  --policy=docs/ops/backup-retention-policy.json
+```
+
 ## What to Back Up
 
 | Component | Data | Priority |
