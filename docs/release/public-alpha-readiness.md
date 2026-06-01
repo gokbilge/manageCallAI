@@ -149,20 +149,20 @@ alpha labeling. Production cannot.
 
 ## Public Alpha Checklist
 
-- [x] All high/medium CodeQL alerts closed or triaged. — No open alerts as of 2026-06-01.
-- [x] General `/api/v1/*` fallback rate limit verified. — `api` bucket covers all authenticated DB-backed routes; tested in `apps/api/src/security/rate-limit.test.ts`.
-- [x] Sensitive runtime/SIP logging findings closed. — `logError` omits stack traces; URL redaction strips `*_token` and `*secret` query params; tested in logger.test.ts.
-- [x] README clearly says alpha and not production-ready. — README "Current Status" section reads "Alpha candidate. Not production-ready."
-- [x] Known limitations are documented. — Listed in `docs/deployment/local-alpha.md` under Alpha Limitations.
-- [x] Local alpha deployment doc exists. — `docs/deployment/local-alpha.md`
-- [ ] Local demo loop verified from a clean clone. — Run manually before tagging `v0.2.0-alpha`.
-- [ ] Runtime proof verified manually on one clean machine. — Required before public tag; see live-freeswitch-*.md runbooks.
-- [x] Docker images build successfully. — CI docker-build job covers all 5 images on every PR.
-- [x] DB migration replay and constraints pass. — CI `db:migrate`, `db:contracts`, `db:constraints` run on every PR.
-- [x] OpenAPI generation and drift checks pass. — CI `generate:openapi` + drift check runs on every PR.
-- [x] MCP schema drift check passes. — CI `check:mcp-schemas` runs on every PR.
-- [x] Webhook payload coverage check passes. — CI `check:webhook-payloads` runs on every PR.
-- [ ] Security reporting process is visible. — Add SECURITY.md or link to GitHub security advisory process before public tag.
+- [x] All high/medium CodeQL alerts closed or triaged. -- No open alerts as of 2026-06-01.
+- [x] General `/api/v1/*` fallback rate limit verified. -- `api` bucket covers all authenticated DB-backed routes; tested in `apps/api/src/security/rate-limit.test.ts`.
+- [x] Sensitive runtime/SIP logging findings closed. -- `logError` omits stack traces; URL redaction strips `*_token` and `*secret` query params; tested in logger.test.ts.
+- [x] README clearly says alpha and not production-ready. -- README "Current Status" section reads "Alpha candidate. Not production-ready."
+- [x] Known limitations are documented. -- Listed in `docs/deployment/local-alpha.md` under Alpha Limitations.
+- [x] Local alpha deployment doc exists. -- `docs/deployment/local-alpha.md`
+- [ ] Local demo loop verified from a clean clone. -- Run manually before tagging `v0.2.0-alpha`.
+- [ ] Runtime proof verified manually on one clean machine. -- Required before public tag; see live-freeswitch-*.md runbooks.
+- [x] Docker images build successfully. -- CI docker-build job covers all 5 images on every PR.
+- [x] DB migration replay and constraints pass. -- CI `db:migrate`, `db:contracts`, `db:constraints` run on every PR.
+- [x] OpenAPI generation and drift checks pass. -- CI `generate:openapi` + drift check runs on every PR.
+- [x] MCP schema drift check passes. -- CI `check:mcp-schemas` runs on every PR.
+- [x] Webhook payload coverage check passes. -- CI `check:webhook-payloads` runs on every PR.
+- [x] Security reporting process is visible. -- `SECURITY.md` is present at the repository root.
 
 ## Beta Checklist
 

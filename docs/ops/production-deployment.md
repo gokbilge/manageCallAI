@@ -17,15 +17,20 @@ Every required variable is documented in `apps/api/src/config/env.ts`. Minimum r
 | `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET` | At least 32 random bytes (hex/base64). Must not be the sample value. |
 | `RUNTIME_API_TOKEN` | At least 32 random bytes. Used by FreeSWITCH adapter and mod_xml_curl. |
+| `RUNTIME_API_TOKEN_SECONDARY` | Optional short-lived secondary token for rolling runtime credential rotation. Leave empty unless rotating. |
+| `ALLOW_RUNTIME_TOKEN_FALLBACK` | Must be `false` in production unless an explicitly isolated compatibility path is approved. |
 | `SIP_SECRET_MASTER_KEY` | 64-char hex. Master key for SIP password encryption. |
 | `SIP_SECRET_KEY_ID` | Label for the active key version. |
 | `APP_ENV` | Set to `production`. Enables secret validation and disables token fallback. |
 | `PLATFORM_OPERATOR_EMAILS` | Comma-separated list of emails that receive `platform_admin` role at login. |
+| `RECORDING_STORAGE_ROOT` | Root path for recording and voicemail media. Back this up with the database. |
 | `RATE_LIMIT_WINDOW_MS` | Rate-limit window. Default `60000`. |
 | `RATE_LIMIT_AUTH_MAX` | Auth requests per window per client key. Default `100`. |
 | `RATE_LIMIT_RUNTIME_MAX` | Runtime and FreeSWITCH requests per window per client key. Default `1200`. |
 | `RATE_LIMIT_WEBHOOK_MAX` | Webhook-management requests per window per client key. Default `300`. |
 | `RATE_LIMIT_OUTBOUND_MAX` | Outbound call-initiation requests per window per client key. Default `60`. |
+| `RATE_LIMIT_API_MAX` | General authenticated API requests per window per client key. Default `600`. |
+| `RATE_LIMIT_SCRAPE_MAX` | Scrape-sensitive unauthenticated requests per window per client key. Default `30`. |
 
 The FreeSWITCH agent requires:
 
@@ -103,7 +108,7 @@ For TLS SIP trunks (`transport=tls`), FreeSWITCH requires:
 - `sofia.conf.xml` profile `tls-bind-params` pointing to the cert
 
 manageCallAI passes `transport=tls` in the FreeSWITCH gateway XML. The API itself does
-not terminate SIP — TLS is negotiated between FreeSWITCH and the carrier.
+not terminate SIP -- TLS is negotiated between FreeSWITCH and the carrier.
 
 ### NAT traversal
 
@@ -171,7 +176,7 @@ becomes an orphaned reference.
 9. Run `pnpm carrier:interop-check -- --evidence=<file>` for each supported carrier profile.
 10. Run `pnpm release:evidence-check -- --manifest=<file>` before final promotion.
 11. Roll back: restore the snapshot and redeploy the previous API version.
-   Migrations are not automatically reversible — write a rollback migration if needed.
+   Migrations are not automatically reversible -- write a rollback migration if needed.
 
 ## SLOs for runtime lookup endpoints
 

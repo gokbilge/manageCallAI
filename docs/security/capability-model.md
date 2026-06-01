@@ -41,27 +41,32 @@ CHECK constraint to include `platform_admin` as a safety net only.
 
 | Capability | platform_admin | tenant_admin | tenant_operator | tenant_viewer |
 |-----------|:-:|:-:|:-:|:-:|
-| `platform.tenants.view` | ✓ | — | — | — |
-| `platform.runtime.view` | ✓ | — | — | — |
-| `platform.audit.view` | ✓ | — | — | — |
-| `tenant.dashboard.view` | ✓ | ✓ | ✓ | ✓ |
-| `tenant.extensions.*` (view) | ✓ | ✓ | ✓ | ✓ |
-| `tenant.extensions.*` (create/update) | ✓ | ✓ | ✓ | — |
-| `tenant.extensions.deactivate` | ✓ | ✓ | — | — |
-| `tenant.calls.view` | ✓ | ✓ | ✓ | ✓ |
-| `tenant.inbound_routes.*` (view) | ✓ | ✓ | ✓ | ✓ |
-| `tenant.inbound_routes.*` (create/update/activate) | ✓ | ✓ | ✓ | — |
-| `tenant.inbound_routes.deactivate` | ✓ | ✓ | — | — |
-| `tenant.ivr_flows.*` (view) | ✓ | ✓ | ✓ | ✓ |
-| `tenant.ivr_flows.*` (create/update/validate/simulate) | ✓ | ✓ | ✓ | — |
-| `tenant.ivr_flows.publish` / `rollback` | ✓ | ✓ | — | — |
-| `tenant.approvals.view` | ✓ | ✓ | ✓ | ✓ |
-| `tenant.approvals.decide` | ✓ | ✓ | — | — |
-| `tenant.automation.keys.manage` | ✓ | ✓ | — | — |
-| `tenant.automation.webhooks.manage` | ✓ | ✓ | — | — |
-| `tenant.outbound_calls.create` | ✓ | ✓ | ✓ | — |
-| `tenant.audit_log.view` | ✓ | ✓ | ✓ | — |
-| `tenant.users.manage` | ✓ | ✓ | — | — |
+| `platform.tenants.view` | yes | no | no | no |
+| `platform.runtime.view` | yes | no | no | no |
+| `platform.audit.view` | yes | no | no | no |
+| `tenant.dashboard.view` | yes | yes | yes | yes |
+| `tenant.extensions.*` (view) | yes | yes | yes | yes |
+| `tenant.extensions.*` (create/update) | yes | yes | yes | no |
+| `tenant.extensions.deactivate` | yes | yes | no | no |
+| `tenant.calls.view` | yes | yes | yes | yes |
+| `tenant.inbound_routes.*` (view) | yes | yes | yes | yes |
+| `tenant.inbound_routes.*` (create/update/activate) | yes | yes | yes | no |
+| `tenant.inbound_routes.deactivate` | yes | yes | no | no |
+| `tenant.ivr_flows.*` (view) | yes | yes | yes | yes |
+| `tenant.ivr_flows.*` (create/update/validate/simulate) | yes | yes | yes | no |
+| `tenant.ivr_flows.publish` / `rollback` | yes | yes | no | no |
+| `tenant.approvals.view` | yes | yes | yes | yes |
+| `tenant.approvals.decide` | yes | yes | no | no |
+| `tenant.automation.keys.manage` | yes | yes | no | no |
+| `tenant.automation.webhooks.manage` | yes | yes | no | no |
+| `tenant.outbound_calls.create` | yes | yes | yes | no |
+| `tenant.fraud_policy.view` | yes | yes | yes | no |
+| `tenant.fraud_policy.manage` | yes | yes | no | no |
+| `tenant.security.alerts.view` | yes | yes | yes | no |
+| `tenant.security.alerts.manage` | yes | yes | no | no |
+| `tenant.compliance.admin` | yes | yes | no | no |
+| `tenant.audit_log.view` | yes | yes | yes | no |
+| `tenant.users.manage` | yes | yes | no | no |
 
 The authoritative capability-to-role mapping lives in `ROLE_CAPABILITIES` in
 `apps/api/src/modules/auth/capabilities.ts`. This table is a summary; the code is the

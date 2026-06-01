@@ -49,8 +49,18 @@ The JWT is issued by `/auth/register` or `/auth/login` and includes claims:
 `tenant_operator`, or `tenant_viewer`).
 
 **Runtime-internal endpoints** (`/freeswitch/*`, `/call-events/internal/ingest`)
-are called by FreeSWITCH and the Go ESL agent — not by end users. They require
-a shared runtime token:
+are called by FreeSWITCH and the Go ESL agent -- not by end users. They prefer
+node-scoped HMAC authentication and can fall back to a shared runtime token during
+compatibility windows:
+
+```text
+x-managecallai-node-id: <node-id>
+x-managecallai-timestamp: <unix-seconds>
+x-managecallai-nonce: <unique-nonce>
+x-managecallai-signature: <hmac-sha256>
+```
+
+Shared-token compatibility transport:
 
 ```text
 Authorization: Bearer <RUNTIME_API_TOKEN>
@@ -118,6 +128,8 @@ Primary resources:
 - `prompt-generation`
 - `runtime/ivr-ai`
 - `channels`
+- `fraud/outbound-policy`
+- `platform/nodes`
 
 ## 5. Error Model
 
