@@ -39,6 +39,7 @@ and release smoke evidence are complete.
 - `pnpm check:production-readiness`
 - `pnpm production:preflight`
 - `pnpm check:network-config`
+- `pnpm check:runtime-token-rotation`
 - `pnpm production:rate-limit-check`
 - `./scripts/local-runtime-release-gate.sh` on a runtime-capable machine, OR
   passing `FreeSWITCH runtime smoke` workflow on self-hosted runner

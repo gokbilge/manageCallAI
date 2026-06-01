@@ -133,6 +133,31 @@ describe('authenticateRuntime', () => {
     expect(reply.code).toHaveBeenCalledWith(401);
   });
 
+  it('rejects old primary after rotation is complete (secondary promoted, secondary cleared)', async () => {
+    // Simulates the completed-rotation state:
+    //   Step 2: secondary = new-token (both tokens valid)
+    //   Step 4: primary promoted to new-token, secondary cleared → old primary now invalid
+    mockConfig.runtimeApiToken = 'new-token-after-promotion';
+    mockConfig.runtimeApiTokenSecondary = null;
+    const req = makeReq({ headers: { authorization: 'Bearer primary-token' } }); // old primary
+    const reply = makeReply();
+    await authenticateRuntime(req as never, reply as never);
+    expect(reply.code).toHaveBeenCalledWith(401);
+    expect(vi.mocked(fireAuditEvent)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'runtime.auth_failed' }),
+    );
+  });
+
+  it('accepts promoted token after rotation is complete', async () => {
+    mockConfig.runtimeApiToken = 'new-token-after-promotion';
+    mockConfig.runtimeApiTokenSecondary = null;
+    const req = makeReq({ headers: { authorization: 'Bearer new-token-after-promotion' } });
+    const reply = makeReply();
+    await authenticateRuntime(req as never, reply as never);
+    expect(reply.code).not.toHaveBeenCalled();
+    expect((req as { user?: { sub: string } }).user?.sub).toBe('runtime');
+  });
+
   it('populates tenant_id from x-tenant-id header when present', async () => {
     const req = makeReq({
       headers: {
