@@ -21,6 +21,7 @@
  *   FREESWITCH_ESL_HOST  (default: 127.0.0.1)
  *   FREESWITCH_ESL_PORT  (default: 8021)
  *   FREESWITCH_ESL_PASSWORD  (required, must not be the vendor default in non-dev environments)
+ *   FREESWITCH_ESL_TIMEOUT_MS  (default: 60000)
  *
  * Exit code 0 = FreeSWITCH is reachable and sofia internal profile is loaded.
  * Non-zero = connection failed or profile not found.
@@ -45,32 +46,41 @@ if (password === defaultEslPassword && process.env.APP_ENV === 'production') {
 
 console.log(`Connecting to FreeSWITCH ESL at ${host}:${port}...`);
 
-const TIMEOUT_MS = 10_000;
+const TIMEOUT_MS = parseInt(process.env.FREESWITCH_ESL_TIMEOUT_MS ?? '60000', 10);
+const RETRY_DELAY_MS = 1_000;
+const deadline = Date.now() + TIMEOUT_MS;
 
-const client = net.createConnection({ host, port });
 let buffer = '';
 let authenticated = false;
 let done = false;
+let client;
 
 const timer = setTimeout(() => {
   if (!done) {
     console.error(`Timeout: could not connect to ${host}:${port} within ${TIMEOUT_MS}ms`);
-    client.destroy();
+    client?.destroy();
     process.exit(1);
   }
 }, TIMEOUT_MS);
 
-client.on('data', (data) => {
+function connect() {
+  client = net.createConnection({ host, port });
+
+  client.on('data', onData);
+  client.on('error', onError);
+}
+
+function onData(data) {
   buffer += data.toString();
 
   if (!authenticated && buffer.includes('Content-Type: auth/request')) {
-    client.write(`auth ${password}\n\n`);
+    client?.write(`auth ${password}\n\n`);
   }
 
   if (!authenticated && buffer.includes('Reply-Text: +OK accepted')) {
     authenticated = true;
     console.log('ESL authentication succeeded.');
-    client.write('api sofia status\n\n');
+    client?.write('api sofia status\n\n');
   }
 
   if (authenticated && buffer.includes('Content-Type: api/response')) {
@@ -82,14 +92,14 @@ client.on('data', (data) => {
       console.log('FreeSWITCH profile smoke test PASSED: sofia internal profile is loaded.');
       done = true;
       clearTimeout(timer);
-      client.destroy();
+      client?.destroy();
       process.exit(0);
     } else {
       console.error('FreeSWITCH profile smoke test FAILED: sofia internal profile not found in status output.');
       console.error('sofia status output:', body.slice(0, 500));
       done = true;
       clearTimeout(timer);
-      client.destroy();
+      client?.destroy();
       process.exit(1);
     }
   }
@@ -98,14 +108,23 @@ client.on('data', (data) => {
     console.error('ESL authentication failed: invalid password.');
     done = true;
     clearTimeout(timer);
-    client.destroy();
+    client?.destroy();
     process.exit(1);
   }
-});
+}
 
-client.on('error', (err) => {
+function onError(err) {
+  client?.destroy();
+
+  if (!done && (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT') && Date.now() + RETRY_DELAY_MS < deadline) {
+    setTimeout(connect, RETRY_DELAY_MS);
+    return;
+  }
+
   console.error(`ESL connection error: ${err.message}`);
   console.error('Is FreeSWITCH running? Try: pnpm runtime:up');
   clearTimeout(timer);
   process.exit(1);
-});
+}
+
+connect();
