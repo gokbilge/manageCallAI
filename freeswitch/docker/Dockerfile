@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtool-bin \
     pkg-config \
     libssl-dev \
+    libsrtp2-dev \
     zlib1g-dev \
     libdb-dev \
     unixodbc-dev \
