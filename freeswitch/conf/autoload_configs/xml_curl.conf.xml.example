@@ -1,11 +1,11 @@
 <configuration name="xml_curl.conf" description="XML Curl">
   <bindings>
     <binding name="directory">
-      <param name="gateway-url" value="http://freeswitch:__RUNTIME_API_TOKEN__@__MANAGECALLAI_API_HOST__/api/v1/freeswitch/directory" />
+      <param name="gateway-url" value="__MANAGECALLAI_DIRECTORY_URL__" />
       <param name="method" value="POST" />
     </binding>
     <binding name="dialplan">
-      <param name="gateway-url" value="http://freeswitch:__RUNTIME_API_TOKEN__@__MANAGECALLAI_API_HOST__/api/v1/freeswitch/dialplan" />
+      <param name="gateway-url" value="__MANAGECALLAI_DIALPLAN_URL__" />
       <param name="method" value="POST" />
     </binding>
   </bindings>
