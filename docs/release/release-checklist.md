@@ -37,7 +37,9 @@ and release smoke evidence are complete.
 - `pnpm restore:smoke` after restore rehearsals
 - `pnpm production:e2e` on a runtime-capable environment
 - `pnpm production:soak` on a runtime-capable environment
+- `pnpm production:slo-check -- --evidence=<sanitized-runtime-slo-evidence.json>`
 - `pnpm carrier:interop-check -- --evidence=<sanitized-carrier-evidence.json>`
+- `pnpm release:evidence-check -- --manifest=<sanitized-release-evidence.json>`
 
 ## Coverage Gates
 
@@ -76,8 +78,10 @@ versions were used. Production release candidates must also attach the sanitized
 Production promotion requires:
 
 - `pnpm production:soak` evidence from the target release topology
+- `pnpm production:slo-check -- --evidence=<file>` passing for runtime lookup endpoints
 - `pnpm production:rate-limit-check` passing with shared or edge-enforced rate limiting for multi-instance API deployments
 - `pnpm carrier:interop-check -- --evidence=<file>` passing for each supported carrier profile
+- `pnpm release:evidence-check -- --manifest=<file>` passing for the production promotion bundle
 - documented exceptions for carrier features that are intentionally unsupported
 
 Do not treat check-config mode as production evidence. Check-config mode only proves that release scripts and documentation are wired correctly.

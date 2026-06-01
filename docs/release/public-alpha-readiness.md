@@ -193,7 +193,9 @@ alpha labeling. Production cannot.
 - [ ] Structured logs with redaction verified.
 - [ ] Telecom threat model complete.
 - [ ] Load/soak test for call events and runtime ingestion passes with sanitized `pnpm production:soak` evidence.
+- [ ] Runtime lookup SLO evidence passes `pnpm production:slo-check -- --evidence=<file>`.
 - [ ] Carrier interop evidence passes `pnpm carrier:interop-check -- --evidence=<file>`.
+- [ ] Release evidence bundle passes `pnpm release:evidence-check -- --manifest=<file>`.
 - [ ] Platform admin and tenant admin runbooks.
 - [ ] Rollback procedure tested.
 - [ ] Release checklist completed.

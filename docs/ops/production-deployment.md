@@ -167,8 +167,10 @@ becomes an orphaned reference.
 5. Verify `GET /health` returns `{ status: "ok" }`.
 6. Run `pnpm production:e2e` on a runtime-capable deployment before promoting.
 7. Run `pnpm production:soak` and attach the sanitized evidence to the release.
-8. Run `pnpm carrier:interop-check -- --evidence=<file>` for each supported carrier profile.
-9. Roll back: restore the snapshot and redeploy the previous API version.
+8. Run `pnpm production:slo-check -- --evidence=<file>` with runtime lookup latency evidence.
+9. Run `pnpm carrier:interop-check -- --evidence=<file>` for each supported carrier profile.
+10. Run `pnpm release:evidence-check -- --manifest=<file>` before final promotion.
+11. Roll back: restore the snapshot and redeploy the previous API version.
    Migrations are not automatically reversible — write a rollback migration if needed.
 
 ## SLOs for runtime lookup endpoints
@@ -183,3 +185,4 @@ These SLOs represent FreeSWITCH's real-time requirements. If the API is too slow
 FreeSWITCH falls back to its internal default dialplan, breaking routing.
 
 Monitor via `GET /metrics` (Prometheus format). Alert when p99 breaches the threshold.
+Validate release-candidate evidence with `pnpm production:slo-check -- --evidence=<file>`.

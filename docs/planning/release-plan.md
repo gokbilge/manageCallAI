@@ -93,6 +93,8 @@ Last audited: 2026-05-30.
 | `SLICE-55` | completed |
 | `SLICE-56` | completed |
 | `SLICE-57` | completed |
+| `SLICE-58` | completed |
+| `SLICE-59` | completed |
 
 The original v1 release-plan slices are closed. The next release-candidate feature
 set is now explicit as `SLICE-25` through `SLICE-32`. Contract generation,
@@ -272,6 +274,8 @@ SLICE-00 Current Baseline
 - `SLICE-55`
 - `SLICE-56`
 - `SLICE-57`
+- `SLICE-58`
+- `SLICE-59`
 
 ## 6. Recommended Execution Order
 
@@ -352,6 +356,8 @@ SLICE-00 Current Baseline
 49. `SLICE-55` Load And Soak Testing
 50. `SLICE-56` Multi-Instance Rate Limiting
 51. `SLICE-57` Carrier Interop Certification
+52. `SLICE-58` Runtime SLO Release Gate
+53. `SLICE-59` Release Evidence Bundle
 
 ## 7. Minimal Release Gate
 
@@ -419,3 +425,5 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-55](slices/SLICE-55-load-and-soak-testing.md)
 - [SLICE-56](slices/SLICE-56-multi-instance-rate-limiting.md)
 - [SLICE-57](slices/SLICE-57-carrier-interop-certification.md)
+- [SLICE-58](slices/SLICE-58-runtime-slo-release-gate.md)
+- [SLICE-59](slices/SLICE-59-release-evidence-bundle.md)

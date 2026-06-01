@@ -56,6 +56,8 @@ Required slices:
 - `SLICE-55`: load and soak testing
 - `SLICE-56`: multi-instance rate limiting
 - `SLICE-57`: carrier interop certification
+- `SLICE-58`: runtime SLO release gate
+- `SLICE-59`: release evidence bundle
 
 Exit criteria:
 
@@ -68,6 +70,8 @@ Exit criteria:
 - load/soak tests cover runtime event ingestion and call-event query paths
 - multi-instance deployments prove shared or edge-enforced rate limiting
 - carrier interop evidence proves registration, call flow, DTMF, CDR, NAT/media, and failover expectations
+- runtime lookup SLO evidence passes documented breach thresholds
+- release evidence bundle contains CI, security, runtime, restore, SLO, carrier, rollback, and operator signoff evidence
 
 ## Slice Ownership
 
@@ -82,6 +86,8 @@ Exit criteria:
 | `SLICE-55` | Production | unmeasured sustained runtime/event throughput |
 | `SLICE-56` | Production | per-instance rate limits that fail open at scale |
 | `SLICE-57` | Production | carrier-specific SIP/media behavior not certified |
+| `SLICE-58` | Production | runtime lookup latency regressions in live call path |
+| `SLICE-59` | Production | scattered release evidence and unaudited promotion decisions |
 
 ## Do Not Reclassify As Production Until
 
@@ -94,3 +100,5 @@ Exit criteria:
 - soak evidence exists for the target release topology
 - multi-instance rate limiting is shared or externally enforced
 - at least one carrier interop evidence file has passed validation
+- runtime lookup SLO evidence has passed validation
+- release evidence bundle has passed validation and operator signoff
