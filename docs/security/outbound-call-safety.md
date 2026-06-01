@@ -7,35 +7,39 @@ number, blocks global emergency and premium-rate destinations, resolves an activ
 outbound route, applies route allow/block prefixes, checks the resolved trunk is
 active, then enforces the route `max_calls_per_minute` cap before persistence.
 
-Existing controls:
+Current controls:
 
 - Global emergency destination block.
 - Global premium-rate prefix block.
 - Route destination allowlist through `allowed_destination_prefixes_json`.
 - Route destination blocklist through `blocked_destination_prefixes_json`.
 - Route-level attempt cap through `max_calls_per_minute`.
+- Tenant-level outbound policy at `GET/PUT /api/v1/fraud/outbound-policy`.
+- Tenant country allowlist through `country_allowlist`.
+- Tenant area-code allowlist through `areacode_allowlist`.
+- Tenant premium-rate and high-risk prefix blocklists.
+- Tenant hourly and daily call caps.
 - API rate limit for `POST /api/v1/runtime/outbound`.
 - Tenant-scoped outbound request storage and lookup.
 
 ## Policy Design
 
-The next policy tier should make route-level controls easier to operate by adding
-a tenant-level outbound policy object.
+Route-level controls are layered with a tenant-level outbound policy object.
+The policy is managed through `/api/v1/fraud/outbound-policy` and is guarded by
+`tenant.fraud_policy.view` and `tenant.fraud_policy.manage`.
 
-Recommended fields:
+Implemented fields:
 
 - `tenant_id`
-- `enabled`
 - `country_allowlist`: E.164 country prefixes such as `+1`, `+44`, `+90`
-- `area_code_allowlist`: specific prefixes such as `+1415`, `+4420`
+- `areacode_allowlist`: specific prefixes such as `+1415`, `+4420`
 - `premium_rate_blocklist`: configurable prefix set layered on top of global defaults
-- `high_risk_country_blocklist`
-- `max_call_duration_seconds`
-- `max_calls_per_minute`
+- `high_risk_blocklist`
 - `max_calls_per_hour`
-- `max_concurrent_outbound_calls`
-- `alert_thresholds_json`
-- `updated_by`, `updated_at`
+- `max_calls_per_day`
+- `max_call_duration_secs`
+- `deny_international_default`
+- `created_at`, `updated_at`
 
 Evaluation order:
 
@@ -43,9 +47,9 @@ Evaluation order:
 2. Reject malformed, emergency, premium-rate, and high-risk destinations.
 3. Apply tenant country and area-code allowlists.
 4. Resolve route and apply route allow/block lists.
-5. Verify trunk state and trunk-specific limits.
-6. Apply tenant, route, and trunk rate/concurrency limits.
-7. Persist request with decision metadata and audit outcome.
+5. Verify trunk state.
+6. Apply route-level attempt caps.
+7. Persist request and emit audit events for created, blocked, and terminal outcomes.
 
 ## Operational Guidance
 
@@ -62,11 +66,12 @@ Evaluation order:
 ## Tests
 
 Existing service tests cover malformed numbers, emergency block, premium block,
-route allow/block prefixes, active trunk checks, and route rate caps. Additional
-tests should be added with the tenant policy object:
+route allow/block prefixes, active trunk checks, route rate caps, tenant policy
+country/area-code allowlists, tenant high-risk and premium blocklists, hourly and
+daily caps, and blocked-attempt audit emission.
 
-- country allowlist permits only configured countries
-- area-code allowlist can narrow a broad country route
-- tenant hourly cap blocks persistence
-- max duration is passed to the runtime dispatch contract
-- blocked attempts create audit and alert events
+Remaining production-hardening follow-ups:
+
+- enforce `max_call_duration_secs` in the runtime dispatch contract
+- add concurrent outbound-call caps if the runtime worker supports concurrency tracking
+- add platform-operated temporary exceptions for carefully reviewed premium destinations

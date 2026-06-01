@@ -36,7 +36,7 @@ Reference:
 
 ## 2.1 Current Slice Status
 
-Last audited: 2026-05-30.
+Last audited: 2026-06-01.
 
 | Slice | Status |
 |-------|--------|
@@ -84,6 +84,10 @@ Last audited: 2026-05-30.
 | `SLICE-42` | planned |
 | `SLICE-43` | completed |
 | `SLICE-44` | completed outside SLICE-42 tracing dependency |
+| `SLICE-45` | completed |
+| `SLICE-46` | completed |
+| `SLICE-47` | completed |
+| `SLICE-48` | completed |
 | `SLICE-49` | planned |
 | `SLICE-50` | planned |
 | `SLICE-51` | planned |
@@ -99,7 +103,7 @@ Last audited: 2026-05-30.
 The original v1 release-plan slices are closed. The next release-candidate feature
 set is now explicit as `SLICE-25` through `SLICE-32`. Contract generation,
 MCP alignment, telecom CI gates, and P1/P2 hardening are tracked in `SLICE-33`
-and `SLICE-35` through `SLICE-44`. `SLICE-34` is referenced by `SLICE-33` as a
+and `SLICE-35` through `SLICE-48`. `SLICE-34` is referenced by `SLICE-33` as a
 future Fastify/Zod cleanup, but no slice document exists yet.
 
 That means:
@@ -195,6 +199,14 @@ SLICE-00 Current Baseline
   +--> SLICE-43 MVP Demonstrable Reliability ------+
   |
   +--> SLICE-44 Production Readiness Hardening ----+
+  |
+  +--> SLICE-45 Telecom Fraud Policy --------------+
+  |
+  +--> SLICE-46 Runtime Secret Hardening ----------+
+  |
+  +--> SLICE-47 Recording Retention And Privacy ---+
+  |
+  +--> SLICE-48 Security Alert Rules --------------+
 ```
 
 ## 5. Parallel Work Tracks
@@ -262,6 +274,10 @@ SLICE-00 Current Baseline
 - `SLICE-42`
 - `SLICE-43`
 - `SLICE-44`
+- `SLICE-45`
+- `SLICE-46`
+- `SLICE-47`
+- `SLICE-48`
 
 ### Track H - Public Alpha To Production
 
@@ -344,20 +360,24 @@ SLICE-00 Current Baseline
 40. `SLICE-42` AI Dry-Run, Audit Identity, And Tracing
 41. `SLICE-43` MVP Demonstrable Reliability
 42. `SLICE-44` Production Readiness Hardening
+43. `SLICE-45` Telecom Fraud Policy
+44. `SLICE-46` Runtime Secret Hardening
+45. `SLICE-47` Recording Retention And Privacy
+46. `SLICE-48` Security Alert Rules
 
 ### Stage 9 - Public Alpha To Production
 
-43. `SLICE-49` Public Alpha Readiness And Security Triage
-44. `SLICE-50` Self-Hosted FreeSWITCH Smoke CI
-45. `SLICE-51` Release-Grade Product Surfaces, Coverage, And Runbooks
-46. `SLICE-52` Production Runtime E2E Gate
-47. `SLICE-53` Production Deployment And Network Hardening
-48. `SLICE-54` Backup, Restore, Upgrade, And DR
-49. `SLICE-55` Load And Soak Testing
-50. `SLICE-56` Multi-Instance Rate Limiting
-51. `SLICE-57` Carrier Interop Certification
-52. `SLICE-58` Runtime SLO Release Gate
-53. `SLICE-59` Release Evidence Bundle
+47. `SLICE-49` Public Alpha Readiness And Security Triage
+48. `SLICE-50` Self-Hosted FreeSWITCH Smoke CI
+49. `SLICE-51` Release-Grade Product Surfaces, Coverage, And Runbooks
+50. `SLICE-52` Production Runtime E2E Gate
+51. `SLICE-53` Production Deployment And Network Hardening
+52. `SLICE-54` Backup, Restore, Upgrade, And DR
+53. `SLICE-55` Load And Soak Testing
+54. `SLICE-56` Multi-Instance Rate Limiting
+55. `SLICE-57` Carrier Interop Certification
+56. `SLICE-58` Runtime SLO Release Gate
+57. `SLICE-59` Release Evidence Bundle
 
 ## 7. Minimal Release Gate
 
@@ -416,6 +436,10 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-42](slices/SLICE-42-ai-dry-run-audit-identity-and-tracing.md)
 - [SLICE-43](slices/SLICE-43-mvp-demonstrable-reliability.md)
 - [SLICE-44](slices/SLICE-44-production-readiness-hardening.md)
+- [SLICE-45](slices/SLICE-45-telecom-fraud-policy.md)
+- [SLICE-46](slices/SLICE-46-runtime-secret-hardening.md)
+- [SLICE-47](slices/SLICE-47-recording-retention-privacy.md)
+- [SLICE-48](slices/SLICE-48-security-alert-rules.md)
 - [SLICE-49](slices/SLICE-49-public-alpha-readiness.md)
 - [SLICE-50](slices/SLICE-50-self-hosted-freeswitch-smoke-ci.md)
 - [SLICE-51](slices/SLICE-51-release-grade-product-coverage-and-runbooks.md)

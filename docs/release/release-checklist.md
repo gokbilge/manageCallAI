@@ -18,6 +18,7 @@ and release smoke evidence are complete.
 
 - `pnpm install --frozen-lockfile`
 - `pnpm generate:openapi`
+- `node scripts/check-openapi-coverage.mjs`
 - `pnpm db:migrate`
 - `pnpm db:contracts`
 - `pnpm lint`
@@ -105,5 +106,7 @@ Before release, verify:
 - API key wildcard behavior does not grant platform-admin capabilities
 - MCP and n8n cannot invoke raw ESL, raw XML, shell, or direct runtime control
 - outbound call policy changes include fraud-safety tests
+- `/api/v1/fraud/outbound-policy` changes are capability-gated and audited where they affect live call behavior
+- `/api/v1/platform/nodes` token creation and rotation flows return raw secrets once and never log them
 - webhook signing and replay behavior remain covered
 - logs and error responses do not expose runtime tokens, SIP secrets, webhook secrets, recordings, or stack traces in production mode

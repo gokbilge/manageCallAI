@@ -322,6 +322,8 @@ Responsibilities:
 - Enforce stable translation from business objects to telecom artifacts
 - Ingest events back into the control plane
 - Keep project-specific logic outside stock FreeSWITCH
+- Authenticate runtime nodes with node-scoped HMAC credentials, replay
+  protection, optional CIDR allowlists, and capability limits when available
 
 For MVP, Lua should be limited to:
 
@@ -492,6 +494,9 @@ Required principles:
 - Full audit trail for every configuration mutation
 - Tenant-scoped access control
 - Destination allowlists for outbound safety
+- Tenant-level outbound fraud policy for country/area-code allowlists,
+  premium/high-risk blocklists, and hourly/daily caps
+- Runtime-node authentication and token rotation for FreeSWITCH-facing paths
 - Route-impact analysis before publish
 - Rollback-first publishing model
 - Live observability streams must enforce the same tenant and role boundaries as
@@ -521,6 +526,8 @@ Preferred API shape:
 - `recording-analysis`
 - `runtime/ivr-ai`
 - `channels`
+- `fraud/outbound-policy`
+- `platform/nodes`
 
 Avoid API designs centered on:
 

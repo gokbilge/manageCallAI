@@ -73,7 +73,8 @@ Release readiness references:
 - [docs/planning/production-readiness-roadmap.md](docs/planning/production-readiness-roadmap.md)
 - [docs/release/release-checklist.md](docs/release/release-checklist.md)
 
-All core API domains are implemented and passing CI (327 tests, 97 OpenAPI operations).
+Core API domains are implemented and covered by CI, with the current generated
+contract covering 99 OpenAPI operations.
 
 ### Implemented
 
@@ -83,10 +84,10 @@ All core API domains are implemented and passing CI (327 tests, 97 OpenAPI opera
 - **Call Groups, Queues**: CRUD + member management (simultaneous / sequential ring strategies)
 - **Voicemail Boxes**: CRUD + greeting prompt assignment
 - **Prompt Assets**: metadata CRUD; provider-neutral TTS generation contract (provider-work)
-- **IVR Flows**: draft → validate → simulate → publish → rollback, approval gating, full history
-- **Inbound Routes**: draft → publish lifecycle with version control
+- **IVR Flows**: draft -> validate -> simulate -> publish -> rollback, approval gating, full history
+- **Inbound Routes**: draft -> publish lifecycle with version control
 - **Runtime (IVR)**: live session start/advance; FreeSWITCH Lua executor closes the loop
-- **Outbound Calls**: dispatch via outbound route resolution
+- **Outbound Calls**: dispatch via outbound route resolution, route policy, and tenant fraud policy checks
 - **Call Events**: ingestion from Go ESL agent + tenant query
 - **Recordings**: metadata ingestion + analysis request contract (transcript / summary)
 - **Automation**: API key management + webhook subscriptions + durable delivery queue
@@ -95,18 +96,19 @@ All core API domains are implemented and passing CI (327 tests, 97 OpenAPI opera
 - **Audit, Export**: read access + tenant data export
 - **Channels**: account, message, and meeting-session adapters (WhatsApp / Telegram / Google Meet)
 - **IVR AI**: provider-neutral AI turn contract
-- **Platform ops**: tenant list, runtime health, session summary (platform_admin)
-- **FreeSWITCH integration**: `mod_xml_curl` directory + dialplan endpoints; Go ESL adapter
-- **MCP server**: 30+ read/write tools for AI agents
+- **Platform ops**: tenant list, runtime health, session summary, and FreeSWITCH node registry (platform_admin)
+- **FreeSWITCH integration**: `mod_xml_curl` directory + dialplan endpoints; Go ESL adapter; node-scoped HMAC runtime auth
+- **Fraud and runtime safety**: tenant outbound policy, security alerts, token redaction, production preflight, rate-limit topology, soak/SLO/carrier/release-evidence gates
+- **MCP server**: safe read, draft mutation, validation, simulation, approval-request, and export tools for AI agents
 - **n8n connector**: webhook trigger + API action patterns
 - **Schema contracts**: Zod schemas as single source of truth; OpenAPI spec generated from code
 - **Error standard**: gRPC-inspired RPC codes, global error handler, CI coverage gate
 
 ### Planned / In Progress
 
-- Visual IVR builder (React drag-and-drop flow editor)
+- Visual IVR builder production polish and release-grade workflow coverage
 - SLICE-34: Fastify Zod type provider (controller validation migrated to contracts schemas)
-- SDK generation and npm publish
+- SDK npm publish/versioning workflow
 
 **Run the full demo loop in one sitting:**
 
@@ -189,4 +191,4 @@ Runbooks:
 
 manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSWITCH through supported extension interfaces: `mod_xml_curl`, ESL / `mod_event_socket`, and Lua helpers.
 
-**Lua helpers are thin executors only** — they carry out runtime actions (play, collect, transfer, hangup) and call back to the API. All business logic lives in the Node.js control plane.
+**Lua helpers are thin executors only** -- they carry out runtime actions (play, collect, transfer, hangup) and call back to the API. All business logic lives in the Node.js control plane.
