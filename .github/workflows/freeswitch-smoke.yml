@@ -1,99 +1,82 @@
 name: FreeSWITCH Smoke
 
-# Self-hosted FreeSWITCH smoke test.
+# Required release/RC runtime smoke gate.
 #
-# This workflow is OPTIONAL for normal contributor PRs: it requires a
-# self-hosted runner with a running FreeSWITCH instance, PostgreSQL, and the
-# Go agent. It is skipped automatically when the self-hosted runner label is
-# unavailable, so it never blocks standard pull requests.
+# This workflow intentionally runs only on a self-hosted runner because a real
+# FreeSWITCH smoke needs SIP/media ports, ESL, mod_xml_curl, PostgreSQL, the API,
+# and the Go agent. GitHub-hosted runners remain covered by deterministic API,
+# XML golden, and unit/integration tests in normal CI.
 #
-# Every beta/release-candidate branch should have manual evidence that this
-# smoke passed before tagging. See docs/release/release-checklist.md.
-#
-# Runner requirements:
-#   - Label: self-hosted, freeswitch
-#   - FreeSWITCH 1.10+ running with mod_xml_curl pointed at the local API
-#   - PostgreSQL accessible at DATABASE_URL
-#   - Secrets configured in the repository settings:
-#       SMOKE_DATABASE_URL, SMOKE_JWT_SECRET, SMOKE_RUNTIME_API_TOKEN,
-#       SMOKE_SIP_SECRET_MASTER_KEY, SMOKE_FREESWITCH_ESL_PASSWORD
-#
-# To test locally without the self-hosted runner:
-#   pnpm runtime:up && pnpm runtime:smoke
+# Branch protection or repository rulesets for release/** and rc/** must require
+# the "FreeSWITCH runtime smoke" status check. If the self-hosted runner is
+# unavailable, this check stays pending or fails and release promotion is blocked.
 
 on:
   workflow_dispatch:
     inputs:
       api_url:
-        description: API base URL for smoke (defaults to http://localhost:3000)
+        description: API base URL for smoke
         required: false
         default: http://localhost:3000
   push:
     branches:
       - 'release/**'
       - 'rc/**'
+  pull_request:
+    branches:
+      - 'release/**'
+      - 'rc/**'
+
+permissions:
+  contents: read
 
 jobs:
   freeswitch-smoke:
     name: FreeSWITCH runtime smoke
     runs-on: [self-hosted, freeswitch]
 
-    # Skip silently on non-self-hosted environments so normal CI stays green.
-    # The self-hosted runner sets FREESWITCH_SMOKE_AVAILABLE=true in its
-    # environment file; GitHub-hosted runners don't have this variable.
     env:
-      FREESWITCH_SMOKE_AVAILABLE: ${{ vars.FREESWITCH_SMOKE_AVAILABLE || '' }}
+      SMOKE_API_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
 
     steps:
-      - name: Check runner capability
-        id: capability
+      - name: Confirm release smoke runner
         run: |
-          if [ "$FREESWITCH_SMOKE_AVAILABLE" != "true" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "FreeSWITCH smoke skipped: self-hosted runner not available"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
+          echo "Running required FreeSWITCH smoke gate on $(hostname)"
+          echo "API URL: ${SMOKE_API_URL}"
 
       - uses: actions/checkout@v5
-        if: steps.capability.outputs.skip != 'true'
 
       - uses: pnpm/action-setup@v6
-        if: steps.capability.outputs.skip != 'true'
 
       - uses: actions/setup-node@v6
-        if: steps.capability.outputs.skip != 'true'
         with:
           node-version: 22
           cache: pnpm
 
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache: false
+
       - name: Install dependencies
-        if: steps.capability.outputs.skip != 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Apply migrations
-        if: steps.capability.outputs.skip != 'true'
         run: pnpm db:migrate
         env:
           DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
 
-      # ── API health ────────────────────────────────────────────────────────────
       - name: API health check
-        if: steps.capability.outputs.skip != 'true'
         run: |
           for i in {1..15}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ inputs.api_url || 'http://localhost:3000' }}/health")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${SMOKE_API_URL}/health")
             [ "$STATUS" = "200" ] && { echo "API healthy"; exit 0; }
             echo "Waiting for API (attempt $i, status $STATUS)..."
             sleep 3
           done
           echo "API did not become healthy in time" && exit 1
-        env:
-          DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
 
-      # ── FreeSWITCH directory and dialplan lookup ──────────────────────────────
       - name: FreeSWITCH directory and dialplan smoke
-        if: steps.capability.outputs.skip != 'true'
         run: node scripts/check-freeswitch-profile.mjs
         env:
           DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
@@ -104,11 +87,9 @@ jobs:
           FREESWITCH_ESL_HOST: 127.0.0.1
           FREESWITCH_ESL_PORT: 8021
           FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
-          API_BASE_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
+          API_BASE_URL: ${{ env.SMOKE_API_URL }}
 
-      # ── Production runtime E2E (API + extensions + IVR + route + runtime) ────
       - name: Production runtime E2E
-        if: steps.capability.outputs.skip != 'true'
         run: |
           set -o pipefail
           pnpm production:e2e 2>&1 | node scripts/redact-logs.mjs
@@ -118,47 +99,39 @@ jobs:
           RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
           SIP_SECRET_MASTER_KEY: ${{ secrets.SMOKE_SIP_SECRET_MASTER_KEY }}
           SIP_SECRET_KEY_ID: smoke-v1
-          API_BASE_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
+          API_BASE_URL: ${{ env.SMOKE_API_URL }}
           PRODUCTION_E2E_ARTIFACT_DIR: artifacts/production-e2e
 
-      # ── SIP REGISTER smoke ────────────────────────────────────────────────────
       - name: SIP REGISTER smoke
-        if: steps.capability.outputs.skip != 'true'
         run: |
           set -o pipefail
           node scripts/sip-register-smoke.mjs 2>&1 | node scripts/redact-logs.mjs
         env:
-          API_BASE_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
+          API_BASE_URL: ${{ env.SMOKE_API_URL }}
           RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
           SIP_REGISTRAR_HOST: 127.0.0.1
           SIP_REGISTRAR_PORT: 5060
 
-      # ── Go agent event ingestion ──────────────────────────────────────────────
       - name: Go agent ESL connection smoke
-        if: steps.capability.outputs.skip != 'true'
         run: cd apps/freeswitch-agent && go run . --smoke-check
         env:
           FREESWITCH_ESL_HOST: 127.0.0.1
           FREESWITCH_ESL_PORT: 8021
           FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
-          MANAGECALLAI_API_BASE_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
+          MANAGECALLAI_API_BASE_URL: ${{ env.SMOKE_API_URL }}
           MANAGECALLAI_RUNTIME_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
-        continue-on-error: true
 
-      # ── Observability timeline query ──────────────────────────────────────────
       - name: Observability query smoke
-        if: steps.capability.outputs.skip != 'true'
         run: |
-          TENANT_ID=$(curl -s -X POST "${{ inputs.api_url || 'http://localhost:3000' }}/api/v1/auth/register" \
+          set -o pipefail
+          curl -s -X POST "${SMOKE_API_URL}/api/v1/auth/register" \
             -H 'Content-Type: application/json' \
             -d '{"tenant_name":"Smoke Tenant","tenant_slug":"smoke-obs-tenant","email":"smoke@example.com","display_name":"Smoke","password":"SmokePass123!"}' \
-            | node -e "process.stdin.resume(); let d=''; process.stdin.on('data', c=>d+=c); process.stdin.on('end', ()=>{ try { console.log(JSON.parse(d).token.split('.')[1]); const p=JSON.parse(Buffer.from(JSON.parse(d).token.split('.')[1],'base64url').toString()); console.error('tenant_id='+p.tenant_id); } catch(e){} })" 2>&1 || true)
-          echo "Observability smoke: basic check complete"
-        continue-on-error: true
+            | node scripts/redact-logs.mjs
+          echo "Observability smoke: basic query path complete"
 
-      # ── Smoke evidence summary ────────────────────────────────────────────────
       - name: Upload smoke evidence
-        if: steps.capability.outputs.skip != 'true' && always()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: freeswitch-smoke-${{ github.run_id }}

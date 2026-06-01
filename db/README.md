@@ -142,7 +142,7 @@ All four gates must pass.  A failure in any gate blocks the merge.
 
 | File | What it adds |
 |------|-------------|
-| `0001_initial_schema.sql` | Core tables: `tenants`, `users`, `roles`, `user_roles`, `policies`, `extensions`, `sip_trunks`, `phone_numbers`, `inbound_routes`. Includes `tenants.directory_domain` and per-extension SIP credential columns (squashed from earlier drafts). |
+| `0001_initial_schema.sql` | Core tables: `tenants`, `users`, legacy `roles` / `user_roles`, `policies`, `extensions`, `sip_trunks`, `phone_numbers`, `inbound_routes`. Includes `tenants.directory_domain` and per-extension SIP credential columns (squashed from earlier drafts). |
 | `0002_add_user_password.sql` | `users.password_hash` |
 | `0003_noop.sql` | Standalone noop — documents a squash that folded columns into `0001`. No duplicate prefix. |
 | `0004_encrypt_sip_passwords.sql` | Backfills `extensions.sip_password_ciphertext` / `sip_password_key_id` |
@@ -182,3 +182,8 @@ All four gates must pass.  A failure in any gate blocks the merge.
 | `0035_recording_lifecycle.sql` | Recording lifecycle status columns. |
 | `0036_voicemail_messages.sql` | `voicemail_messages` table. |
 | `0037_sip_trunk_srtp_policy.sql` | `sip_trunks.srtp_policy` column for SRTP enforcement policy. |
+| `0038_tenant_retention_policies.sql` | Tenant retention policies and legal hold requests. |
+| `0039_security_alerts.sql` | Tenant-scoped security alert rules and fired alert instances. |
+| `0040_freeswitch_node_registry.sql` | FreeSWITCH node registry and runtime nonce replay protection. |
+| `0041_tenant_outbound_policies.sql` | Tenant outbound fraud policy and global blocked destination prefixes. |
+| `0042_drop_legacy_role_tables.sql` | Drops unused legacy `roles`, `user_roles`, and `role_policies` tables; `users.role` remains the canonical tenant role source. |

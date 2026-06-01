@@ -12,6 +12,7 @@ const requiredFiles = [
   'scripts/release-evidence-check.mjs',
   'scripts/restore-smoke.mjs',
   'scripts/redact-logs.mjs',
+  '.github/workflows/freeswitch-smoke.yml',
   'docs/planning/slices/SLICE-52-production-runtime-e2e-gate.md',
   'docs/planning/slices/SLICE-53-production-deployment-and-network-hardening.md',
   'docs/planning/slices/SLICE-54-backup-restore-upgrade-and-dr.md',
@@ -20,6 +21,7 @@ const requiredFiles = [
   'docs/planning/slices/SLICE-57-carrier-interop-certification.md',
   'docs/planning/slices/SLICE-58-runtime-slo-release-gate.md',
   'docs/planning/slices/SLICE-59-release-evidence-bundle.md',
+  'docs/release/freeswitch-smoke-gate.md',
   'docs/release/production-runtime-e2e.md',
   'docs/release/release-evidence-bundle.md',
   'docs/ops/production-preflight.md',
@@ -39,6 +41,42 @@ for (const file of requiredFiles) {
 const gitignore = existsSync('.gitignore') ? readFileSync('.gitignore', 'utf8') : '';
 if (!gitignore.includes('.local-prompts/')) {
   failures.push('.local-prompts/ must remain gitignored for local agent prompt files');
+}
+
+if (existsSync('.github/workflows/freeswitch-smoke.yml')) {
+  const workflow = readFileSync('.github/workflows/freeswitch-smoke.yml', 'utf8');
+  const requiredWorkflowFragments = [
+    "name: FreeSWITCH Smoke",
+    "name: FreeSWITCH runtime smoke",
+    "runs-on: [self-hosted, freeswitch]",
+    "pull_request:",
+    "'release/**'",
+    "'rc/**'",
+    "pnpm production:e2e",
+    "node scripts/sip-register-smoke.mjs",
+    "go run . --smoke-check",
+  ];
+
+  for (const fragment of requiredWorkflowFragments) {
+    if (!workflow.includes(fragment)) {
+      failures.push(`FreeSWITCH smoke workflow missing required release-gate fragment: ${fragment}`);
+    }
+  }
+
+  if (/continue-on-error:\s*true/.test(workflow)) {
+    failures.push('FreeSWITCH smoke workflow must not use continue-on-error for release-gate steps');
+  }
+
+  if (/skip\s*=\s*true|FREESWITCH_SMOKE_AVAILABLE/.test(workflow)) {
+    failures.push('FreeSWITCH smoke workflow must not silently skip release/RC smoke checks');
+  }
+}
+
+if (existsSync('docs/release/release-checklist.md')) {
+  const releaseChecklist = readFileSync('docs/release/release-checklist.md', 'utf8');
+  if (!releaseChecklist.includes('FreeSWITCH runtime smoke')) {
+    failures.push('Release checklist must name FreeSWITCH runtime smoke as the required release/RC status check');
+  }
 }
 
 const sliceFiles = existsSync('docs/planning/slices')

@@ -8,7 +8,7 @@ Use this checklist before promoting manageCallAI beyond development or staging.
 |---|---|---|
 | Internal alpha | Allowed | Main CI green, demo loop works locally, runtime proof verified manually |
 | Public alpha | Conditional | `docs/release/public-alpha-readiness.md` checklist complete |
-| Public beta | Blocked | Self-hosted FreeSWITCH smoke CI, usable visual IVR/HUD, broader isolation/runtime tests |
+| Public beta | Blocked until gate evidence exists | Self-hosted FreeSWITCH smoke CI required on `release/**` / `rc/**`, usable visual IVR/HUD, broader isolation/runtime tests |
 | Production | Blocked | Runtime E2E release gate, tested deployment/backup/restore/upgrade, fraud controls, soak testing |
 
 Do not describe manageCallAI as production-ready until the production checklist
@@ -66,13 +66,20 @@ registration, extension creation, IVR validation/simulation/publish, FreeSWITCH 
 call event ingest, and health check.
 
 A self-hosted FreeSWITCH smoke workflow exists at `.github/workflows/freeswitch-smoke.yml`. It:
-- Is skipped automatically when the `freeswitch` self-hosted runner label is unavailable
-- Is triggered automatically on `release/**` and `rc/**` branches
+- Runs on `[self-hosted, freeswitch]` and fails or remains pending when that runner is unavailable
+- Is triggered automatically on pushes to `release/**` and `rc/**`
+- Is triggered automatically for PRs targeting `release/**` and `rc/**`
 - Can be triggered manually via `workflow_dispatch`
 
-Every release candidate must document whether the FreeSWITCH smoke was run and what runtime
-versions were used. Production release candidates must also attach the sanitized
-`pnpm production:e2e` evidence artifact. See `docs/release/production-runtime-e2e.md`.
+Repository branch protection or rulesets for `release/**` and `rc/**` must require
+the `FreeSWITCH runtime smoke` status check. A pending, skipped, or failing smoke
+check blocks the release tag. Do not replace this gate with manual evidence for
+public beta or production promotion.
+
+Every release candidate must document the passing FreeSWITCH smoke run and runtime
+versions used. Production release candidates must also attach the sanitized
+`pnpm production:e2e` evidence artifact uploaded by the smoke workflow. See
+`docs/release/production-runtime-e2e.md`.
 
 ## Load, Rate Limit, And Carrier Gates
 
