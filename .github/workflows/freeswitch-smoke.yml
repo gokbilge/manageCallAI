@@ -74,9 +74,16 @@ jobs:
       # The self-hosted runner must have ports 5060/udp, 5061/tcp, 5080/tcp,
       # 5080/udp, 8021/tcp, 3000/tcp, and 5432/tcp free before this step.
 
+      - name: Build FreeSWITCH image
+        run: |
+          docker compose --profile freeswitch build freeswitch 2>&1 | node scripts/redact-logs.mjs
+        timeout-minutes: 40
+        env:
+          FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
+
       - name: Start runtime stack (postgres + api + freeswitch + agent)
         run: |
-          docker compose --profile freeswitch up -d --build 2>&1 | node scripts/redact-logs.mjs
+          docker compose --profile freeswitch up -d 2>&1 | node scripts/redact-logs.mjs
         env:
           DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
           JWT_SECRET: ${{ secrets.SMOKE_JWT_SECRET }}
@@ -117,6 +124,18 @@ jobs:
           pnpm db:constraints
         env:
           DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
+
+      # ── FreeSWITCH ESL readiness ───────────────────────────────────────────
+
+      - name: Wait for FreeSWITCH ESL
+        run: |
+          echo "Waiting for FreeSWITCH ESL on 127.0.0.1:8021..."
+          for i in $(seq 1 60); do
+            nc -z 127.0.0.1 8021 2>/dev/null && { echo "ESL ready after ${i} attempts"; break; }
+            echo "  attempt ${i}/60..."
+            sleep 5
+          done
+          nc -z 127.0.0.1 8021 2>/dev/null || { echo "ERROR: FreeSWITCH ESL did not open" && exit 1; }
 
       # ── FreeSWITCH TLS port readiness ──────────────────────────────────────
 
