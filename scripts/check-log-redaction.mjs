@@ -22,7 +22,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(__dirname, '..');
 
 const args = process.argv.slice(2);
 
@@ -109,8 +108,6 @@ if (evidenceArg) {
 // ── Live pattern check mode ───────────────────────────────────────────────────
 
 const { redact } = await import('./redact-logs.mjs');
-
-const REDACTED = '[REDACTED]';
 
 const cases = [
   // JWT Bearer token
