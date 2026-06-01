@@ -58,6 +58,7 @@
     "check:freeswitch-profile": "node scripts/check-freeswitch-profile.mjs",
     "check:coverage-ignores": "node scripts/check-coverage-ignores.mjs",
     "check:network-config": "node scripts/check-production-network-config.mjs",
+    "check:sip-tls-srtp-nat-evidence": "node scripts/check-sip-tls-srtp-nat-evidence.mjs",
     "check:production-readiness": "node scripts/check-production-readiness.mjs"
   }
 }

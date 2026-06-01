@@ -1,0 +1,42 @@
+<!--
+  SRTP configuration fragment for a FreeSWITCH sofia profile.
+  Merge these <param> entries into your production sofia profile
+  (e.g. freeswitch/conf/examples/tls/sofia-profile-tls.xml).
+
+  See docs/ops/sip-tls-srtp-nat.md for SRTP policy details.
+-->
+
+<!--
+  rtp-secure-media values:
+    true      = offer SRTP; accept plain RTP if remote does not support SRTP (optional)
+    mandatory = require SRTP on all calls; reject calls that do not offer SRTP
+    false     = plain RTP only (not recommended for production)
+-->
+<param name="rtp-secure-media" value="true"/>
+
+<!--
+  inbound-late-negotiation: required for SRTP interoperability with carriers
+  that use deferred crypto negotiation (RFC 4568 late binding).
+-->
+<param name="inbound-late-negotiation" value="true"/>
+
+<!--
+  rtp-secure-media-mki: include MKI (Master Key Identifier) in SRTP.
+  Set false unless your carrier specifically requires MKI.
+-->
+<param name="rtp-secure-media-mki" value="false"/>
+
+<!--
+  Preferred SRTP crypto suites (offered in SDP in this order).
+  AES_CM_128_HMAC_SHA1_80 is the most widely supported suite.
+  Add AES_256_CM_HMAC_SHA1_80 if your carrier requires 256-bit keys.
+
+  To restrict to a single suite, remove the others.
+-->
+<!-- <param name="crypto-suite" value="AES_CM_128_HMAC_SHA1_80"/> -->
+
+<!--
+  DTLS-SRTP (WebRTC-style): only needed if supporting WebRTC clients.
+  Leave commented out for carrier/SIP trunk deployments.
+-->
+<!-- <param name="dtls-srtp-mode" value="active"/> -->

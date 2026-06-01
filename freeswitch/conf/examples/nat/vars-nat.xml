@@ -1,0 +1,32 @@
+<!--
+  NAT traversal variable declarations for FreeSWITCH.
+  Include in freeswitch.xml or vars.xml.
+
+  Replace CHANGE_ME values before deploying.
+  See docs/ops/sip-tls-srtp-nat.md for configuration details.
+-->
+
+<!--
+  Public IP for SIP signaling (Contact and Via headers).
+  Use your static public IP, or "auto-nat" for dynamic detection via STUN.
+  If behind a load balancer with a known IP, set the VIP here.
+
+  CHANGE_ME: replace with your actual public IP or "auto-nat"
+-->
+<X-PRE-PROCESS cmd="set" data="external_sip_ip=CHANGE_ME"/>
+
+<!--
+  Public IP for RTP media (in SDP c= and a=rtcp lines).
+  Usually the same as external_sip_ip for single-interface deployments.
+
+  CHANGE_ME: replace with your actual public IP or "auto-nat"
+-->
+<X-PRE-PROCESS cmd="set" data="external_rtp_ip=CHANGE_ME"/>
+
+<!--
+  RTP port range. Open exactly this range at the firewall.
+  Each concurrent call uses approximately 2–4 ports.
+  16384 ports supports ~8000 concurrent calls.
+-->
+<X-PRE-PROCESS cmd="set" data="rtp_start_port=16384"/>
+<X-PRE-PROCESS cmd="set" data="rtp_end_port=32768"/>

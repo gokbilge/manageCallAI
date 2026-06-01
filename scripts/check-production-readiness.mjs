@@ -17,6 +17,8 @@ const requiredFiles = [
   'scripts/restore-smoke.mjs',
   'scripts/restore-rehearsal.mjs',
   'scripts/check-production-network-config.mjs',
+  'scripts/check-sip-tls-srtp-nat-evidence.mjs',
+  'docs/ops/templates/sip-tls-srtp-nat-evidence-template.json',
   'scripts/redact-logs.mjs',
   '.github/workflows/freeswitch-smoke.yml',
   'docs/planning/slices/SLICE-52-production-runtime-e2e-gate.md',

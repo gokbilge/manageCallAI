@@ -1,0 +1,41 @@
+{
+  "_note": "Fill in all fields. Set boolean gates only after the corresponding test actually passed. Do not include real IPs, hostnames, or credentials beyond what is needed to identify the test environment.",
+
+  "tested_at": "<ISO-8601 datetime of test completion, e.g. 2026-06-01T14:00:00Z>",
+  "git_sha": "<git rev-parse --short HEAD output>",
+  "freeswitch_version": "<freeswitch -version output, e.g. v1.10.12>",
+  "test_environment": "<development | staging | production>",
+  "operator": "<name or role of the person who ran the test>",
+
+  "sip_tls": {
+    "enabled": false,
+    "port": 5061,
+    "profile": "<sofia profile name, e.g. external-tls>",
+    "tls_version": "<negotiated TLS version, e.g. TLSv1.3>",
+    "cert_cn": "<certificate CN or SAN verified during test>",
+    "client_registered_over_tls": false
+  },
+
+  "srtp": {
+    "enabled": false,
+    "policy": "<disabled | optional | required>",
+    "crypto_suite": "<negotiated suite, e.g. AES_CM_128_HMAC_SHA1_80>",
+    "call_completed_with_srtp": false
+  },
+
+  "nat": {
+    "external_sip_ip_configured": false,
+    "external_rtp_ip": "<public RTP IP used in SDP, masked if sensitive>",
+    "external_rtp_ip_configured": false,
+    "two_way_audio_verified": false,
+    "nat_type": "<static | auto-nat | stun>"
+  },
+
+  "rtp_range": {
+    "from": 0,
+    "to": 0
+  },
+
+  "notes": "",
+  "status": "pending"
+}
