@@ -5,13 +5,22 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 const requiredFiles = [
   'scripts/production-runtime-e2e.mjs',
   'scripts/production-preflight.mjs',
+  'scripts/production-soak.mjs',
+  'scripts/rate-limit-topology-check.mjs',
+  'scripts/carrier-interop-check.mjs',
   'scripts/restore-smoke.mjs',
   'scripts/redact-logs.mjs',
   'docs/planning/slices/SLICE-52-production-runtime-e2e-gate.md',
   'docs/planning/slices/SLICE-53-production-deployment-and-network-hardening.md',
   'docs/planning/slices/SLICE-54-backup-restore-upgrade-and-dr.md',
+  'docs/planning/slices/SLICE-55-load-and-soak-testing.md',
+  'docs/planning/slices/SLICE-56-multi-instance-rate-limiting.md',
+  'docs/planning/slices/SLICE-57-carrier-interop-certification.md',
   'docs/release/production-runtime-e2e.md',
   'docs/ops/production-preflight.md',
+  'docs/ops/production-soak-testing.md',
+  'docs/ops/rate-limit-topology.md',
+  'docs/ops/carrier-interop.md',
   'docs/ops/restore-smoke.md',
 ];
 

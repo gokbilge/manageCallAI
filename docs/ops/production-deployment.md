@@ -72,6 +72,16 @@ TLS, allowlist FreeSWITCH node IPs, block known SIP scanner paths at the edge, a
 ensure access logs redact `Authorization`, `x-managecallai-runtime-token`, and any
 legacy `runtime_token` query parameter.
 
+For multi-instance API deployments, run:
+
+```sh
+pnpm production:rate-limit-check
+```
+
+The check must pass before live traffic is enabled. It requires a shared limiter
+store or edge-enforced rate limits when more than one API instance serves traffic.
+See `docs/ops/rate-limit-topology.md`.
+
 ## Database migrations
 
 Apply all migrations before starting the API:
@@ -156,7 +166,9 @@ becomes an orphaned reference.
 4. Run `pnpm db:contracts`, `pnpm db:constraints`, and `pnpm production:preflight`.
 5. Verify `GET /health` returns `{ status: "ok" }`.
 6. Run `pnpm production:e2e` on a runtime-capable deployment before promoting.
-7. Roll back: restore the snapshot and redeploy the previous API version.
+7. Run `pnpm production:soak` and attach the sanitized evidence to the release.
+8. Run `pnpm carrier:interop-check -- --evidence=<file>` for each supported carrier profile.
+9. Roll back: restore the snapshot and redeploy the previous API version.
    Migrations are not automatically reversible — write a rollback migration if needed.
 
 ## SLOs for runtime lookup endpoints
