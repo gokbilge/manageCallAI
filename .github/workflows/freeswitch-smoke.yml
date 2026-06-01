@@ -179,6 +179,7 @@ jobs:
         env:
           RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
           API_BASE_URL: ${{ env.SMOKE_API_URL }}
+          PRODUCTION_E2E_ARTIFACT_DIR: artifacts/production-e2e-check-config
 
       # ── Validate evidence ───────────────────────────────────────────────────
 
