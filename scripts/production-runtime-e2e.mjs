@@ -11,6 +11,7 @@ const apiRoot = normalizeRoot(process.env.API_BASE_URL ?? 'http://localhost:3000
 const apiBase = `${apiRoot}/api/v1`;
 const runtimeToken = process.env.RUNTIME_API_TOKEN ?? '';
 const evidenceDir = process.env.PRODUCTION_E2E_ARTIFACT_DIR ?? 'artifacts/production-e2e';
+const sipHandoffPath = process.env.PRODUCTION_E2E_SIP_HANDOFF_PATH ?? `${evidenceDir}/sip-register.env`;
 
 const evidence = {
   generated_at: new Date().toISOString(),
@@ -84,6 +85,21 @@ async function writeEvidence(status) {
   console.log(`evidence: ${output}`);
 }
 
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+async function writeSipHandoff({ username, password, domain }) {
+  await mkdir(evidenceDir, { recursive: true });
+  const lines = [
+    `SIP_USERNAME=${shellQuote(username)}`,
+    `SIP_PASSWORD=${shellQuote(password)}`,
+    `SIP_DOMAIN=${shellQuote(domain)}`,
+    '',
+  ];
+  await writeFile(sipHandoffPath, lines.join('\n'), 'utf8');
+}
+
 async function run() {
   if (checkConfigOnly) {
     for (const name of ['API_BASE_URL', 'RUNTIME_API_TOKEN', 'PRODUCTION_E2E_ARTIFACT_DIR']) {
@@ -102,6 +118,8 @@ async function run() {
   const email = `prod-e2e-${suffix}@example.com`;
   const domain = `${tenantSlug}.managecallai.local`;
   const did = `+1212555${suffix.slice(0, 4)}`;
+  const extensionNumber = '1001';
+  const sipPassword = `Sip-${suffix}!`;
 
   const health = await fetch(`${apiRoot}/health`);
   if (!health.ok) throw new Error(`/health returned ${health.status}`);
@@ -124,15 +142,16 @@ async function run() {
   const extension = (await requestJson('POST', '/extensions', {
     token,
     body: {
-      extension_number: '1001',
+      extension_number: extensionNumber,
       display_name: 'Production E2E Reception',
-      sip_password: `Sip-${suffix}!`,
+      sip_password: sipPassword,
     },
   })).data;
   evidence.ids.extension_id = extension.id;
   record('extension create', 'passed');
+  await writeSipHandoff({ username: extensionNumber, password: sipPassword, domain });
 
-  const directoryXml = await requestText('GET', `/freeswitch/directory?user=1001&domain=${encodeURIComponent(domain)}`, { runtime: true });
+  const directoryXml = await requestText('GET', `/freeswitch/directory?user=${encodeURIComponent(extensionNumber)}&domain=${encodeURIComponent(domain)}`, { runtime: true });
   if (!directoryXml.includes('managecall_extension_id')) {
     throw new Error('directory response did not include managecall_extension_id');
   }
@@ -151,7 +170,7 @@ async function run() {
       { id: 'start', type: 'start', next_node_id: 'menu' },
       { id: 'menu', type: 'play_collect', prompt_id: prompt.id, next_node_id: 'route', timeout_node_id: 'end', invalid_node_id: 'end' },
       { id: 'route', type: 'switch', cases: { '1': 'reception' }, default_node_id: 'end' },
-      { id: 'reception', type: 'transfer_extension', extension_number: '1001' },
+      { id: 'reception', type: 'transfer_extension', extension_number: extensionNumber },
       { id: 'end', type: 'hangup' },
     ],
   };
@@ -166,8 +185,8 @@ async function run() {
 
   await requestJson('POST', `/ivr-flows/${flow.id}/versions/${draftVersionId}/validate`, { token });
   const simulation = (await requestJson('POST', `/ivr-flows/${flow.id}/simulate`, { token, body: { digits: ['1'] } })).data;
-  if (!JSON.stringify(simulation).includes('1001')) {
-    throw new Error('simulation did not route to extension 1001');
+  if (!JSON.stringify(simulation).includes(extensionNumber)) {
+    throw new Error(`simulation did not route to extension ${extensionNumber}`);
   }
   record('ivr validate and simulate', 'passed');
 

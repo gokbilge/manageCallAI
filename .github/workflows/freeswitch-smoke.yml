@@ -142,6 +142,11 @@ jobs:
       - name: SIP REGISTER smoke
         run: |
           set -o pipefail
+          if [ -f "${PRODUCTION_E2E_ARTIFACT_DIR}/sip-register.env" ]; then
+            set -a
+            . "${PRODUCTION_E2E_ARTIFACT_DIR}/sip-register.env"
+            set +a
+          fi
           node scripts/sip-register-smoke.mjs 2>&1 | node scripts/redact-logs.mjs
         env:
           SIP_HOST: 127.0.0.1
