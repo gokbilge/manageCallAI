@@ -15,7 +15,7 @@
 #   SIP_SECRET_KEY_ID
 #
 # Optional environment:
-#   FREESWITCH_ESL_PASSWORD  (defaults to ClueCon — not for production)
+#   FREESWITCH_ESL_PASSWORD  (defaults to the FreeSWITCH vendor default — not for production)
 #   API_BASE_URL             (defaults to http://localhost:3000)
 #   CLEANUP                  (set to "true" to tear down the stack after the gate)
 #
