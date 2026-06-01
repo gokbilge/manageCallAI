@@ -263,7 +263,7 @@ try {
 
 const requiredTables = [
   'tenants', 'users', 'extensions', 'sip_trunks', 'phone_numbers',
-  'ivr_flows', 'flow_versions', 'inbound_routes', 'call_events', 'recordings',
+  'ivr_flows', 'flow_versions', 'inbound_routes', 'call_events', 'call_recordings',
   'automation_api_keys', 'automation_webhooks', 'schema_migrations',
 ];
 

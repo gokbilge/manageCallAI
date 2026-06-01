@@ -25,7 +25,7 @@ const requiredTables = [
   'flow_versions',
   'inbound_routes',
   'call_events',
-  'recordings',
+  'call_recordings',
   'automation_api_keys',
   'automation_webhooks',
   'schema_migrations',

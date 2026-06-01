@@ -49,21 +49,29 @@ if [ "${FREESWITCH_TLS_ENABLED}" = "true" ]; then
     echo "WARNING: Certificate generation failed — TLS will not be available"
   fi
 
-  # Enable TLS on the stock internal sofia profile rather than adding a new profile
-  # that might conflict with other bound ports.
+  # Enable TLS via FreeSWITCH vars.xml. The internal profile uses $${internal_ssl_enable}
+  # to control whether TLS is active. Set that var to true and confirm cert dir.
+  FS_VARS="/usr/local/freeswitch/conf/vars.xml"
   FS_INTERNAL="${FS_PROFILES_DIR}/internal.xml"
-  if [ -f "${FS_INTERNAL}" ] && [ -f "${FS_CERTS_DIR}/agent.pem" ]; then
-    sed -i 's|<param name="tls" value="false"/>|<param name="tls" value="true"/>|g' "${FS_INTERNAL}"
-    sed -i "s|<param name=\"tls-cert-dir\" value=\"\"/>|<param name=\"tls-cert-dir\" value=\"${FS_CERTS_DIR}\"/>|g" "${FS_INTERNAL}"
-    # Enable SRTP (optional mode — offers SRTP, accepts plain RTP)
-    sed -i 's|<!--<param name="rtp-secure-media".*/>-->||g' "${FS_INTERNAL}"
+  if [ -f "${FS_VARS}" ] && [ -f "${FS_CERTS_DIR}/agent.pem" ]; then
+    # Enable TLS in vars
+    sed -i 's|internal_ssl_enable=false|internal_ssl_enable=true|g' "${FS_VARS}"
+    sed -i 's|internal_ssl_enable=0|internal_ssl_enable=true|g' "${FS_VARS}"
+    # Set certs_dir to our generated cert location
+    sed -i "s|certs_dir=.*|certs_dir=${FS_CERTS_DIR}|g" "${FS_VARS}"
+    echo "TLS enabled via vars.xml (internal_ssl_enable=true, certs_dir=${FS_CERTS_DIR})"
+  fi
+
+  # Also enable SRTP on the internal profile
+  if [ -f "${FS_INTERNAL}" ]; then
     if ! grep -q 'rtp-secure-media' "${FS_INTERNAL}"; then
       sed -i '/<\/settings>/i\    <param name="rtp-secure-media" value="true"/>' "${FS_INTERNAL}"
     fi
-    echo "TLS+SRTP enabled on stock internal profile"
-    # Remove the external-tls template profile to avoid port conflicts
-    rm -f "${FS_PROFILES_DIR}/external-tls.xml" 2>/dev/null || true
+    echo "SRTP enabled on internal profile"
   fi
+
+  # Remove the external-tls profile to avoid port conflicts
+  rm -f "${FS_PROFILES_DIR}/external-tls.xml" 2>/dev/null || true
 fi
 
 exec /usr/local/freeswitch/bin/freeswitch -nonat -nf
