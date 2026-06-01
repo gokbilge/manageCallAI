@@ -130,6 +130,12 @@ jobs:
           done
           nc -z 127.0.0.1 5061 2>/dev/null || echo "WARNING: TLS port 5061 not confirmed open"
           ss -tlnp | grep 5061 || echo "WARNING: ss shows no listener on 5061"
+          echo "--- TLS diagnostic ---"
+          FS_CONTAINER=$(docker ps --filter "name=freeswitch" --filter "name=managecall" --format "{{.Names}}" | grep -v agent | head -1)
+          echo "FreeSWITCH container: ${FS_CONTAINER}"
+          docker exec "${FS_CONTAINER}" ls /usr/local/freeswitch/certs/ 2>&1 || echo "certs dir not found"
+          docker exec "${FS_CONTAINER}" grep -n "tls" /usr/local/freeswitch/conf/sip_profiles/internal.xml 2>&1 | head -20 || echo "internal.xml tls grep failed"
+          docker exec "${FS_CONTAINER}" openssl s_client -connect 127.0.0.1:5061 -brief 2>&1 </dev/null | head -5 || echo "openssl s_client failed"
 
       # ── FreeSWITCH profile ──────────────────────────────────────────────────
 
