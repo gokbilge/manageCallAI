@@ -164,19 +164,12 @@ jobs:
           pnpm --filter @managecallai/api exec vitest run \
             src/modules/freeswitch/dialplan-builders.test.ts
 
-      # ── FreeSWITCH profile smoke test ────────────────────────────────────────
-      # BLOCKER: FreeSWITCH cannot run as a GitHub Actions service container
-      # because it requires host network access for SIP/media and non-trivial
-      # startup configuration (sofia XML config, mod_xml_curl URL, etc.).
-      # The deterministic CI substitute is the dialplan golden-file test above.
-      # To run the full ESL smoke test locally: pnpm runtime:up && node scripts/check-freeswitch-profile.mjs
-      #
-      # Uncomment the step below when a self-hosted runner with FreeSWITCH is available:
-      # - name: FreeSWITCH profile smoke test
-      #   run: node scripts/check-freeswitch-profile.mjs
-      #   env:
-      #     FREESWITCH_ESL_HOST: <runner-host>
-      #     FREESWITCH_ESL_PASSWORD: ${{ secrets.FREESWITCH_ESL_PASSWORD }}
+      # ── FreeSWITCH release smoke gate ────────────────────────────────────────
+      # Full FreeSWITCH smoke requires host networking, SIP/media ports, and a
+      # configured runtime node, so it is enforced by the self-hosted
+      # .github/workflows/freeswitch-smoke.yml workflow on release/** and rc/**
+      # branches. Normal contributor CI keeps the deterministic XML golden test
+      # above as the hosted-runner substitute.
 
   # ── Docker image build test ───────────────────────────────────────────────────
   docker-build:

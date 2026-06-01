@@ -54,12 +54,12 @@ node scripts/redact-logs.mjs
 
 ## Release Requirement
 
-For a production release candidate, attach one of:
+For a production release candidate, attach:
 
-- a passing `FreeSWITCH Smoke` workflow artifact from the self-hosted runner, or
-- a manual `pnpm production:e2e` evidence file plus runtime versions:
-  PostgreSQL, Node.js, API image tag, FreeSWITCH version, Go agent commit, and
-  operating system.
+- a passing `FreeSWITCH Smoke` workflow artifact from the self-hosted runner.
+
+The release evidence must include runtime versions: PostgreSQL, Node.js, API image
+tag, FreeSWITCH version, Go agent commit, and operating system.
 
 If the gate cannot run, the release is not production-ready. Document the reason
 as a release blocker, not as an accepted limitation.

@@ -6,7 +6,7 @@ P0 - public beta gate
 
 ## Status
 
-PLANNED
+COMPLETED
 
 ## Goal
 
@@ -23,8 +23,8 @@ runtime integration.
 ## Scope
 
 - Define a self-hosted runner profile for FreeSWITCH smoke tests.
-- Add an optional GitHub Actions workflow that runs only when the required runner
-  label is available.
+- Add a GitHub Actions workflow that runs on the required self-hosted runner for
+  release and RC branches.
 - Boot API, PostgreSQL, FreeSWITCH, and the Go agent.
 - Verify directory lookup.
 - Verify dialplan lookup.
@@ -37,9 +37,18 @@ runtime integration.
 
 ## Acceptance Criteria
 
-- The smoke workflow is required for beta/release candidates, optional for normal
-  contributor PRs.
+- The smoke workflow is required for beta/release candidates on `release/**` and
+  `rc/**`, while normal contributor PRs continue using deterministic hosted CI.
 - The workflow fails non-zero on missing directory/dialplan/runtime/event paths.
 - Logs do not expose runtime tokens, SIP passwords, webhook secrets, or JWTs.
 - Release checklist records whether the FreeSWITCH smoke ran and which runtime
   versions were used.
+
+## Implementation Notes
+
+- `.github/workflows/freeswitch-smoke.yml` runs on pushes to `release/**` and
+  `rc/**`, and on PRs targeting those branches.
+- Release branch protection or repository rulesets must require the
+  `FreeSWITCH runtime smoke` status check.
+- Missing self-hosted runner capacity blocks release promotion by leaving the
+  required check pending.

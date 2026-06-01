@@ -74,6 +74,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [planning/README.md](planning/README.md)
   Release planning index with slice-by-slice dependency and sequencing guidance from the current baseline to product release.
 
+- [release/freeswitch-smoke-gate.md](release/freeswitch-smoke-gate.md)
+  Required self-hosted FreeSWITCH smoke gate for release and RC branches.
+
 ## UI Documents
 
 - [ui/UI_ARCHITECTURE.md](ui/UI_ARCHITECTURE.md)
