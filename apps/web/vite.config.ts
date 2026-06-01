@@ -17,7 +17,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     globals: true,
+    include: ['src/**/*.{test,spec}.{ts,tsx,mts}'],
+    exclude: ['dist/**', 'node_modules/**'],
     coverage: {
+      include: ['src/**/*.{ts,tsx,mts}'],
+      exclude: ['dist/**', 'node_modules/**', 'src/**/*.{test,spec}.{ts,tsx,mts}'],
       thresholds: {
         statements: 70,
         branches: 75,
