@@ -1,4 +1,4 @@
-package dispatcher
+﻿package dispatcher
 
 import (
 	"context"
@@ -6,9 +6,11 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/config"
 )
@@ -221,3 +223,97 @@ func TestPollRejectsUnsafeDialNumber(t *testing.T) {
 		t.Errorf("expected failed status report, got %q", statusReported)
 	}
 }
+
+func TestIsSafeDialNumber(t *testing.T) {
+	cases := []struct {
+		number string
+		want   bool
+	}{
+		{"+905551234567", true},
+		{"+12025551234", true},
+		{"905551234567", false},
+		{"+9", false},
+		{"+90;bgapi", false},
+		{"", false},
+		{"+1234567", false},
+	}
+	for _, tc := range cases {
+		got := isSafeDialNumber(tc.number)
+		if got != tc.want {
+			t.Errorf("isSafeDialNumber(%q) = %v, want %v", tc.number, got, tc.want)
+		}
+	}
+}
+
+func TestPollHandlesNetworkError(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	addr := ln.Addr().String()
+	ln.Close()
+
+	dialer := &mockDialer{}
+	d := newTestDispatcher("http://"+addr, dialer)
+	d.poll(context.Background())
+	if dialer.callCount != 0 {
+		t.Errorf("expected 0 originate calls on network error, got %d", dialer.callCount)
+	}
+}
+
+func TestPollHandlesNon200WithBodyLogged(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error":"internal"}`))
+	}))
+	defer server.Close()
+
+	dialer := &mockDialer{}
+	d := newTestDispatcher(server.URL, dialer)
+	d.poll(context.Background())
+	if dialer.callCount != 0 {
+		t.Errorf("expected 0 originate calls on non-200 response, got %d", dialer.callCount)
+	}
+}
+
+func TestPollHandlesInvalidJSONResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`not-valid-json`))
+	}))
+	defer server.Close()
+
+	dialer := &mockDialer{}
+	d := newTestDispatcher(server.URL, dialer)
+	d.poll(context.Background())
+	if dialer.callCount != 0 {
+		t.Errorf("expected 0 originate calls on invalid JSON, got %d", dialer.callCount)
+	}
+}
+
+func TestRunExitsOnContextCancel(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(listResponse{Data: []outboundRequest{}})
+	}))
+	defer server.Close()
+
+	d := newTestDispatcher(server.URL, &mockDialer{})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		d.Run(ctx, 50*time.Millisecond)
+		close(done)
+	}()
+
+	time.Sleep(80 * time.Millisecond)
+	cancel()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Run did not exit after context cancellation")
+	}
+}
+

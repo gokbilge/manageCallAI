@@ -1,4 +1,4 @@
-# Release Evidence Bundle
+﻿# Release Evidence Bundle
 
 Production release candidates require a signed-off JSON manifest checked with:
 
@@ -17,6 +17,7 @@ pnpm release:evidence-check -- --manifest=artifacts/release/release-evidence.jso
   "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/2",
   "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/3",
   "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/4",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/5",
   "production_preflight": "passed",
   "production_e2e": "passed",
   "production_soak": "passed",
@@ -32,9 +33,19 @@ pnpm release:evidence-check -- --manifest=artifacts/release/release-evidence.jso
     "approved_at": "2026-06-01T00:00:00Z"
   },
   "artifact_files": {
-    "runtime_slo": "artifacts/release/runtime-slo.json"
+    "runtime_slo": "artifacts/release/runtime-slo.json",
+    "freeswitch_smoke_evidence": "artifacts/production-e2e/production-runtime-e2e-<timestamp>.json"
   }
 }
+```
+
+The `freeswitch_smoke_run_url` field must point to a **passing** self-hosted `FreeSWITCH runtime smoke`
+workflow run from the RC or release branch. This is the required status check enforced by the
+`Release and RC smoke gate` repository ruleset. The run URL is available in GitHub Actions after the
+workflow completes; copy the URL from the browser or via:
+
+```sh
+gh run list --workflow=freeswitch-smoke.yml --branch=rc/<version> --json url --jq '.[0].url'
 ```
 
 `artifact_files` is optional, but every declared path must exist on the release
