@@ -118,6 +118,19 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
 
+      # ── FreeSWITCH TLS port readiness ──────────────────────────────────────
+
+      - name: Wait for FreeSWITCH TLS port
+        run: |
+          echo "Waiting for FreeSWITCH TLS on 127.0.0.1:5061..."
+          for i in $(seq 1 20); do
+            nc -z 127.0.0.1 5061 2>/dev/null && { echo "TLS port open after ${i}s"; break; }
+            echo "  attempt ${i}/20..."
+            sleep 2
+          done
+          nc -z 127.0.0.1 5061 2>/dev/null || echo "WARNING: TLS port 5061 not confirmed open"
+          ss -tlnp | grep 5061 || echo "WARNING: ss shows no listener on 5061"
+
       # ── FreeSWITCH profile ──────────────────────────────────────────────────
 
       - name: FreeSWITCH ESL profile check
