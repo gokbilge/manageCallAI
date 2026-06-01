@@ -241,3 +241,30 @@ func isEventMessage(headers map[string]string) bool {
 		return false
 	}
 }
+
+// SmokeCheck performs a single ESL connection attempt: dial, authenticate, and
+// send a version query. It returns nil on success and an error on any failure.
+// It does not retry and exits as soon as the auth round-trip completes.
+func SmokeCheck(cfg config.Config, logger *slog.Logger) error {
+	address := fmt.Sprintf("%s:%d", cfg.ESLHost, cfg.ESLPort)
+	logger.Info("esl smoke check: connecting", slog.String("address", address))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	dialer := net.Dialer{Timeout: 5 * time.Second}
+	conn, err := dialer.DialContext(ctx, "tcp", address)
+	if err != nil {
+		return fmt.Errorf("esl smoke check: dial failed: %w", err)
+	}
+	defer conn.Close()
+
+	reader := bufio.NewReader(conn)
+	c := &Client{config: cfg, logger: logger}
+	if err := c.authenticate(reader, conn); err != nil {
+		return fmt.Errorf("esl smoke check: auth failed: %w", err)
+	}
+
+	logger.Info("esl smoke check: authenticated successfully", slog.String("address", address))
+	return nil
+}

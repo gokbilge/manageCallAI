@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 	"time"
 
@@ -19,6 +20,16 @@ import (
 func main() {
 	cfg := config.Load()
 	logger := logging.New(cfg.LogLevel)
+
+	// --smoke-check: single ESL auth round-trip, then exit.
+	if slices.Contains(os.Args[1:], "--smoke-check") {
+		if err := esl.SmokeCheck(cfg, logger); err != nil {
+			logger.Error("ESL smoke check failed", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		logger.Info("ESL smoke check passed")
+		os.Exit(0)
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

@@ -43,6 +43,12 @@ const ALLOWED_PATH_PATTERNS = [
   // it to REJECT it — the opposite of a secret leak.
   /apps\/api\/src\/config\/env\.[tj]s$/,
   /apps\/freeswitch-agent\/internal\/config\/config\.go$/,
+  // The local runtime gate script documents the vendor default in a comment and
+  // uses a split-string pattern in the code to avoid committing the literal value.
+  /scripts\/local-runtime-release-gate\.sh$/,
+  // The evidence validator assembles the vendor default via a split pattern to
+  // detect it in submitted artifacts; the test file mirrors this approach.
+  /scripts\/check-runtime-e2e-evidence\.(mjs|test\.mjs)$/,
   // Go _test.go files (covered by *.test.ts above, but Go uses _test.go suffix)
   /_test\.go$/,
 ];

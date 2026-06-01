@@ -408,3 +408,24 @@ func TestRunSessionHandlesNonEventMessages(t *testing.T) {
 		t.Fatal("expected non-nil error when server closes connection")
 	}
 }
+
+// TestSmokeCheckPassesOnValidESL verifies SmokeCheck authenticates and returns nil.
+func TestSmokeCheckPassesOnValidESL(t *testing.T) {
+	srv := newMockESLServer(t, "smokepass", []string{})
+	host, portStr, _ := net.SplitHostPort(srv.addr())
+	port, _ := strconv.Atoi(portStr)
+	cfg := config.Config{ESLHost: host, ESLPort: port, ESLPassword: "smokepass"}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	if err := SmokeCheck(cfg, logger); err != nil {
+		t.Fatalf("SmokeCheck failed: %v", err)
+	}
+}
+
+// TestSmokeCheckFailsOnConnectionRefused verifies SmokeCheck returns error when ESL is unreachable.
+func TestSmokeCheckFailsOnConnectionRefused(t *testing.T) {
+	cfg := config.Config{ESLHost: "127.0.0.1", ESLPort: 59995}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	if err := SmokeCheck(cfg, logger); err == nil {
+		t.Fatal("expected SmokeCheck to fail on connection refused")
+	}
+}

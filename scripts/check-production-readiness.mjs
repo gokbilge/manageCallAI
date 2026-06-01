@@ -5,6 +5,8 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 const requiredFiles = [
   'scripts/production-runtime-e2e.mjs',
   'scripts/production-preflight.mjs',
+  'scripts/check-runtime-e2e-evidence.mjs',
+  'scripts/local-runtime-release-gate.sh',
   'scripts/restore-evidence-check.mjs',
   'docs/ops/templates/restore-evidence-template.json',
   'scripts/production-soak.mjs',
@@ -57,6 +59,10 @@ if (existsSync('.github/workflows/freeswitch-smoke.yml')) {
     "pnpm production:e2e",
     "node scripts/sip-register-smoke.mjs",
     "go run . --smoke-check",
+    "docker compose --profile freeswitch up",
+    "docker compose --profile freeswitch down",
+    "check-runtime-e2e-evidence.mjs",
+    "actions/upload-artifact",
   ];
 
   for (const fragment of requiredWorkflowFragments) {
