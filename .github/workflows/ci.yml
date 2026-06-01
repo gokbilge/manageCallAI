@@ -146,6 +146,9 @@ jobs:
       - name: API key capability alignment check
         run: node scripts/check-api-key-capabilities.mjs
 
+      - name: Production readiness manifest check
+        run: pnpm check:production-readiness
+
       # ── IVR simulation regression ────────────────────────────────────────────
       # Runs IVR graph validator and simulation engine unit tests explicitly to
       # ensure call-flow behaviour doesn't regress when node types or graph rules change.

@@ -143,16 +143,19 @@ aws s3 sync "s3://your-bucket/recordings/" "$RECORDING_STORAGE_ROOT"
 docker-compose start api worker
 ```
 
-### 7. Smoke test
+### 7. Restore and runtime smoke tests
 
 ```sh
-pnpm runtime:smoke
+pnpm db:contracts
+pnpm db:constraints
+pnpm restore:smoke
+pnpm production:preflight
 ```
 
-or
+If the restored environment is allowed to run live runtime checks, run:
 
 ```sh
-node scripts/mvp-smoke.mjs
+pnpm production:e2e
 ```
 
 Verify:
@@ -161,6 +164,8 @@ Verify:
 - Tenant login works
 - Extension list returns expected data
 - IVR flow list returns expected data
+- FreeSWITCH directory and dialplan lookup work
+- runtime call-event ingest and tenant query work
 
 ## Verification After Restore
 
@@ -205,10 +210,11 @@ key version was used.
 |---|---|
 | Full restore from daily backup | < 2 hours |
 | Recovery point objective (RPO) | 24 hours (daily backups) |
-| Production target (not yet) | RTO < 30 min, RPO < 1 hour with WAL streaming |
+| Production target | RTO < 30 min, RPO < 1 hour with WAL streaming |
 
 ## Related Documents
 
 - `docs/ops/production-deployment.md` — environment setup
+- `docs/ops/restore-smoke.md` — restore verification gate
 - `docs/development/release-runbook.md` — upgrade and rollback procedures
 - `docs/release/release-checklist.md` — backup/restore gate in production checklist

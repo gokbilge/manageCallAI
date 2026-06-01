@@ -28,6 +28,9 @@
     "runtime:up": "docker compose --profile freeswitch up -d",
     "runtime:down": "docker compose --profile freeswitch down",
     "runtime:smoke": "powershell -ExecutionPolicy Bypass -File ./scripts/live-runtime-smoke.ps1",
+    "production:e2e": "node scripts/production-runtime-e2e.mjs",
+    "production:preflight": "node scripts/production-preflight.mjs",
+    "restore:smoke": "node scripts/restore-smoke.mjs",
     "test": "pnpm -r test",
     "test:coverage": "pnpm coverage:api && pnpm coverage:web && pnpm coverage:mcp && pnpm coverage:sdk && pnpm coverage:freeswitch-agent",
     "coverage:api": "pnpm --filter @managecallai/api test:coverage",
@@ -44,6 +47,7 @@
     "check:api-key-capabilities": "node scripts/check-api-key-capabilities.mjs",
     "check:ivr-simulation": "node scripts/check-ivr-simulation.mjs",
     "check:freeswitch-profile": "node scripts/check-freeswitch-profile.mjs",
-    "check:coverage-ignores": "node scripts/check-coverage-ignores.mjs"
+    "check:coverage-ignores": "node scripts/check-coverage-ignores.mjs",
+    "check:production-readiness": "node scripts/check-production-readiness.mjs"
   }
 }

@@ -31,6 +31,10 @@ and release smoke evidence are complete.
 - `pnpm check:webhook-payloads`
 - `pnpm check:api-key-capabilities`
 - `pnpm check:coverage-ignores`
+- `pnpm check:production-readiness`
+- `pnpm production:preflight`
+- `pnpm restore:smoke` after restore rehearsals
+- `pnpm production:e2e` on a runtime-capable environment
 
 ## Coverage Gates
 
@@ -61,7 +65,19 @@ A self-hosted FreeSWITCH smoke workflow exists at `.github/workflows/freeswitch-
 - Can be triggered manually via `workflow_dispatch`
 
 Every release candidate must document whether the FreeSWITCH smoke was run and what runtime
-versions were used. See `docs/release/public-alpha-readiness.md` for the current gate status.
+versions were used. Production release candidates must also attach the sanitized
+`pnpm production:e2e` evidence artifact. See `docs/release/production-runtime-e2e.md`.
+
+## Backup, Restore, And Upgrade Gates
+
+Production promotion requires evidence that:
+
+- a PostgreSQL backup was taken before migration
+- migrations were applied with `pnpm db:migrate`
+- `pnpm db:contracts` and `pnpm db:constraints` passed
+- a restore rehearsal or recent restore smoke ran with `pnpm restore:smoke`
+- `pnpm production:preflight` passed in the target environment
+- `pnpm production:e2e` passed after deployment or restore
 
 ## Safety Review
 

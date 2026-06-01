@@ -87,6 +87,9 @@ Last audited: 2026-05-30.
 | `SLICE-49` | planned |
 | `SLICE-50` | planned |
 | `SLICE-51` | planned |
+| `SLICE-52` | completed |
+| `SLICE-53` | completed |
+| `SLICE-54` | completed |
 
 The original v1 release-plan slices are closed. The next release-candidate feature
 set is now explicit as `SLICE-25` through `SLICE-32`. Contract generation,
@@ -260,6 +263,9 @@ SLICE-00 Current Baseline
 - `SLICE-49`
 - `SLICE-50`
 - `SLICE-51`
+- `SLICE-52`
+- `SLICE-53`
+- `SLICE-54`
 
 ## 6. Recommended Execution Order
 
@@ -334,6 +340,9 @@ SLICE-00 Current Baseline
 43. `SLICE-49` Public Alpha Readiness And Security Triage
 44. `SLICE-50` Self-Hosted FreeSWITCH Smoke CI
 45. `SLICE-51` Release-Grade Product Surfaces, Coverage, And Runbooks
+46. `SLICE-52` Production Runtime E2E Gate
+47. `SLICE-53` Production Deployment And Network Hardening
+48. `SLICE-54` Backup, Restore, Upgrade, And DR
 
 ## 7. Minimal Release Gate
 
@@ -395,3 +404,6 @@ The product is ready for the first release only when all of these are true:
 - [SLICE-49](slices/SLICE-49-public-alpha-readiness.md)
 - [SLICE-50](slices/SLICE-50-self-hosted-freeswitch-smoke-ci.md)
 - [SLICE-51](slices/SLICE-51-release-grade-product-coverage-and-runbooks.md)
+- [SLICE-52](slices/SLICE-52-production-runtime-e2e-gate.md)
+- [SLICE-53](slices/SLICE-53-production-deployment-and-network-hardening.md)
+- [SLICE-54](slices/SLICE-54-backup-restore-upgrade-and-dr.md)
