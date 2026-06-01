@@ -52,10 +52,6 @@ function fail(name, message) {
   findings.push({ level: 'fail', name, message });
 }
 
-function warn(name, message) {
-  findings.push({ level: 'warn', name, message });
-}
-
 function info(name, message) {
   findings.push({ level: 'info', name, message });
 }
