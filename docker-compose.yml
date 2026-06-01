@@ -69,6 +69,7 @@ services:
       - "5061:5061/tcp"
       - "5080:5080/tcp"
       - "5080:5080/udp"
+      - "5081:5081/tcp"
       - "8021:8021/tcp"
     extra_hosts:
       - "host.docker.internal:host-gateway"

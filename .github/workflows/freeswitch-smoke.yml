@@ -122,17 +122,14 @@ jobs:
 
       - name: Wait for FreeSWITCH TLS port
         run: |
-          echo "Waiting for FreeSWITCH TLS on 127.0.0.1:5061..."
+          echo "Waiting for FreeSWITCH TLS on 127.0.0.1:5081 (external profile)..."
           for i in $(seq 1 20); do
-            nc -z 127.0.0.1 5061 2>/dev/null && { echo "TLS port open after ${i}s"; break; }
+            nc -z 127.0.0.1 5081 2>/dev/null && { echo "TLS port open after ${i}s"; break; }
             echo "  attempt ${i}/20..."
             sleep 2
           done
-          nc -z 127.0.0.1 5061 2>/dev/null || echo "WARNING: TLS port 5061 not confirmed open"
-          ss -tlnp | grep 5061 || echo "WARNING: ss shows no listener on 5061"
-          FS_CONTAINER=$(docker ps --filter "name=freeswitch" --filter "name=managecall" --format "{{.Names}}" | grep -v agent | head -1)
-          echo "Container: ${FS_CONTAINER}"
-          docker exec "${FS_CONTAINER}" ls /usr/local/freeswitch/certs/ 2>&1 || echo "WARNING: certs dir empty"
+          nc -z 127.0.0.1 5081 2>/dev/null || echo "WARNING: TLS port 5081 not confirmed open"
+          ss -tlnp | grep 5081 || echo "WARNING: ss shows no listener on 5081"
           docker exec "${FS_CONTAINER}" grep "internal_ssl_enable\|certs_dir" /usr/local/freeswitch/conf/vars.xml 2>&1 | head -5 || echo "vars.xml check skipped"
 
       # ── FreeSWITCH profile ──────────────────────────────────────────────────
@@ -239,7 +236,7 @@ jobs:
             2>&1 | node scripts/redact-logs.mjs
         env:
           SIP_HOST: 127.0.0.1
-          SIP_TLS_PORT: "5061"
+          SIP_TLS_PORT: "5081"
           SIP_UDP_PORT: "5080"
           SIP_LOCAL_IP: 127.0.0.1
           FREESWITCH_EXT_SIP_IP: "127.0.0.1"

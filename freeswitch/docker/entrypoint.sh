@@ -49,28 +49,30 @@ if [ "${FREESWITCH_TLS_ENABLED}" = "true" ]; then
     echo "WARNING: Certificate generation failed — TLS will not be available"
   fi
 
-  # Enable TLS via FreeSWITCH vars.xml. The internal profile uses $${internal_ssl_enable}
-  # to control whether TLS is active. Set that var to true and confirm cert dir.
+  # Enable TLS via FreeSWITCH vars.xml.
+  # Use the EXTERNAL profile (port 5081 for TLS) instead of internal (port 5061)
+  # because the internal profile applies a strict domains ACL that blocks 127.0.0.1
+  # registrations. The external profile accepts all IPs.
   FS_VARS="/usr/local/freeswitch/conf/vars.xml"
-  FS_INTERNAL="${FS_PROFILES_DIR}/internal.xml"
+  FS_EXTERNAL="${FS_PROFILES_DIR}/external.xml"
   if [ -f "${FS_VARS}" ] && [ -f "${FS_CERTS_DIR}/agent.pem" ]; then
-    # Enable TLS in vars
-    sed -i 's|internal_ssl_enable=false|internal_ssl_enable=true|g' "${FS_VARS}"
-    sed -i 's|internal_ssl_enable=0|internal_ssl_enable=true|g' "${FS_VARS}"
+    # Enable TLS on the external profile
+    sed -i 's|external_ssl_enable=false|external_ssl_enable=true|g' "${FS_VARS}"
+    sed -i 's|external_ssl_enable=0|external_ssl_enable=true|g' "${FS_VARS}"
     # Set certs_dir to our generated cert location
     sed -i "s|certs_dir=.*|certs_dir=${FS_CERTS_DIR}|g" "${FS_VARS}"
-    echo "TLS enabled via vars.xml (internal_ssl_enable=true, certs_dir=${FS_CERTS_DIR})"
+    echo "TLS enabled via vars.xml (external_ssl_enable=true on port 5081, certs_dir=${FS_CERTS_DIR})"
   fi
 
-  # Also enable SRTP on the internal profile
-  if [ -f "${FS_INTERNAL}" ]; then
-    if ! grep -q 'rtp-secure-media' "${FS_INTERNAL}"; then
-      sed -i '/<\/settings>/i\    <param name="rtp-secure-media" value="true"/>' "${FS_INTERNAL}"
+  # Enable SRTP on the external profile
+  if [ -f "${FS_EXTERNAL}" ]; then
+    if ! grep -q 'rtp-secure-media' "${FS_EXTERNAL}"; then
+      sed -i '/<\/settings>/i\    <param name="rtp-secure-media" value="true"/>' "${FS_EXTERNAL}"
     fi
-    echo "SRTP enabled on internal profile"
+    echo "SRTP enabled on external profile"
   fi
 
-  # Remove the external-tls profile to avoid port conflicts
+  # Remove the custom external-tls profile to avoid port conflicts
   rm -f "${FS_PROFILES_DIR}/external-tls.xml" 2>/dev/null || true
 fi
 
