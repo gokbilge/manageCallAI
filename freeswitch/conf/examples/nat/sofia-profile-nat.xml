@@ -1,0 +1,44 @@
+<!--
+  NAT traversal settings for a FreeSWITCH sofia profile.
+  Merge these <param> entries into your production sofia profile.
+  Requires vars-nat.xml to be sourced in freeswitch.xml first.
+
+  See docs/ops/sip-tls-srtp-nat.md for detailed NAT configuration guidance.
+-->
+
+<!-- Public IP addresses inserted into SDP and Contact headers -->
+<param name="ext-sip-ip" value="$${external_sip_ip}"/>
+<param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
+
+<!--
+  local-network-acl: networks classified as "local" skip NAT rewriting.
+  Use the built-in "localnet.auto" or define a custom ACL in acl.conf.xml.
+-->
+<param name="local-network-acl" value="localnet.auto"/>
+
+<!--
+  aggressive-nat-detection: detect NAT by comparing source IP/port against
+  Via and Contact headers. Helps with symmetric NAT and firewalls that
+  rewrite the SIP source port.
+-->
+<param name="aggressive-nat-detection" value="true"/>
+
+<!--
+  STUN: enable for deployments where the public IP is dynamic.
+  Set stun-auto-disable to true so STUN is used only when NAT is detected.
+  Leave stun-enabled false if using a static public IP in external_sip_ip.
+-->
+<param name="stun-enabled" value="false"/>
+<param name="stun-auto-disable" value="true"/>
+<!-- <param name="stun-server" value="stun.example.com"/> -->
+
+<!--
+  RTP port range (must match vars-nat.xml and firewall rules).
+-->
+<param name="rtp-start-port" value="$${rtp_start_port}"/>
+<param name="rtp-end-port" value="$${rtp_end_port}"/>
+
+<!--
+  rtp-timer-name: zrtp_hash or none. Leave "soft" for standard RTP.
+-->
+<param name="rtp-timer-name" value="soft"/>

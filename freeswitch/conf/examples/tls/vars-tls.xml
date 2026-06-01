@@ -1,0 +1,19 @@
+<!--
+  TLS variable declarations for FreeSWITCH.
+  Include in freeswitch.xml or vars.xml before any SIP profile references.
+
+  Copy to /etc/freeswitch/vars.xml (or include from it).
+  Replace CHANGE_ME values before deploying.
+-->
+
+<!-- Path to TLS certificate directory -->
+<X-PRE-PROCESS cmd="set" data="tls_cert_dir=/etc/freeswitch/tls"/>
+
+<!-- FreeSWITCH SIP TLS port (standard: 5061) -->
+<X-PRE-PROCESS cmd="set" data="tls_sip_port=5061"/>
+
+<!--
+  Minimum TLS protocol version.
+  Use "tlsv1.2,tlsv1.3" to disable TLS 1.0 and 1.1.
+-->
+<X-PRE-PROCESS cmd="set" data="tls_version=tlsv1.2,tlsv1.3"/>
