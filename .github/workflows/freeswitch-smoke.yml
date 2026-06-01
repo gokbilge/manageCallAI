@@ -91,6 +91,7 @@ jobs:
           FREESWITCH_ANONYMOUS_CALLS: disabled
           FREESWITCH_MOD_XML_RPC: disabled
           FREESWITCH_LOG_LEVEL: warning
+          MANAGECALLAI_SMOKE_ECHO_ENABLED: "true"
 
       - name: Apply migrations
         run: pnpm db:migrate
