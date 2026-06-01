@@ -106,10 +106,12 @@ jobs:
           FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
           API_BASE_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
 
-      # ── Full MVP smoke (API + extensions + IVR + inbound route) ──────────────
-      - name: API smoke (mvp-smoke)
+      # ── Production runtime E2E (API + extensions + IVR + route + runtime) ────
+      - name: Production runtime E2E
         if: steps.capability.outputs.skip != 'true'
-        run: node scripts/mvp-smoke.mjs 2>&1 | node scripts/redact-logs.mjs
+        run: |
+          set -o pipefail
+          pnpm production:e2e 2>&1 | node scripts/redact-logs.mjs
         env:
           DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
           JWT_SECRET: ${{ secrets.SMOKE_JWT_SECRET }}
@@ -117,11 +119,14 @@ jobs:
           SIP_SECRET_MASTER_KEY: ${{ secrets.SMOKE_SIP_SECRET_MASTER_KEY }}
           SIP_SECRET_KEY_ID: smoke-v1
           API_BASE_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
+          PRODUCTION_E2E_ARTIFACT_DIR: artifacts/production-e2e
 
       # ── SIP REGISTER smoke ────────────────────────────────────────────────────
       - name: SIP REGISTER smoke
         if: steps.capability.outputs.skip != 'true'
-        run: node scripts/sip-register-smoke.mjs 2>&1 | node scripts/redact-logs.mjs
+        run: |
+          set -o pipefail
+          node scripts/sip-register-smoke.mjs 2>&1 | node scripts/redact-logs.mjs
         env:
           API_BASE_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
           RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
@@ -159,5 +164,6 @@ jobs:
           name: freeswitch-smoke-${{ github.run_id }}
           path: |
             logs/smoke-*.log
+            artifacts/production-e2e/*.json
           if-no-files-found: ignore
           retention-days: 30
