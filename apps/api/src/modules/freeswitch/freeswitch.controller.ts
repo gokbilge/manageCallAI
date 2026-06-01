@@ -132,8 +132,11 @@ export const freeswitchController: FastifyPluginAsyncZod = async (app) => {
 
     // Smoke test echo extension — active only when MANAGECALLAI_SMOKE_ECHO_ENABLED=true.
     // Used by the SIP TLS/SRTP smoke workflow to verify two-way audio without a real carrier.
+    // Returns the echo dialplan in whatever context FreeSWITCH requested (e.g. 'public' for
+    // the external profile, 'default' for the internal profile).
+    const requestedContext = bodyParsed.context ?? 'default';
     if (destinationNumber === '*47' && process.env.MANAGECALLAI_SMOKE_ECHO_ENABLED === 'true') {
-      return { statusCode: 200, body: buildSmokeEchoDialplan() };
+      return { statusCode: 200, body: buildSmokeEchoDialplan(requestedContext) };
     }
 
     let tenantId: string | undefined;
@@ -555,11 +558,11 @@ function buildNotFoundDialplan(): string {
 </document>`;
 }
 
-function buildSmokeEchoDialplan(): string {
+function buildSmokeEchoDialplan(context = 'default'): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <document type="freeswitch/xml">
   <section name="dialplan">
-    <context name="default">
+    <context name="${xmlEscape(context)}">
       <extension name="smoke-echo">
         <condition field="destination_number" expression="^\\*47$">
           <action application="answer"/>
