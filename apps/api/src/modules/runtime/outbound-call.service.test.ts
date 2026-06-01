@@ -8,6 +8,11 @@ import type { OutboundCallRepository } from './outbound-call.repository.js';
 import type { OutboundCallRequest } from './outbound-call.types.js';
 
 vi.mock('../audit/fire-audit.js', () => ({ fireAuditEvent: vi.fn() }));
+vi.mock('../fraud/fraud.service.js', () => ({
+  FraudService: class {
+    checkOutboundCall = vi.fn().mockResolvedValue({ allowed: true });
+  },
+}));
 
 const TENANT = 'tenant-1';
 const EXT_ID = '00000000-0000-0000-0000-000000000010';
@@ -324,5 +329,51 @@ describe('OutboundCallService', () => {
         service.updateStatus('missing-id', TENANT, 'dispatched'),
       ).rejects.toBeInstanceOf(OutboundCallNotFoundError);
     });
+  });
+});
+
+// ── SLICE-45: Fraud policy integration ───────────────────────────────────────
+
+import { FraudService } from '../fraud/fraud.service.js';
+
+describe('OutboundCallService + FraudService integration', () => {
+  it('blocks call when fraud policy denies the destination', async () => {
+    const repo = makeRepo();
+    const fraud = new FraudService({} as never);
+    vi.mocked(fraud.checkOutboundCall).mockResolvedValue({ allowed: false, reason: 'tenant_country_not_allowed' });
+
+    const service = new OutboundCallService(repo, fraud);
+    await expect(
+      service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+44701234567' }),
+    ).rejects.toBeInstanceOf(OutboundCallValidationError);
+    expect(vi.mocked(repo.create)).not.toHaveBeenCalled();
+  });
+
+  it('includes block reason in validation error message', async () => {
+    const repo = makeRepo();
+    const fraud = new FraudService({} as never);
+    vi.mocked(fraud.checkOutboundCall).mockResolvedValue({ allowed: false, reason: 'tenant_hourly_limit_exceeded' });
+
+    const service = new OutboundCallService(repo, fraud);
+    await expect(
+      service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' }),
+    ).rejects.toThrow('tenant_hourly_limit_exceeded');
+  });
+
+  it('proceeds when fraud policy allows the destination', async () => {
+    const repo = makeRepo();
+    const fraud = new FraudService({} as never);
+    vi.mocked(fraud.checkOutboundCall).mockResolvedValue({ allowed: true });
+
+    const service = new OutboundCallService(repo, fraud);
+    const result = await service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' });
+    expect(result.id).toBe(baseRequest.id);
+  });
+
+  it('works without a FraudService (backward compat — no optional arg)', async () => {
+    const repo = makeRepo();
+    const service = new OutboundCallService(repo);
+    const result = await service.create({ tenant_id: TENANT, extension_id: EXT_ID, dial_number: '+905551234567' });
+    expect(result.id).toBe(baseRequest.id);
   });
 });

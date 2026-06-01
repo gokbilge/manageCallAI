@@ -18,8 +18,11 @@ import {
 } from './outbound-call.service.js';
 import type { OutboundCallStatus } from './outbound-call.types.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
+import { FraudRepository } from '../fraud/fraud.repository.js';
+import { FraudService } from '../fraud/fraud.service.js';
 
-const service = new OutboundCallService(new OutboundCallRepository(db));
+const fraudService = new FraudService(new FraudRepository(db));
+const service = new OutboundCallService(new OutboundCallRepository(db), fraudService);
 
 function replyOutboundError(err: unknown, reply: FastifyReply): void {
   if (err instanceof OutboundCallNotFoundError) {

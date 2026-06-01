@@ -151,6 +151,9 @@ export const API_KEY_CAPABILITIES = [
   // tenant — security alerts (SLICE-48)
   'tenant.security.alerts.view',
   'tenant.security.alerts.manage',
+  // tenant — fraud policy (SLICE-45)
+  'tenant.fraud_policy.view',
+  'tenant.fraud_policy.manage',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;
