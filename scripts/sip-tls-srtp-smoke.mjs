@@ -30,7 +30,6 @@
 import crypto from 'node:crypto';
 import dgram from 'node:dgram';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import net from 'node:net';
 import path from 'node:path';
 import tls from 'node:tls';
 
@@ -45,7 +44,6 @@ const evidenceDir = evidenceDirArg ? evidenceDirArg.slice('--evidence-dir='.leng
 
 const HOST = process.env.SIP_HOST ?? '127.0.0.1';
 const TLS_PORT = Number(process.env.SIP_TLS_PORT ?? '5061');
-const UDP_PORT = Number(process.env.SIP_UDP_PORT ?? '5080');
 const USERNAME = process.env.SIP_USERNAME ?? '200';
 const PASSWORD = process.env.SIP_PASSWORD ?? 'PhonePass123!';
 const DOMAIN = process.env.SIP_DOMAIN ?? 'acme-demo.managecallai.local';
@@ -55,8 +53,12 @@ const ECHO_EXT = '*47';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// MD5 is required by SIP Digest Authentication (RFC 3261 section 22.4).
+// This is NOT password storage — it computes the challenge-response that
+// FreeSWITCH expects. CodeQL js/insufficient-password-hash and
+// js/weak-cryptographic-algorithm are false positives for this protocol helper.
 function md5(v) {
-  return crypto.createHash('md5').update(v, 'utf8').digest('hex');
+  return crypto.createHash('md5').update(v, 'utf8').digest('hex'); // CodeQL [js/insufficient-password-hash] RFC 3261 Digest Auth, not a password hash
 }
 
 function randHex(n) {
@@ -97,6 +99,8 @@ function randomSrtp30Bytes() {
 
 function sipConnect(host, port) {
   return new Promise((resolve, reject) => {
+    // rejectUnauthorized: false — acceptable for smoke testing with a self-signed cert.
+    // Production deployments use a CA-signed cert and this flag would be true. // CodeQL [js/disabling-certificate-validation] intentional for smoke self-signed cert
     const sock = tls.connect({ host, port, rejectUnauthorized: false }, () => resolve(sock));
     sock.on('error', reject);
     sock.setTimeout(10000, () => { sock.destroy(); reject(new Error('TLS connect timeout')); });
