@@ -319,6 +319,63 @@ describe('ManageCallApiClient', () => {
       new ManageCallApiError('API request failed: 422', 422, { details: ['failed'] }),
     );
   });
+
+  it('covers IVR list/get/rollback, phone numbers, inbound routes, and recordings', async () => {
+    const BASE = 'https://api.example.test/api/v1';
+    const TOKEN = 'bearer-token';
+    const FLOW_ID = '00000000-0000-0000-0000-000000000010';
+    const requests: Array<{ url: string; method: string }> = [];
+
+    const fetchMock: typeof fetch = async (input, init) => {
+      const url = input instanceof Request ? input.url : String(input);
+      const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
+      requests.push({ url, method });
+
+      if (url.endsWith('/ivr-flows') && method === 'GET')
+        return jsonResponse({ data: [{ id: FLOW_ID, name: 'Main IVR', status: 'draft' }] });
+      if (url === `${BASE}/ivr-flows/${FLOW_ID}`)
+        return jsonResponse({ data: { id: FLOW_ID, name: 'Main IVR', status: 'active' } });
+      if (url === `${BASE}/ivr-flows/${FLOW_ID}/rollback`)
+        return jsonResponse({ data: { status: 'rolled_back', flow: { id: FLOW_ID } } });
+      if (url.endsWith('/phone-numbers'))
+        return jsonResponse({ data: [{ id: 'pn-1', number: '+15551234567', status: 'active' }] });
+      if (url.endsWith('/inbound-routes'))
+        return jsonResponse({ data: [{ id: 'ir-1', did: '+15551234567', status: 'active' }] });
+      if (url.includes('/recordings'))
+        return jsonResponse({ data: [{ id: 'rec-1', call_id: 'call-1', status: 'available' }] });
+      return jsonResponse({ error: 'NOT_FOUND' }, 404);
+    };
+
+    const client = new ManageCallApiClient({ baseUrl: BASE, fetch: fetchMock });
+    const opts = { accessToken: TOKEN };
+
+    const flows = await client.listIvrFlows(opts);
+    const flow = await client.getIvrFlow(FLOW_ID, opts);
+    const rollback = await client.rollbackIvrFlow(FLOW_ID, opts);
+    const numbers = await client.listPhoneNumbers(opts);
+    const routes = await client.listInboundRoutes(opts);
+    const recordings = await client.listRecordings(opts);
+    const recordingsByCall = await client.listRecordings({ ...opts, call_id: 'call-1' });
+
+    expect(flows).toHaveLength(1);
+    expect(flows[0]!.id).toBe(FLOW_ID);
+    expect(flow.name).toBe('Main IVR');
+    expect(rollback.status).toBe('rolled_back');
+    expect(numbers).toHaveLength(1);
+    expect(routes).toHaveLength(1);
+    expect(recordings).toHaveLength(1);
+    expect(recordingsByCall).toHaveLength(1);
+
+    expect(requests).toEqual([
+      { url: `${BASE}/ivr-flows`,                             method: 'GET'  },
+      { url: `${BASE}/ivr-flows/${FLOW_ID}`,                  method: 'GET'  },
+      { url: `${BASE}/ivr-flows/${FLOW_ID}/rollback`,         method: 'POST' },
+      { url: `${BASE}/phone-numbers`,                         method: 'GET'  },
+      { url: `${BASE}/inbound-routes`,                        method: 'GET'  },
+      { url: `${BASE}/recordings`,                            method: 'GET'  },
+      { url: `${BASE}/recordings?call_id=call-1`,             method: 'GET'  },
+    ]);
+  });
 });
 
 function jsonResponse(body: unknown, status = 200): Response {

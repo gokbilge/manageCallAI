@@ -17,6 +17,9 @@ export type FlowSimulationResult = components['schemas']['FlowSimulationResult']
 export type SimulationScenario = components['schemas']['SimulationScenario'];
 export type PublishAttemptResult = components['schemas']['PublishAttemptResult'];
 export type IvrRuntimeSessionReplay = components['schemas']['IvrRuntimeSessionResult'];
+export type PhoneNumber = components['schemas']['PhoneNumber'];
+export type InboundRoute = components['schemas']['InboundRoute'];
+export type Recording = components['schemas']['Recording'];
 
 export class ManageCallApiError extends Error {
   constructor(
@@ -146,6 +149,53 @@ export class ManageCallApiClient {
 
   async getPlatformRuntimeHealth(options: RequestOptions): Promise<RuntimeHealthSummary> {
     const { data, error, response } = await this.client.GET('/platform/runtime/health', {
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async listIvrFlows(options: RequestOptions): Promise<IvrFlow[]> {
+    const { data, error, response } = await this.client.GET('/ivr-flows', {
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async getIvrFlow(flowId: string, options: RequestOptions): Promise<IvrFlow> {
+    const { data, error, response } = await this.client.GET('/ivr-flows/{flowId}', {
+      params: { path: { flowId } },
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async rollbackIvrFlow(flowId: string, options: RequestOptions): Promise<PublishAttemptResult> {
+    const { data, error, response } = await this.client.POST('/ivr-flows/{flowId}/rollback', {
+      params: { path: { flowId } },
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async listPhoneNumbers(options: RequestOptions): Promise<PhoneNumber[]> {
+    const { data, error, response } = await this.client.GET('/phone-numbers', {
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async listInboundRoutes(options: RequestOptions): Promise<InboundRoute[]> {
+    const { data, error, response } = await this.client.GET('/inbound-routes', {
+      headers: authHeaders(options),
+    });
+    return unwrap(data, error, response).data;
+  }
+
+  async listRecordings(options: RequestOptions & { call_id?: string } = {}): Promise<Recording[]> {
+    const { data, error, response } = await this.client.GET('/recordings', {
+      params: {
+        query: options.call_id ? { call_id: options.call_id } : {},
+      },
       headers: authHeaders(options),
     });
     return unwrap(data, error, response).data;
