@@ -101,6 +101,26 @@ DATABASE_URL=<url> node db/migrate.mjs
 Migrations are idempotent and ordered by filename. Never skip migrations. Never edit
 an applied migration; always write a new one.
 
+## Network Security
+
+Run before enabling any production SIP traffic:
+
+```sh
+pnpm production:preflight    # secrets, env, rate-limit topology
+pnpm check:network-config    # ESL exposure, proxy config, NAT/TLS/RTP declarations
+```
+
+Both must pass with zero failures. See `docs/ops/network-hardening.md` for the
+full hardening checklist and `docs/ops/firewall-rules.md` for the port-by-port
+firewall baseline.
+
+Hard rules:
+
+- Never expose ESL (8021/tcp) publicly. Set `FREESWITCH_ESL_HOST=127.0.0.1`.
+- Never expose PostgreSQL (5432/tcp) publicly.
+- Never expose the API (3000/tcp) directly; put it behind a TLS reverse proxy.
+- Only open SIP/RTP ports that are actively configured.
+
 ## TLS / NAT for SIP
 
 ### TLS
@@ -127,6 +147,8 @@ the FreeSWITCH sofia profile. The manageCallAI API exposes `srtp_policy` per tru
 `disabled`, `optional`, or `required`. Treat `required` as an operational contract
 that the selected FreeSWITCH profile or gateway must be SRTP-capable before traffic
 is enabled.
+
+See `docs/ops/sip-tls-srtp-nat.md` for the full TLS, SRTP, and NAT configuration guide.
 
 ## DTMF modes
 
