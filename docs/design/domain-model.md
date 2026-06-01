@@ -104,24 +104,23 @@ Key fields:
 Relationships:
 
 - Belongs to one tenant
-- Has one or more roles or policies
+- Has exactly one persisted tenant role
 - Creates or modifies configuration and audit records
 
 ### 4.3 Role
 
-Represents a named authorization grouping for administrative actions.
+Represents a bounded application role used to derive capabilities.
 
 Key fields:
 
-- `id`
-- `tenantId`
 - `name`
 - `description`
 
 Relationships:
 
-- Assigned to users
-- Maps to policy capabilities
+- A tenant user stores one role in `users.role`
+- `platform_admin` is computed from `PLATFORM_OPERATOR_EMAILS` and issued only in JWTs
+- Maps to fixed capability sets in application code
 
 ### 4.4 Policy
 
@@ -138,7 +137,6 @@ Key fields:
 
 Relationships:
 
-- Can be attached to roles
 - Can gate publish or outbound routing actions
 
 ### 4.5 AuditFinding

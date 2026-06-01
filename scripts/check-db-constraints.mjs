@@ -166,6 +166,15 @@ async function columnExists(table, column) {
   return rows.length > 0;
 }
 
+async function tableExists(table) {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM information_schema.tables
+     WHERE table_schema = 'public' AND table_name = $1`,
+    [table],
+  );
+  return rows.length > 0;
+}
+
 // ── Run all checks ────────────────────────────────────────────────────────────
 
 try {
@@ -194,6 +203,17 @@ try {
       ok('users_role_check CHECK constraint exists');
     } else {
       fail('users_role_check', 'CHECK constraint not found on users table (migration 0018)');
+    }
+  }
+
+  // Legacy RBAC join tables must remain absent. Authorization is users.role plus
+  // code-defined capabilities; reintroducing these tables creates model drift.
+  for (const table of ['roles', 'user_roles', 'role_policies']) {
+    const exists = await tableExists(table);
+    if (!exists) {
+      ok(`legacy RBAC table absent: ${table}`);
+    } else {
+      fail(`legacy RBAC table absent: ${table}`, 'Table should be removed by migration 0042');
     }
   }
 
