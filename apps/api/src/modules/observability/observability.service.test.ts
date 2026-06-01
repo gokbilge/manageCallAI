@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ObservabilityService } from './observability.service.js';
+import { AlertNotFoundError, AlertRuleNotFoundError, ObservabilityService } from './observability.service.js';
 import type { ObservabilityRepository } from './observability.repository.js';
-import type { LiveSnapshot, PlatformRuntimeSummary } from './observability.types.js';
+import type { LiveSnapshot, PlatformRuntimeSummary, SecurityAlertInstance, SecurityAlertRule } from './observability.types.js';
 
 const TENANT_A = 'aaaaaaaa-0000-0000-0000-000000000001';
 const TENANT_B = 'bbbbbbbb-0000-0000-0000-000000000002';
@@ -26,9 +26,54 @@ function makePlatformSummary(): PlatformRuntimeSummary {
   return { active_sessions: 4, completed_sessions_24h: 50, failed_sessions_24h: 1 };
 }
 
+const baseRule: SecurityAlertRule = {
+  id: 'rule-1',
+  tenant_id: TENANT_A,
+  name: 'SIP Failure Alert',
+  description: null,
+  alert_type: 'failed_sip_registration',
+  conditions: { threshold: 5, window_minutes: 10 },
+  severity: 'warning',
+  status: 'active',
+  created_by: 'user-1',
+  created_at: '2026-06-01T00:00:00Z',
+  updated_at: '2026-06-01T00:00:00Z',
+};
+
+const baseAlert: SecurityAlertInstance = {
+  id: 'alert-1',
+  tenant_id: TENANT_A,
+  rule_id: 'rule-1',
+  alert_type: 'failed_sip_registration',
+  severity: 'warning',
+  message: '7 SIP failures in 10 minutes',
+  context_json: { count: 7, window_minutes: 10 },
+  status: 'new',
+  acknowledged_by: null,
+  acknowledged_at: null,
+  resolved_at: null,
+  fired_at: '2026-06-01T01:00:00Z',
+  created_at: '2026-06-01T01:00:00Z',
+};
+
 const mockRepo = {
   getSnapshot: vi.fn(),
   getPlatformRuntimeSummary: vi.fn(),
+  // SLICE-48
+  listAlertRules: vi.fn().mockResolvedValue([baseRule]),
+  createAlertRule: vi.fn().mockResolvedValue(baseRule),
+  updateAlertRule: vi.fn().mockResolvedValue(baseRule),
+  deleteAlertRule: vi.fn().mockResolvedValue(true),
+  listAlerts: vi.fn().mockResolvedValue([baseAlert]),
+  createAlert: vi.fn().mockResolvedValue(baseAlert),
+  acknowledgeAlert: vi.fn().mockResolvedValue({ ...baseAlert, status: 'acknowledged', acknowledged_by: 'user-1' }),
+  resolveAlert: vi.fn().mockResolvedValue({ ...baseAlert, status: 'resolved', resolved_at: '2026-06-01T02:00:00Z' }),
+  dismissAlert: vi.fn().mockResolvedValue({ ...baseAlert, status: 'dismissed' }),
+  countFailedSipRegistrations: vi.fn().mockResolvedValue(0),
+  countRecentCallEvents: vi.fn().mockResolvedValue(0),
+  countWebhookBacklog: vi.fn().mockResolvedValue({ failed: 0, abandoned: 0 }),
+  countOldAnalysisJobs: vi.fn().mockResolvedValue(0),
+  isCooledDown: vi.fn().mockResolvedValue(false),
 } as unknown as ObservabilityRepository;
 
 const service = new ObservabilityService(mockRepo);
@@ -145,5 +190,197 @@ describe('ObservabilityService.getPlatformHealth', () => {
     expect(serialised).not.toContain('queue_depths');
 
     vi.restoreAllMocks();
+  });
+});
+
+// ── SLICE-48: Security Alert Rules ───────────────────────────────────────────
+
+describe('ObservabilityService - alert rules', () => {
+  beforeEach(() => {
+    vi.mocked(mockRepo.listAlertRules).mockResolvedValue([baseRule]);
+    vi.mocked(mockRepo.createAlertRule).mockResolvedValue(baseRule);
+    vi.mocked(mockRepo.updateAlertRule).mockResolvedValue(baseRule);
+    vi.mocked(mockRepo.deleteAlertRule).mockResolvedValue(true);
+  });
+
+  describe('listAlertRules', () => {
+    it('returns active rules for the tenant', async () => {
+      const rules = await service.listAlertRules(TENANT_A, {});
+      expect(rules).toHaveLength(1);
+      expect(rules[0]?.alert_type).toBe('failed_sip_registration');
+      expect(mockRepo.listAlertRules).toHaveBeenCalledWith(TENANT_A, {});
+    });
+
+    it('passes alert_type filter to repository', async () => {
+      await service.listAlertRules(TENANT_A, { alert_type: 'outbound_call_burst' });
+      expect(mockRepo.listAlertRules).toHaveBeenCalledWith(TENANT_A, { alert_type: 'outbound_call_burst' });
+    });
+  });
+
+  describe('createAlertRule', () => {
+    it('creates a rule and returns it', async () => {
+      const rule = await service.createAlertRule(TENANT_A, 'user-1', {
+        name: 'SIP Failures',
+        alert_type: 'failed_sip_registration',
+        conditions: { threshold: 5, window_minutes: 10 },
+      });
+      expect(rule.id).toBe('rule-1');
+      expect(mockRepo.createAlertRule).toHaveBeenCalledWith(TENANT_A, 'user-1', expect.objectContaining({
+        name: 'SIP Failures',
+        alert_type: 'failed_sip_registration',
+      }));
+    });
+  });
+
+  describe('updateAlertRule', () => {
+    it('updates an existing rule', async () => {
+      vi.mocked(mockRepo.updateAlertRule).mockResolvedValueOnce({ ...baseRule, name: 'Updated' });
+      const rule = await service.updateAlertRule('rule-1', TENANT_A, { name: 'Updated' });
+      expect(rule.name).toBe('Updated');
+    });
+
+    it('throws AlertRuleNotFoundError when rule does not exist', async () => {
+      vi.mocked(mockRepo.updateAlertRule).mockResolvedValueOnce(null);
+      await expect(service.updateAlertRule('missing', TENANT_A, { name: 'X' })).rejects.toBeInstanceOf(AlertRuleNotFoundError);
+    });
+  });
+
+  describe('deleteAlertRule', () => {
+    it('archives the rule', async () => {
+      await service.deleteAlertRule('rule-1', TENANT_A);
+      expect(mockRepo.deleteAlertRule).toHaveBeenCalledWith('rule-1', TENANT_A);
+    });
+
+    it('throws AlertRuleNotFoundError when rule not found', async () => {
+      vi.mocked(mockRepo.deleteAlertRule).mockResolvedValueOnce(false);
+      await expect(service.deleteAlertRule('missing', TENANT_A)).rejects.toBeInstanceOf(AlertRuleNotFoundError);
+    });
+  });
+});
+
+describe('ObservabilityService - alert instances', () => {
+  beforeEach(() => {
+    vi.mocked(mockRepo.listAlerts).mockResolvedValue([baseAlert]);
+    vi.mocked(mockRepo.acknowledgeAlert).mockResolvedValue({ ...baseAlert, status: 'acknowledged', acknowledged_by: 'user-1' });
+    vi.mocked(mockRepo.resolveAlert).mockResolvedValue({ ...baseAlert, status: 'resolved', resolved_at: '2026-06-01T02:00:00Z' });
+    vi.mocked(mockRepo.dismissAlert).mockResolvedValue({ ...baseAlert, status: 'dismissed' });
+  });
+
+  describe('listAlerts', () => {
+    it('returns alerts for the tenant', async () => {
+      const alerts = await service.listAlerts(TENANT_A, {});
+      expect(alerts).toHaveLength(1);
+      expect(alerts[0]?.status).toBe('new');
+    });
+  });
+
+  describe('acknowledgeAlert', () => {
+    it('acknowledges a new alert', async () => {
+      const alert = await service.acknowledgeAlert('alert-1', TENANT_A, 'user-1');
+      expect(alert.status).toBe('acknowledged');
+      expect(alert.acknowledged_by).toBe('user-1');
+    });
+
+    it('throws AlertNotFoundError when alert cannot be acknowledged', async () => {
+      vi.mocked(mockRepo.acknowledgeAlert).mockResolvedValueOnce(null);
+      await expect(service.acknowledgeAlert('missing', TENANT_A, 'user-1')).rejects.toBeInstanceOf(AlertNotFoundError);
+    });
+  });
+
+  describe('resolveAlert', () => {
+    it('resolves an alert and sets resolved_at', async () => {
+      const alert = await service.resolveAlert('alert-1', TENANT_A);
+      expect(alert.status).toBe('resolved');
+      expect(alert.resolved_at).toBeTruthy();
+    });
+
+    it('throws AlertNotFoundError when alert cannot be resolved', async () => {
+      vi.mocked(mockRepo.resolveAlert).mockResolvedValueOnce(null);
+      await expect(service.resolveAlert('missing', TENANT_A)).rejects.toBeInstanceOf(AlertNotFoundError);
+    });
+  });
+
+  describe('dismissAlert', () => {
+    it('dismisses an alert', async () => {
+      const alert = await service.dismissAlert('alert-1', TENANT_A);
+      expect(alert.status).toBe('dismissed');
+    });
+  });
+});
+
+describe('ObservabilityService - rule evaluation', () => {
+  describe('evaluateAllRules', () => {
+    it('skips rules in cooldown', async () => {
+      vi.mocked(mockRepo.isCooledDown).mockResolvedValueOnce(true);
+      const fired = await service.evaluateAllRules(TENANT_A);
+      expect(fired).toHaveLength(0);
+      expect(mockRepo.createAlert).not.toHaveBeenCalled();
+    });
+
+    it('fires alert when SIP failure threshold is exceeded', async () => {
+      vi.mocked(mockRepo.isCooledDown).mockResolvedValueOnce(false);
+      vi.mocked(mockRepo.countFailedSipRegistrations).mockResolvedValueOnce(7);
+      vi.mocked(mockRepo.createAlert).mockResolvedValueOnce(baseAlert);
+
+      const fired = await service.evaluateAllRules(TENANT_A);
+      expect(fired).toHaveLength(1);
+      expect(mockRepo.createAlert).toHaveBeenCalledWith(expect.objectContaining({
+        alert_type: 'failed_sip_registration',
+        severity: 'warning',
+      }));
+    });
+
+    it('does not fire when count is below threshold', async () => {
+      vi.mocked(mockRepo.isCooledDown).mockResolvedValueOnce(false);
+      vi.mocked(mockRepo.countFailedSipRegistrations).mockResolvedValueOnce(2);
+
+      const fired = await service.evaluateAllRules(TENANT_A);
+      expect(fired).toHaveLength(0);
+      expect(mockRepo.createAlert).not.toHaveBeenCalled();
+    });
+
+    it('fires webhook_delivery_backlog alert when thresholds exceeded', async () => {
+      const backlogRule: SecurityAlertRule = {
+        ...baseRule,
+        id: 'rule-backlog',
+        alert_type: 'webhook_delivery_backlog',
+        conditions: { max_failed: 3, max_abandoned: 2 },
+      };
+      vi.mocked(mockRepo.listAlertRules).mockResolvedValueOnce([backlogRule]);
+      vi.mocked(mockRepo.isCooledDown).mockResolvedValueOnce(false);
+      vi.mocked(mockRepo.countWebhookBacklog).mockResolvedValueOnce({ failed: 5, abandoned: 0 });
+      vi.mocked(mockRepo.createAlert).mockResolvedValueOnce({ ...baseAlert, alert_type: 'webhook_delivery_backlog' });
+
+      const fired = await service.evaluateAllRules(TENANT_A);
+      expect(fired).toHaveLength(1);
+      expect(fired[0]?.alert_type).toBe('webhook_delivery_backlog');
+    });
+
+    it('fires recording_analysis_backlog alert when old jobs exceed threshold', async () => {
+      const backlogRule: SecurityAlertRule = {
+        ...baseRule,
+        id: 'rule-analysis',
+        alert_type: 'recording_analysis_backlog',
+        conditions: { max_queued: 10, age_minutes: 30 },
+      };
+      vi.mocked(mockRepo.listAlertRules).mockResolvedValueOnce([backlogRule]);
+      vi.mocked(mockRepo.isCooledDown).mockResolvedValueOnce(false);
+      vi.mocked(mockRepo.countOldAnalysisJobs).mockResolvedValueOnce(15);
+      vi.mocked(mockRepo.createAlert).mockResolvedValueOnce({ ...baseAlert, alert_type: 'recording_analysis_backlog' });
+
+      const fired = await service.evaluateAllRules(TENANT_A);
+      expect(fired).toHaveLength(1);
+    });
+
+    it('alert message does not expose raw FreeSWITCH or provider internals', async () => {
+      vi.mocked(mockRepo.isCooledDown).mockResolvedValueOnce(false);
+      vi.mocked(mockRepo.countFailedSipRegistrations).mockResolvedValueOnce(10);
+      vi.mocked(mockRepo.createAlert).mockImplementationOnce(async (input) => {
+        expect(input.message).not.toMatch(/sofia|esl|dialplan|xml_curl|variable_|mod_/i);
+        return baseAlert;
+      });
+
+      await service.evaluateAllRules(TENANT_A);
+    });
   });
 });
