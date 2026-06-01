@@ -37,33 +37,32 @@ render_template "${FS_CONF_DIR}/event_socket.conf.xml.tmpl" "${FS_CONF_DIR}/even
 if [ "${FREESWITCH_TLS_ENABLED}" = "true" ]; then
   mkdir -p "${FS_CERTS_DIR}"
 
-  if [ ! -f "${FS_CERTS_DIR}/agent.pem" ]; then
-    echo "Generating self-signed TLS certificate for FreeSWITCH smoke..."
-    openssl req -newkey rsa:2048 -nodes -keyout "${FS_CERTS_DIR}/key.pem" \
-      -x509 -days 3650 -out "${FS_CERTS_DIR}/cert.pem" \
-      -subj "/CN=freeswitch-smoke/O=manageCallAI/C=US" \
-      -addext "subjectAltName=IP:127.0.0.1,DNS:freeswitch,DNS:localhost" 2>/dev/null
+  echo "Generating self-signed TLS certificate for FreeSWITCH smoke..."
+  openssl req -newkey rsa:2048 -nodes -keyout "${FS_CERTS_DIR}/key.pem" \
+    -x509 -days 3650 -out "${FS_CERTS_DIR}/cert.pem" \
+    -subj "/CN=freeswitch-smoke/O=manageCallAI/C=US" 2>&1 || true
+  if [ -f "${FS_CERTS_DIR}/cert.pem" ] && [ -f "${FS_CERTS_DIR}/key.pem" ]; then
     cat "${FS_CERTS_DIR}/cert.pem" "${FS_CERTS_DIR}/key.pem" > "${FS_CERTS_DIR}/agent.pem"
     cp "${FS_CERTS_DIR}/cert.pem" "${FS_CERTS_DIR}/cafile.pem"
     echo "Certificate generated: ${FS_CERTS_DIR}/agent.pem"
+  else
+    echo "WARNING: Certificate generation failed — TLS will not be available"
   fi
 
-  # Activate the TLS+SRTP sofia profile
-  if [ -f "${FS_PROFILES_DIR}/external-tls.xml.tmpl" ]; then
-    EXT_SIP="${FREESWITCH_EXT_SIP_IP:-auto}"
-    EXT_RTP="${FREESWITCH_EXT_RTP_IP:-auto}"
-    sed \
-      -e "s|__EXT_SIP_IP__|${EXT_SIP}|g" \
-      -e "s|__EXT_RTP_IP__|${EXT_RTP}|g" \
-      -e "s|__TLS_CERT_DIR__|${FS_CERTS_DIR}|g" \
-      "${FS_PROFILES_DIR}/external-tls.xml.tmpl" > "${FS_PROFILES_DIR}/external-tls.xml"
-    echo "TLS profile activated: ${FS_PROFILES_DIR}/external-tls.xml"
-  fi
-
-  # Activate the smoke echo dialplan extension
-  if [ -f "${FS_DIALPLAN_DIR}/smoke-echo.xml.example" ]; then
-    cp "${FS_DIALPLAN_DIR}/smoke-echo.xml.example" "${FS_DIALPLAN_DIR}/smoke-echo.xml"
-    echo "Smoke echo dialplan activated."
+  # Enable TLS on the stock internal sofia profile rather than adding a new profile
+  # that might conflict with other bound ports.
+  FS_INTERNAL="${FS_PROFILES_DIR}/internal.xml"
+  if [ -f "${FS_INTERNAL}" ] && [ -f "${FS_CERTS_DIR}/agent.pem" ]; then
+    sed -i 's|<param name="tls" value="false"/>|<param name="tls" value="true"/>|g' "${FS_INTERNAL}"
+    sed -i "s|<param name=\"tls-cert-dir\" value=\"\"/>|<param name=\"tls-cert-dir\" value=\"${FS_CERTS_DIR}\"/>|g" "${FS_INTERNAL}"
+    # Enable SRTP (optional mode — offers SRTP, accepts plain RTP)
+    sed -i 's|<!--<param name="rtp-secure-media".*/>-->||g' "${FS_INTERNAL}"
+    if ! grep -q 'rtp-secure-media' "${FS_INTERNAL}"; then
+      sed -i '/<\/settings>/i\    <param name="rtp-secure-media" value="true"/>' "${FS_INTERNAL}"
+    fi
+    echo "TLS+SRTP enabled on stock internal profile"
+    # Remove the external-tls template profile to avoid port conflicts
+    rm -f "${FS_PROFILES_DIR}/external-tls.xml" 2>/dev/null || true
   fi
 fi
 
