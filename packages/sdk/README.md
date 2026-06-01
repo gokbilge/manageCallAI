@@ -103,7 +103,7 @@ await client.createExtension(
 | `listPlatformTenants` | GET | `/platform/tenants` |
 | `getPlatformRuntimeHealth` | GET | `/platform/runtime/health` |
 
-The remaining 79 API operations (queues, voicemail, webhooks, schedules, approvals,
+The remaining 81 API operations (queues, voicemail, webhooks, schedules, approvals,
 audit, etc.) are available via the generated `paths` type and the underlying
 `openapi-fetch` client if you need them before they are wrapped.
 
