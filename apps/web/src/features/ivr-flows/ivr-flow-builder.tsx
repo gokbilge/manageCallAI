@@ -45,6 +45,8 @@ type IvrFlowBuilderProps = {
   isSaving: boolean;
   /** Node IDs returned by the last simulation run — highlighted in the graph. */
   simulatedPath?: string[];
+  readOnly?: boolean;
+  readOnlyReason?: string;
 };
 
 export function IvrFlowBuilder({
@@ -57,6 +59,8 @@ export function IvrFlowBuilder({
   onSave,
   isSaving,
   simulatedPath = [],
+  readOnly = false,
+  readOnlyReason,
 }: IvrFlowBuilderProps) {
   const [nodes, setNodes] = useState<Node<BuilderNodeData>[]>(() => graphToBuilderNodes(sanitizeBuilderGraph(version.graph_json)));
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -91,6 +95,7 @@ export function IvrFlowBuilder({
   );
 
   const onNodesChange: OnNodesChange = (changes) => {
+    if (readOnly) return;
     setNodes((current) => applyNodeChanges(changes as NodeChange[], current));
     if (changes.length > 0) setIsDirty(true);
   };
@@ -103,13 +108,20 @@ export function IvrFlowBuilder({
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
             Add only the node types the backend can validate, simulate, and execute safely.
           </p>
+          {readOnly ? (
+            <p className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-warning)]/12 px-3 py-2 text-xs font-medium text-[var(--color-warning)]">
+              {readOnlyReason ?? 'This version is read-only.'}
+            </p>
+          ) : null}
         </div>
         <div className="space-y-3">
           {BUILDER_NODE_TYPES.map((entry) => (
             <button
               key={entry.type}
               className="w-full rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-3 text-left transition hover:border-[var(--color-tenant)]/40 hover:bg-[var(--color-surface)]"
+              disabled={readOnly}
               onClick={() => {
+                if (readOnly) return;
                 setNodes((current) => addBuilderNode(current, entry.type));
                 setIsDirty(true);
               }}
@@ -140,8 +152,11 @@ export function IvrFlowBuilder({
               </span>
             )}
             <Button
-              disabled={!isDirty || isSaving}
-              onClick={() => void onSave(builderStateToGraph(nodes))}
+              disabled={!isDirty || isSaving || readOnly}
+              onClick={() => {
+                if (readOnly) return;
+                void onSave(builderStateToGraph(nodes));
+              }}
               type="button"
             >
               <Save className="size-4" aria-hidden="true" />
@@ -156,13 +171,17 @@ export function IvrFlowBuilder({
             fitView
             minZoom={0.5}
             nodes={highlightedNodes}
+            nodesConnectable={!readOnly}
+            nodesDraggable={!readOnly}
             nodeTypes={nodeTypes}
             onConnect={(connection) => {
+              if (readOnly) return;
               if (!connection.source || !connection.target) return;
               setNodes((current) => connectBuilderNodes(current, connection.source!, connection.sourceHandle, connection.target!));
               setIsDirty(true);
             }}
             onEdgesDelete={(deletedEdges) => {
+              if (readOnly) return;
               setNodes((current) => deletedEdges.reduce((acc, edge) => disconnectBuilderEdge(acc, edge), current));
               if (deletedEdges.length > 0) setIsDirty(true);
             }}
@@ -198,14 +217,17 @@ export function IvrFlowBuilder({
             nodeOptions={nodeOptions}
             prompts={prompts}
             queues={queues}
+            readOnly={readOnly}
             schedules={schedules}
             voicemailBoxes={voicemailBoxes}
             onDelete={() => {
+              if (readOnly) return;
               setNodes((current) => removeNode(current, selectedNode.id));
               setSelectedNodeId(null);
               setIsDirty(true);
             }}
             onUpdate={(patch) => {
+              if (readOnly) return;
               setNodes((current) => current.map((node) => node.id === selectedNode.id ? updateBuilderNode(node, patch) : node));
               setIsDirty(true);
             }}
@@ -265,6 +287,7 @@ function NodeInspector({
   queues,
   voicemailBoxes,
   nodeOptions,
+  readOnly,
   onUpdate,
   onDelete,
 }: {
@@ -275,13 +298,14 @@ function NodeInspector({
   queues: QueueOption[];
   voicemailBoxes: VoicemailBoxOption[];
   nodeOptions: Array<{ id: string; label: string }>;
+  readOnly: boolean;
   onUpdate: (patch: Partial<BuilderGraphNode>) => void;
   onDelete: () => void;
 }) {
   const graphNode = node.data.graphNode;
 
   return (
-    <div className="space-y-4 text-sm">
+    <fieldset className="space-y-4 text-sm" disabled={readOnly}>
       <div className="rounded-[var(--radius-xl)] bg-[var(--color-surface-muted)] px-4 py-4">
         <p className="font-medium text-[var(--color-fg)]">{node.data.title}</p>
         <p className="mt-1 font-mono text-xs text-[var(--color-muted-fg)]">{node.id}</p>
@@ -490,7 +514,7 @@ function NodeInspector({
         <Trash2 className="size-4" aria-hidden="true" />
         Remove node
       </Button>
-    </div>
+    </fieldset>
   );
 }
 

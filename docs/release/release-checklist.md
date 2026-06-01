@@ -16,6 +16,10 @@ and release smoke evidence are complete.
 
 ## Required Gates
 
+- Confirm `CHANGELOG.md` has a target release section or accurate `Unreleased`
+  entries for the candidate.
+- Confirm GitHub release notes follow `docs/release/release-notes-policy.md`.
+- Confirm the SDK version and publish status are stated in the release notes.
 - `pnpm install --frozen-lockfile`
 - `pnpm generate:openapi`
 - `node scripts/check-openapi-coverage.mjs`

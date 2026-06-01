@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'pg';
 
@@ -18,6 +18,13 @@ describe('IVR Flows API integration', () => {
     ({ db } = await import('../../db/client.js'));
     app = buildApp();
     await app.ready();
+
+    await db.query('SELECT pg_advisory_lock(72070)');
+    try {
+      await db.query('TRUNCATE TABLE tenants CASCADE');
+    } finally {
+      await db.query('SELECT pg_advisory_unlock(72070)');
+    }
   });
 
   afterAll(async () => {
@@ -25,9 +32,9 @@ describe('IVR Flows API integration', () => {
     await db.end();
   });
 
-  beforeEach(async () => {
-    await db.query('TRUNCATE TABLE tenants CASCADE');
-  });
+  function testSuffix(): string {
+    return `ivr-flow-${randomUUID().slice(0, 8)}`;
+  }
 
   async function register(suffix: string): Promise<string> {
     const res = await app.inject({
@@ -163,7 +170,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('POST /ivr-flows creates flow with draft version 1', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const res = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -184,7 +191,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('GET /ivr-flows/:id/versions lists versions for the tenant flow', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -206,7 +213,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('POST /ivr-flows/:id/versions/:vid/validate returns 422 for invalid definition', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -228,7 +235,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('POST /ivr-flows/:id/validate validates the current draft version', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -249,7 +256,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('POST /ivr-flows/:id/simulate simulates the current draft version', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -282,7 +289,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('POST /ivr-flows/:id/versions/:vid/simulate returns 422 for unsupported runtime path', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -314,7 +321,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('simulation resolves switch input from caller_number', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -337,7 +344,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('simulation resolves switch input from now.hour', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -360,7 +367,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('simulation supports node-specific collected digits across multiple play_collect nodes', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -395,7 +402,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('full lifecycle: create, validate, publish, rollback', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
 
     const createRes = await app.inject({
       method: 'POST',
@@ -431,7 +438,7 @@ describe('IVR Flows API integration', () => {
       method: 'POST',
       url: `/api/v1/ivr-flows/${flow.id}/versions`,
       headers: { authorization: `Bearer ${token}` },
-      payload: { definition: { ...validDefinition, entry_node_id: 'menu' } },
+      payload: { graph_json: { ...validDefinition, entry_node_id: 'menu' } },
     });
     expect(v2Res.statusCode).toBe(201);
     const v2 = v2Res.json<{ data: { id: string; version_number: number; state: string } }>().data;
@@ -465,7 +472,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('publish returns 409 when version is not validated', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -484,7 +491,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('rollback returns 409 when no superseded version exists', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const createRes = await app.inject({
       method: 'POST',
       url: '/api/v1/ivr-flows',
@@ -502,7 +509,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('publish returns 202 pending approval when tenant policy requires approval', async () => {
-    const suffix = randomUUID().slice(0, 8);
+    const suffix = testSuffix();
     const token = await register(suffix);
     const claims = decodeTokenClaims(token);
 
@@ -547,7 +554,7 @@ describe('IVR Flows API integration', () => {
   });
 
   it('GET /ivr-flows/:id returns 404 for non-existent flow', async () => {
-    const token = await register(randomUUID().slice(0, 8));
+    const token = await register(testSuffix());
     const res = await app.inject({
       method: 'GET',
       url: `/api/v1/ivr-flows/${randomUUID()}`,
@@ -557,8 +564,8 @@ describe('IVR Flows API integration', () => {
   });
 
   it('tenant isolation prevents reading another tenant flow', async () => {
-    const token1 = await register(randomUUID().slice(0, 8));
-    const token2 = await register(randomUUID().slice(0, 8));
+    const token1 = await register(testSuffix());
+    const token2 = await register(testSuffix());
 
     const createRes = await app.inject({
       method: 'POST',

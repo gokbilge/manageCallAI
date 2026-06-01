@@ -106,7 +106,6 @@ contract covering 99 OpenAPI operations.
 
 ### Planned / In Progress
 
-- Visual IVR builder production polish and release-grade workflow coverage
 - SLICE-34: Fastify Zod type provider (controller validation migrated to contracts schemas)
 - SDK npm publish/versioning workflow
 

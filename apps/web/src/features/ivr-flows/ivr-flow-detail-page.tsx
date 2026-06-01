@@ -60,6 +60,12 @@ export function IvrFlowDetailPage() {
     && queuesQuery.data
     && voicemailBoxesQuery.data
   );
+  const builderReadOnly = Boolean(draftVersion && (!caps.canEdit || draftVersion.state !== 'draft'));
+  const builderReadOnlyReason = !caps.canEdit
+    ? 'Your role can view this flow, but cannot edit draft graph state.'
+    : draftVersion && draftVersion.state !== 'draft'
+      ? `Version ${draftVersion.version_number} is ${draftVersion.state}; create or restore a draft before editing.`
+      : undefined;
 
   return (
     <div className="space-y-6">
@@ -238,6 +244,8 @@ export function IvrFlowDetailPage() {
                 }}
                 prompts={promptsQuery.data ?? []}
                 queues={queuesQuery.data ?? []}
+                readOnly={builderReadOnly}
+                readOnlyReason={builderReadOnlyReason}
                 schedules={schedulesQuery.data ?? []}
                 simulatedPath={simulatedPath}
                 voicemailBoxes={voicemailBoxesQuery.data ?? []}
@@ -316,4 +324,3 @@ function ErrorState({ message }: { message: string }) {
     </div>
   );
 }
-
