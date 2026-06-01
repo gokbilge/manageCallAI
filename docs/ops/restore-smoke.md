@@ -25,9 +25,21 @@ This is intentionally fast and conservative. It does not prove the whole product
 works; it proves the restored database is coherent enough to proceed to contract,
 constraint, runtime, and UI checks.
 
+## Automated Rehearsal
+
+Run the full backup → restore → migrate → validate cycle in one step:
+
+```sh
+pnpm restore:rehearsal
+```
+
+This requires `pg_dump`, `pg_restore`, and `psql` in PATH. It restores into a
+temporary database, runs all checks, and writes a validated evidence JSON to
+`artifacts/restore/`.
+
 ## Restore Validation Sequence
 
-After restore:
+For a manual restore or when the rehearsal script cannot run directly:
 
 ```sh
 pnpm db:contracts
