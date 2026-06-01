@@ -51,9 +51,17 @@ If the package has not reached the Phase 3 target yet, release readiness require
 
 ## E2E Gates
 
-Normal CI should include an API-only demo loop covering tenant registration, extension creation, IVR validation/simulation/publish, runtime resolution, call event ingest, observability query, and rollback.
+Normal CI includes an API-only demo loop (`apps/api/src/demo-loop.e2e.test.ts`) covering tenant
+registration, extension creation, IVR validation/simulation/publish, FreeSWITCH dialplan lookup,
+call event ingest, and health check.
 
-FreeSWITCH smoke tests may be optional when they require a self-hosted runner, but every release candidate must document whether the smoke was run and what runtime versions were used.
+A self-hosted FreeSWITCH smoke workflow exists at `.github/workflows/freeswitch-smoke.yml`. It:
+- Is skipped automatically when the `freeswitch` self-hosted runner label is unavailable
+- Is triggered automatically on `release/**` and `rc/**` branches
+- Can be triggered manually via `workflow_dispatch`
+
+Every release candidate must document whether the FreeSWITCH smoke was run and what runtime
+versions were used. See `docs/release/public-alpha-readiness.md` for the current gate status.
 
 ## Safety Review
 
