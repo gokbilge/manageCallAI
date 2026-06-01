@@ -20,10 +20,7 @@ It maps the conceptual domain model into relational structures suitable for MVP 
 
 - `tenants`
 - `users`
-- `roles`
-- `user_roles`
 - `policies`
-- `role_policies`
 
 ### 3.2 Core Telecom Configuration
 
@@ -60,9 +57,19 @@ It maps the conceptual domain model into relational structures suitable for MVP 
 
 Owns the tenant boundary. MVP may operate with a single tenant, but schema design should remain tenant-aware.
 
-### 4.2 users, roles, user_roles, policies, role_policies
+### 4.2 users and policies
 
-Support authentication-related identity mapping and authorization policy assignment.
+`users.role` is the canonical persisted tenant role source. Supported persisted
+tenant roles are `tenant_admin`, `tenant_operator`, and `tenant_viewer`; the
+`platform_admin` role is computed at login from `PLATFORM_OPERATOR_EMAILS` and
+issued in the JWT rather than stored for normal tenant users.
+
+The legacy `roles`, `user_roles`, and `role_policies` tables from the initial
+schema are removed by `0042_drop_legacy_role_tables.sql`. New authorization work
+must extend the explicit capability model rather than reusing those table names.
+
+`policies` stores tenant-level governance rules such as approval requirements.
+It is not a role-assignment table.
 
 ### 4.3 extensions
 

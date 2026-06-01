@@ -17,10 +17,11 @@ enforces the required capability per route.
 
 ## Canonical role model
 
-`users.role` is the **single source of truth** for tenant roles. The legacy `roles` and
-`user_roles` tables created in the initial schema migration exist as design artifacts from
-an earlier RBAC model and are **unused by the application**. They must not be read or
-written by any production code path.
+`users.role` is the **single source of truth** for tenant roles. The legacy `roles`,
+`user_roles`, and `role_policies` tables created in the initial schema migration were
+unused design artifacts from an earlier RBAC model and are dropped by
+`0042_drop_legacy_role_tables.sql`. They must not be reintroduced without a new ADR
+and a migration from the current role model.
 
 `platform_admin` is **never stored in the database**. It is computed in the auth
 controller by checking `config.platformOperatorEmails` at login and registration time,
