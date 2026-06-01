@@ -191,3 +191,8 @@ Runbooks:
 manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSWITCH through supported extension interfaces: `mod_xml_curl`, ESL / `mod_event_socket`, and Lua helpers.
 
 **Lua helpers are thin executors only** -- they carry out runtime actions (play, collect, transfer, hangup) and call back to the API. All business logic lives in the Node.js control plane.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Please read the [Code of Conduct](CODE_OF_CONDUCT.md) before opening issues or pull requests.
