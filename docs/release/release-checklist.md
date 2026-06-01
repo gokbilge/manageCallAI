@@ -127,21 +127,31 @@ Production promotion requires evidence that:
 - a PostgreSQL backup was taken before migration
 - migrations were applied with `pnpm db:migrate`
 - `pnpm db:contracts` and `pnpm db:constraints` passed
-- a restore rehearsal or recent restore smoke ran with `pnpm restore:smoke`
+- a restore rehearsal ran and passed `pnpm restore:smoke`
 - `pnpm production:preflight` passed in the target environment
 - `pnpm production:e2e` passed after deployment or restore
 
-Collect a sanitized restore-evidence JSON artifact for each rehearsal:
+Run a full automated rehearsal with:
 
 ```sh
-# Validate a completed restore evidence artifact
-pnpm restore:evidence-check -- --evidence=artifacts/restore/restore-evidence.json
+pnpm restore:rehearsal
 ```
 
-Use `docs/ops/templates/restore-evidence-template.json` as the starting template.
+This takes a pg_dump, restores to a temporary database, runs migrations,
+`db:contracts`, `db:constraints`, and `restore:smoke`, then writes and validates
+a restore-evidence JSON to `artifacts/restore/`. Requires `pg_dump`, `pg_restore`,
+and `psql` in PATH.
+
+To validate an existing evidence artifact:
+
+```sh
+pnpm restore:evidence-check -- --evidence=artifacts/restore/restore-evidence-<timestamp>.json
+```
+
+Use `docs/ops/templates/restore-evidence-template.json` to fill in evidence
+manually for environments where the rehearsal script cannot run directly.
 The validator rejects missing required fields, unmasked passwords, and boolean
-gates that are not set to `true`. Do not submit evidence for a restore that did
-not complete `restore:smoke`, `db:contracts`, and `db:constraints` successfully.
+gates that are not set to `true`.
 
 See `docs/ops/backup-restore.md` for the full restore procedure.
 

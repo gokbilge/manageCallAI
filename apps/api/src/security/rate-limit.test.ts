@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { InMemoryRateLimiter, policyForPath, evaluateRateLimitTopology, type TopologyConfig } from './rate-limit.js';
+import {
+  InMemoryRateLimiter,
+  RedisRateLimiter,
+  evaluateRateLimitTopology,
+  policyForPath,
+  type TopologyConfig,
+} from './rate-limit.js';
 
 // ── Topology baseline ──────────────────────────────────────────────────────
 const singleInstanceProduction: TopologyConfig = {
@@ -45,6 +51,70 @@ describe('InMemoryRateLimiter', () => {
     now += 60_001;
 
     expect(limiter.take('auth:127.0.0.1', policy)).toMatchObject({ allowed: true, remaining: 1 });
+  });
+});
+
+describe('RedisRateLimiter', () => {
+  it('uses a shared Redis fixed window and denies after the limit', async () => {
+    const now = 10_000;
+    const calls: string[] = [];
+    const counters = new Map<string, number>();
+    const client = {
+      async eval(_script: string, keyCount: number, key: string, windowMs: string): Promise<[number, number]> {
+        calls.push(`${keyCount}:${key}:${windowMs}`);
+        const next = (counters.get(key) ?? 0) + 1;
+        counters.set(key, next);
+        return [next, 30_000];
+      },
+      async quit(): Promise<void> {},
+    };
+    const limiter = new RedisRateLimiter(client, 'test-prefix', () => now);
+    const policy = { name: 'api', limit: 2, windowMs: 60_000 };
+
+    await expect(limiter.take('api:tenant-a', policy)).resolves.toMatchObject({
+      allowed: true,
+      remaining: 1,
+      resetAt: 40_000,
+    });
+    await expect(limiter.take('api:tenant-a', policy)).resolves.toMatchObject({
+      allowed: true,
+      remaining: 0,
+    });
+    await expect(limiter.take('api:tenant-a', policy)).resolves.toMatchObject({
+      allowed: false,
+      remaining: 0,
+    });
+
+    expect(calls[0]).toBe('1:test-prefix:api:tenant-a:60000');
+  });
+
+  it('falls back to the policy window when Redis returns no TTL', async () => {
+    const client = {
+      async eval(): Promise<[number, number]> {
+        return [1, -1];
+      },
+      async quit(): Promise<void> {},
+    };
+    const limiter = new RedisRateLimiter(client, 'test-prefix', () => 5_000);
+
+    await expect(limiter.take('auth:ip', { name: 'auth', limit: 10, windowMs: 60_000 })).resolves.toMatchObject({
+      allowed: true,
+      resetAt: 65_000,
+    });
+  });
+
+  it('rejects malformed Redis replies fail-closed through the hook caller', async () => {
+    const client = {
+      async eval(): Promise<unknown> {
+        return ['bad'];
+      },
+      async quit(): Promise<void> {},
+    };
+    const limiter = new RedisRateLimiter(client, 'test-prefix');
+
+    await expect(limiter.take('auth:ip', { name: 'auth', limit: 10, windowMs: 60_000 })).rejects.toThrow(
+      'Unexpected Redis rate-limit response',
+    );
   });
 });
 
@@ -122,6 +192,16 @@ describe('evaluateRateLimitTopology', () => {
 
   it('multi-instance production with gateway enforcer passes', () => {
     const findings = evaluateRateLimitTopology(multiInstanceGateway);
+    const failures = findings.filter((f) => f.level === 'fail');
+    expect(failures).toHaveLength(0);
+  });
+
+  it('multi-instance production with Redis shared store configured passes', () => {
+    const findings = evaluateRateLimitTopology({
+      ...multiInstanceUnsafe,
+      sharedStoreConfigured: true,
+      storeNamed: true,
+    });
     const failures = findings.filter((f) => f.level === 'fail');
     expect(failures).toHaveLength(0);
   });

@@ -60,23 +60,28 @@ if (!env('RECORDING_STORAGE_ROOT')) {
   warn('RECORDING_STORAGE_ROOT', 'recording storage root is not configured');
 }
 
-// Multi-instance rate limiting gate (issue #59):
-// The in-process rate limiter is not safe for horizontal scaling.
-// Operators must either set MANAGECALLAI_INSTANCE_COUNT=1 (single instance),
-// or configure an external/edge-level rate limiter and set
-// RATE_LIMIT_EXTERNAL_ENFORCED=true or EDGE_RATE_LIMIT_ENFORCED=true.
+// Multi-instance rate limiting gate:
+// The in-process limiter is not safe for horizontal scaling. Operators must
+// either run one instance, use the built-in Redis shared store, provide another
+// external limiter, or enforce limits at the edge.
 const instanceCount = Number.parseInt(env('MANAGECALLAI_INSTANCE_COUNT') || '1', 10);
+const rateLimitStore = env('RATE_LIMIT_STORE').toLowerCase();
+const redisSharedStoreConfigured = rateLimitStore === 'redis' && Boolean(env('RATE_LIMIT_REDIS_URL'));
 const externalEnforced =
   ['1', 'true', 'yes'].includes((env('RATE_LIMIT_EXTERNAL_ENFORCED') || '').toLowerCase()) ||
   ['1', 'true', 'yes'].includes((env('EDGE_RATE_LIMIT_ENFORCED') || '').toLowerCase());
-if (instanceCount > 1 && !externalEnforced) {
+if (instanceCount > 1 && !externalEnforced && !redisSharedStoreConfigured) {
   fail(
     'RATE_LIMIT_EXTERNAL_ENFORCED',
     `multi-instance deployment (MANAGECALLAI_INSTANCE_COUNT=${instanceCount}) requires ` +
-    'an external shared rate limiter (set RATE_LIMIT_EXTERNAL_ENFORCED=true) or an ' +
-    'edge gateway rate limit (set EDGE_RATE_LIMIT_ENFORCED=true) — ' +
+    'RATE_LIMIT_STORE=redis with RATE_LIMIT_REDIS_URL, another external shared rate limiter, or an ' +
+    'edge gateway rate limit (set EDGE_RATE_LIMIT_ENFORCED=true) -- ' +
     'the in-process limiter does not synchronise across instances',
   );
+}
+
+if (instanceCount > 1 && rateLimitStore === 'redis' && !env('RATE_LIMIT_REDIS_URL')) {
+  fail('RATE_LIMIT_REDIS_URL', 'required when RATE_LIMIT_STORE=redis');
 }
 
 // Warn if runtime token fallback is still enabled in production.

@@ -31,6 +31,9 @@ Every required variable is documented in `apps/api/src/config/env.ts`. Minimum r
 | `RATE_LIMIT_OUTBOUND_MAX` | Outbound call-initiation requests per window per client key. Default `60`. |
 | `RATE_LIMIT_API_MAX` | General authenticated API requests per window per client key. Default `600`. |
 | `RATE_LIMIT_SCRAPE_MAX` | Scrape-sensitive unauthenticated requests per window per client key. Default `30`. |
+| `RATE_LIMIT_STORE` | `memory` for single-instance, `redis` for shared multi-instance enforcement. |
+| `RATE_LIMIT_REDIS_URL` | Required when `RATE_LIMIT_STORE=redis`. Treat as a secret if it contains credentials. |
+| `RATE_LIMIT_REDIS_KEY_PREFIX` | Optional Redis key prefix. Default `managecallai:rate-limit`. |
 
 The FreeSWITCH agent requires:
 

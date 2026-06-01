@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { Redis } from 'ioredis';
 import { config } from '../config/env.js';
 import { sendResourceExhausted } from '../errors/index.js';
 
@@ -13,6 +14,17 @@ export type RateLimitPolicy = {
   limit: number;
   windowMs: number;
 };
+
+export type RateLimitResult = {
+  allowed: boolean;
+  remaining: number;
+  resetAt: number;
+};
+
+export interface RateLimiter {
+  take(key: string, policy: RateLimitPolicy): RateLimitResult | Promise<RateLimitResult>;
+  close?(): void | Promise<void>;
+}
 
 export class InMemoryRateLimiter {
   private readonly buckets = new Map<string, RateLimitBucket>();
@@ -38,7 +50,73 @@ export class InMemoryRateLimiter {
   }
 }
 
-const limiter = new InMemoryRateLimiter();
+export type RedisRateLimitClient = {
+  eval(script: string, keyCount: number, key: string, windowMs: string): Promise<unknown>;
+  quit?(): Promise<unknown>;
+  disconnect?(): void;
+};
+
+const redisFixedWindowScript = `
+local current = redis.call('INCR', KEYS[1])
+if current == 1 then
+  redis.call('PEXPIRE', KEYS[1], ARGV[1])
+end
+local ttl = redis.call('PTTL', KEYS[1])
+return {current, ttl}
+`;
+
+export class RedisRateLimiter implements RateLimiter {
+  constructor(
+    private readonly client: RedisRateLimitClient,
+    private readonly keyPrefix: string,
+    private readonly now: () => number = () => Date.now(),
+  ) {}
+
+  async take(key: string, policy: RateLimitPolicy): Promise<RateLimitResult> {
+    const redisKey = `${this.keyPrefix}:${key}`;
+    const reply = await this.client.eval(redisFixedWindowScript, 1, redisKey, String(policy.windowMs));
+    const [countRaw, ttlRaw] = parseRedisRateLimitReply(reply);
+    const ttl = ttlRaw > 0 ? ttlRaw : policy.windowMs;
+    const remaining = Math.max(0, policy.limit - countRaw);
+
+    return {
+      allowed: countRaw <= policy.limit,
+      remaining,
+      resetAt: this.now() + ttl,
+    };
+  }
+
+  async close(): Promise<void> {
+    if (this.client.quit) {
+      await this.client.quit();
+      return;
+    }
+    this.client.disconnect?.();
+  }
+}
+
+export function createRateLimiterFromConfig(): RateLimiter {
+  if (config.rateLimitStore === 'memory' || config.rateLimitStore.trim() === '') {
+    return new InMemoryRateLimiter();
+  }
+
+  if (config.rateLimitStore === 'redis') {
+    if (!config.rateLimitRedisUrl) {
+      throw new Error('RATE_LIMIT_REDIS_URL is required when RATE_LIMIT_STORE=redis');
+    }
+    const redis = new Redis(config.rateLimitRedisUrl, {
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 1,
+    });
+    redis.on('error', (err: Error) => {
+      // Keep the message generic; connection strings may contain credentials.
+      console.error(`Redis rate-limit store error: ${err.message}`);
+    });
+    return new RedisRateLimiter(redis, config.rateLimitRedisKeyPrefix);
+  }
+
+  throw new Error(`Unsupported RATE_LIMIT_STORE: ${config.rateLimitStore}`);
+}
 
 const policies = {
   auth: { name: 'auth', limit: config.rateLimitAuthMax, windowMs: config.rateLimitWindowMs },
@@ -49,13 +127,26 @@ const policies = {
   scrape: { name: 'scrape', limit: config.rateLimitScrapeMax, windowMs: config.rateLimitWindowMs },
 } satisfies Record<string, RateLimitPolicy>;
 
-export function registerRateLimitHook(app: FastifyInstance): void {
+export function registerRateLimitHook(app: FastifyInstance, limiter: RateLimiter = createRateLimiterFromConfig()): void {
+  if (limiter.close) {
+    app.addHook('onClose', async () => {
+      await limiter.close?.();
+    });
+  }
+
   app.addHook('onRequest', async (req, reply) => {
     const policy = policyForPath(req.method, req.url);
     if (!policy) return;
 
     const key = `${policy.name}:${clientKey(req)}`;
-    const result = limiter.take(key, policy);
+    let result: RateLimitResult;
+    try {
+      result = await limiter.take(key, policy);
+    } catch (err) {
+      req.log.error({ err }, 'rate limit store unavailable');
+      reply.header('Retry-After', '1');
+      return sendResourceExhausted(reply, 'Rate limit unavailable');
+    }
     reply.header('X-RateLimit-Limit', String(policy.limit));
     reply.header('X-RateLimit-Remaining', String(result.remaining));
     reply.header('X-RateLimit-Reset', String(Math.ceil(result.resetAt / 1000)));
@@ -114,6 +205,7 @@ export type TopologyConfig = {
   instanceCount: number;
   externalEnforced: boolean;
   gatewayEnforced: boolean;
+  sharedStoreConfigured?: boolean;
   explicitRateLimits: boolean;
   explicitWindow: boolean;
   storeNamed: boolean;
@@ -130,7 +222,13 @@ export type TopologyConfig = {
 export function evaluateRateLimitTopology(cfg: TopologyConfig): TopologyFinding[] {
   const findings: TopologyFinding[] = [];
 
-  if (cfg.appEnv === 'production' && cfg.instanceCount > 1 && !cfg.externalEnforced && !cfg.gatewayEnforced) {
+  if (
+    cfg.appEnv === 'production'
+    && cfg.instanceCount > 1
+    && !cfg.externalEnforced
+    && !cfg.gatewayEnforced
+    && !cfg.sharedStoreConfigured
+  ) {
     findings.push({
       level: 'fail',
       name: 'RATE_LIMIT_EXTERNAL_ENFORCED',
@@ -164,4 +262,17 @@ export function evaluateRateLimitTopology(cfg: TopologyConfig): TopologyFinding[
   }
 
   return findings;
+}
+
+function parseRedisRateLimitReply(reply: unknown): [number, number] {
+  if (!Array.isArray(reply) || reply.length < 2) {
+    throw new Error('Unexpected Redis rate-limit response');
+  }
+
+  const count = Number(reply[0]);
+  const ttl = Number(reply[1]);
+  if (!Number.isFinite(count) || !Number.isFinite(ttl)) {
+    throw new Error('Unexpected Redis rate-limit response');
+  }
+  return [count, ttl];
 }

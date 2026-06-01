@@ -15,6 +15,7 @@ const requiredFiles = [
   'scripts/carrier-interop-check.mjs',
   'scripts/release-evidence-check.mjs',
   'scripts/restore-smoke.mjs',
+  'scripts/restore-rehearsal.mjs',
   'scripts/redact-logs.mjs',
   '.github/workflows/freeswitch-smoke.yml',
   'docs/planning/slices/SLICE-52-production-runtime-e2e-gate.md',

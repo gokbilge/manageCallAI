@@ -83,6 +83,9 @@ const configValues = {
   rateLimitOutboundMax: parsePositiveInt('RATE_LIMIT_OUTBOUND_MAX', 60),
   rateLimitApiMax: parsePositiveInt('RATE_LIMIT_API_MAX', 600),
   rateLimitScrapeMax: parsePositiveInt('RATE_LIMIT_SCRAPE_MAX', 30),
+  rateLimitStore: process.env['RATE_LIMIT_STORE'] ?? 'memory',
+  rateLimitRedisUrl: process.env['RATE_LIMIT_REDIS_URL'] ?? null,
+  rateLimitRedisKeyPrefix: process.env['RATE_LIMIT_REDIS_KEY_PREFIX'] ?? 'managecallai:rate-limit',
 } as const;
 
 if (configValues.isProduction) {

@@ -11,7 +11,8 @@ COMPLETED
 ## Goal
 
 Prevent operators from scaling the API horizontally while relying only on
-per-process in-memory rate limits.
+per-process in-memory rate limits, and provide a built-in Redis shared-store
+option for production multi-instance deployments.
 
 ## Context
 
@@ -27,16 +28,18 @@ gateway policy that applies before requests reach any API instance.
   `RATE_LIMIT_EXTERNAL_ENFORCED=true` nor `EDGE_RATE_LIMIT_ENFORCED=true` is set.
 - Warn when explicit production limit values are missing.
 - Document accepted topologies and required evidence.
-- Keep future Redis/shared-store implementation explicit instead of implied.
+- Implement `RATE_LIMIT_STORE=redis` with `RATE_LIMIT_REDIS_URL` for shared API
+  rate limits across instances.
 
 ## Acceptance Criteria
 
-- Multi-instance deployments cannot pass the topology check without external or
-  edge limiter evidence.
+- Multi-instance deployments cannot pass the topology check without Redis,
+  another external limiter, or edge limiter evidence.
 - Single-instance deployments continue to pass with warnings for missing
   explicit limits.
 - Release checklist includes rate-limit topology evidence.
 - The check does not expose credentials.
+- Redis store behavior is unit-tested without requiring a live Redis service.
 
 ## Dependencies
 
