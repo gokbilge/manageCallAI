@@ -23,6 +23,9 @@ const requiredFiles = [
   'docs/ops/secret-rotation.md',
   'docs/ops/runtime-token-rotation.md',
   'scripts/redact-logs.mjs',
+  'scripts/check-log-redaction.mjs',
+  'docs/ops/log-redaction.md',
+  'docs/ops/templates/log-redaction-evidence-template.json',
   'scripts/check-backup-retention-policy.mjs',
   'docs/ops/backup-retention.md',
   'docs/ops/templates/backup-retention-policy-template.json',
@@ -45,6 +48,8 @@ const requiredFiles = [
   'docs/ops/carrier-interop.md',
   'docs/ops/restore-smoke.md',
   'docs/ops/network-hardening.md',
+  'docs/ops/freeswitch-hardening.md',
+  'scripts/check-freeswitch-hardening.mjs',
   'docs/ops/sip-tls-srtp-nat.md',
   'docs/ops/firewall-rules.md',
 ];

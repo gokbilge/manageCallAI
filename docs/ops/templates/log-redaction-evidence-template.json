@@ -1,0 +1,28 @@
+{
+  "_note": "Fill in all fields. Set boolean gates only after the corresponding check actually passed.",
+
+  "checked_at": "<ISO-8601 datetime, e.g. 2026-06-01T14:00:00Z>",
+  "git_sha": "<git rev-parse --short HEAD>",
+  "operator": "<name or role>",
+  "environment": "<development | staging | production>",
+
+  "patterns_verified": [
+    "jwt_bearer",
+    "runtime_token_header",
+    "env_var_secrets",
+    "query_param_secrets",
+    "json_secret_fields",
+    "database_url_credentials",
+    "sip_password",
+    "cookie_header",
+    "automation_api_key"
+  ],
+
+  "redact_function_passes_all_patterns": false,
+  "url_redaction_covers_query_params": false,
+  "production_error_responses_no_stack_traces": false,
+  "no_raw_tokens_in_audit_events": false,
+
+  "notes": "",
+  "status": "pending"
+}
