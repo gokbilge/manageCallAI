@@ -227,7 +227,8 @@ jobs:
       - name: Export SIP credentials for TLS smoke
         run: |
           if [ -f "${PRODUCTION_E2E_ARTIFACT_DIR}/sip-register.env" ]; then
-            cat "${PRODUCTION_E2E_ARTIFACT_DIR}/sip-register.env" >> "${GITHUB_ENV}"
+            # Strip shell quotes from values (sip-register.env uses 'value' quoting)
+            sed "s/='\(.*\)'$/=\1/" "${PRODUCTION_E2E_ARTIFACT_DIR}/sip-register.env" >> "${GITHUB_ENV}"
           fi
 
       - name: SIP TLS / SRTP / NAT smoke
