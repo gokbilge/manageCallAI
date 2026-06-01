@@ -104,4 +104,33 @@ describe('ApprovalsPage', () => {
       expect(screen.getByText('Rollback')).toBeInTheDocument();
     });
   });
+
+  it('approve and reject buttons are present', async () => {
+    mockBothQueries([pendingApproval]);
+    renderWithProviders(<ApprovalsPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+    });
+  });
+
+  it('shows mutation error alert when approve throws', async () => {
+    // Queries succeed; the mutation (POST to approve) throws.
+    vi.mocked(apiRequest).mockImplementation(async (path: string, opts?: unknown) => {
+      const method = (opts as { method?: string } | undefined)?.method ?? 'GET';
+      if (method === 'GET' || !opts) {
+        if (String(path).includes('approvals')) return { data: [pendingApproval] };
+        return { data: [] };
+      }
+      throw new ApiError('Decision failed: server error', 500);
+    });
+
+    renderWithProviders(<ApprovalsPage />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument());
+    screen.getByRole('button', { name: 'Approve' }).click();
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+  });
 });

@@ -1,0 +1,42 @@
+{
+  "_note": "Fill in all fields. Replace <placeholders>. Set boolean gates only after the corresponding check actually passed. Do not include real passwords, tokens, or secrets.",
+
+  "restored_at": "<ISO-8601 datetime of restore completion, e.g. 2026-06-01T14:00:00Z>",
+  "database_url_masked": "postgres://managecallai:***@<host>:5432/managecallai",
+  "source_backup_file": "<filename of the .pgdump used, without path>",
+  "backup_taken_at": "<ISO-8601 datetime when the source backup was created>",
+
+  "migration_count": 0,
+  "tables_verified": [
+    "tenants",
+    "users",
+    "extensions",
+    "sip_trunks",
+    "phone_numbers",
+    "ivr_flows",
+    "flow_versions",
+    "inbound_routes",
+    "call_events",
+    "recordings",
+    "automation_api_keys",
+    "automation_webhooks",
+    "schema_migrations"
+  ],
+
+  "restore_smoke_passed": false,
+  "db_contracts_passed": false,
+  "db_constraints_passed": false,
+  "preflight_passed": false,
+  "e2e_passed": false,
+
+  "restore_duration_seconds": 0,
+
+  "node_version": "<node --version output>",
+  "pnpm_version": "<pnpm --version output>",
+  "postgres_version": "<psql --version output>",
+  "api_image_tag": "<Docker image tag or git commit SHA>",
+
+  "operator": "<name or role of the person who performed the restore>",
+  "environment": "<development | staging | production>",
+  "notes": ""
+}

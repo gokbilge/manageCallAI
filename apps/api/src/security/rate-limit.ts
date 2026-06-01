@@ -74,6 +74,7 @@ export function policyForPath(method: string, url: string): RateLimitPolicy | nu
   if (method === 'POST' && path === '/api/v1/runtime/outbound') return policies.outbound;
   if (path.startsWith('/api/v1/runtime/') || path.startsWith('/api/v1/freeswitch/')) return policies.runtime;
   if (method === 'POST' && path === '/api/v1/call-events') return policies.runtime;
+  if (path.startsWith('/api/v1/call-events/internal/')) return policies.runtime;
   if (path.startsWith('/api/v1/webhooks/')) return policies.webhook;
 
   if (path.startsWith('/api/v1/')) return policies.api;
@@ -98,4 +99,69 @@ function headerValue(value: string | string[] | undefined): string {
 function hashValue(value: string): string {
   if (!value) return 'anonymous';
   return createHash('sha256').update(value).digest('hex').slice(0, 24);
+}
+
+// ── Topology check (multi-instance safety) ───────────────────────────────────
+
+export type TopologyFinding = {
+  level: 'fail' | 'warn';
+  name: string;
+  message: string;
+};
+
+export type TopologyConfig = {
+  appEnv: string;
+  instanceCount: number;
+  externalEnforced: boolean;
+  gatewayEnforced: boolean;
+  explicitRateLimits: boolean;
+  explicitWindow: boolean;
+  storeNamed: boolean;
+};
+
+/**
+ * Evaluates the rate-limit topology configuration and returns findings.
+ * A finding with level 'fail' indicates an unsafe configuration that must be
+ * fixed before production deployment.
+ *
+ * This is the same logic used by scripts/rate-limit-topology-check.mjs,
+ * extracted here for unit testing.
+ */
+export function evaluateRateLimitTopology(cfg: TopologyConfig): TopologyFinding[] {
+  const findings: TopologyFinding[] = [];
+
+  if (cfg.appEnv === 'production' && cfg.instanceCount > 1 && !cfg.externalEnforced && !cfg.gatewayEnforced) {
+    findings.push({
+      level: 'fail',
+      name: 'RATE_LIMIT_EXTERNAL_ENFORCED',
+      message:
+        'multi-instance production deployments require an external shared rate limiter or an enforced edge gateway limiter',
+    });
+  }
+
+  if (!cfg.explicitRateLimits) {
+    findings.push({
+      level: 'warn',
+      name: 'RATE_LIMIT_*',
+      message: 'explicit production rate-limit values are not configured',
+    });
+  }
+
+  if (cfg.appEnv === 'production' && !cfg.explicitWindow) {
+    findings.push({
+      level: 'warn',
+      name: 'RATE_LIMIT_WINDOW_MS',
+      message: 'explicit production window is not configured',
+    });
+  }
+
+  if (cfg.appEnv === 'production' && cfg.instanceCount > 1 && cfg.externalEnforced && !cfg.storeNamed) {
+    findings.push({
+      level: 'warn',
+      name: 'RATE_LIMIT_STORE',
+      message: 'external limiter is marked enforced but the store/provider is not named',
+    });
+  }
+
+  return findings;
 }

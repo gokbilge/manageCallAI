@@ -34,6 +34,33 @@ multiply allowed request volume by spreading traffic across instances.
 - `RATE_LIMIT_STORE`
 - `EDGE_RATE_LIMIT_ENFORCED`
 
+## In-Process Limiter Safety Note
+
+The default `InMemoryRateLimiter` in `apps/api/src/security/rate-limit.ts` maintains
+separate quota buckets per process. It is safe for single-instance deployments. It
+is **not** safe for multi-instance horizontal scaling because each instance enforces
+its own independent quota — an attacker can multiply allowed volume by spreading
+traffic across instances.
+
+Multi-instance production deployments must either:
+1. Set `EDGE_RATE_LIMIT_ENFORCED=true` and configure an edge gateway (e.g. nginx,
+   Cloudflare, AWS WAF) to enforce shared limits before traffic reaches API instances.
+2. Set `RATE_LIMIT_EXTERNAL_ENFORCED=true` with a named `RATE_LIMIT_STORE` pointing
+   to a shared store (Redis, etc.). A Redis adapter is not yet implemented; set
+   `RATE_LIMIT_EXTERNAL_ENFORCED=true` only if you provide your own proxy.
+
+## Topology Evaluation Function
+
+The topology check logic is exported as a pure function from
+`apps/api/src/security/rate-limit.ts` for unit testing:
+
+```typescript
+import { evaluateRateLimitTopology } from './security/rate-limit.js';
+const findings = evaluateRateLimitTopology({ appEnv, instanceCount, externalEnforced, ... });
+```
+
+Tests are in `apps/api/src/security/rate-limit.test.ts`.
+
 ## Release Gate
 
 Production promotion requires the check to pass in the target topology. Warnings

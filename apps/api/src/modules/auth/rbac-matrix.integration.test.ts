@@ -609,5 +609,486 @@ describe('RBAC capability matrix + tenant isolation', () => {
       expect(flows).toHaveLength(1);
       expect(flows[0]?.name).toBe('Tenant A Flow');
     });
+
+    // ── SIP trunks ────────────────────────────────────────────────────────────
+
+    // Shared helper for valid SIP trunk body (matches CreateSipTrunkBody schema)
+    function sipTrunkBody(name = 'Test Trunk') {
+      return {
+        name,
+        direction: 'inbound',
+        realm: 'sip.example.com',
+        proxy: 'sip.example.com',
+        auth_username: 'trunk-user',
+        auth_password: 'SuperSecret99!',
+      };
+    }
+
+    it('tenant A SIP trunk list does not include tenant B trunks', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`trunk-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`trunk-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/sip-trunks',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: sipTrunkBody('Trunk B'),
+      });
+
+      const listRes = await app.inject({
+        method: 'GET',
+        url: '/api/v1/sip-trunks',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listRes.statusCode).toBe(200);
+      expect(listRes.json<{ data: unknown[] }>().data).toHaveLength(0);
+    });
+
+    it('tenant A cannot read tenant B SIP trunk by ID', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`trunkid-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`trunkid-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/sip-trunks',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: sipTrunkBody('Trunk B'),
+      });
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
+      const trunkBId = createRes.json<{ data: { id: string } }>().data.id;
+
+      const getRes = await app.inject({
+        method: 'GET',
+        url: `/api/v1/sip-trunks/${trunkBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(getRes.statusCode).toBe(404);
+    });
+
+    it('tenant A cannot update tenant B SIP trunk', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`trunkupd-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`trunkupd-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/sip-trunks',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: sipTrunkBody('Trunk B'),
+      });
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
+      const trunkBId = createRes.json<{ data: { id: string } }>().data.id;
+
+      const patchRes = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/sip-trunks/${trunkBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+        payload: { name: 'Hijacked Trunk' },
+      });
+      expect([403, 404]).toContain(patchRes.statusCode);
+    });
+
+    // ── Phone numbers ─────────────────────────────────────────────────────────
+
+    it('tenant A phone number list does not include tenant B numbers', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`num-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`num-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/phone-numbers',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { e164_number: '+15550001001' },
+      });
+
+      const listRes = await app.inject({
+        method: 'GET',
+        url: '/api/v1/phone-numbers',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listRes.statusCode).toBe(200);
+      expect(listRes.json<{ data: unknown[] }>().data).toHaveLength(0);
+    });
+
+    it('tenant A cannot read tenant B phone number by ID', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`numid-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`numid-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/phone-numbers',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { e164_number: '+15550001002' },
+      });
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
+      const numBId = createRes.json<{ data: { id: string } }>().data.id;
+
+      const getRes = await app.inject({
+        method: 'GET',
+        url: `/api/v1/phone-numbers/${numBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(getRes.statusCode).toBe(404);
+    });
+
+    // ── IVR flow write/lifecycle isolation ────────────────────────────────────
+
+    it('tenant A cannot update tenant B IVR flow', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`flowupd-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`flowupd-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/ivr-flows',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { name: 'B Flow', graph_json: { entry_node_id: 's', nodes: [{ id: 's', type: 'hangup' }] } },
+      });
+      expect(createRes.statusCode).toBe(201);
+      const flowBId = createRes.json<{ data: { id: string } }>().data.id;
+
+      const patchRes = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/ivr-flows/${flowBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+        payload: { name: 'Hijacked Flow' },
+      });
+      expect([403, 404]).toContain(patchRes.statusCode);
+    });
+
+    it('tenant A cannot get tenant B IVR flow version', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`flowver-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`flowver-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/ivr-flows',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { name: 'B Flow', graph_json: { entry_node_id: 's', nodes: [{ id: 's', type: 'hangup' }] } },
+      });
+      const flowBId = createRes.json<{ data: { id: string; draft_version_id: string } }>().data.id;
+      const versionBId = createRes.json<{ data: { draft_version_id: string } }>().data.draft_version_id;
+
+      const getRes = await app.inject({
+        method: 'GET',
+        url: `/api/v1/ivr-flows/${flowBId}/versions/${versionBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect([403, 404]).toContain(getRes.statusCode);
+    });
+
+    it('tenant A cannot publish tenant B IVR flow', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`flowpub-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`flowpub-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/ivr-flows',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { name: 'B Flow', graph_json: { entry_node_id: 's', nodes: [{ id: 's', type: 'hangup' }] } },
+      });
+      const flowBId = createRes.json<{ data: { id: string; draft_version_id: string } }>().data.id;
+      const versionBId = createRes.json<{ data: { draft_version_id: string } }>().data.draft_version_id;
+
+      const publishRes = await app.inject({
+        method: 'POST',
+        url: `/api/v1/ivr-flows/${flowBId}/versions/${versionBId}/publish`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect([403, 404]).toContain(publishRes.statusCode);
+    });
+
+    // ── Inbound routes ────────────────────────────────────────────────────────
+
+    // Shared helper for valid inbound route body
+    function inboundRouteBody(name = 'Test Route', matchValue = '+15550001000') {
+      return { name, match_type: 'did', match_value: matchValue, target_type: 'flow' };
+    }
+
+    it('tenant A inbound route list does not include tenant B routes', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`inb-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`inb-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/inbound-routes',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: inboundRouteBody('B Route', '+15550001003'),
+      });
+
+      const listRes = await app.inject({
+        method: 'GET',
+        url: '/api/v1/inbound-routes',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listRes.statusCode).toBe(200);
+      expect(listRes.json<{ data: unknown[] }>().data).toHaveLength(0);
+    });
+
+    it('tenant A cannot update tenant B inbound route', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`inbupd-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`inbupd-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/inbound-routes',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: inboundRouteBody('B Route', '+15550001004'),
+      });
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
+      const routeBId = createRes.json<{ data: { id: string } }>().data.id;
+
+      const patchRes = await app.inject({
+        method: 'PUT',
+        url: `/api/v1/inbound-routes/${routeBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+        payload: { name: 'Hijacked Route', match_type: 'did', match_value: '+15550001004', target_type: 'flow' },
+      });
+      expect([403, 404]).toContain(patchRes.statusCode);
+    });
+
+    // ── Outbound routes ───────────────────────────────────────────────────────
+
+    it('tenant A outbound route list does not include tenant B routes', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`out-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`out-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      // Tenant B creates a SIP trunk first (outbound route requires one)
+      const trunkRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/sip-trunks',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: sipTrunkBody('B Trunk'),
+      });
+      expect(trunkRes.statusCode, `trunk create failed: ${trunkRes.body}`).toBe(201);
+      const trunkBId = trunkRes.json<{ data: { id: string } }>().data.id;
+
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/outbound-routes',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { name: 'B Outbound Route', sip_trunk_id: trunkBId, match_prefix: '+' },
+      });
+
+      const listRes = await app.inject({
+        method: 'GET',
+        url: '/api/v1/outbound-routes',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listRes.statusCode).toBe(200);
+      expect(listRes.json<{ data: unknown[] }>().data).toHaveLength(0);
+    });
+
+    // ── Call events ───────────────────────────────────────────────────────────
+
+    it('runtime call-event ingest is tenant-scoped — tenant A cannot query tenant B events', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`evt-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`evt-b-${sB}`, `admin-b-${sB}@example.com`);
+      const { tenant_id: tenantBId } = decodeJwt(tokenB);
+
+      // Ingest an event for tenant B via the runtime endpoint
+      const ingestRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/call-events/internal/ingest',
+        headers: {
+          authorization: `Bearer ${process.env.RUNTIME_API_TOKEN}`,
+          'x-tenant-id': tenantBId,
+        },
+        payload: {
+          tenant_id: tenantBId,
+          call_id: 'call-b-001',
+          event_type: 'channel_create',
+          metadata: { direction: 'inbound' },
+        },
+      });
+      expect(ingestRes.statusCode, `ingest failed: ${ingestRes.body}`).toBe(201);
+
+      // Tenant A querying call events must not see tenant B's events
+      const listResA = await app.inject({
+        method: 'GET',
+        url: '/api/v1/call-events',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listResA.statusCode).toBe(200);
+      const eventsA = listResA.json<{ data: unknown[] }>().data;
+      expect(eventsA).toHaveLength(0);
+
+      // Tenant B can see their own event
+      const listResB = await app.inject({
+        method: 'GET',
+        url: '/api/v1/call-events',
+        headers: { authorization: `Bearer ${tokenB}` },
+      });
+      expect(listResB.statusCode).toBe(200);
+      expect(listResB.json<{ data: unknown[] }>().data).toHaveLength(1);
+    });
+
+    // ── Recordings ────────────────────────────────────────────────────────────
+
+    it('tenant A recording list does not include tenant B recordings', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`rec-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`rec-b-${sB}`, `admin-b-${sB}@example.com`);
+      const { tenant_id: tenantBId } = decodeJwt(tokenB);
+
+      // Ingest a recording via the runtime path
+      const recIngestRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/recordings/internal/ingest',
+        headers: {
+          authorization: `Bearer ${process.env.RUNTIME_API_TOKEN}`,
+          'x-tenant-id': tenantBId,
+        },
+        payload: {
+          tenant_id: tenantBId,
+          call_id: 'call-rec-b-001',
+          storage_path: '/recordings/b/call-rec-b-001.wav',
+        },
+      });
+      expect(recIngestRes.statusCode, `recording ingest failed: ${recIngestRes.body}`).toBe(201);
+
+      const listResA = await app.inject({
+        method: 'GET',
+        url: '/api/v1/recordings',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listResA.statusCode).toBe(200);
+      expect(listResA.json<{ data: unknown[] }>().data).toHaveLength(0);
+    });
+
+    // ── Automation webhooks ───────────────────────────────────────────────────
+
+    it('tenant A webhook list does not include tenant B webhooks', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`wh-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`wh-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/automation/webhooks',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { name: 'B Webhook', url: 'https://b.example.com/webhook', events: ['call.started'] },
+      });
+
+      const listResA = await app.inject({
+        method: 'GET',
+        url: '/api/v1/automation/webhooks',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listResA.statusCode).toBe(200);
+      expect(listResA.json<{ data: unknown[] }>().data).toHaveLength(0);
+    });
+
+    it('tenant A cannot delete tenant B webhook', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`whd-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`whd-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/automation/webhooks',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { name: 'B Webhook', url: 'https://b.example.com/webhook', events: ['call.started'] },
+      });
+      expect(createRes.statusCode).toBe(201);
+      const webhookBId = createRes.json<{ data: { id: string } }>().data.id;
+
+      const deleteRes = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/automation/webhooks/${webhookBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect([403, 404]).toContain(deleteRes.statusCode);
+    });
+
+    // ── Fraud / outbound policy ───────────────────────────────────────────────
+
+    it('tenant A fraud outbound policy does not expose tenant B policy', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`fraud-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`fraud-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      // Set a distinctive policy for tenant B using PUT (not POST)
+      await app.inject({
+        method: 'PUT',
+        url: '/api/v1/fraud/outbound-policy',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { max_calls_per_minute: 77 },
+      });
+
+      // Tenant A gets their own policy — should not see max_calls_per_minute=77
+      const resA = await app.inject({
+        method: 'GET',
+        url: '/api/v1/fraud/outbound-policy',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(resA.statusCode).toBe(200);
+      // Tenant A has no configured policy — data is null or lacks tenant B's value
+      const body = resA.json<{ data: { max_calls_per_minute?: number | null } | null }>();
+      if (body.data !== null) {
+        expect(body.data.max_calls_per_minute).not.toBe(77);
+      }
+      // Either null (no policy) or an unrelated default — both prove isolation
+    });
+
+    // ── Export ────────────────────────────────────────────────────────────────
+
+    it('tenant A cannot trigger export for tenant B', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`exp-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`exp-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      // Create a resource in tenant B
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/extensions',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { extension_number: '901', display_name: 'B Ext', sip_password: 'Pass123!' },
+      });
+
+      // Tenant A POSTs to export — must be scoped to tenant A only
+      const exportRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/export',
+        headers: { authorization: `Bearer ${tokenA}` },
+        payload: { include: ['extensions'] },
+      });
+      if (exportRes.statusCode === 200) {
+        // Export must only contain tenant A data
+        const exportData = exportRes.json<{ data?: { extensions?: unknown[] } }>();
+        const extensions = exportData.data?.extensions ?? [];
+        expect(extensions).toHaveLength(0);
+      } else {
+        // Export endpoint may not exist yet — 404 is acceptable
+        expect([404]).toContain(exportRes.statusCode);
+      }
+    });
   });
 });
