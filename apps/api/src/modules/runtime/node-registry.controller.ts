@@ -2,11 +2,10 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { UuidParamsSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
-import { CAPABILITIES } from '../auth/capabilities.js';
-import { requireCapability } from '../auth/require-capability.js';
 import { sendNotFound } from '../../errors/index.js';
 import { fireAuditEvent } from '../audit/fire-audit.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
+import { authenticatePlatform } from '../platform/authenticate-platform.js';
 import { NodeRegistryRepository } from './node-registry.repository.js';
 import { NodeNotFoundError, NodeRegistryService } from './node-registry.service.js';
 
@@ -16,20 +15,16 @@ const service = new NodeRegistryService(repo);
 const NODE_CAPABILITIES_ENUM = ['dialplan', 'directory', 'event_ingest', 'outbound_poll'] as const;
 
 export const nodeRegistryController: FastifyPluginAsyncZod = async (app) => {
-  app.get(
-    '/nodes',
-    { preHandler: requireCapability(CAPABILITIES.PLATFORM_RUNTIME_VIEW) },
-    async () => {
-      return { data: await service.list() };
-    },
-  );
+  // Platform admin only — same protection as platform.controller.ts
+  app.addHook('preHandler', authenticatePlatform);
+
+  app.get('/nodes', async () => {
+    return { data: await service.list() };
+  });
 
   app.get(
     '/nodes/:id',
-    {
-      preHandler: requireCapability(CAPABILITIES.PLATFORM_RUNTIME_VIEW),
-      schema: { params: UuidParamsSchema },
-    },
+    { schema: { params: UuidParamsSchema } },
     async (req, reply) => {
       try {
         return { data: await service.getById(req.params.id) };
@@ -43,7 +38,6 @@ export const nodeRegistryController: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/nodes',
     {
-      preHandler: requireCapability(CAPABILITIES.PLATFORM_RUNTIME_VIEW),
       schema: {
         body: z.object({
           display_name: z.string().min(1).max(255),
@@ -72,7 +66,6 @@ export const nodeRegistryController: FastifyPluginAsyncZod = async (app) => {
   app.patch(
     '/nodes/:id',
     {
-      preHandler: requireCapability(CAPABILITIES.PLATFORM_RUNTIME_VIEW),
       schema: {
         params: UuidParamsSchema,
         body: z.object({
@@ -97,10 +90,7 @@ export const nodeRegistryController: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     '/nodes/:id/rotate-token',
-    {
-      preHandler: requireCapability(CAPABILITIES.PLATFORM_RUNTIME_VIEW),
-      schema: { params: UuidParamsSchema },
-    },
+    { schema: { params: UuidParamsSchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
