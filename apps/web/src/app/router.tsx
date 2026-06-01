@@ -22,6 +22,8 @@ import { SchedulesPage } from '@/features/schedules/schedules-page';
 import { OutboundRoutesPage } from '@/features/outbound-routes/outbound-routes-page';
 import { OutboundCallsPage } from '@/features/outbound-calls/outbound-calls-page';
 import { RecordingsPage } from '@/features/recordings/recordings-page';
+import { SecurityAlertsPage } from '@/features/security-alerts/security-alerts-page';
+import { CompliancePage } from '@/features/compliance/compliance-page';
 import { RequireSession } from '@/lib/auth/require-session';
 import { RequireCapability } from '@/lib/auth/require-capability';
 import { CAPABILITIES } from '@/lib/permissions/capabilities';
@@ -119,6 +121,18 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_OUTBOUND_CALLS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/outbound-calls', element: <OutboundCallsPage /> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_SECURITY_ALERTS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/security-alerts', element: <SecurityAlertsPage /> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_COMPLIANCE_ADMIN} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/compliance', element: <CompliancePage /> },
             ],
           },
         ],

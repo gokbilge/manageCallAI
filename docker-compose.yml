@@ -26,7 +26,7 @@ services:
       APP_ENV: ${APP_ENV:-development}
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string-in-production}
       RUNTIME_API_TOKEN: ${RUNTIME_API_TOKEN:-change-me-runtime-token}
-      ALLOW_RUNTIME_TOKEN_FALLBACK: ${ALLOW_RUNTIME_TOKEN_FALLBACK:-true}
+      ALLOW_RUNTIME_TOKEN_FALLBACK: ${ALLOW_RUNTIME_TOKEN_FALLBACK:-false}
       SIP_SECRET_MASTER_KEY: ${SIP_SECRET_MASTER_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       SIP_SECRET_KEY_ID: ${SIP_SECRET_KEY_ID:-v1}
     ports:

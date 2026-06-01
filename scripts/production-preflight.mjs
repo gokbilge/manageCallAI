@@ -60,6 +60,31 @@ if (!env('RECORDING_STORAGE_ROOT')) {
   warn('RECORDING_STORAGE_ROOT', 'recording storage root is not configured');
 }
 
+// Multi-instance rate limiting gate (issue #59):
+// The in-process rate limiter is not safe for horizontal scaling.
+// Operators must either set MANAGECALLAI_INSTANCE_COUNT=1 (single instance),
+// or configure an external/edge-level rate limiter and set
+// RATE_LIMIT_EXTERNAL_ENFORCED=true or EDGE_RATE_LIMIT_ENFORCED=true.
+const instanceCount = Number.parseInt(env('MANAGECALLAI_INSTANCE_COUNT') || '1', 10);
+const externalEnforced =
+  ['1', 'true', 'yes'].includes((env('RATE_LIMIT_EXTERNAL_ENFORCED') || '').toLowerCase()) ||
+  ['1', 'true', 'yes'].includes((env('EDGE_RATE_LIMIT_ENFORCED') || '').toLowerCase());
+if (instanceCount > 1 && !externalEnforced) {
+  fail(
+    'RATE_LIMIT_EXTERNAL_ENFORCED',
+    `multi-instance deployment (MANAGECALLAI_INSTANCE_COUNT=${instanceCount}) requires ` +
+    'an external shared rate limiter (set RATE_LIMIT_EXTERNAL_ENFORCED=true) or an ' +
+    'edge gateway rate limit (set EDGE_RATE_LIMIT_ENFORCED=true) — ' +
+    'the in-process limiter does not synchronise across instances',
+  );
+}
+
+// Warn if runtime token fallback is still enabled in production.
+if (env('APP_ENV') === 'production' &&
+    ['1', 'true', 'yes'].includes((env('ALLOW_RUNTIME_TOKEN_FALLBACK') || '').toLowerCase())) {
+  fail('ALLOW_RUNTIME_TOKEN_FALLBACK', 'must be false or unset in production — query/body token fallback exposes the token in request logs and URLs');
+}
+
 for (const finding of findings) {
   const label = finding.level.toUpperCase();
   console.log(`${label}: ${finding.name}: ${finding.message}`);
