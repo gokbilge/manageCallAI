@@ -38,6 +38,7 @@ and release smoke evidence are complete.
 - `pnpm check:coverage-ignores`
 - `pnpm check:production-readiness`
 - `pnpm production:preflight`
+- `pnpm check:network-config`
 - `pnpm check:runtime-token-rotation`
 - `pnpm production:rate-limit-check`
 - `./scripts/local-runtime-release-gate.sh` on a runtime-capable machine, OR
@@ -48,6 +49,7 @@ and release smoke evidence are complete.
 - `pnpm production:soak` on a runtime-capable environment
 - `pnpm production:slo-check -- --evidence=<sanitized-runtime-slo-evidence.json>`
 - `pnpm carrier:interop-check -- --evidence=<sanitized-carrier-evidence.json>`
+- `pnpm check:sip-tls-srtp-nat-evidence -- --evidence=<sanitized-sip-tls-srtp-nat-evidence.json>`
 - `pnpm release:evidence-check -- --manifest=<sanitized-release-evidence.json>`
 
 ## Coverage Gates

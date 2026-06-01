@@ -17,6 +17,8 @@ const requiredFiles = [
   'scripts/restore-smoke.mjs',
   'scripts/restore-rehearsal.mjs',
   'scripts/check-production-network-config.mjs',
+  'scripts/check-sip-tls-srtp-nat-evidence.mjs',
+  'docs/ops/templates/sip-tls-srtp-nat-evidence-template.json',
   'scripts/check-runtime-token-rotation.mjs',
   'docs/ops/secret-rotation.md',
   'docs/ops/runtime-token-rotation.md',

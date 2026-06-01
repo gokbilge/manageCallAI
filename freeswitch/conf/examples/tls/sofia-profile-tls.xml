@@ -1,0 +1,78 @@
+<!--
+  Production SIP profile with TLS enabled.
+  Place in /etc/freeswitch/sip_profiles/external-tls.xml (or merge into
+  your existing external.xml profile).
+
+  Prerequisites:
+    - /etc/freeswitch/tls/agent.pem  (private key + certificate chain, no passphrase)
+    - /etc/freeswitch/tls/cafile.pem (CA bundle for verifying remote certificates)
+    - vars-tls.xml sourced in freeswitch.xml
+
+  See docs/ops/sip-tls-srtp-nat.md for certificate generation instructions.
+-->
+<profile name="external-tls">
+  <settings>
+    <!-- Bind address: use the private/internal interface for the SIP listener -->
+    <param name="sip-ip" value="$${local_ip_v4}"/>
+    <param name="rtp-ip" value="$${local_ip_v4}"/>
+
+    <!-- NAT: public IPs for SDP and Contact headers (set in vars-nat.xml) -->
+    <param name="ext-sip-ip" value="$${external_sip_ip}"/>
+    <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
+
+    <!-- Plain SIP on 5080 (adjust or remove if UDP-only not needed) -->
+    <param name="sip-port" value="5080"/>
+
+    <!-- TLS -->
+    <param name="tls" value="true"/>
+    <param name="tls-only" value="false"/>
+    <param name="tls-bind-params" value="transport=tls"/>
+    <param name="tls-sip-port" value="$${tls_sip_port}"/>
+    <param name="tls-passphrase" value=""/>
+    <param name="tls-cert-dir" value="$${tls_cert_dir}"/>
+    <param name="tls-version" value="$${tls_version}"/>
+
+    <!-- Certificate verification policy:
+         none = no client cert required (typical for carrier trunks)
+         in   = verify inbound client certificates
+         all  = verify all peers (mutual TLS) -->
+    <param name="tls-verify-policy" value="none"/>
+    <param name="tls-verify-depth" value="2"/>
+    <param name="tls-verify-date" value="true"/>
+
+    <!-- SRTP (see srtp/sofia-profile-srtp.xml for SRTP-specific params) -->
+    <param name="rtp-secure-media" value="true"/>
+    <param name="inbound-late-negotiation" value="true"/>
+
+    <!-- RTP port range (match your firewall rules and vars-nat.xml) -->
+    <param name="rtp-start-port" value="$${rtp_start_port}"/>
+    <param name="rtp-end-port" value="$${rtp_end_port}"/>
+
+    <!-- NAT traversal -->
+    <param name="local-network-acl" value="localnet.auto"/>
+    <param name="aggressive-nat-detection" value="true"/>
+
+    <!-- Codec policy -->
+    <param name="inbound-codec-prefs" value="PCMU,PCMA,G722"/>
+    <param name="outbound-codec-prefs" value="PCMU,PCMA,G722"/>
+
+    <!-- Disable plain-text credential exposure in SIP headers -->
+    <param name="apply-inbound-acl" value="domains"/>
+    <param name="log-auth-failures" value="true"/>
+    <param name="challenge-realm" value="auto_from"/>
+
+    <!-- Dialplan context for inbound calls -->
+    <param name="context" value="public"/>
+    <param name="dialplan" value="XML"/>
+
+    <!-- Presence / subscriptions: disable if not needed to reduce attack surface -->
+    <param name="manage-presence" value="false"/>
+  </settings>
+
+  <gateways>
+    <!--
+      Carrier gateway entries are managed by manageCallAI via the sip_trunks API.
+      Do not add static gateways here; they will be overwritten on reload.
+    -->
+  </gateways>
+</profile>
