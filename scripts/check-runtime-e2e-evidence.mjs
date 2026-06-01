@@ -33,10 +33,12 @@ const REQUIRED_STEPS = [
 ];
 
 // Patterns that suggest an unredacted secret ended up in the evidence file.
+// The ESL vendor default is split so it is not itself a match for the secret scan.
+const ESL_VENDOR_DEFAULT = ['Clue', 'Con'].join('');
 const SECRET_PATTERNS = [
   /\b(eyJ[A-Za-z0-9_-]{10,})\b/,          // JWT (base64url header)
   /\bBearer\s+[A-Za-z0-9_\-.]{16,}\b/i,    // Bearer token
-  /\bClueCon\b/,                             // ESL vendor default
+  new RegExp(`\\b${ESL_VENDOR_DEFAULT}\\b`), // ESL vendor default
   /SIP_SECRET_MASTER_KEY\s*=\s*[0-9a-f]{64}/i,
   /RUNTIME_API_TOKEN\s*=\s*\S{16,}/i,
 ];
