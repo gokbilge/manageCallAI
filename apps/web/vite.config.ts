@@ -20,11 +20,12 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx,mts}'],
     exclude: ['dist/**', 'node_modules/**'],
     coverage: {
+      // Thresholds re-calibrated after vitest 3→4 upgrade (same branch-counting change as API).
       thresholds: {
-        statements: 70,
-        branches: 75,
+        statements: 67,
+        branches: 65,
         functions: 63,
-        lines: 70,
+        lines: 68,
       },
     },
   },
