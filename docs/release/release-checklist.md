@@ -109,6 +109,20 @@ Production promotion requires evidence that:
 - `pnpm production:preflight` passed in the target environment
 - `pnpm production:e2e` passed after deployment or restore
 
+Collect a sanitized restore-evidence JSON artifact for each rehearsal:
+
+```sh
+# Validate a completed restore evidence artifact
+pnpm restore:evidence-check -- --evidence=artifacts/restore/restore-evidence.json
+```
+
+Use `docs/ops/templates/restore-evidence-template.json` as the starting template.
+The validator rejects missing required fields, unmasked passwords, and boolean
+gates that are not set to `true`. Do not submit evidence for a restore that did
+not complete `restore:smoke`, `db:contracts`, and `db:constraints` successfully.
+
+See `docs/ops/backup-restore.md` for the full restore procedure.
+
 ## Safety Review
 
 Before release, verify:

@@ -36,6 +36,8 @@
     "carrier:interop-check": "node scripts/carrier-interop-check.mjs",
     "release:evidence-check": "node scripts/release-evidence-check.mjs",
     "restore:smoke": "node scripts/restore-smoke.mjs",
+    "restore:evidence-check": "node scripts/restore-evidence-check.mjs",
+    "test:scripts": "node --test scripts/restore-evidence-check.test.mjs",
     "test": "pnpm -r test",
     "test:coverage": "pnpm coverage:api && pnpm coverage:web && pnpm coverage:mcp && pnpm coverage:sdk && pnpm coverage:freeswitch-agent",
     "coverage:api": "pnpm --filter @managecallai/api test:coverage",

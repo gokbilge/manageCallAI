@@ -19,6 +19,10 @@ export function ApprovalsPage() {
   const policiesQuery = usePolicies();
   const approveRequest = useApproveRequest();
   const rejectRequest = useRejectRequest();
+  const mutationError =
+    (approveRequest.error instanceof ApiError ? approveRequest.error.message : null) ??
+    (rejectRequest.error instanceof ApiError ? rejectRequest.error.message : null) ??
+    (approveRequest.isError || rejectRequest.isError ? 'Could not complete the decision' : null);
 
   const refreshMutation = useMutation({
     mutationFn: async () => {
@@ -70,9 +74,10 @@ export function ApprovalsPage() {
                     <ApprovalRow
                       key={req.id}
                       request={req}
-                      onApprove={() => void approveRequest.mutateAsync(req.id)}
-                      onReject={() => void rejectRequest.mutateAsync(req.id)}
-                      isPending={approveRequest.isPending || rejectRequest.isPending}
+                      onApprove={() => approveRequest.mutate(req.id)}
+                      onReject={() => rejectRequest.mutate(req.id)}
+                      isApprovePending={approveRequest.isPending}
+                      isRejectPending={rejectRequest.isPending}
                     />
                   ))}
                 </tbody>
@@ -84,6 +89,11 @@ export function ApprovalsPage() {
               description="All publish and rollback requests have been decided. New requests appear here when a policy requires approval."
             />
           )}
+          {mutationError ? (
+            <div role="alert" className="mt-3 rounded-[var(--radius-md)] border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]">
+              {mutationError}
+            </div>
+          ) : null}
         </DataCard>
 
         <DataCard
@@ -119,13 +129,16 @@ function ApprovalRow({
   request,
   onApprove,
   onReject,
-  isPending,
+  isApprovePending,
+  isRejectPending,
 }: {
   request: ApprovalRequest;
   onApprove: () => void;
   onReject: () => void;
-  isPending: boolean;
+  isApprovePending: boolean;
+  isRejectPending: boolean;
 }) {
+  const anyPending = isApprovePending || isRejectPending;
   return (
     <tr>
       <td className="px-3 py-2 font-medium">
@@ -143,21 +156,21 @@ function ApprovalRow({
       <td className="px-3 py-2">
         <div className="flex gap-2">
           <Button
-            disabled={isPending}
+            disabled={anyPending}
             onClick={onApprove}
             aria-label="Approve"
           >
             <CheckCircle className="size-3.5" aria-hidden="true" />
-            Approve
+            {isApprovePending ? 'Approving…' : 'Approve'}
           </Button>
           <Button
             variant="secondary"
-            disabled={isPending}
+            disabled={anyPending}
             onClick={onReject}
             aria-label="Reject"
           >
             <XCircle className="size-3.5" aria-hidden="true" />
-            Reject
+            {isRejectPending ? 'Rejecting…' : 'Reject'}
           </Button>
         </div>
       </td>

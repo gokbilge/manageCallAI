@@ -5,6 +5,8 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 const requiredFiles = [
   'scripts/production-runtime-e2e.mjs',
   'scripts/production-preflight.mjs',
+  'scripts/restore-evidence-check.mjs',
+  'docs/ops/templates/restore-evidence-template.json',
   'scripts/production-soak.mjs',
   'scripts/production-slo-check.mjs',
   'scripts/rate-limit-topology-check.mjs',
