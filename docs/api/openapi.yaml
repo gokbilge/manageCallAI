@@ -4226,6 +4226,9 @@ components:
               - tenant.export.run
               - tenant.users.view
               - tenant.users.manage
+              - tenant.compliance.admin
+              - tenant.security.alerts.view
+              - tenant.security.alerts.manage
               - "*"
         created_by:
           type:

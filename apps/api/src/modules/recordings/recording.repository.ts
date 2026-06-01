@@ -2,10 +2,15 @@ import type { Pool } from 'pg';
 import type {
   ClaimRecordingAnalysisInput,
   CompleteRecordingAnalysisInput,
+  CreateLegalHoldInput,
   CreateRecordingAnalysisInput,
   IngestRecordingInput,
+  LegalHold,
+  LegalHoldListFilter,
   Recording,
   RecordingAnalysisRequest,
+  TenantRetentionPolicy,
+  UpdateRetentionPolicyInput,
 } from './recording.types.js';
 
 export class RecordingRepository {
@@ -148,5 +153,129 @@ export class RecordingRepository {
       ],
     );
     return result.rows[0] ?? null;
+  }
+
+  // ── SLICE-47: Retention policy ────────────────────────────────────────────
+
+  async getRetentionPolicy(tenantId: string): Promise<TenantRetentionPolicy | null> {
+    const result = await this.db.query<TenantRetentionPolicy>(
+      `SELECT id, tenant_id, recording_retention_days, transcript_retention_days,
+              cdr_retention_days, created_at, updated_at
+       FROM tenant_retention_policies
+       WHERE tenant_id = $1`,
+      [tenantId],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async upsertRetentionPolicy(tenantId: string, input: UpdateRetentionPolicyInput): Promise<TenantRetentionPolicy> {
+    const result = await this.db.query<TenantRetentionPolicy>(
+      `INSERT INTO tenant_retention_policies
+         (tenant_id, recording_retention_days, transcript_retention_days, cdr_retention_days)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (tenant_id) DO UPDATE
+         SET recording_retention_days  = COALESCE($2, tenant_retention_policies.recording_retention_days),
+             transcript_retention_days = COALESCE($3, tenant_retention_policies.transcript_retention_days),
+             cdr_retention_days        = COALESCE($4, tenant_retention_policies.cdr_retention_days),
+             updated_at                = NOW()
+       RETURNING id, tenant_id, recording_retention_days, transcript_retention_days,
+                 cdr_retention_days, created_at, updated_at`,
+      [
+        tenantId,
+        input.recording_retention_days ?? null,
+        input.transcript_retention_days ?? null,
+        input.cdr_retention_days ?? null,
+      ],
+    );
+    return result.rows[0]!;
+  }
+
+  // ── SLICE-47: Legal holds ─────────────────────────────────────────────────
+
+  async createLegalHold(tenantId: string, initiatedBy: string, input: CreateLegalHoldInput): Promise<LegalHold> {
+    const result = await this.db.query<LegalHold>(
+      `INSERT INTO legal_hold_requests
+         (tenant_id, resource_type, resource_id, initiated_by, case_reference, reason, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz)
+       RETURNING id, tenant_id, resource_type, resource_id, initiated_by, case_reference, reason,
+                 status, released_by, released_at, expires_at, created_at, updated_at`,
+      [
+        tenantId,
+        input.resource_type,
+        input.resource_id ?? null,
+        initiatedBy,
+        input.case_reference ?? null,
+        input.reason,
+        input.expires_at ?? null,
+      ],
+    );
+    return result.rows[0]!;
+  }
+
+  async listLegalHolds(tenantId: string, filter: LegalHoldListFilter): Promise<LegalHold[]> {
+    const conditions: string[] = ['tenant_id = $1'];
+    const values: unknown[] = [tenantId];
+    let idx = 2;
+
+    if (filter.resource_type) {
+      conditions.push(`resource_type = $${idx++}`);
+      values.push(filter.resource_type);
+    }
+    if (filter.status) {
+      conditions.push(`status = $${idx++}`);
+      values.push(filter.status);
+    }
+
+    const result = await this.db.query<LegalHold>(
+      `SELECT id, tenant_id, resource_type, resource_id, initiated_by, case_reference, reason,
+              status, released_by, released_at, expires_at, created_at, updated_at
+       FROM legal_hold_requests
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY created_at DESC
+       LIMIT 200`,
+      values,
+    );
+    return result.rows;
+  }
+
+  async findLegalHold(id: string, tenantId: string): Promise<LegalHold | null> {
+    const result = await this.db.query<LegalHold>(
+      `SELECT id, tenant_id, resource_type, resource_id, initiated_by, case_reference, reason,
+              status, released_by, released_at, expires_at, created_at, updated_at
+       FROM legal_hold_requests
+       WHERE id = $1 AND tenant_id = $2`,
+      [id, tenantId],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async releaseLegalHold(id: string, tenantId: string, releasedBy: string): Promise<LegalHold | null> {
+    const result = await this.db.query<LegalHold>(
+      `UPDATE legal_hold_requests
+       SET status = 'released',
+           released_by = $3,
+           released_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $1 AND tenant_id = $2 AND status = 'active'
+       RETURNING id, tenant_id, resource_type, resource_id, initiated_by, case_reference, reason,
+                 status, released_by, released_at, expires_at, created_at, updated_at`,
+      [id, tenantId, releasedBy],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async hasActiveLegalHold(tenantId: string, resourceType: string, resourceId?: string): Promise<boolean> {
+    const result = await this.db.query<{ exists: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM legal_hold_requests
+         WHERE tenant_id = $1
+           AND status = 'active'
+           AND (resource_type = 'all'
+                OR resource_type = $2
+                OR (resource_type = $2 AND ($3::text IS NULL OR resource_id = $3::text)))
+       ) AS exists`,
+      [tenantId, resourceType, resourceId ?? null],
+    );
+    return result.rows[0]?.exists ?? false;
   }
 }

@@ -146,6 +146,11 @@ export const API_KEY_CAPABILITIES = [
   'tenant.export.run',
   'tenant.users.view',
   'tenant.users.manage',
+  // tenant — compliance and retention (SLICE-47)
+  'tenant.compliance.admin',
+  // tenant — security alerts (SLICE-48)
+  'tenant.security.alerts.view',
+  'tenant.security.alerts.manage',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;

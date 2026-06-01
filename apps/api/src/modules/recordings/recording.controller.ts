@@ -151,6 +151,113 @@ export const recordingController: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
+  // ── SLICE-47: Retention policy ────────────────────────────────────────────
+
+  app.get(
+    '/retention-policy',
+    { preHandler: requireCapability(CAPABILITIES.TENANT_COMPLIANCE_ADMIN) },
+    async (req) => {
+      const user = req.user as AuthClaims;
+      const policy = await service.getRetentionPolicy(user.tenant_id);
+      return { data: policy };
+    },
+  );
+
+  app.put(
+    '/retention-policy',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_COMPLIANCE_ADMIN),
+      schema: {
+        body: z.object({
+          recording_retention_days: z.number().int().positive().nullable().optional(),
+          transcript_retention_days: z.number().int().positive().nullable().optional(),
+          cdr_retention_days: z.number().int().positive().nullable().optional(),
+        }),
+      },
+    },
+    async (req) => {
+      const user = req.user as AuthClaims;
+      const policy = await service.updateRetentionPolicy(user.tenant_id, req.body);
+      return { data: policy };
+    },
+  );
+
+  // ── SLICE-47: Legal holds ─────────────────────────────────────────────────
+
+  app.post(
+    '/legal-holds',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_COMPLIANCE_ADMIN),
+      schema: {
+        body: z.object({
+          resource_type: z.enum(['recording', 'transcript', 'cdr', 'all']),
+          resource_id: z.string().max(255).nullable().optional(),
+          case_reference: z.string().max(255).nullable().optional(),
+          reason: z.string().min(1).max(2000),
+          expires_at: z.string().datetime().nullable().optional(),
+        }),
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      const hold = await service.createLegalHold(user.tenant_id, user.sub, req.body);
+      return reply.code(201).send({ data: hold });
+    },
+  );
+
+  app.get(
+    '/legal-holds',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_COMPLIANCE_ADMIN),
+      schema: {
+        querystring: z.object({
+          resource_type: z.enum(['recording', 'transcript', 'cdr', 'all']).optional(),
+          status: z.enum(['active', 'released', 'expired']).optional(),
+        }),
+      },
+    },
+    async (req) => {
+      const user = req.user as AuthClaims;
+      const holds = await service.listLegalHolds(user.tenant_id, req.query);
+      return { data: holds };
+    },
+  );
+
+  app.get(
+    '/legal-holds/:id',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_COMPLIANCE_ADMIN),
+      schema: { params: UuidParamsSchema },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.getLegalHold(req.params.id, user.tenant_id) };
+      } catch (err) {
+        if (err instanceof RecordingNotFoundError) return sendNotFound(reply, err.message);
+        throw err;
+      }
+    },
+  );
+
+  app.post(
+    '/legal-holds/:id/release',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_COMPLIANCE_ADMIN),
+      schema: { params: UuidParamsSchema },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const hold = await service.releaseLegalHold(req.params.id, user.tenant_id, user.sub);
+        return { data: hold };
+      } catch (err) {
+        if (err instanceof RecordingNotFoundError) return sendNotFound(reply, err.message);
+        throw err;
+      }
+    },
+  );
+
   app.post(
     '/internal/ingest',
     {

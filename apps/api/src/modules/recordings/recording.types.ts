@@ -63,3 +63,53 @@ export interface CompleteRecordingAnalysisInput {
   error_message?: string | null;
   provider_metadata?: Record<string, unknown>;
 }
+
+// ── SLICE-47: Retention and privacy ──────────────────────────────────────────
+
+export interface TenantRetentionPolicy {
+  id: string;
+  tenant_id: string;
+  recording_retention_days: number | null;
+  transcript_retention_days: number | null;
+  cdr_retention_days: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateRetentionPolicyInput {
+  recording_retention_days?: number | null;
+  transcript_retention_days?: number | null;
+  cdr_retention_days?: number | null;
+}
+
+export type LegalHoldStatus = 'active' | 'released' | 'expired';
+export type LegalHoldResourceType = 'recording' | 'transcript' | 'cdr' | 'all';
+
+export interface LegalHold {
+  id: string;
+  tenant_id: string;
+  resource_type: LegalHoldResourceType;
+  resource_id: string | null;
+  initiated_by: string;
+  case_reference: string | null;
+  reason: string;
+  status: LegalHoldStatus;
+  released_by: string | null;
+  released_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateLegalHoldInput {
+  resource_type: LegalHoldResourceType;
+  resource_id?: string | null;
+  case_reference?: string | null;
+  reason: string;
+  expires_at?: string | null;
+}
+
+export interface LegalHoldListFilter {
+  resource_type?: LegalHoldResourceType;
+  status?: LegalHoldStatus;
+}

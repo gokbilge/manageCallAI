@@ -2,10 +2,15 @@ import { resolve, sep } from 'node:path';
 import type {
   ClaimRecordingAnalysisInput,
   CompleteRecordingAnalysisInput,
+  CreateLegalHoldInput,
   CreateRecordingAnalysisInput,
   IngestRecordingInput,
+  LegalHold,
+  LegalHoldListFilter,
   Recording,
   RecordingAnalysisRequest,
+  TenantRetentionPolicy,
+  UpdateRetentionPolicyInput,
 } from './recording.types.js';
 import type { RecordingRepository } from './recording.repository.js';
 
@@ -96,5 +101,41 @@ export class RecordingService {
     if (outputs.length === 0 || outputs.some((output) => !allowed.has(output))) {
       throw new Error('requested_outputs must contain transcript, summary, or both');
     }
+  }
+
+  // ── SLICE-47: Retention policy ────────────────────────────────────────────
+
+  async getRetentionPolicy(tenantId: string): Promise<TenantRetentionPolicy | null> {
+    return this.repo.getRetentionPolicy(tenantId);
+  }
+
+  async updateRetentionPolicy(tenantId: string, input: UpdateRetentionPolicyInput): Promise<TenantRetentionPolicy> {
+    return this.repo.upsertRetentionPolicy(tenantId, input);
+  }
+
+  // ── SLICE-47: Legal holds ─────────────────────────────────────────────────
+
+  async createLegalHold(tenantId: string, initiatedBy: string, input: CreateLegalHoldInput): Promise<LegalHold> {
+    return this.repo.createLegalHold(tenantId, initiatedBy, input);
+  }
+
+  async listLegalHolds(tenantId: string, filter: LegalHoldListFilter): Promise<LegalHold[]> {
+    return this.repo.listLegalHolds(tenantId, filter);
+  }
+
+  async getLegalHold(id: string, tenantId: string): Promise<LegalHold> {
+    const hold = await this.repo.findLegalHold(id, tenantId);
+    if (!hold) throw new RecordingNotFoundError(id);
+    return hold;
+  }
+
+  async releaseLegalHold(id: string, tenantId: string, releasedBy: string): Promise<LegalHold> {
+    const hold = await this.repo.releaseLegalHold(id, tenantId, releasedBy);
+    if (!hold) throw new RecordingNotFoundError(id);
+    return hold;
+  }
+
+  async hasActiveLegalHold(tenantId: string, resourceType: string, resourceId?: string): Promise<boolean> {
+    return this.repo.hasActiveLegalHold(tenantId, resourceType, resourceId);
   }
 }
