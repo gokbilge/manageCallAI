@@ -62,6 +62,7 @@
     "check:backup-retention-policy": "node scripts/check-backup-retention-policy.mjs",
     "check:network-config": "node scripts/check-production-network-config.mjs",
     "check:sip-tls-srtp-nat-evidence": "node scripts/check-sip-tls-srtp-nat-evidence.mjs",
+    "sip:tls-srtp-smoke": "node scripts/sip-tls-srtp-smoke.mjs",
     "check:runtime-token-rotation": "node scripts/check-runtime-token-rotation.mjs",
     "check:production-readiness": "node scripts/check-production-readiness.mjs"
   }

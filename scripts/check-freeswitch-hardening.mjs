@@ -7,7 +7,7 @@
  *
  * Usage:
  *   pnpm check:freeswitch-hardening
- *   node scripts/check-freeswitch-hardening.mjs [--check-config]
+ *   node scripts/check-freeswitch-hardening.mjs [--check-config] [--json-output=<path>]
  *
  * Checked env vars:
  *   FREESWITCH_ESL_HOST          — must not be 0.0.0.0
@@ -21,18 +21,22 @@
  * Exit 1 — one or more hard failures detected.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 
-const args = new Set(process.argv.slice(2));
+const argList = process.argv.slice(2);
+const args = new Set(argList);
 if (args.has('--check-config')) {
   console.log('FreeSWITCH hardening check configuration check passed');
   process.exit(0);
 }
+
+const jsonOutputArg = argList.find((a) => a.startsWith('--json-output='));
+const jsonOutputPath = jsonOutputArg ? jsonOutputArg.slice('--json-output='.length) : null;
 
 // Load .env — only sets vars not already in the environment
 const envPath = path.join(rootDir, '.env');
@@ -140,6 +144,39 @@ for (const f of findings) {
 }
 
 const failures = findings.filter((f) => f.level === 'fail');
+const status = failures.length > 0 ? 'failed' : 'passed';
+
+if (jsonOutputPath) {
+  const evidence = {
+    generated_at: new Date().toISOString(),
+    git_sha: (process.env.GITHUB_SHA ?? '').slice(0, 12) || 'local',
+    mode: 'live',
+    status,
+    app_env: env('APP_ENV') || 'development',
+    checks_performed: [
+      'FREESWITCH_ESL_HOST',
+      'FREESWITCH_ESL_PASSWORD',
+      'FREESWITCH_ANONYMOUS_CALLS',
+      'FREESWITCH_MOD_XML_RPC',
+      'FREESWITCH_LOG_LEVEL',
+    ],
+    env_snapshot: {
+      FREESWITCH_ESL_HOST: eslHost || '(not set)',
+      FREESWITCH_ANONYMOUS_CALLS: anonymousCalls || '(not set)',
+      FREESWITCH_MOD_XML_RPC: modXmlRpc || '(not set)',
+      FREESWITCH_LOG_LEVEL: logLevel || '(not set)',
+      APP_ENV: env('APP_ENV') || '(not set)',
+    },
+    findings,
+    failure_count: failures.length,
+    warning_count: findings.filter((f) => f.level === 'warn').length,
+  };
+  const dir = path.dirname(jsonOutputPath);
+  if (dir && dir !== '.') mkdirSync(dir, { recursive: true });
+  writeFileSync(jsonOutputPath, JSON.stringify(evidence, null, 2));
+  console.log(`\nEvidence written to: ${jsonOutputPath}`);
+}
+
 if (failures.length > 0) {
   console.error(
     `\nFreeSWITCH hardening check FAILED with ${failures.length} blocking issue(s)`,

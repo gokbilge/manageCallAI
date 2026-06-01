@@ -71,8 +71,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ── Start runtime stack ─────────────────────────────────────────────────
-      # The self-hosted runner must have ports 5060/udp, 5080/tcp, 5080/udp,
-      # 8021/tcp, 3000/tcp, and 5432/tcp free before this step.
+      # The self-hosted runner must have ports 5060/udp, 5061/tcp, 5080/tcp,
+      # 5080/udp, 8021/tcp, 3000/tcp, and 5432/tcp free before this step.
 
       - name: Start runtime stack (postgres + api + freeswitch + agent)
         run: |
@@ -85,6 +85,12 @@ jobs:
           SIP_SECRET_KEY_ID: smoke-v1
           FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
           ALLOW_RUNTIME_TOKEN_FALLBACK: "false"
+          FREESWITCH_TLS_ENABLED: "true"
+          FREESWITCH_EXT_SIP_IP: "127.0.0.1"
+          FREESWITCH_EXT_RTP_IP: "127.0.0.1"
+          FREESWITCH_ANONYMOUS_CALLS: disabled
+          FREESWITCH_MOD_XML_RPC: disabled
+          FREESWITCH_LOG_LEVEL: warning
 
       - name: Apply migrations
         run: pnpm db:migrate
@@ -181,7 +187,53 @@ jobs:
           API_BASE_URL: ${{ env.SMOKE_API_URL }}
           PRODUCTION_E2E_ARTIFACT_DIR: artifacts/production-e2e-check-config
 
-      # ── Validate evidence ───────────────────────────────────────────────────
+      # ── FreeSWITCH hardening check ──────────────────────────────────────────
+
+      - name: FreeSWITCH hardening check
+        run: |
+          set -o pipefail
+          node scripts/check-freeswitch-hardening.mjs \
+            --json-output=artifacts/hardening/freeswitch-hardening-$(date -u +%Y-%m-%dT%H-%M-%SZ).json \
+            2>&1 | node scripts/redact-logs.mjs
+        env:
+          FREESWITCH_ESL_HOST: 127.0.0.1
+          FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
+          FREESWITCH_ANONYMOUS_CALLS: disabled
+          FREESWITCH_MOD_XML_RPC: disabled
+          FREESWITCH_LOG_LEVEL: warning
+          APP_ENV: production
+          GITHUB_SHA: ${{ github.sha }}
+
+      # ── SIP TLS / SRTP / NAT smoke ──────────────────────────────────────────
+
+      - name: SIP TLS / SRTP / NAT smoke
+        run: |
+          set -o pipefail
+          if [ -f "${PRODUCTION_E2E_ARTIFACT_DIR}/sip-register.env" ]; then
+            set -a
+            . "${PRODUCTION_E2E_ARTIFACT_DIR}/sip-register.env"
+            set +a
+          fi
+          node scripts/sip-tls-srtp-smoke.mjs \
+            --evidence-dir=artifacts/sip-tls \
+            2>&1 | node scripts/redact-logs.mjs
+        env:
+          SIP_HOST: 127.0.0.1
+          SIP_TLS_PORT: "5061"
+          SIP_UDP_PORT: "5080"
+          SIP_LOCAL_IP: 127.0.0.1
+          FREESWITCH_EXT_SIP_IP: "127.0.0.1"
+          FREESWITCH_EXT_RTP_IP: "127.0.0.1"
+          APP_ENV: production
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Validate SIP TLS / SRTP / NAT evidence
+        run: |
+          EVIDENCE=$(ls artifacts/sip-tls/sip-tls-srtp-nat-evidence-*.json 2>/dev/null | tail -1)
+          if [ -z "$EVIDENCE" ]; then echo "ERROR: no SIP TLS evidence found" && exit 1; fi
+          node scripts/check-sip-tls-srtp-nat-evidence.mjs --evidence="$EVIDENCE"
+
+      # ── Validate E2E evidence ───────────────────────────────────────────────
 
       - name: Validate evidence artifact
         run: node scripts/check-runtime-e2e-evidence.mjs --dir="${PRODUCTION_E2E_ARTIFACT_DIR}"
@@ -195,6 +247,8 @@ jobs:
           name: freeswitch-smoke-${{ github.run_id }}
           path: |
             artifacts/production-e2e/*.json
+            artifacts/hardening/*.json
+            artifacts/sip-tls/*.json
             logs/smoke-*.log
           if-no-files-found: warn
           retention-days: 90

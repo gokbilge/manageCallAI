@@ -1,0 +1,19 @@
+<include>
+  <!--
+    Smoke test echo extension. Activated only when FREESWITCH_TLS_ENABLED=true
+    (via entrypoint.sh). Provides a deterministic echo target for the TLS/SRTP/NAT
+    smoke test script (scripts/sip-tls-srtp-smoke.mjs).
+
+    Extension *47: answers immediately, runs the echo application, and hangs up
+    after 10 seconds. Only reachable from registered SIP accounts on the
+    external-tls profile.
+  -->
+  <extension name="smoke-echo">
+    <condition field="destination_number" expression="^\*47$">
+      <action application="answer"/>
+      <action application="echo"/>
+      <action application="sleep" data="10000"/>
+      <action application="hangup"/>
+    </condition>
+  </extension>
+</include>

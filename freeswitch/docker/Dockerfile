@@ -94,6 +94,8 @@ COPY conf/autoload_configs/xml_curl.conf.xml.example /usr/local/freeswitch/conf/
 COPY conf/autoload_configs/event_socket.conf.xml.example /usr/local/freeswitch/conf/autoload_configs/event_socket.conf.xml.tmpl
 COPY conf/dialplan/managecall_entry.xml.example /usr/local/freeswitch/conf/dialplan/managecall_entry.xml
 COPY conf/dialplan/inbound_did.xml.example /usr/local/freeswitch/conf/dialplan/inbound_did.xml
+COPY conf/dialplan/smoke-echo.xml.example /usr/local/freeswitch/conf/dialplan/smoke-echo.xml.example
+COPY conf/sip_profiles/external-tls.xml.tmpl /usr/local/freeswitch/conf/sip_profiles/external-tls.xml.tmpl
 COPY lua/managecall_entry.lua /usr/local/freeswitch/scripts/managecall_entry.lua
 COPY lua/inbound_route.lua /usr/local/freeswitch/scripts/inbound_route.lua
 COPY docker/entrypoint.sh /usr/local/bin/managecallai-freeswitch-entrypoint

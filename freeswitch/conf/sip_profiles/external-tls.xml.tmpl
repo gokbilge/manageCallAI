@@ -1,0 +1,41 @@
+<profile name="external-tls">
+  <settings>
+    <param name="sip-ip" value="$${local_ip_v4}"/>
+    <param name="rtp-ip" value="$${local_ip_v4}"/>
+
+    <param name="ext-sip-ip" value="__EXT_SIP_IP__"/>
+    <param name="ext-rtp-ip" value="__EXT_RTP_IP__"/>
+
+    <param name="sip-port" value="5080"/>
+    <param name="tls" value="true"/>
+    <param name="tls-only" value="false"/>
+    <param name="tls-bind-params" value="transport=tls"/>
+    <param name="tls-sip-port" value="5061"/>
+    <param name="tls-passphrase" value=""/>
+    <param name="tls-cert-dir" value="__TLS_CERT_DIR__"/>
+    <param name="tls-version" value="tlsv1.2,tlsv1.3"/>
+    <param name="tls-verify-policy" value="none"/>
+    <param name="tls-verify-depth" value="2"/>
+    <param name="tls-verify-date" value="true"/>
+
+    <param name="rtp-secure-media" value="true"/>
+    <param name="inbound-late-negotiation" value="true"/>
+
+    <param name="rtp-start-port" value="16384"/>
+    <param name="rtp-end-port" value="32768"/>
+
+    <param name="local-network-acl" value="localnet.auto"/>
+    <param name="aggressive-nat-detection" value="true"/>
+
+    <param name="inbound-codec-prefs" value="PCMU,PCMA"/>
+    <param name="outbound-codec-prefs" value="PCMU,PCMA"/>
+
+    <param name="apply-inbound-acl" value="domains"/>
+    <param name="log-auth-failures" value="true"/>
+    <param name="challenge-realm" value="auto_from"/>
+
+    <param name="context" value="default"/>
+    <param name="dialplan" value="XML"/>
+    <param name="manage-presence" value="false"/>
+  </settings>
+</profile>

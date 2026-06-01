@@ -1057,6 +1057,183 @@ describe('RBAC capability matrix + tenant isolation', () => {
       // Either null (no policy) or an unrelated default — both prove isolation
     });
 
+    // ── Platform node registry ────────────────────────────────────────────────
+
+    it('tenant user cannot access platform node registry endpoints', async () => {
+      const sA = s();
+      const tokenA = await register(`plat-a-${sA}`, `admin-a-${sA}@example.com`);
+
+      for (const path of [
+        '/api/v1/platform/tenants',
+        '/api/v1/platform/runtime/health',
+        '/api/v1/platform/runtime/summary',
+      ]) {
+        const res = await app.inject({
+          method: 'GET',
+          url: path,
+          headers: { authorization: `Bearer ${tokenA}` },
+        });
+        expect([401, 403], `expected 401/403 for ${path}, got ${res.statusCode}`).toContain(
+          res.statusCode,
+        );
+      }
+    });
+
+    // ── Approvals cross-tenant ────────────────────────────────────────────────
+
+    it('tenant A cannot list or decide on tenant B approval requests', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`appr-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`appr-b-${sB}`, `admin-b-${sB}@example.com`);
+      const { tenant_id: tenantBId, sub: userBId } = decodeJwt(tokenB);
+
+      const { rows } = await db.query<{ id: string }>(
+        `INSERT INTO approval_requests (tenant_id, object_type, object_id, version_id, requested_by, status)
+         VALUES ($1, 'ivr_flow', $2, $3, $4, 'pending')
+         RETURNING id`,
+        [tenantBId, randomUUID(), randomUUID(), userBId],
+      );
+      const approvalBId = rows[0]!.id;
+
+      const listA = await app.inject({
+        method: 'GET',
+        url: '/api/v1/approvals',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listA.statusCode).toBe(200);
+      expect(listA.json<{ data: unknown[] }>().data).toHaveLength(0);
+
+      const listB = await app.inject({
+        method: 'GET',
+        url: '/api/v1/approvals',
+        headers: { authorization: `Bearer ${tokenB}` },
+      });
+      expect(listB.statusCode).toBe(200);
+      expect(listB.json<{ data: unknown[] }>().data).toHaveLength(1);
+
+      const approveRes = await app.inject({
+        method: 'POST',
+        url: `/api/v1/approvals/${approvalBId}/approve`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect([403, 404]).toContain(approveRes.statusCode);
+    });
+
+    // ── Audit log ─────────────────────────────────────────────────────────────
+
+    it('tenant A cannot read tenant B audit log entries', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`aud-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`aud-b-${sB}`, `admin-b-${sB}@example.com`);
+      const { tenant_id: tenantBId, sub: userBId } = decodeJwt(tokenB);
+
+      await db.query(
+        `INSERT INTO tenant_audit_log (tenant_id, actor_id, actor_role, action, resource_type)
+         VALUES ($1, $2, 'tenant_admin', 'extension.created', 'extension')`,
+        [tenantBId, userBId],
+      );
+
+      const resA = await app.inject({
+        method: 'GET',
+        url: '/api/v1/audit',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(resA.statusCode).toBe(200);
+      expect(resA.json<{ data: unknown[] }>().data).toHaveLength(0);
+
+      const resB = await app.inject({
+        method: 'GET',
+        url: '/api/v1/audit',
+        headers: { authorization: `Bearer ${tokenB}` },
+      });
+      expect(resB.statusCode).toBe(200);
+      expect(resB.json<{ data: unknown[] }>().data.length).toBeGreaterThanOrEqual(1);
+    });
+
+    // ── Schedules ─────────────────────────────────────────────────────────────
+
+    it('tenant A schedule list and read do not expose tenant B schedules', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`sched-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`sched-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/schedules',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { name: 'B Schedule', timezone: 'UTC' },
+      });
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
+      const scheduleBId = createRes.json<{ data: { id: string } }>().data.id;
+
+      const listA = await app.inject({
+        method: 'GET',
+        url: '/api/v1/schedules',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listA.statusCode).toBe(200);
+      expect(listA.json<{ data: unknown[] }>().data).toHaveLength(0);
+
+      const getA = await app.inject({
+        method: 'GET',
+        url: `/api/v1/schedules/${scheduleBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect([403, 404]).toContain(getA.statusCode);
+
+      const patchA = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/schedules/${scheduleBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+        payload: { name: 'Hijacked Schedule' },
+      });
+      expect([403, 404]).toContain(patchA.statusCode);
+    });
+
+    // ── Queues ────────────────────────────────────────────────────────────────
+
+    it('tenant A queue list and read do not expose tenant B queues', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`queue-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`queue-b-${sB}`, `admin-b-${sB}@example.com`);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/queues',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { name: 'B Queue' },
+      });
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
+      const queueBId = createRes.json<{ data: { id: string } }>().data.id;
+
+      const listA = await app.inject({
+        method: 'GET',
+        url: '/api/v1/queues',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listA.statusCode).toBe(200);
+      expect(listA.json<{ data: unknown[] }>().data).toHaveLength(0);
+
+      const getA = await app.inject({
+        method: 'GET',
+        url: `/api/v1/queues/${queueBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect([403, 404]).toContain(getA.statusCode);
+
+      const patchA = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/queues/${queueBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+        payload: { name: 'Hijacked Queue' },
+      });
+      expect([403, 404]).toContain(patchA.statusCode);
+    });
+
     // ── Export ────────────────────────────────────────────────────────────────
 
     it('tenant A cannot trigger export for tenant B', async () => {

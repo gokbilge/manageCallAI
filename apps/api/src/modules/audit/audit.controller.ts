@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
@@ -8,25 +9,19 @@ import { AuditService } from './audit.service.js';
 
 const service = new AuditService(new AuditRepository(db));
 
+const AuditQuerySchema = z.object({
+  action: z.string().max(100).optional(),
+  resource_type: z.string().max(100).optional(),
+  since: z.string().datetime().optional(),
+  limit: z.string().optional(),
+});
+
 export const auditController: FastifyPluginAsyncZod = async (app) => {
-  app.get<{
-    Querystring: { action?: string; resource_type?: string; since?: string; limit?: string };
-  }>(
+  app.get(
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_AUDIT_LOG_VIEW),
-      schema: {
-        querystring: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            action: { type: 'string', maxLength: 100 },
-            resource_type: { type: 'string', maxLength: 100 },
-            since: { type: 'string', format: 'date-time' },
-            limit: { type: 'string' },
-          },
-        },
-      },
+      schema: { querystring: AuditQuerySchema },
     },
     async (req) => {
       const user = req.user as AuthClaims;
