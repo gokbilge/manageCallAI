@@ -64,10 +64,24 @@ const timer = setTimeout(() => {
 }, TIMEOUT_MS);
 
 function connect() {
+  buffer = '';
+  authenticated = false;
   client = net.createConnection({ host, port });
 
   client.on('data', onData);
   client.on('error', onError);
+}
+
+function retry(reason) {
+  client?.destroy();
+
+  if (!done && Date.now() + RETRY_DELAY_MS < deadline) {
+    console.log(`${reason}; retrying in ${RETRY_DELAY_MS}ms...`);
+    setTimeout(connect, RETRY_DELAY_MS);
+    return true;
+  }
+
+  return false;
 }
 
 function onData(data) {
@@ -94,6 +108,8 @@ function onData(data) {
       clearTimeout(timer);
       client?.destroy();
       process.exit(0);
+    } else if (retry('Sofia internal profile is not loaded yet')) {
+      return;
     } else {
       console.error('FreeSWITCH profile smoke test FAILED: sofia internal profile not found in status output.');
       console.error('sofia status output:', body.slice(0, 500));
@@ -114,10 +130,15 @@ function onData(data) {
 }
 
 function onError(err) {
-  client?.destroy();
+  if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET') {
+    if (retry(`ESL connection not ready (${err.code})`)) {
+      return;
+    }
+  } else {
+    client?.destroy();
+  }
 
-  if (!done && (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT') && Date.now() + RETRY_DELAY_MS < deadline) {
-    setTimeout(connect, RETRY_DELAY_MS);
+  if (done) {
     return;
   }
 
