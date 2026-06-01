@@ -40,6 +40,7 @@ and release smoke evidence are complete.
 - `pnpm check:log-redaction`
 - `pnpm production:preflight`
 - `pnpm check:network-config`
+- `pnpm check:freeswitch-hardening`
 - `pnpm check:runtime-token-rotation`
 - `pnpm production:rate-limit-check`
 - `./scripts/local-runtime-release-gate.sh` on a runtime-capable machine, OR

@@ -45,6 +45,8 @@ const requiredFiles = [
   'docs/ops/carrier-interop.md',
   'docs/ops/restore-smoke.md',
   'docs/ops/network-hardening.md',
+  'docs/ops/freeswitch-hardening.md',
+  'scripts/check-freeswitch-hardening.mjs',
   'docs/ops/sip-tls-srtp-nat.md',
   'docs/ops/firewall-rules.md',
 ];
