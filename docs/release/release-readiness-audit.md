@@ -11,7 +11,7 @@
 
 manageCallAI is an AI-native telecom control plane built over stock FreeSWITCH. The backend API, IVR lifecycle, MCP server, automation layer, and CI quality gates are well-built for an early-stage project. Architecture boundaries are cleanly enforced. All major CI checks pass. No open CodeQL security alerts exist on main.
 
-The project is **ready for internal alpha** and is **close to public alpha**. It is **not ready for public beta or production** due to missing FreeSWITCH smoke CI, incomplete visual IVR builder polish, in-memory-only rate limiting (unsafe for multi-instance), gaps in frontend test coverage, one stale README count, and several documentation gaps.
+The project is **ready for internal alpha** and is **close to public alpha**. It is **not ready for public beta or production** due to missing FreeSWITCH smoke CI, incomplete visual IVR builder polish, multi-instance rate-limit evidence requirements, gaps in frontend test coverage, one stale README count, and several documentation gaps.
 
 **No critical security findings** were uncovered. The most significant runtime risk is `ALLOW_RUNTIME_TOKEN_FALLBACK=true` in `docker-compose.yml` (development default), which must not be used in production.
 
@@ -70,7 +70,7 @@ The project is **ready for internal alpha** and is **close to public alpha**. It
 | CI / tooling | 9 | 20+ CI checks; all pass; FreeSWITCH smoke CI exists but gated to self-hosted runner |
 | Coverage / tests | 7 | API 68% stmts / 80% branches; Web 53%; MCP 84%; SDK 99%; Go agent 55–100% by package; thresholds set but below beta targets |
 | Docs | 7 | Architecture, API, ops, security, n8n docs exist; README has stale test/OpenAPI counts; `RUNTIME_API_TOKEN_SECONDARY` missing from `.env.example` |
-| Deployment | 7 | Production deployment guide solid; docker-compose present; multi-instance rate limiting not solved; `restore:smoke` needs real env |
+| Deployment | 7 | Production deployment guide solid; docker-compose present; Redis or edge rate-limit evidence still required; `restore:smoke` needs real env |
 | Release governance | 6 | Release checklist exists; no GitHub release tags; no CHANGELOG; no milestones or project board |
 
 ---
@@ -147,7 +147,7 @@ The project is **ready for internal alpha** and is **close to public alpha**. It
 
 7. **FreeSWITCH smoke CI as required gate** — Must run automatically for every release branch, not just manually.
 8. **Visual IVR builder publish diff and rollback affordance** — Publish diff preview and rollback state visualization are noted as missing in the alpha readiness doc. `PublishPanel.tsx` exists (182 lines) but doesn't show a diff.
-9. **Multi-instance rate limiting** — `InMemoryRateLimiter` is per-process. Horizontal scaling is unsafe. Redis or edge-level shared rate limiting required. (SLICE-56 marked COMPLETED in slice docs but the implementation is not in the API codebase — the slice outcome appears to be documentation and guidance, not a Redis adapter.)
+9. **Multi-instance rate limiting** -- Redis shared-store implementation exists. Production promotion still requires `RATE_LIMIT_STORE=redis` with `RATE_LIMIT_REDIS_URL`, another external limiter, or edge-gateway evidence.
 10. **SDK not npm-publishable** — `packages/sdk/package.json` has no `main`, `types`, or `exports` fields. The package claims version `0.1.0` but is not importable from npm.
 11. **Tenant isolation matrix coverage** — RBAC matrix integration test exists (613 lines, `rbac-matrix.integration.test.ts`) but cross-tenant write/read isolation for recordings, security alerts, retention policies, and the new fraud policy is not covered.
 12. **Go ESL agent main package coverage: 0%** — `apps/freeswitch-agent` top-level package has 0% coverage (main.go initialization path). Internal packages have good coverage.
@@ -188,7 +188,7 @@ The project is **ready for internal alpha** and is **close to public alpha**. It
 | 5 | Retention / legal hold UI absent | `apps/web/src/features/` | Add compliance/retention page |
 | 6 | Frontend coverage 53% | `apps/web/` | Add tests to reach ≥70% for beta |
 | 7 | Publish diff in IVR builder absent | `apps/web/src/features/ivr-builder/` | Add diff preview to PublishPanel |
-| 8 | Multi-instance rate limiting: in-memory only | `apps/api/src/security/rate-limit.ts` | Add Redis adapter or edge-level enforcement |
+| 8 | Multi-instance rate limiting evidence | `apps/api/src/security/rate-limit.ts`, `docs/ops/rate-limit-topology.md` | Configure Redis or edge-level enforcement in production evidence |
 | 9 | SDK not npm-publishable | `packages/sdk/package.json` | Add `main`, `types`, `exports` fields |
 
 ### Production Blockers (P2)
@@ -229,7 +229,7 @@ All public alpha items, plus:
 - [ ] Frontend coverage ≥ 70% statements
 - [ ] Tenant isolation matrix: add cross-tenant tests for recordings, security alerts, fraud policy
 - [ ] SDK: add `main`, `types`, `exports` to `package.json`; extend client to cover ≥ 30 endpoints
-- [ ] Multi-instance rate limiting: Redis adapter or guidance for edge-level enforcement
+- [x] Multi-instance rate limiting: Redis adapter and edge guidance exist
 - [ ] CHANGELOG and release notes policy
 
 ---
@@ -243,7 +243,7 @@ All beta items, plus:
 - [ ] Restore rehearsal evidence (`pnpm restore:smoke`)
 - [ ] Carrier interop evidence (`pnpm carrier:interop-check`)
 - [ ] Release evidence bundle (`pnpm release:evidence-check`)
-- [ ] Multi-instance rate limiting implemented and tested
+- [x] Multi-instance rate limiting implemented and tested
 - [ ] Deployment hardening: `docker-compose.yml` `ALLOW_RUNTIME_TOKEN_FALLBACK` defaults to `false`
 - [ ] TLS/SRTP guidance verified for trunk configuration
 - [ ] Monitoring, alerting, and on-call runbooks
@@ -432,7 +432,7 @@ Excellent. SDK client is small (6 endpoints) but fully tested.
 ### Medium-term (public beta)
 8. FreeSWITCH smoke CI as required gate
 9. Visual IVR builder: publish diff + rollback UI
-10. Multi-instance rate limiting (Redis adapter or edge docs)
+10. Multi-instance rate limiting production evidence (Redis or edge config)
 11. SDK publish readiness (`main`, `types`, `exports`, extended client)
 12. Tenant isolation matrix: recordings, security alerts, fraud policy
 13. CHANGELOG and release governance
@@ -499,7 +499,7 @@ pnpm restore:smoke                      SKIP  requires live deployment and backu
 ## 21. Known Limitations
 
 1. **FreeSWITCH build time:** The Dockerfile compiles FreeSWITCH from source (~10–25 min). Pre-built packages would improve developer experience.
-2. **Single-process rate limiting:** The in-memory rate limiter is not safe for multi-instance horizontal deployments. Single-instance deployments are fine.
+2. **Rate-limit topology:** Redis shared-store support exists, but production deployments must still provide Redis or edge-gateway evidence.
 3. **One agent per tenant:** The Go FreeSWITCH agent is configured with a single `MANAGECALLAI_TENANT_ID`. Multi-tenant FreeSWITCH setups require one agent per tenant or a routing proxy.
 4. **`mod_xml_curl` timeout sensitivity:** If the API is slow or unreachable, FreeSWITCH falls back to its default behavior. This is documented but not tested for graceful fallback in CI.
 5. **No SMS/voice-over-IP provider integration:** Channel accounts exist for future PSTN/SMS providers but no provider adapter is implemented.
@@ -521,7 +521,7 @@ Fix the two P0 issues first. Then tag `v0.1.0-alpha`. The project is very close.
 
 ### Public beta: **DO NOT RELEASE** ❌
 
-FreeSWITCH smoke CI, IVR builder UI gaps, frontend coverage, multi-instance rate limiting, SDK publish readiness, and tenant isolation matrix coverage must all be addressed.
+FreeSWITCH smoke CI, IVR builder UI gaps, frontend coverage, rate-limit topology evidence, SDK publish readiness, and tenant isolation matrix coverage must all be addressed.
 
 ### Production: **DO NOT RELEASE** ❌
 

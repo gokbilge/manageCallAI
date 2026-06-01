@@ -32,22 +32,35 @@ multiply allowed request volume by spreading traffic across instances.
 - `RATE_LIMIT_OUTBOUND_MAX`
 - `RATE_LIMIT_EXTERNAL_ENFORCED`
 - `RATE_LIMIT_STORE`
+- `RATE_LIMIT_REDIS_URL`
+- `RATE_LIMIT_REDIS_KEY_PREFIX`
 - `EDGE_RATE_LIMIT_ENFORCED`
 
-## In-Process Limiter Safety Note
+## API Rate-Limit Stores
 
 The default `InMemoryRateLimiter` in `apps/api/src/security/rate-limit.ts` maintains
 separate quota buckets per process. It is safe for single-instance deployments. It
 is **not** safe for multi-instance horizontal scaling because each instance enforces
-its own independent quota — an attacker can multiply allowed volume by spreading
+its own independent quota -- an attacker can multiply allowed volume by spreading
 traffic across instances.
 
 Multi-instance production deployments must either:
 1. Set `EDGE_RATE_LIMIT_ENFORCED=true` and configure an edge gateway (e.g. nginx,
    Cloudflare, AWS WAF) to enforce shared limits before traffic reaches API instances.
-2. Set `RATE_LIMIT_EXTERNAL_ENFORCED=true` with a named `RATE_LIMIT_STORE` pointing
-   to a shared store (Redis, etc.). A Redis adapter is not yet implemented; set
-   `RATE_LIMIT_EXTERNAL_ENFORCED=true` only if you provide your own proxy.
+2. Set `RATE_LIMIT_STORE=redis` and `RATE_LIMIT_REDIS_URL=<redis-url>` so API
+   instances use the built-in Redis fixed-window store.
+3. Set `RATE_LIMIT_EXTERNAL_ENFORCED=true` with a named `RATE_LIMIT_STORE` when
+   another shared limiter is enforced outside the API process.
+
+The Redis store uses atomic `INCR` plus `PEXPIRE` in a Lua script and fails
+closed with `RESOURCE_EXHAUSTED` if the store is unavailable. Use Redis ACLs,
+TLS where available, and do not log `RATE_LIMIT_REDIS_URL`.
+
+Redis variables:
+
+- `RATE_LIMIT_STORE=redis`
+- `RATE_LIMIT_REDIS_URL`
+- `RATE_LIMIT_REDIS_KEY_PREFIX` (default `managecallai:rate-limit`)
 
 ## Topology Evaluation Function
 

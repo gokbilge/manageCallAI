@@ -17,6 +17,7 @@ suffix: `0.1.0-alpha`, `0.2.0-beta.1`, etc.
 - Compliance / retention UI (`/tenant/compliance`) -- tenant retention policy and legal hold management (closes #55).
 - Release notes policy for versioned GitHub releases, changelog updates, and SDK publish status (closes #71).
 - Visual IVR detail workflow coverage for draft editing, validate, publish, read-only version states, and empty builder state (closes #72).
+- Redis-backed API rate-limit store for multi-instance production deployments.
 
 ### Fixed
 - `docker-compose.yml` `ALLOW_RUNTIME_TOKEN_FALLBACK` default changed from `true` to `false` -- the API already defaults to `false` in production; the compose default now matches (closes #57).
@@ -91,7 +92,7 @@ MCP, n8n, and CI quality gates all passing.
 - Release readiness audit (docs/release/release-readiness-audit.md).
 
 ### Known limitations
-- In-process rate limiter is per-process â€” not safe for multi-instance deployments without an edge/external limiter.
+- Multi-instance deployments require `RATE_LIMIT_STORE=redis`, another external limiter, or edge-enforced rate limits.
 - FreeSWITCH smoke CI requires a self-hosted runner; not in standard hosted CI gate.
 - SDK package is generated, buildable, and tested; public npm publish has not been exercised in a tagged release.
 - Security alerts, retention/legal hold admin UI pages absent from this release.

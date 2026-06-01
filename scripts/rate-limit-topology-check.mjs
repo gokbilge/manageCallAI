@@ -26,6 +26,8 @@ const instanceCount = int('MANAGECALLAI_INSTANCE_COUNT', 1);
 const appEnv = env('APP_ENV') || 'development';
 const externalEnforced = bool('RATE_LIMIT_EXTERNAL_ENFORCED');
 const gatewayEnforced = bool('EDGE_RATE_LIMIT_ENFORCED');
+const rateLimitStore = env('RATE_LIMIT_STORE').toLowerCase();
+const redisSharedStoreConfigured = rateLimitStore === 'redis' && Boolean(env('RATE_LIMIT_REDIS_URL'));
 
 function fail(name, message) {
   findings.push({ level: 'fail', name, message });
@@ -35,10 +37,10 @@ function warn(name, message) {
   findings.push({ level: 'warn', name, message });
 }
 
-if (appEnv === 'production' && instanceCount > 1 && !externalEnforced && !gatewayEnforced) {
+if (appEnv === 'production' && instanceCount > 1 && !externalEnforced && !gatewayEnforced && !redisSharedStoreConfigured) {
   fail(
     'RATE_LIMIT_EXTERNAL_ENFORCED',
-    'multi-instance production deployments require an external shared rate limiter or an enforced edge gateway limiter',
+    'multi-instance production deployments require RATE_LIMIT_STORE=redis with RATE_LIMIT_REDIS_URL, RATE_LIMIT_EXTERNAL_ENFORCED=true, or EDGE_RATE_LIMIT_ENFORCED=true',
   );
 }
 
@@ -52,6 +54,10 @@ if (appEnv === 'production' && !env('RATE_LIMIT_WINDOW_MS')) {
 
 if (appEnv === 'production' && instanceCount > 1 && externalEnforced && !env('RATE_LIMIT_STORE')) {
   warn('RATE_LIMIT_STORE', 'external limiter is marked enforced but the store/provider is not named');
+}
+
+if (appEnv === 'production' && instanceCount > 1 && rateLimitStore === 'redis' && !env('RATE_LIMIT_REDIS_URL')) {
+  fail('RATE_LIMIT_REDIS_URL', 'RATE_LIMIT_REDIS_URL is required when RATE_LIMIT_STORE=redis');
 }
 
 for (const finding of findings) {
