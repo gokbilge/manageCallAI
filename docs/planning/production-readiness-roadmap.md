@@ -53,7 +53,9 @@ Required slices:
 - `SLICE-52`: production runtime E2E gate
 - `SLICE-53`: production deployment and network hardening
 - `SLICE-54`: backup, restore, upgrade, and DR
-- add future slices for load/soak, multi-instance rate limiting, and carrier interop
+- `SLICE-55`: load and soak testing
+- `SLICE-56`: multi-instance rate limiting
+- `SLICE-57`: carrier interop certification
 
 Exit criteria:
 
@@ -64,6 +66,8 @@ Exit criteria:
 - outbound fraud controls are tested
 - logs and support bundles are redaction-verified
 - load/soak tests cover runtime event ingestion and call-event query paths
+- multi-instance deployments prove shared or edge-enforced rate limiting
+- carrier interop evidence proves registration, call flow, DTMF, CDR, NAT/media, and failover expectations
 
 ## Slice Ownership
 
@@ -75,6 +79,9 @@ Exit criteria:
 | `SLICE-52` | Production | missing release-grade runtime E2E evidence |
 | `SLICE-53` | Production | unsafe deployment defaults and network exposure |
 | `SLICE-54` | Production | untested restore, upgrade, and DR procedures |
+| `SLICE-55` | Production | unmeasured sustained runtime/event throughput |
+| `SLICE-56` | Production | per-instance rate limits that fail open at scale |
+| `SLICE-57` | Production | carrier-specific SIP/media behavior not certified |
 
 ## Do Not Reclassify As Production Until
 
@@ -84,3 +91,6 @@ Exit criteria:
 - MCP/n8n remain narrower than REST and are drift-checked
 - outbound toll-fraud controls are enforced and tested
 - backup/restore/upgrade playbooks have been executed successfully
+- soak evidence exists for the target release topology
+- multi-instance rate limiting is shared or externally enforced
+- at least one carrier interop evidence file has passed validation

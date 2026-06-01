@@ -189,11 +189,11 @@ alpha labeling. Production cannot.
 - [ ] Upgrade and migration playbook tested.
 - [ ] Outbound toll-fraud controls tested.
 - [ ] Recording/CDR/voicemail retention policy enforced or explicitly operated.
-- [ ] Multi-instance rate limiting uses Redis or another external store.
+- [ ] Multi-instance rate limiting uses Redis, edge enforcement, or another external store and passes `pnpm production:rate-limit-check`.
 - [ ] Structured logs with redaction verified.
 - [ ] Telecom threat model complete.
-- [ ] Load/soak test for call events and runtime ingestion.
+- [ ] Load/soak test for call events and runtime ingestion passes with sanitized `pnpm production:soak` evidence.
+- [ ] Carrier interop evidence passes `pnpm carrier:interop-check -- --evidence=<file>`.
 - [ ] Platform admin and tenant admin runbooks.
 - [ ] Rollback procedure tested.
 - [ ] Release checklist completed.
-

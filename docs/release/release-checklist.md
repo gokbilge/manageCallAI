@@ -33,8 +33,11 @@ and release smoke evidence are complete.
 - `pnpm check:coverage-ignores`
 - `pnpm check:production-readiness`
 - `pnpm production:preflight`
+- `pnpm production:rate-limit-check`
 - `pnpm restore:smoke` after restore rehearsals
 - `pnpm production:e2e` on a runtime-capable environment
+- `pnpm production:soak` on a runtime-capable environment
+- `pnpm carrier:interop-check -- --evidence=<sanitized-carrier-evidence.json>`
 
 ## Coverage Gates
 
@@ -67,6 +70,17 @@ A self-hosted FreeSWITCH smoke workflow exists at `.github/workflows/freeswitch-
 Every release candidate must document whether the FreeSWITCH smoke was run and what runtime
 versions were used. Production release candidates must also attach the sanitized
 `pnpm production:e2e` evidence artifact. See `docs/release/production-runtime-e2e.md`.
+
+## Load, Rate Limit, And Carrier Gates
+
+Production promotion requires:
+
+- `pnpm production:soak` evidence from the target release topology
+- `pnpm production:rate-limit-check` passing with shared or edge-enforced rate limiting for multi-instance API deployments
+- `pnpm carrier:interop-check -- --evidence=<file>` passing for each supported carrier profile
+- documented exceptions for carrier features that are intentionally unsupported
+
+Do not treat check-config mode as production evidence. Check-config mode only proves that release scripts and documentation are wired correctly.
 
 ## Backup, Restore, And Upgrade Gates
 
