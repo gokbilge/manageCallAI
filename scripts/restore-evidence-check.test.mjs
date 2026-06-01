@@ -113,7 +113,7 @@ test('malformed restored_at fails', () => {
 test('missing evidence file exits 1', () => {
   const result = run(['--evidence=/tmp/does-not-exist-restore-evidence.json']);
   strictEqual(result.status, 1);
-  ok(result.stderr.includes('not found') || result.stderr.includes('not found'));
+  ok(result.stderr.includes('not found'));
 });
 
 test('missing --evidence arg exits 1', () => {

@@ -612,6 +612,18 @@ describe('RBAC capability matrix + tenant isolation', () => {
 
     // ── SIP trunks ────────────────────────────────────────────────────────────
 
+    // Shared helper for valid SIP trunk body (matches CreateSipTrunkBody schema)
+    function sipTrunkBody(name = 'Test Trunk') {
+      return {
+        name,
+        direction: 'inbound',
+        realm: 'sip.example.com',
+        proxy: 'sip.example.com',
+        auth_username: 'trunk-user',
+        auth_password: 'SuperSecret99!',
+      };
+    }
+
     it('tenant A SIP trunk list does not include tenant B trunks', async () => {
       const sA = s();
       const sB = s();
@@ -622,7 +634,7 @@ describe('RBAC capability matrix + tenant isolation', () => {
         method: 'POST',
         url: '/api/v1/sip-trunks',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { name: 'Trunk B', host: 'sip.b.example.com', port: 5060 },
+        payload: sipTrunkBody('Trunk B'),
       });
 
       const listRes = await app.inject({
@@ -644,9 +656,9 @@ describe('RBAC capability matrix + tenant isolation', () => {
         method: 'POST',
         url: '/api/v1/sip-trunks',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { name: 'Trunk B', host: 'sip.b.example.com', port: 5060 },
+        payload: sipTrunkBody('Trunk B'),
       });
-      expect(createRes.statusCode).toBe(201);
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
       const trunkBId = createRes.json<{ data: { id: string } }>().data.id;
 
       const getRes = await app.inject({
@@ -667,8 +679,9 @@ describe('RBAC capability matrix + tenant isolation', () => {
         method: 'POST',
         url: '/api/v1/sip-trunks',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { name: 'Trunk B', host: 'sip.b.example.com', port: 5060 },
+        payload: sipTrunkBody('Trunk B'),
       });
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
       const trunkBId = createRes.json<{ data: { id: string } }>().data.id;
 
       const patchRes = await app.inject({
@@ -692,7 +705,7 @@ describe('RBAC capability matrix + tenant isolation', () => {
         method: 'POST',
         url: '/api/v1/phone-numbers',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { number: '+15550001001', display_name: 'B Number' },
+        payload: { e164_number: '+15550001001' },
       });
 
       const listRes = await app.inject({
@@ -714,9 +727,9 @@ describe('RBAC capability matrix + tenant isolation', () => {
         method: 'POST',
         url: '/api/v1/phone-numbers',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { number: '+15550001002', display_name: 'B Number' },
+        payload: { e164_number: '+15550001002' },
       });
-      expect(createRes.statusCode).toBe(201);
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
       const numBId = createRes.json<{ data: { id: string } }>().data.id;
 
       const getRes = await app.inject({
@@ -801,6 +814,11 @@ describe('RBAC capability matrix + tenant isolation', () => {
 
     // ── Inbound routes ────────────────────────────────────────────────────────
 
+    // Shared helper for valid inbound route body
+    function inboundRouteBody(name = 'Test Route', matchValue = '+15550001000') {
+      return { name, match_type: 'did', match_value: matchValue, target_type: 'flow' };
+    }
+
     it('tenant A inbound route list does not include tenant B routes', async () => {
       const sA = s();
       const sB = s();
@@ -811,7 +829,7 @@ describe('RBAC capability matrix + tenant isolation', () => {
         method: 'POST',
         url: '/api/v1/inbound-routes',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { name: 'B Route', match_did: '+15550001003' },
+        payload: inboundRouteBody('B Route', '+15550001003'),
       });
 
       const listRes = await app.inject({
@@ -833,16 +851,16 @@ describe('RBAC capability matrix + tenant isolation', () => {
         method: 'POST',
         url: '/api/v1/inbound-routes',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { name: 'B Route', match_did: '+15550001004' },
+        payload: inboundRouteBody('B Route', '+15550001004'),
       });
-      expect(createRes.statusCode).toBe(201);
+      expect(createRes.statusCode, `create failed: ${createRes.body}`).toBe(201);
       const routeBId = createRes.json<{ data: { id: string } }>().data.id;
 
       const patchRes = await app.inject({
         method: 'PUT',
         url: `/api/v1/inbound-routes/${routeBId}`,
         headers: { authorization: `Bearer ${tokenA}` },
-        payload: { name: 'Hijacked Route' },
+        payload: { name: 'Hijacked Route', match_type: 'did', match_value: '+15550001004', target_type: 'flow' },
       });
       expect([403, 404]).toContain(patchRes.statusCode);
     });
@@ -860,15 +878,16 @@ describe('RBAC capability matrix + tenant isolation', () => {
         method: 'POST',
         url: '/api/v1/sip-trunks',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { name: 'B Trunk', host: 'sip.b.example.com', port: 5060 },
+        payload: sipTrunkBody('B Trunk'),
       });
+      expect(trunkRes.statusCode, `trunk create failed: ${trunkRes.body}`).toBe(201);
       const trunkBId = trunkRes.json<{ data: { id: string } }>().data.id;
 
       await app.inject({
         method: 'POST',
         url: '/api/v1/outbound-routes',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { name: 'B Outbound Route', sip_trunk_id: trunkBId },
+        payload: { name: 'B Outbound Route', sip_trunk_id: trunkBId, match_prefix: '+' },
       });
 
       const listRes = await app.inject({
@@ -898,13 +917,13 @@ describe('RBAC capability matrix + tenant isolation', () => {
           'x-tenant-id': tenantBId,
         },
         payload: {
+          tenant_id: tenantBId,
           call_id: 'call-b-001',
           event_type: 'channel_create',
-          source: 'freeswitch-esl',
-          payload: { 'Event-Name': 'CHANNEL_CREATE' },
+          metadata: { direction: 'inbound' },
         },
       });
-      expect(ingestRes.statusCode).toBe(201);
+      expect(ingestRes.statusCode, `ingest failed: ${ingestRes.body}`).toBe(201);
 
       // Tenant A querying call events must not see tenant B's events
       const listResA = await app.inject({
@@ -936,7 +955,7 @@ describe('RBAC capability matrix + tenant isolation', () => {
       const { tenant_id: tenantBId } = decodeJwt(tokenB);
 
       // Ingest a recording via the runtime path
-      await app.inject({
+      const recIngestRes = await app.inject({
         method: 'POST',
         url: '/api/v1/recordings/internal/ingest',
         headers: {
@@ -944,10 +963,12 @@ describe('RBAC capability matrix + tenant isolation', () => {
           'x-tenant-id': tenantBId,
         },
         payload: {
+          tenant_id: tenantBId,
           call_id: 'call-rec-b-001',
-          storage_reference: '/recordings/b/call-rec-b-001.wav',
+          storage_path: '/recordings/b/call-rec-b-001.wav',
         },
       });
+      expect(recIngestRes.statusCode, `recording ingest failed: ${recIngestRes.body}`).toBe(201);
 
       const listResA = await app.inject({
         method: 'GET',
@@ -1007,32 +1028,33 @@ describe('RBAC capability matrix + tenant isolation', () => {
 
     // ── Fraud / outbound policy ───────────────────────────────────────────────
 
-    it('tenant A fraud outbound policy list does not include tenant B policies', async () => {
+    it('tenant A fraud outbound policy does not expose tenant B policy', async () => {
       const sA = s();
       const sB = s();
       const tokenA = await register(`fraud-a-${sA}`, `admin-a-${sA}@example.com`);
       const tokenB = await register(`fraud-b-${sB}`, `admin-b-${sB}@example.com`);
 
-      // Create a policy for tenant B
+      // Set a distinctive policy for tenant B using PUT (not POST)
       await app.inject({
-        method: 'POST',
+        method: 'PUT',
         url: '/api/v1/fraud/outbound-policy',
         headers: { authorization: `Bearer ${tokenB}` },
-        payload: { max_calls_per_minute: 10 },
+        payload: { max_calls_per_minute: 77 },
       });
 
-      const listResA = await app.inject({
+      // Tenant A gets their own policy — should not see max_calls_per_minute=77
+      const resA = await app.inject({
         method: 'GET',
         url: '/api/v1/fraud/outbound-policy',
         headers: { authorization: `Bearer ${tokenA}` },
       });
-      // Either empty list or 404 — tenant A must not see tenant B's policy
-      if (listResA.statusCode === 200) {
-        const items = listResA.json<{ data: unknown[] }>().data;
-        expect(items).toHaveLength(0);
-      } else {
-        expect([404]).toContain(listResA.statusCode);
+      expect(resA.statusCode).toBe(200);
+      // Tenant A has no configured policy — data is null or lacks tenant B's value
+      const body = resA.json<{ data: { max_calls_per_minute?: number | null } | null }>();
+      if (body.data !== null) {
+        expect(body.data.max_calls_per_minute).not.toBe(77);
       }
+      // Either null (no policy) or an unrelated default — both prove isolation
     });
 
     // ── Export ────────────────────────────────────────────────────────────────
