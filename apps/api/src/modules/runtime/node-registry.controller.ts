@@ -17,11 +17,9 @@ const NODE_CAPABILITIES_ENUM = ['dialplan', 'directory', 'event_ingest', 'outbou
 export const nodeRegistryController: FastifyPluginAsyncZod = async (app) => {
   // Platform admin only — same protection as platform.controller.ts.
   // Global rate limiting applied via registerRateLimitHook in app.ts (onRequest hook).
-  // codeql[js/missing-rate-limiting]
-  app.addHook('preHandler', authenticatePlatform);
+  app.addHook('preHandler', authenticatePlatform); // codeql[js/missing-rate-limiting]
 
-  // codeql[js/missing-rate-limiting]
-  app.get('/nodes', async () => {
+  app.get('/nodes', async () => { // codeql[js/missing-rate-limiting]
     return { data: await service.list() };
   });
 
