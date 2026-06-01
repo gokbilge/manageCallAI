@@ -1,0 +1,19 @@
+<!--
+  Production-hardened event_socket.conf.xml for manageCallAI.
+
+  Changes from the default FreeSWITCH example:
+    - listen-ip restricted to 127.0.0.1 (not 0.0.0.0)
+    - password must be set to a strong value (not ClueCon)
+    - apply-inbound-acl restricted to loopback
+
+  Set FREESWITCH_ESL_HOST=127.0.0.1 and FREESWITCH_ESL_PASSWORD=<strong>
+  in your deployment environment.
+-->
+<configuration name="event_socket.conf" description="Socket Client">
+  <settings>
+    <param name="listen-ip" value="127.0.0.1" />
+    <param name="listen-port" value="8021" />
+    <param name="password" value="__FREESWITCH_ESL_PASSWORD__" />
+    <param name="apply-inbound-acl" value="loopback.auto" />
+  </settings>
+</configuration>

@@ -16,6 +16,7 @@ const requiredFiles = [
   'scripts/release-evidence-check.mjs',
   'scripts/restore-smoke.mjs',
   'scripts/restore-rehearsal.mjs',
+  'scripts/check-production-network-config.mjs',
   'scripts/redact-logs.mjs',
   '.github/workflows/freeswitch-smoke.yml',
   'docs/planning/slices/SLICE-52-production-runtime-e2e-gate.md',
@@ -35,6 +36,9 @@ const requiredFiles = [
   'docs/ops/rate-limit-topology.md',
   'docs/ops/carrier-interop.md',
   'docs/ops/restore-smoke.md',
+  'docs/ops/network-hardening.md',
+  'docs/ops/sip-tls-srtp-nat.md',
+  'docs/ops/firewall-rules.md',
 ];
 
 const failures = [];
