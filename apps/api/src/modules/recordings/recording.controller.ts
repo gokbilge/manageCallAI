@@ -170,8 +170,12 @@ export const recordingController: FastifyPluginAsyncZod = async (app) => {
       schema: {
         body: z.object({
           recording_retention_days: z.number().int().positive().nullable().optional(),
+          voicemail_retention_days: z.number().int().positive().nullable().optional(),
           transcript_retention_days: z.number().int().positive().nullable().optional(),
+          ai_summary_retention_days: z.number().int().positive().nullable().optional(),
           cdr_retention_days: z.number().int().positive().nullable().optional(),
+          call_event_retention_days: z.number().int().positive().nullable().optional(),
+          generated_media_retention_days: z.number().int().positive().nullable().optional(),
         }),
       },
     },
@@ -190,7 +194,7 @@ export const recordingController: FastifyPluginAsyncZod = async (app) => {
       preHandler: requireCapability(CAPABILITIES.TENANT_COMPLIANCE_ADMIN),
       schema: {
         body: z.object({
-          resource_type: z.enum(['recording', 'transcript', 'cdr', 'all']),
+          resource_type: z.enum(['recording', 'voicemail', 'transcript', 'summary', 'cdr', 'call_event', 'generated_media', 'all']),
           resource_id: z.string().max(255).nullable().optional(),
           case_reference: z.string().max(255).nullable().optional(),
           reason: z.string().min(1).max(2000),
@@ -211,7 +215,7 @@ export const recordingController: FastifyPluginAsyncZod = async (app) => {
       preHandler: requireCapability(CAPABILITIES.TENANT_COMPLIANCE_ADMIN),
       schema: {
         querystring: z.object({
-          resource_type: z.enum(['recording', 'transcript', 'cdr', 'all']).optional(),
+          resource_type: z.enum(['recording', 'voicemail', 'transcript', 'summary', 'cdr', 'call_event', 'generated_media', 'all']).optional(),
           status: z.enum(['active', 'released', 'expired']).optional(),
         }),
       },

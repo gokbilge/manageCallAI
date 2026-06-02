@@ -53,22 +53,37 @@ export function CompliancePage() {
 function RetentionPolicyCard() {
   const policyQuery = useRetentionPolicy();
   const update = useUpdateRetentionPolicy();
-  const form = useForm<{
-    recording_retention_days: string;
-    transcript_retention_days: string;
-    cdr_retention_days: string;
-  }>();
+  type RetentionField = keyof Pick<
+    TenantRetentionPolicy,
+    | 'recording_retention_days'
+    | 'voicemail_retention_days'
+    | 'transcript_retention_days'
+    | 'ai_summary_retention_days'
+    | 'cdr_retention_days'
+    | 'call_event_retention_days'
+    | 'generated_media_retention_days'
+  >;
+  type RetentionForm = Record<RetentionField, string>;
+  const retentionFields: Array<[RetentionField, string, string]> = [
+    ['recording_retention_days', 'Recording retention (days)', 'Recordings'],
+    ['voicemail_retention_days', 'Voicemail retention (days)', 'Voicemail'],
+    ['transcript_retention_days', 'Transcript retention (days)', 'Transcripts'],
+    ['ai_summary_retention_days', 'AI summary retention (days)', 'AI summaries'],
+    ['cdr_retention_days', 'CDR retention (days)', 'CDRs'],
+    ['call_event_retention_days', 'Call event retention (days)', 'Call events'],
+    ['generated_media_retention_days', 'Generated media retention (days)', 'Generated media'],
+  ];
+  const form = useForm<RetentionForm>();
 
-  function handleSubmit(data: { recording_retention_days: string; transcript_retention_days: string; cdr_retention_days: string }) {
+  function handleSubmit(data: RetentionForm) {
     const parse = (v: string) => (v.trim() === '' ? null : Number.parseInt(v, 10));
-    void update.mutateAsync({
-      recording_retention_days: parse(data.recording_retention_days),
-      transcript_retention_days: parse(data.transcript_retention_days),
-      cdr_retention_days: parse(data.cdr_retention_days),
-    });
+    const payload = Object.fromEntries(
+      retentionFields.map(([field]) => [field, parse(data[field] ?? '')]),
+    ) as Partial<Pick<TenantRetentionPolicy, RetentionField>>;
+    void update.mutateAsync(payload);
   }
 
-  function daysLabel(policy: TenantRetentionPolicy | null | undefined, field: keyof Pick<TenantRetentionPolicy, 'recording_retention_days' | 'transcript_retention_days' | 'cdr_retention_days'>) {
+  function daysLabel(policy: TenantRetentionPolicy | null | undefined, field: RetentionField) {
     const v = policy?.[field];
     return v == null ? 'Indefinite (keep forever)' : `${v} days`;
   }
@@ -86,9 +101,9 @@ function RetentionPolicyCard() {
         <>
           {policyQuery.data && (
             <div className="mb-4 space-y-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-3 text-xs text-[var(--color-muted-fg)]">
-              <p>Recordings: <span className="font-medium text-[var(--color-fg)]">{daysLabel(policyQuery.data, 'recording_retention_days')}</span></p>
-              <p>Transcripts: <span className="font-medium text-[var(--color-fg)]">{daysLabel(policyQuery.data, 'transcript_retention_days')}</span></p>
-              <p>CDRs: <span className="font-medium text-[var(--color-fg)]">{daysLabel(policyQuery.data, 'cdr_retention_days')}</span></p>
+              {retentionFields.map(([field, , label]) => (
+                <p key={field}>{label}: <span className="font-medium text-[var(--color-fg)]">{daysLabel(policyQuery.data, field)}</span></p>
+              ))}
             </div>
           )}
 
@@ -96,11 +111,7 @@ function RetentionPolicyCard() {
             onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(handleSubmit)(e); }}
             className="space-y-3"
           >
-            {([
-              ['recording_retention_days', 'Recording retention (days)'],
-              ['transcript_retention_days', 'Transcript retention (days)'],
-              ['cdr_retention_days', 'CDR retention (days)'],
-            ] as const).map(([field, label]) => (
+            {retentionFields.map(([field, label]) => (
               <div key={field}>
                 <label className="mb-1 block text-xs font-medium text-[var(--color-muted-fg)]">{label}</label>
                 <input
@@ -157,8 +168,12 @@ function LegalHoldsCard() {
             <label className="mb-1 block text-xs font-medium text-[var(--color-muted-fg)]">Resource type</label>
             <select className={inputClass} {...form.register('resource_type', { required: true })}>
               <option value="recording">Recording</option>
+              <option value="voicemail">Voicemail</option>
               <option value="transcript">Transcript</option>
+              <option value="summary">AI summary</option>
               <option value="cdr">CDR</option>
+              <option value="call_event">Call event</option>
+              <option value="generated_media">Generated media</option>
               <option value="all">All</option>
             </select>
           </div>
