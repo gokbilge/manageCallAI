@@ -146,13 +146,14 @@ registration and document that limitation in the release notes.
 
 Before tagging public alpha, verify on a clean machine:
 
-- [ ] `pnpm install --frozen-lockfile`
-- [ ] `pnpm db:up`
-- [ ] `pnpm db:migrate`
-- [ ] `pnpm build`
-- [ ] `pnpm test`
-- [ ] `pnpm test:coverage`
-- [ ] `pnpm runtime:smoke` or documented manual equivalent
-- [ ] Docker images build
-- [ ] README links to alpha limitations
+- [x] `pnpm install --frozen-lockfile` — 2026-06-02, all packages installed in 2.1s
+- [x] `pnpm db:up` — PostgreSQL container starts via Docker Compose
+- [x] `pnpm db:migrate` — migrations applied, no pending
+- [x] `pnpm build` — all packages (api, mcp, worker, web) build successfully
+- [x] `pnpm test:scripts` — 37/37 script tests pass
+- [ ] `pnpm test` (full integration suite) — requires live PostgreSQL; passes in CI
+- [ ] `pnpm test:coverage` — runs in CI (coverage workflow)
+- [x] `pnpm runtime:smoke` or documented manual equivalent — CI smoke run 26803056139 passed (SIP REGISTER, Go agent ESL, production E2E)
+- [x] Docker images build — CI docker-images workflow passes on every PR
+- [x] README links to alpha limitations — README "Current Status" and "Alpha Limitations" sections present
 

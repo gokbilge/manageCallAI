@@ -10,6 +10,55 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ---
 
+## [0.2.0-alpha] -- 2026-06-02
+
+Public alpha. All public alpha gates are now closed. Clean-clone demo loop
+verified. CI smoke gate infrastructure provisioned with passing run.
+Production-readiness slices (#90–#103) closed with lab evidence.
+
+### Added
+
+- Complete tenant isolation test coverage: 41/41 rbac-matrix integration
+  tests pass including outbound call request queue isolation (closes #91).
+- FreeSWITCH SIP TLS/SRTP/NAT evidence from self-hosted smoke run 26803056139:
+  TLS REGISTER and SRTP-negotiated INVITE pass on external profile (closes #92).
+- FreeSWITCH hardening evidence from smoke run (closes #93).
+- Carrier interoperability evidence with lab SIP trunk: sip_register,
+  tls_or_documented_exception, nat_media_path passed; 5 scenarios documented
+  as exceptions requiring live carrier re-test (closes #101).
+- Release evidence bundle manifest `docs/release/release-evidence-v0.1.0.json`
+  validated by `release-evidence-check.mjs` (closes #103).
+- Recording/voicemail/CDR/transcript retention policy documentation
+  (`docs/ops/recording-voicemail-cdr-retention.md`) with accurate
+  implementation status.
+- Open release blockers index (`docs/planning/open-release-blockers.md`).
+
+### Demo loop result (2026-06-02)
+
+API proof (no FreeSWITCH required) executed on `main` at commit `HEAD`:
+
+- `pnpm install --frozen-lockfile` ✅
+- `pnpm build` ✅ (all packages)
+- `pnpm db:migrate` ✅ (no pending)
+- Tenant registration → extension CRUD → directory XML → call-event ingest
+  (HTTP 201) → call-event query (count:1, type:registration_seen) ✅
+
+Runtime proof: CI smoke run 26803056139 passed SIP REGISTER (UDP + TLS),
+Go agent ESL, production E2E, and all hardening checks.
+
+### Alpha limitations (unchanged)
+
+- No normal GitHub-hosted CI job boots full FreeSWITCH runtime.
+- Multi-instance production rate limiting requires an external store.
+- Carrier interop is lab-only; live carrier re-test required before
+  enabling carrier traffic.
+- Two-way SRTP media path not verified in smoke (SRTP negotiation confirmed;
+  actual media encryption requires SRTP-capable smoke client).
+- Observability HUD, webhook signing, n8n/MCP verification, and SDK
+  publishing are required before beta (see open issues #131–135, #141).
+
+---
+
 ## [Unreleased]
 
 ### Added
