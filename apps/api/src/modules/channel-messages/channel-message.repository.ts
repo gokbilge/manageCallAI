@@ -10,6 +10,9 @@ import type {
 
 const MSG_COLS = `id, tenant_id, channel_account_id, direction, message_type, external_id, sender_id, recipient_id, body, media_reference, provider_metadata, received_at, created_at`;
 const REQ_COLS = `id, tenant_id, channel_account_id, recipient_id, message_type, body, media_reference, status, failure_reason, processor_id, claimed_at, completed_at, external_id, provider_metadata, created_at, updated_at`;
+const REQ_RETURNING_COLS = REQ_COLS.split(', ')
+  .map((column) => `r.${column}`)
+  .join(', ');
 
 export class ChannelMessageRepository {
   constructor(private readonly db: Pool) {}
@@ -102,7 +105,7 @@ export class ChannelMessageRepository {
            updated_at = NOW()
        FROM next_request
        WHERE r.id = next_request.id
-       RETURNING ${REQ_COLS}`,
+       RETURNING ${REQ_RETURNING_COLS}`,
       params,
     );
     return r.rows[0] ?? null;

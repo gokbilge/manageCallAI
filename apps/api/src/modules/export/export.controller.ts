@@ -1,4 +1,5 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -8,15 +9,13 @@ import { ExportService } from './export.service.js';
 
 const service = new ExportService(new ExportRepository(db));
 
-const EXPORT_QUERY_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    since: { type: 'string', format: 'date-time' },
-    until: { type: 'string', format: 'date-time' },
-    limit: { type: 'string' },
-  },
-} as const;
+const EXPORT_QUERY_SCHEMA = z
+  .object({
+    since: z.string().datetime().optional(),
+    until: z.string().datetime().optional(),
+    limit: z.string().optional(),
+  })
+  .strict();
 
 type ExportQuery = { since?: string; until?: string; limit?: string };
 
