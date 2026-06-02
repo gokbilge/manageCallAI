@@ -28,6 +28,7 @@ under the `cross-tenant isolation matrix` describe block.
 | Audit log | ✅ | — | — | — | rbac-matrix |
 | Schedules | ✅ | ✅ | ✅ | — | rbac-matrix |
 | Queues | ✅ | ✅ | ✅ | — | rbac-matrix |
+| Outbound call requests | ✅ | ✅ | — | — | rbac-matrix |
 
 Legend: ✅ tested | — not yet tested
 

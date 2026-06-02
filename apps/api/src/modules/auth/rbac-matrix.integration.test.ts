@@ -1234,6 +1234,50 @@ describe('RBAC capability matrix + tenant isolation', () => {
       expect([403, 404]).toContain(patchA.statusCode);
     });
 
+    // ── Outbound call requests ────────────────────────────────────────────────
+
+    it('tenant A outbound call list and read do not expose tenant B call requests', async () => {
+      const sA = s();
+      const sB = s();
+      const tokenA = await register(`ocr-a-${sA}`, `admin-a-${sA}@example.com`);
+      const tokenB = await register(`ocr-b-${sB}`, `admin-b-${sB}@example.com`);
+      const { tenant_id: tenantBId } = decodeJwt(tokenB);
+
+      // Create extension in tenant B (required FK for outbound_call_requests)
+      const extRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/extensions',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { extension_number: '700', display_name: 'B Ext OCR', sip_password: 'Pass123!' },
+      });
+      expect(extRes.statusCode, `ext create failed: ${extRes.body}`).toBe(201);
+      const extBId = extRes.json<{ data: { id: string } }>().data.id;
+
+      // Insert outbound call request for tenant B directly
+      const { rows } = await db.query<{ id: string }>(
+        `INSERT INTO outbound_call_requests (tenant_id, extension_id, dial_number)
+         VALUES ($1, $2, '15551234567')
+         RETURNING id`,
+        [tenantBId, extBId],
+      );
+      const callBId = rows[0]!.id;
+
+      const listA = await app.inject({
+        method: 'GET',
+        url: '/api/v1/runtime/outbound',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect(listA.statusCode).toBe(200);
+      expect(listA.json<{ data: unknown[] }>().data).toHaveLength(0);
+
+      const getA = await app.inject({
+        method: 'GET',
+        url: `/api/v1/runtime/outbound/${callBId}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      expect([403, 404]).toContain(getA.statusCode);
+    });
+
     // ── Export ────────────────────────────────────────────────────────────────
 
     it('tenant A cannot trigger export for tenant B', async () => {

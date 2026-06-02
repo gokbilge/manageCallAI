@@ -66,18 +66,14 @@ export const outboundCallController: FastifyPluginAsyncZod = async (app) => {
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_CALLS_VIEW),
       schema: {
-        querystring: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            status: { type: 'string', enum: ['pending', 'dispatched', 'answered', 'completed', 'failed', 'expired'] },
-          },
-        },
+        querystring: z.object({
+          status: z.enum(['pending', 'dispatched', 'answered', 'completed', 'failed', 'expired']).optional(),
+        }),
       },
     },
     async (req) => {
       const user = req.user as AuthClaims;
-      return { data: await service.listByTenant(user.tenant_id, (req.query as { status?: string }).status as OutboundCallStatus | undefined) };
+      return { data: await service.listByTenant(user.tenant_id, req.query.status as OutboundCallStatus | undefined) };
     },
   );
 

@@ -44,6 +44,7 @@ jobs:
     env:
       SMOKE_API_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
       PRODUCTION_E2E_ARTIFACT_DIR: artifacts/production-e2e
+      FS_CONTAINER: managecallai-freeswitch-1
 
     steps:
       - name: Pre-clean leftover containers
@@ -133,12 +134,22 @@ jobs:
       - name: Wait for FreeSWITCH ESL
         run: |
           echo "Waiting for FreeSWITCH ESL on 127.0.0.1:8021..."
+          ss -tlnp | grep 8021 || echo "  (port 8021 not yet bound at start of wait)"
           for i in $(seq 1 60); do
             nc -z 127.0.0.1 8021 2>/dev/null && { echo "ESL ready after ${i} attempts"; break; }
             echo "  attempt ${i}/60..."
             sleep 5
           done
-          nc -z 127.0.0.1 8021 2>/dev/null || { echo "ERROR: FreeSWITCH ESL did not open" && exit 1; }
+          if ! nc -z 127.0.0.1 8021 2>/dev/null; then
+            echo "ERROR: FreeSWITCH ESL did not open on port 8021"
+            echo "--- FreeSWITCH container status ---"
+            docker inspect "${FS_CONTAINER}" --format '{{.State.Status}} exitcode={{.State.ExitCode}}' 2>/dev/null || echo "container not found"
+            echo "--- FreeSWITCH container logs (last 80 lines) ---"
+            docker logs "${FS_CONTAINER}" --tail 80 2>&1 | node scripts/redact-logs.mjs || echo "no container logs"
+            echo "--- Port 8021 listeners ---"
+            ss -tlnp | grep 8021 || echo "nothing on 8021"
+            exit 1
+          fi
 
       # ── FreeSWITCH TLS port readiness ──────────────────────────────────────
 
@@ -152,7 +163,7 @@ jobs:
           done
           nc -z 127.0.0.1 5081 2>/dev/null || echo "WARNING: TLS port 5081 not confirmed open"
           ss -tlnp | grep 5081 || echo "WARNING: ss shows no listener on 5081"
-          docker exec "${FS_CONTAINER}" grep "internal_ssl_enable\|certs_dir" /usr/local/freeswitch/conf/vars.xml 2>&1 | head -5 || echo "vars.xml check skipped"
+          docker exec "${FS_CONTAINER}" grep "external_ssl_enable\|certs_dir" /usr/local/freeswitch/conf/vars.xml 2>&1 | head -5 || echo "vars.xml check skipped"
 
       # ── FreeSWITCH profile ──────────────────────────────────────────────────
 
