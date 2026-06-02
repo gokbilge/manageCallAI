@@ -10,6 +10,42 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ---
 
+## [Unreleased] — beta readiness
+
+### Added
+
+- Retention API: `GET/PATCH /api/v1/tenant/retention` and
+  `POST/DELETE/GET /api/v1/tenant/legal-hold(s)` — per-tenant retention policy
+  management and full legal hold lifecycle with bounds validation, audit trail,
+  and cross-tenant isolation (closes #136).
+- FreeSWITCH node health panel in the observability live cockpit: active/total
+  node count from the node registry with status copy for all health states
+  (closes #131).
+- Webhook signing, replay protection, and idempotency documentation
+  (`docs/design/webhooks.md`) with Node.js verification example (closes #132).
+- n8n setup guide (`docs/ops/n8n-setup.md`) covering all 10 example workflows,
+  credential configuration, and signature verification (closes #133).
+- MCP setup guide (`docs/ops/mcp-setup.md`): env vars, capability matrix, all
+  tool categories, security constraints (closes #134).
+- SDK usage guide (`docs/ops/sdk-usage.md`): installation, quick start,
+  versioning policy, publish workflow (closes #135).
+- Recommended production values for all `RATE_LIMIT_*` env vars documented in
+  `docs/ops/rate-limit-topology.md` (closes #139).
+- Upgrade and migration rehearsal evidence template
+  (`docs/ops/upgrade-rehearsal-evidence.md`) with step-by-step procedure and
+  JSON evidence record format (closes #140).
+- Release evidence stub `docs/release/release-evidence-v0.2.0.json` with RC
+  branch procedure and beta/production gate checklists (#137 partial).
+
+### Changed
+
+- API coverage thresholds raised (62/52/64/64 → 64/54/66/66); beta exception
+  documented with 70% beta-GA and 80% RC follow-up targets (closes #141).
+- `docs/ops/recording-voicemail-cdr-retention.md` updated to reflect completed
+  retention API endpoints and integration tests.
+
+---
+
 ## [0.2.0-alpha] -- 2026-06-02
 
 Public alpha. All public alpha gates are now closed. Clean-clone demo loop
