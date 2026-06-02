@@ -78,6 +78,11 @@ jobs:
       # The self-hosted runner must have ports 5060/udp, 5061/tcp, 5080/tcp,
       # 5080/udp, 8021/tcp, 3000/tcp, and 5432/tcp free before this step.
 
+      - name: Build API image
+        run: |
+          docker compose build api 2>&1 | node scripts/redact-logs.mjs
+        timeout-minutes: 10
+
       - name: Build FreeSWITCH image
         run: |
           docker compose --profile freeswitch build freeswitch 2>&1 | node scripts/redact-logs.mjs
