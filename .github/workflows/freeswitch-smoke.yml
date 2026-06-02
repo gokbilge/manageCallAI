@@ -265,6 +265,13 @@ jobs:
             # Strip shell quotes from values (sip-register.env uses 'value' quoting)
             sed "s/='\(.*\)'$/=\1/" "${PRODUCTION_E2E_ARTIFACT_DIR}/sip-register.env" >> "${GITHUB_ENV}"
           fi
+          # Determine the Docker host bridge IP so FreeSWITCH can send RTP back
+          # to the smoke script running on the host. 127.0.0.1 inside the container
+          # is the container's own loopback; we need the host-gateway address.
+          HOST_BRIDGE_IP=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null)
+          if [ -z "${HOST_BRIDGE_IP}" ]; then HOST_BRIDGE_IP="172.18.0.1"; fi
+          echo "SIP_LOCAL_IP=${HOST_BRIDGE_IP}" >> "${GITHUB_ENV}"
+          echo "Smoke SIP_LOCAL_IP set to ${HOST_BRIDGE_IP}"
 
       - name: Verify smoke echo dialplan endpoint
         run: |
@@ -290,7 +297,6 @@ jobs:
           SIP_HOST: 127.0.0.1
           SIP_TLS_PORT: "5081"
           SIP_UDP_PORT: "5080"
-          SIP_LOCAL_IP: 127.0.0.1
           FREESWITCH_EXT_SIP_IP: "127.0.0.1"
           FREESWITCH_EXT_RTP_IP: "127.0.0.1"
           APP_ENV: production
