@@ -1,0 +1,35 @@
+{
+  "_note": "Fill in all fields after a live staging or production-candidate rotation rehearsal. Never include raw JWT secrets or runtime tokens.",
+  "rotated_at": "<ISO-8601 datetime, e.g. 2026-06-02T10:00:00Z>",
+  "git_sha": "<git rev-parse HEAD>",
+  "operator": "<name or role>",
+  "environment": "<staging | production-candidate | production>",
+  "mode": "live",
+  "status": "passed",
+  "jwt_rotation": {
+    "new_secret_deployed": false,
+    "overlap_window_verified": false,
+    "new_jwt_accepted_after_cutover": false,
+    "old_jwt_rejected_after_cutover": false
+  },
+  "runtime_token_rotation": {
+    "secondary_token_configured": false,
+    "primary_token_accepted_during_window": false,
+    "secondary_token_accepted_during_window": false,
+    "secondary_promoted_to_primary": false,
+    "promoted_token_accepted": false,
+    "old_primary_rejected_after_revocation": false,
+    "query_body_fallback_disabled_in_production": false
+  },
+  "audit": {
+    "jwt_rotation_event_found": false,
+    "runtime_token_rotation_event_found": false,
+    "event_ids": []
+  },
+  "log_redaction": {
+    "check_passed": false,
+    "evidence_path": "<artifacts/log-redaction/log-redaction-evidence-...json>"
+  },
+  "runtime_token_rotation_check_exit_code": 0,
+  "notes": ""
+}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -20,18 +21,37 @@ import (
 func main() {
 	cfg := config.Load()
 	logger := logging.New(cfg.LogLevel)
+	os.Exit(runAgent(context.Background(), os.Args[1:], cfg, logger, newESLConnector, esl.SmokeCheck))
+}
 
-	// --smoke-check: single ESL auth round-trip, then exit.
-	if slices.Contains(os.Args[1:], "--smoke-check") {
-		if err := esl.SmokeCheck(cfg, logger); err != nil {
-			logger.Error("ESL smoke check failed", slog.String("error", err.Error()))
-			os.Exit(1)
-		}
-		logger.Info("ESL smoke check passed")
-		os.Exit(0)
+type eslConnector interface {
+	eslHealth
+	Connect(context.Context) error
+}
+
+func runAgent(
+	parent context.Context,
+	args []string,
+	cfg config.Config,
+	logger *slog.Logger,
+	newClient func(config.Config, *slog.Logger) eslConnector,
+	smokeCheck func(config.Config, *slog.Logger) error,
+) int {
+	if err := validateAgentConfig(cfg); err != nil {
+		logger.Error("invalid freeswitch-agent configuration", slog.String("error", err.Error()))
+		return 1
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	if slices.Contains(args, "--smoke-check") {
+		if err := smokeCheck(cfg, logger); err != nil {
+			logger.Error("ESL smoke check failed", slog.String("error", err.Error()))
+			return 1
+		}
+		logger.Info("ESL smoke check passed")
+		return 0
+	}
+
+	ctx, stop := signal.NotifyContext(parent, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	logger.Info("starting manageCallAI freeswitch-agent",
@@ -43,7 +63,7 @@ func main() {
 		slog.String("log_level", cfg.LogLevel),
 	)
 
-	client := esl.NewClient(cfg, logger)
+	client := newClient(cfg, logger)
 	healthServer := startHealthServer(ctx, cfg, client, logger)
 	defer func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -53,15 +73,36 @@ func main() {
 
 	if err := client.Connect(ctx); err != nil {
 		logger.Error("failed to initialize esl client", slog.String("error", err.Error()))
-		os.Exit(1)
+		return 1
 	}
 
 	<-ctx.Done()
 	logger.Info("shutting down manageCallAI freeswitch-agent")
+	return 0
+}
+
+func newESLConnector(cfg config.Config, logger *slog.Logger) eslConnector {
+	return esl.NewClient(cfg, logger)
 }
 
 type eslHealth interface {
 	Health() esl.HealthStatus
+}
+
+func validateAgentConfig(cfg config.Config) error {
+	if cfg.ESLPort <= 0 || cfg.ESLPort > 65535 {
+		return fmt.Errorf("FREESWITCH_ESL_PORT must be between 1 and 65535, got %d", cfg.ESLPort)
+	}
+	if cfg.HealthPort <= 0 || cfg.HealthPort > 65535 {
+		return fmt.Errorf("HEALTH_PORT must be between 1 and 65535, got %d", cfg.HealthPort)
+	}
+	if cfg.ESLHost == "" {
+		return errors.New("FREESWITCH_ESL_HOST is required")
+	}
+	if cfg.APIBaseURL == "" {
+		return errors.New("API_BASE_URL is required")
+	}
+	return nil
 }
 
 func startHealthServer(ctx context.Context, cfg config.Config, client eslHealth, logger *slog.Logger) *http.Server {

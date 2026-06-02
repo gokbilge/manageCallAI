@@ -71,7 +71,7 @@ The project is **ready for internal alpha** and is **close to public alpha**. It
 | Coverage / tests | 7 | API 68% stmts / 80% branches; Web 53%; MCP 84%; SDK 99%; Go agent 55–100% by package; thresholds set but below beta targets |
 | Docs | 7 | Architecture, API, ops, security, n8n docs exist; README has stale test/OpenAPI counts; `RUNTIME_API_TOKEN_SECONDARY` missing from `.env.example` |
 | Deployment | 7 | Production deployment guide solid; docker-compose present; Redis or edge rate-limit evidence still required; `restore:smoke` needs real env |
-| Release governance | 6 | Release checklist exists; no GitHub release tags; no CHANGELOG; no milestones or project board |
+| Release governance | 7 | Release checklist, changelog, and release-notes policy exist; no GitHub release tags; no milestones or project board |
 
 ---
 
@@ -161,7 +161,7 @@ The project is **ready for internal alpha** and is **close to public alpha**. It
 
 ### NICE TO HAVE
 
-17. No GitHub releases, tags, or CHANGELOG.
+17. No GitHub releases or version tags.
 18. No milestones or project board on GitHub.
 19. CONTRIBUTING.md is 33 lines — minimal. A more detailed contributor guide (dev setup, test approach, PR expectations) would help.
 20. SDK client wraps only 6 of 99 API endpoints. Not a blocker for alpha but limits SDK usefulness.
@@ -207,7 +207,7 @@ The project is **ready for internal alpha** and is **close to public alpha**. It
 - [ ] Fix README stale test/operation counts (P0)
 - [ ] Add `RUNTIME_API_TOKEN_SECONDARY` to `.env.example` (P0)
 - [ ] Verify demo loop from a clean clone end-to-end
-- [ ] Tag `v0.1.0-alpha` on GitHub
+- [ ] Tag `v0.1.0-alpha.1` on GitHub after public-alpha gates pass on `main`
 - [ ] Confirm 0 CodeQL alerts on tagged commit ✅ (currently 0)
 - [ ] Confirm secret scan passes on tagged commit ✅
 - [ ] Confirm dependency audit passes at high level ✅
@@ -230,7 +230,7 @@ All public alpha items, plus:
 - [ ] Tenant isolation matrix: add cross-tenant tests for recordings, security alerts, fraud policy
 - [ ] SDK: add `main`, `types`, `exports` to `package.json`; extend client to cover ≥ 30 endpoints
 - [x] Multi-instance rate limiting: Redis adapter and edge guidance exist
-- [ ] CHANGELOG and release notes policy
+- [x] CHANGELOG and release notes policy
 
 ---
 
@@ -397,7 +397,7 @@ Excellent. SDK client is small (6 endpoints) but fully tested.
 | Retention policy / legal hold (SLICE-47) — no operator-facing UI docs | P1 | `docs/` |
 | FreeSWITCH node registry (SLICE-43) — no operator setup guide | P1 | `docs/ops/` |
 | SDK publish instructions and endpoint coverage list | P1 | `packages/sdk/README.md` |
-| CHANGELOG / release notes | P2 | root |
+| GitHub release tag and release page | P2 | root |
 
 ---
 
@@ -406,7 +406,6 @@ Excellent. SDK client is small (6 endpoints) but fully tested.
 | Gap | Priority |
 |---|---|
 | No GitHub release tags or version tags | P1 |
-| No CHANGELOG | P2 |
 | No milestones or project board | P3 |
 | CONTRIBUTING.md is minimal (33 lines) — no dev setup instructions | P2 |
 | SECURITY.md is 45 lines — solid for alpha; needs vulnerability response SLA for beta | P2 |
@@ -421,7 +420,7 @@ Excellent. SDK client is small (6 endpoints) but fully tested.
 ### Immediate (before public alpha tag)
 1. Fix README stale counts
 2. Add `RUNTIME_API_TOKEN_SECONDARY` to `.env.example`
-3. Tag `v0.1.0-alpha`
+3. Tag `v0.1.0-alpha.1` after public-alpha gates pass on `main`
 
 ### Short-term (public alpha stabilization)
 4. Security alert management UI
@@ -435,7 +434,7 @@ Excellent. SDK client is small (6 endpoints) but fully tested.
 10. Multi-instance rate limiting production evidence (Redis or edge config)
 11. SDK publish readiness (`main`, `types`, `exports`, extended client)
 12. Tenant isolation matrix: recordings, security alerts, fraud policy
-13. CHANGELOG and release governance
+13. GitHub milestones and project-board governance
 
 ### Long-term (production)
 14. Restore rehearsal and soak test evidence
@@ -460,7 +459,7 @@ See issues created as part of this audit below. Issue numbers assigned after cre
 | TBD | P2 | [release][P2] docker-compose ALLOW_RUNTIME_TOKEN_FALLBACK defaults to true |
 | TBD | P2 | [release][P2] SDK not npm-publishable — missing main/types/exports |
 | TBD | P2 | [security][P2] In-memory rate limiter unsafe for multi-instance production |
-| TBD | P2 | [release][P2] No GitHub release tags, CHANGELOG, or release notes policy |
+| TBD | P2 | [release][P2] No GitHub release tag or release page |
 
 ---
 
@@ -517,7 +516,7 @@ All required gates pass. Demo loop is runnable. Architecture is sound. CI is gre
 
 ### Public alpha: **DO NOT RELEASE YET** ⚠️
 
-Fix the two P0 issues first. Then tag `v0.1.0-alpha`. The project is very close.
+Fix the two P0 issues first. Then tag `v0.1.0-alpha.1`. The project is very close.
 
 ### Public beta: **DO NOT RELEASE** ❌
 

@@ -42,6 +42,7 @@ and release smoke evidence are complete.
 - `pnpm check:network-config`
 - `pnpm check:freeswitch-hardening`
 - `pnpm check:runtime-token-rotation`
+- `pnpm check:runtime-token-rotation -- --evidence=artifacts/rotation/rotation-rehearsal-<timestamp>.json`
 - `pnpm production:rate-limit-check`
 - `./scripts/local-runtime-release-gate.sh` on a runtime-capable machine, OR
   passing `FreeSWITCH runtime smoke` workflow on self-hosted runner
@@ -54,6 +55,39 @@ and release smoke evidence are complete.
 - `pnpm carrier:interop-check -- --evidence=<sanitized-carrier-evidence.json>`
 - `pnpm check:sip-tls-srtp-nat-evidence -- --evidence=<sanitized-sip-tls-srtp-nat-evidence.json>`
 - `pnpm release:evidence-check -- --manifest=<sanitized-release-evidence.json>`
+
+## Version Tags And GitHub Releases
+
+Create tags only from the protected `main` branch after the required gates for
+the release classification pass.
+
+| Channel | Tag pattern | GitHub release setting |
+|---|---|---|
+| Internal alpha | `v0.1.0-internal-alpha.N` | Draft or prerelease |
+| Public alpha | `v0.1.0-alpha.N` | Prerelease |
+| Public beta | `v0.2.0-beta.N` | Prerelease |
+| Release candidate | `v0.2.0-rc.N` | Prerelease |
+| Production | `v1.0.0` and later | Full release |
+
+Tagging procedure:
+
+1. Move completed `CHANGELOG.md` entries from `Unreleased` to the target
+   version heading.
+2. Run the required gates above on the exact commit to be tagged.
+3. Create an annotated tag:
+
+   ```sh
+   git tag -a v0.1.0-alpha.1 -m "v0.1.0-alpha.1"
+   git push origin v0.1.0-alpha.1
+   ```
+
+4. Create the GitHub release as a prerelease for alpha, beta, or RC channels.
+5. Attach or link sanitized evidence artifacts required by the channel.
+6. Confirm Docker and SDK publish workflows either completed or are explicitly
+   documented as not exercised for the release.
+
+Do not move public tags. If validation fails after a tag is published, cut the
+next numbered prerelease tag.
 
 ## Coverage Gates
 
@@ -171,5 +205,6 @@ Before release, verify:
 - outbound call policy changes include fraud-safety tests
 - `/api/v1/fraud/outbound-policy` changes are capability-gated and audited where they affect live call behavior
 - `/api/v1/platform/nodes` token creation and rotation flows return raw secrets once and never log them
+- secret and runtime token rotation rehearsal evidence validates old-token rejection, audit events, and log-redaction linkage
 - webhook signing and replay behavior remain covered
 - logs and error responses do not expose runtime tokens, SIP secrets, webhook secrets, recordings, or stack traces in production mode
