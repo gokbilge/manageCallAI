@@ -5,11 +5,11 @@
   "stage": "beta",
   "notes": "Beta evidence bundle for the v0.2.0 line. RC-branch CI and smoke runs are in progress (triggered by push to rc/v0.2.0). Production-only gates are documented with current status; full production evidence is required before RC or production promotion. Tracking issue: #150.",
 
-  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26821054583",
-  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26821054642",
-  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26821054627",
-  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26821055248",
-  "freeswitch_smoke_run_url": "PENDING — rc/v0.2.0 smoke run triggered on push to rc/** branch; update this field with the passing run URL from the self-hosted runner (issue #137)",
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825072900",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825073180",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825072967",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825072790",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825030902",
 
   "rc_branch_procedure": {
     "step_1": "git checkout main && git pull",
@@ -24,7 +24,7 @@
 
   "production_preflight": "pnpm production:preflight passes check-config. Fails in dev (10 items, all missing production env vars — expected). Target-environment validation required before production RC — tracked in open-release-blockers.md.",
 
-  "production_e2e": "Smoke run 26803056139 included full production E2E: tenant registration, extension create, directory/dialplan lookup, IVR lifecycle (validate/simulate/publish), inbound route publish — all passed. RC-branch E2E artifact will be produced by the rc/v0.2.0 smoke run in progress. Production RC evidence must reference the rc-branch smoke artifact.",
+  "production_e2e": "Smoke run 26825030902 passed all production E2E steps: tenant registration, extension create, directory/dialplan lookup, IVR lifecycle (validate/simulate/publish), inbound route publish, SIP REGISTER (UDP+TLS), Go agent ESL, FreeSWITCH hardening check, SIP TLS/SRTP/NAT smoke, observability query. Artifact: freeswitch-smoke-26825030902 (retained 90 days). https://github.com/gokbilge/manageCallAI/actions/runs/26825030902",
 
   "production_soak": "Lab soak evidence: 1800s run, 0% error rate, p95 8.78ms, p99 12.05ms (PR #116, issue #100). Production RC evidence requires soak from the target release topology — tracked in open-release-blockers.md.",
 
@@ -39,7 +39,7 @@
     "5 scenarios documented as exceptions requiring live carrier re-test before production carrier traffic (see docs/ops/carrier-interop.md)."
   ],
 
-  "security_review": "CodeQL: https://github.com/gokbilge/manageCallAI/actions/runs/26821054642 (clean, no open high/medium alerts). FreeSWITCH hardening check passes (0 findings). Log redaction: 20/20 test cases pass. Full telecom threat model and production security review required before production RC — tracked in open-release-blockers.md.",
+  "security_review": "CodeQL: https://github.com/gokbilge/manageCallAI/actions/runs/26825073180 (clean, no open high/medium alerts). FreeSWITCH hardening check: 0 findings (smoke run 26825030902). Log redaction: 20/20 test cases pass. Full telecom threat model and production security review required before production RC — tracked in open-release-blockers.md.",
 
   "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
 
