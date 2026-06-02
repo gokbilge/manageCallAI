@@ -64,11 +64,15 @@ Issues and linked back to the audit record.
 
 ### 5.1 Admin UI
 
-- React + TypeScript operator console
-- Consumes backend APIs
+- React 18 + TypeScript 5 operator console built with Vite
+- Two workspace surfaces sharing one React app: **Platform** (indigo, `platform_admin`) and **Tenant** (cyan, role-based)
+- Consumes backend APIs via a typed `apiRequest` client (`src/lib/api/client.ts`)
 - Presents domain-level telecom objects and lifecycle operations
-- Provides a live operations cockpit for active sessions, queue pressure, runtime
-  health, and recent failures
+- Provides a live operations cockpit for active sessions, queue pressure, runtime health, and recent failures
+- Design system: Tailwind v4 `@theme` tokens, Inter + JetBrains Mono, Lucide React icons (exclusive), no gradients or illustrations
+- Brand assets in `apps/web/public/` (SVG marks for light/dark, PNG favicon)
+- See `docs/design/ux-design.md` for design tokens, color system, and component patterns
+- See `docs/ui/UI_ARCHITECTURE.md` for layout, routing, and feature surface details
 
 ### 5.2 API Layer
 

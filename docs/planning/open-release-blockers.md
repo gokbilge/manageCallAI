@@ -5,85 +5,98 @@ Last updated: 2026-06-02.
 Authoritative issue state lives in GitHub. This file records release gates and
 evidence requirements so closed issues are not mistaken for production evidence.
 
+Scripts, templates, docs, check-config mode, and issue closure are **not** evidence.
+Evidence must be a real artifact (workflow run URL, uploaded JSON, CI run) tied
+to the release-candidate commit.
+
 ## Current Release Stage
 
-# Release Stage Decision
+```
+Decision:         Public beta candidate
+Tag:              v0.2.0-beta.1 (cut 2026-06-02 from main at b51cdd5)
+Evidence status:  Beta evidence manifest passes pnpm release:evidence-check
+                  Smoke run 26825030902 passed all gates on self-hosted runner
+Next step:        n8n / MCP / SDK end-to-end evidence before beta-ready promotion
+                  Full production evidence bundle before RC promotion
+```
 
-Decision: Public beta candidate
+## What closed since the last update (2026-06-02)
 
-Reason: Public alpha evidence exists and current `main` includes beta-readiness
-implementation work, but beta promotion still needs evidence tied to the intended
-candidate. Production promotion requires a complete release-candidate evidence
-bundle and operator signoff.
+| Issue | Gate | Resolution |
+|---|---|---|
+| [#130](https://github.com/gokbilge/manageCallAI/issues/130) | Clean-clone alpha verification | Evidenced for v0.2.0-alpha |
+| [#131](https://github.com/gokbilge/manageCallAI/issues/131) | Observability HUD | Implemented — candidate run evidence still required for beta-ready |
+| [#132](https://github.com/gokbilge/manageCallAI/issues/132) | Webhook signing/replay/idempotency | Implemented and CI-tested |
+| [#133](https://github.com/gokbilge/manageCallAI/issues/133) | n8n workflows | Documented — end-to-end run proof still required |
+| [#134](https://github.com/gokbilge/manageCallAI/issues/134) | MCP setup and capability matrix | Documented and drift-tested — run proof still required |
+| [#135](https://github.com/gokbilge/manageCallAI/issues/135) | SDK publish/dry-run | Workflow exists — latest run failed; re-run required |
+| [#136](https://github.com/gokbilge/manageCallAI/issues/136) | Retention and legal hold API | API and worker implemented — storage cleanup gap remains |
+| [#137](https://github.com/gokbilge/manageCallAI/issues/137) | Self-hosted FreeSWITCH smoke | Smoke run 26825030902 passed all gates |
+| [#138](https://github.com/gokbilge/manageCallAI/issues/138) | Carrier interop | Lab evidence (FusionPBX/NetGSM) in manifest — live carrier scenarios pending |
+| [#139](https://github.com/gokbilge/manageCallAI/issues/139) | Rate-limit production values | Documented; multi-instance topology not yet validated |
+| [#140](https://github.com/gokbilge/manageCallAI/issues/140) | Upgrade/migration rehearsal | Template documented — rehearsal not yet executed |
+| [#141](https://github.com/gokbilge/manageCallAI/issues/141) | Coverage thresholds | API 67.46% / Web 80% / MCP 85% — thresholds raised |
+| [#150](https://github.com/gokbilge/manageCallAI/issues/150) | Candidate evidence bundle | v0.2.0-beta.1 manifest passes validator |
 
-Highest-risk blocker: release-candidate runtime and production evidence are not
-assembled into a current passing manifest.
+## Public Alpha — Closed
 
-Next required step: cut or identify the beta/RC candidate commit, run the
-candidate-bound evidence gates, and update `docs/release/release-evidence-v0.2.0.json`.
+All alpha gates are closed for `v0.2.0-alpha`.
 
-Tracking issue: [#150](https://github.com/gokbilge/manageCallAI/issues/150)
+## Public Beta — Open Blockers
 
-## Public Alpha
+The `v0.2.0-beta.1` tag exists and the evidence manifest passes `pnpm release:evidence-check`.
+These gates remain open before the project can be described as **beta-ready**:
 
-| Gate | Issue | Status | Owner | Required evidence | Next action |
+| Gate | Issue | P | Status | Required evidence | Next action |
 |---|---|---|---|---|---|
-| Clean-clone public alpha verification and release notes evidence | [#130](https://github.com/gokbilge/manageCallAI/issues/130) | evidenced for `v0.2.0-alpha` | maintainer | clean-clone demo proof, CI run, release notes | no blocker |
+| n8n example workflows end-to-end | [#157](https://github.com/gokbilge/manageCallAI/issues/157) | P0 | Documented — 10 templates in `docs/ops/n8n-setup.md`; no run proof | Workflow import/run proof against a running API | Import workflows, run against beta API, capture log |
+| MCP setup and capability matrix proof | [#158](https://github.com/gokbilge/manageCallAI/issues/158) | P0 | Documented and drift-tested — no end-to-end run proof | MCP tool-list/call proof from a running stack | Connect Claude MCP client, run tool call proof |
+| SDK publish/dry-run | [#159](https://github.com/gokbilge/manageCallAI/issues/159) | P0 | Workflow exists; latest run failed | Successful `npm pack` or publish evidence | Fix workflow failure; rerun |
+| Operator UI evidence | — | P0 | IVR builder, approvals, rollback, HUD implemented — no run-stack screenshot/test | Screenshot or test evidence from a running stack | Run stack, capture screenshots for release notes |
+| Observability HUD from running stack | — | P0 | Implemented — smoke passed but no isolated UI proof | Evidence from running stack (screenshot or test) | Covered by operator UI evidence above |
 
-## Public Beta
+## Production Release — Open Blockers
 
-| Gate | Issue | Status | Owner | Required evidence | Next action |
+None of the following gates are evidenced for a production release candidate.
+All require real artifacts from the target deployment environment.
+
+| Gate | Issue | P | Status | Required evidence | Next action |
 |---|---|---|---|---|---|
-| Self-hosted FreeSWITCH runtime smoke | [#137](https://github.com/gokbilge/manageCallAI/issues/137) | scripted/evidenced on feature branch; candidate evidence required | maintainer | passing `FreeSWITCH runtime smoke` run for beta/RC commit | run smoke on candidate branch or tag |
-| Observability HUD beta surface | [#131](https://github.com/gokbilge/manageCallAI/issues/131) | done; candidate UI evidence required | frontend | screenshot/video or test evidence from running stack | attach evidence to beta notes |
-| Webhook signing, replay, idempotency | [#132](https://github.com/gokbilge/manageCallAI/issues/132) | done; candidate evidence required | backend | test run and docs verification | cite CI run and docs |
-| n8n example workflows | [#133](https://github.com/gokbilge/manageCallAI/issues/133) | documented; end-to-end evidence required | integrations | workflow import/run proof against candidate API | run examples and attach proof |
-| MCP setup and capability matrix | [#134](https://github.com/gokbilge/manageCallAI/issues/134) | documented/tested; setup evidence required | integrations | MCP tool list/call proof and capability matrix check | attach candidate proof |
-| SDK versioning and publishing readiness | [#135](https://github.com/gokbilge/manageCallAI/issues/135) | scripted; publish workflow latest run failed | maintainer | `npm pack`/publish dry-run or package publish success | rerun SDK dry-run/publish workflow |
-| Coverage threshold or beta exceptions | [#141](https://github.com/gokbilge/manageCallAI/issues/141) | documented; candidate evidence required | maintainers | coverage run for candidate and accepted exceptions | attach coverage report |
-| Candidate evidence bundle | [#150](https://github.com/gokbilge/manageCallAI/issues/150) | open | release manager | candidate-bound evidence manifest | assemble and validate manifest |
-
-## Production Release
-
-| Gate | Issue | Status | Owner | Required evidence | Next action |
-|---|---|---|---|---|---|
-| Production runtime E2E and RC smoke | [#137](https://github.com/gokbilge/manageCallAI/issues/137) | scripted; no current RC manifest entry | maintainer | RC-bound smoke run URL and uploaded runtime artifacts | run on `rc/**` or `release/**` |
-| Restore rehearsal | historical [#98](https://github.com/gokbilge/manageCallAI/issues/98) | evidenced historically; current RC evidence required | ops | restore rehearsal JSON for RC environment | rerun or attach current evidence |
-| Upgrade and migration rehearsal | [#140](https://github.com/gokbilge/manageCallAI/issues/140) | documented; current evidence required | ops | upgrade + rollback rehearsal record | execute rehearsal |
-| SIP TLS/SRTP/NAT evidence | historical [#92](https://github.com/gokbilge/manageCallAI/issues/92) | evidenced historically; current RC evidence required | runtime | validated SIP TLS/SRTP/NAT JSON | rerun for RC topology |
-| Runtime token and secret rotation | historical [#94](https://github.com/gokbilge/manageCallAI/issues/94) | scripted/evidenced historically; current evidence required | security | rotation rehearsal JSON and log redaction linkage | rerun for RC |
-| Log redaction evidence | historical hardening work | scripted; current evidence required | security | redaction evidence JSON from candidate logs | generate artifact |
-| Production soak/load | historical [#100](https://github.com/gokbilge/manageCallAI/issues/100) | lab evidence exists; current RC evidence required | ops | soak evidence from target topology | run soak |
-| Runtime SLO | historical [#100](https://github.com/gokbilge/manageCallAI/issues/100) | lab evidence exists; current RC evidence required | ops | runtime lookup latency evidence | run SLO check |
-| Carrier interop certification | [#138](https://github.com/gokbilge/manageCallAI/issues/138) | live FusionPBX/NetGSM evidence exists; RC manifest still placeholder | runtime | carrier evidence referenced from RC manifest | validate and link in manifest |
-| Backup retention policy | historical [#99](https://github.com/gokbilge/manageCallAI/issues/99) | documented; target-env evidence required | ops | target backup-retention policy validation | rerun validator |
-| Retention and legal hold | [#136](https://github.com/gokbilge/manageCallAI/issues/136) | implemented; storage/export evidence missing | backend/ops | API tests plus object-storage cleanup/export-before-delete decision | close storage/export gaps or accept risk |
-| Firewall/network hardening | historical [#93](https://github.com/gokbilge/manageCallAI/issues/93) | documented/scripted; target evidence required | ops | network config and FreeSWITCH hardening evidence | validate target deployment |
-| Outbound toll-fraud controls | fraud slice | implemented; carrier-level evidence required | backend/runtime | fraud allow/block proof with audit/security alert evidence | run live policy proof |
-| Release evidence bundle and operator signoff | [#103](https://github.com/gokbilge/manageCallAI/issues/103) | v0.1 manifest exists; v0.2 manifest is incomplete | release manager | passing `release:evidence-check` manifest with operator signoff | complete manifest |
-| Current candidate evidence tracking | [#150](https://github.com/gokbilge/manageCallAI/issues/150) | open | release manager | v0.2 manifest tied to candidate commit | run gates and update manifest |
+| Production runtime E2E on `rc/**` branch | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | P0 | Smoke run 26825030902 on `docs/beta-evidence-v0.2.0` branch — must be re-run on `rc/**` | `FreeSWITCH runtime smoke` check on `release/**` or `rc/**` | Create rc branch; smoke triggers automatically |
+| Restore rehearsal (RC environment) | [#160](https://github.com/gokbilge/manageCallAI/issues/160) | P1 | Template documented; historical evidence from PR #116 | `pnpm restore:rehearsal` JSON for RC environment | Execute rehearsal |
+| Upgrade and migration rehearsal | [#160](https://github.com/gokbilge/manageCallAI/issues/160) | P1 | Template at `docs/ops/upgrade-rehearsal-evidence.md`; not yet executed | Upgrade + rollback rehearsal record | Execute rehearsal |
+| SIP TLS/SRTP/NAT evidence (RC topology) | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | Historical artifact from smoke run 26803056139; RC-topology artifact required | Validated SIP TLS/SRTP/NAT JSON from RC environment | Rerun on RC topology |
+| Runtime token and secret rotation evidence | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | Check passes; no rehearsal artifact for RC | Rotation rehearsal JSON + log redaction linkage | `pnpm check:runtime-token-rotation -- --evidence=<file>` |
+| Log redaction artifact (candidate) | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | CI passes (20/20); no candidate-level artifact file | Sanitized log artifact from candidate deployment | Generate and attach artifact |
+| Production soak / load evidence (RC topology) | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | P1 | Lab evidence from PR #116 (1800s, 0% failure, p95 8.78ms); RC topology evidence required | `pnpm production:soak` output from target environment | Run soak on target env |
+| Runtime SLO evidence (RC topology) | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | P1 | Lab evidence: directory p95 12.8ms, dialplan p95 17.19ms; RC evidence required | `pnpm production:slo-check` against target env | Run SLO check |
+| Carrier interop certification — live carrier | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | P1 | Lab: sip_register, TLS, NAT passed; inbound/outbound/DTMF/hangup require live carrier | Re-test all 8 scenarios with real carrier trunk | Schedule live carrier test |
+| Backup retention policy (target env) | [#160](https://github.com/gokbilge/manageCallAI/issues/160) | P1 | Template documented; no target-env validation | `pnpm check:backup-retention-policy` against target | Run validator with target policy |
+| Retention storage / object cleanup | [#161](https://github.com/gokbilge/manageCallAI/issues/161) | P1 | DB + API + worker exist; object-storage file deletion and export-before-delete NOT implemented | Implementation + evidence | See issue #161 |
+| DSR / right-to-erasure behavior | [#161](https://github.com/gokbilge/manageCallAI/issues/161) | P1 | Not documented | Documentation + implementation decision | See issue #161 |
+| Firewall / network hardening (target env) | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | Docs + check pass in dev (4 warnings); target-env evidence required | `pnpm check:network-config` against production config | Validate target deployment |
+| Outbound toll-fraud controls (carrier level) | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | P1 | Policy API + integration tests implemented; no carrier-level block/allow proof | Fraud allow/block proof with audit + alert evidence | Run live policy proof |
+| Multi-instance rate limiting | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | Redis store implemented; 4 warnings in check — no topology proof | Production topology validation | `pnpm production:rate-limit-check` with production config |
+| Release evidence bundle + operator signoff | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | P0 | v0.2.0-beta.1 manifest passes validator with beta fields; production fields still TBD | Completed manifest for RC commit + operator signoff | Assemble once all P1s close |
 
 ## Issue Body Template
-
-Use this shape when a closed historical issue needs a fresh release-candidate
-tracking issue:
 
 ```markdown
 ## Why
 
-## Current state
+## Current State
 
 ## Scope
 
-## Acceptance criteria
+## Acceptance Criteria
 
-## Evidence required
+## Evidence Required
 
-## Suggested files
+## Suggested Files
 
-## Blocked by
+## Blocked By
 
-## Release impact
+## Release Impact
 ```
 
 Recommended labels: `release-blocker`, `beta`, `production`, `security`,
@@ -92,8 +105,7 @@ Recommended labels: `release-blocker`, `beta`, `production`, `security`,
 `fraud`, `retention`, `sdk`, `mcp`, `n8n`, `ops`.
 
 Priority guidance:
-
-- P0: blocks public beta or a release gate.
-- P1: required before production.
-- P2: hardening or improvement.
-- P3: docs or cleanup.
+- P0: blocks public beta or a release gate
+- P1: required before production
+- P2: hardening or improvement
+- P3: docs or cleanup
