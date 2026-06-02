@@ -74,6 +74,16 @@ if [ "${FREESWITCH_TLS_ENABLED}" = "true" ]; then
 
   # Remove the custom external-tls profile to avoid port conflicts
   rm -f "${FS_PROFILES_DIR}/external-tls.xml" 2>/dev/null || true
+
+  # Activate smoke echo extension (ext 747) in the public dialplan context.
+  # FreeSWITCH uses static dialplan files for the public context; placing the
+  # echo extension here ensures it is reachable without relying on mod_xml_curl.
+  FS_PUBLIC_DIR="/usr/local/freeswitch/conf/dialplan/public"
+  mkdir -p "${FS_PUBLIC_DIR}"
+  if [ -f "${FS_DIALPLAN_DIR}/smoke-echo.xml.example" ]; then
+    cp "${FS_DIALPLAN_DIR}/smoke-echo.xml.example" "${FS_PUBLIC_DIR}/smoke-echo.xml"
+    echo "Smoke echo extension (747) activated in public dialplan context"
+  fi
 fi
 
 exec /usr/local/freeswitch/bin/freeswitch -nonat -nf

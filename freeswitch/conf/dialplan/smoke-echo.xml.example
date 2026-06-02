@@ -4,12 +4,11 @@
     (via entrypoint.sh). Provides a deterministic echo target for the TLS/SRTP/NAT
     smoke test script (scripts/sip-tls-srtp-smoke.mjs).
 
-    Extension *47: answers immediately, runs the echo application, and hangs up
-    after 10 seconds. Only reachable from registered SIP accounts on the
-    external-tls profile.
+    Extension 747: answers immediately, runs the echo application, and hangs up
+    after 10 seconds. Reachable in the public context (external profile).
   -->
   <extension name="smoke-echo">
-    <condition field="destination_number" expression="^\*47$">
+    <condition field="destination_number" expression="^747$">
       <action application="answer"/>
       <action application="echo"/>
       <action application="sleep" data="10000"/>
