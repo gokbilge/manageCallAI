@@ -27,10 +27,16 @@ const rootDir = path.resolve(__dirname, '..');
 const args = process.argv.slice(2);
 const checkConfigOnly = args.includes('--check-config');
 const keepTempDb = args.includes('--keep-temp-db');
+const requireRcEvidence =
+  args.includes('--require-rc') || process.env.RESTORE_REQUIRE_RC_EVIDENCE === 'true';
 const outputDirArg = args.find((a) => a.startsWith('--output-dir='));
+const releaseVersionArg = args.find((a) => a.startsWith('--release-version='));
 const outputDir = outputDirArg
   ? outputDirArg.slice('--output-dir='.length)
   : path.join(rootDir, 'artifacts', 'restore');
+const releaseVersion = releaseVersionArg
+  ? releaseVersionArg.slice('--release-version='.length)
+  : process.env.RESTORE_RELEASE_VERSION || '';
 
 if (checkConfigOnly) {
   console.log('restore rehearsal configuration check passed');
@@ -71,9 +77,53 @@ function requireTool(name) {
   return (r.stdout || r.stderr || '').split('\n')[0].trim();
 }
 
-requireTool('pg_dump');
-requireTool('pg_restore');
-const psqlVersion = requireTool('psql');
+const pgToolsImage = process.env.RESTORE_PG_TOOLS_IMAGE || 'postgres:17';
+let pgToolMode = 'host';
+
+function resolvePgTool(name) {
+  const host = spawnSync(name, ['--version'], { encoding: 'utf8' });
+  if (!host.error && host.status === 0) {
+    return { mode: 'host', version: (host.stdout || host.stderr || '').split('\n')[0].trim() };
+  }
+
+  const docker = spawnSync(
+    'docker',
+    ['run', '--rm', '--network', 'host', pgToolsImage, name, '--version'],
+    { encoding: 'utf8' },
+  );
+  if (!docker.error && docker.status === 0) {
+    return { mode: 'docker', version: (docker.stdout || docker.stderr || '').split('\n')[0].trim() };
+  }
+
+  console.error(`Required tool not found: ${name}. Install PostgreSQL client tools or Docker with ${pgToolsImage}.`);
+  process.exit(1);
+}
+
+function runPgTool(name, toolArgs, options = {}) {
+  if (pgToolMode === 'docker') {
+    return spawnSync(
+      'docker',
+      ['run', '--rm', '--network', 'host', '-v', `${tmpdir()}:${tmpdir()}`, pgToolsImage, name, ...toolArgs],
+      { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024, ...options },
+    );
+  }
+
+  return spawnSync(name, toolArgs, {
+    encoding: 'utf8',
+    maxBuffer: 10 * 1024 * 1024,
+    ...options,
+  });
+}
+
+const pgDumpVersion = resolvePgTool('pg_dump');
+const pgRestoreVersion = resolvePgTool('pg_restore');
+const psqlToolVersion = resolvePgTool('psql');
+if (pgDumpVersion.mode !== pgRestoreVersion.mode || pgDumpVersion.mode !== psqlToolVersion.mode) {
+  console.error('PostgreSQL client tools must all run in the same mode (host or docker).');
+  process.exit(1);
+}
+pgToolMode = pgDumpVersion.mode;
+const psqlVersion = psqlToolVersion.version;
 
 // URL helpers
 function parseDbUrl(urlStr) {
@@ -111,7 +161,7 @@ process.on('exit', () => {
     try { unlinkSync(dumpFile); } catch {}
   }
   if (tempDbCreated && !keepTempDb) {
-    spawnSync('psql', [adminUrl, '-c', `DROP DATABASE IF EXISTS "${restoreDbName}";`], {
+    runPgTool('psql', [adminUrl, '-c', `DROP DATABASE IF EXISTS "${restoreDbName}";`], {
       encoding: 'utf8',
     });
   }
@@ -141,7 +191,7 @@ console.log(`target:  ${restoreDbName}`);
 // [1/7] pg_dump
 dumpFile = path.join(tmpdir(), `managecallai-rehearsal-${Date.now()}.pgdump`);
 console.log('\n[1/7] pg_dump...');
-const dumpResult = spawnSync(
+const dumpResult = runPgTool(
   'pg_dump',
   ['--format=custom', '--no-acl', '--no-owner', '--file', dumpFile, sourceUrl],
   { encoding: 'utf8' },
@@ -155,7 +205,7 @@ const backupFileName = path.basename(dumpFile);
 
 // [2/7] Create temp database
 console.log(`\n[2/7] CREATE DATABASE ${restoreDbName}...`);
-const createResult = spawnSync('psql', [adminUrl, '-c', `CREATE DATABASE "${restoreDbName}";`], {
+const createResult = runPgTool('psql', [adminUrl, '-c', `CREATE DATABASE "${restoreDbName}";`], {
   encoding: 'utf8',
 });
 if (createResult.status !== 0) {
@@ -168,7 +218,7 @@ console.log('ok');
 
 // [3/7] pg_restore
 console.log('\n[3/7] pg_restore...');
-const restoreResult = spawnSync(
+const restoreResult = runPgTool(
   'pg_restore',
   ['--dbname', restoreUrl, '--no-acl', '--no-owner', dumpFile],
   { encoding: 'utf8' },
@@ -257,9 +307,14 @@ try {
 
 let gitSha = '';
 try {
-  const r = spawnSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8', cwd: rootDir });
+  const r = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', cwd: rootDir });
   gitSha = (r.stdout || '').trim();
 } catch {}
+
+let workflowRunUrl = process.env.RESTORE_WORKFLOW_RUN_URL || '';
+if (!workflowRunUrl && process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID) {
+  workflowRunUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+}
 
 const requiredTables = [
   'tenants', 'users', 'extensions', 'sip_trunks', 'phone_numbers',
@@ -268,6 +323,10 @@ const requiredTables = [
 ];
 
 const evidence = {
+  release_version: releaseVersion || null,
+  commit_sha: gitSha || null,
+  workflow_run_url: workflowRunUrl || null,
+  target_host: process.env.RESTORE_TARGET_HOST || parsed.host,
   restored_at: restoredAt,
   database_url_masked: maskUrl(restoreUrl),
   source_backup_file: backupFileName,
@@ -289,7 +348,7 @@ const evidence = {
     process.env.USERNAME ||
     process.env.USER ||
     'local-rehearsal',
-  environment: process.env.APP_ENV || 'development',
+  environment: process.env.RESTORE_ENVIRONMENT || process.env.APP_ENV || 'development',
   notes: `rehearsal — restore to temporary database ${restoreDbName}`,
 };
 
@@ -305,6 +364,7 @@ const checkResult = run([
   'node',
   path.join(rootDir, 'scripts/restore-evidence-check.mjs'),
   `--evidence=${evidenceFile}`,
+  ...(requireRcEvidence ? ['--require-rc'] : []),
 ]);
 if (checkResult.stdout.trim()) console.log(checkResult.stdout.trim());
 if (checkResult.stderr?.trim()) console.error(checkResult.stderr.trim());

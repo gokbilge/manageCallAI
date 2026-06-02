@@ -38,6 +38,21 @@ const validEvidence = {
   db_constraints_passed: true,
 };
 
+const validRcEvidence = {
+  ...validEvidence,
+  release_version: 'v0.2.0-rc.1',
+  commit_sha: '0123456789abcdef0123456789abcdef01234567',
+  workflow_run_url: 'https://github.com/gokbilge/manageCallAI/actions/runs/123456789',
+  target_host: 'enlogy@10.0.0.32',
+  source_backup_file: 'managecallai-20260602.pgdump',
+  backup_taken_at: '2026-06-01T13:55:00Z',
+  node_version: 'v22.0.0',
+  pnpm_version: '10.0.0',
+  postgres_version: 'psql (PostgreSQL) 16.0',
+  api_image_tag: '0123456789abcdef0123456789abcdef01234567',
+  environment: 'rc',
+};
+
 test('--check-config exits 0', () => {
   const result = run(['--check-config']);
   strictEqual(result.status, 0);
@@ -49,6 +64,35 @@ test('valid evidence passes', () => {
   const result = run([`--evidence=${path}`]);
   strictEqual(result.status, 0, result.stderr);
   ok(result.stdout.includes('PASSED'));
+});
+
+test('valid RC evidence passes with --require-rc', () => {
+  const path = writeTmp('valid-rc.json', validRcEvidence);
+  const result = run([`--evidence=${path}`, '--require-rc']);
+  strictEqual(result.status, 0, result.stderr);
+  ok(result.stdout.includes('PASSED'));
+});
+
+test('--require-rc fails when release metadata is missing', () => {
+  const path = writeTmp('missing-rc-metadata.json', validEvidence);
+  const result = run([`--evidence=${path}`, '--require-rc']);
+  strictEqual(result.status, 1);
+  ok(result.stdout.includes('release_version'));
+  ok(result.stdout.includes('commit_sha'));
+});
+
+test('--require-rc rejects development environment evidence', () => {
+  const path = writeTmp('dev-rc.json', { ...validRcEvidence, environment: 'development' });
+  const result = run([`--evidence=${path}`, '--require-rc']);
+  strictEqual(result.status, 1);
+  ok(result.stdout.includes('environment'));
+});
+
+test('short commit SHA fails when present', () => {
+  const path = writeTmp('short-sha.json', { ...validEvidence, commit_sha: 'abc123' });
+  const result = run([`--evidence=${path}`]);
+  strictEqual(result.status, 1);
+  ok(result.stdout.includes('commit_sha'));
 });
 
 test('missing required fields fails', () => {

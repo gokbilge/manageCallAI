@@ -1,6 +1,11 @@
 {
   "_note": "Fill in all fields. Replace <placeholders>. Set boolean gates only after the corresponding check actually passed. Do not include real passwords, tokens, or secrets.",
 
+  "release_version": "<release candidate version, e.g. v0.2.0-rc.1>",
+  "commit_sha": "<full 40-character release candidate commit SHA>",
+  "workflow_run_url": "<GitHub Actions run URL, if the rehearsal ran in CI>",
+  "target_host": "<deployment host or environment identifier>",
+
   "restored_at": "<ISO-8601 datetime of restore completion, e.g. 2026-06-01T14:00:00Z>",
   "database_url_masked": "postgres://managecallai:***@<host>:5432/managecallai",
   "source_backup_file": "<filename of the .pgdump used, without path>",

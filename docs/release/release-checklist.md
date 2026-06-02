@@ -202,10 +202,21 @@ This takes a pg_dump, restores to a temporary database, runs migrations,
 a restore-evidence JSON to `artifacts/restore/`. Requires `pg_dump`, `pg_restore`,
 and `psql` in PATH.
 
+For production RC evidence, require candidate metadata:
+
+```sh
+RESTORE_RELEASE_VERSION=<rc-version> \
+RESTORE_TARGET_HOST=<target-host> \
+RESTORE_ENVIRONMENT=rc \
+RESTORE_OPERATOR="<operator>" \
+pnpm restore:rehearsal -- --require-rc
+```
+
 To validate an existing evidence artifact:
 
 ```sh
 pnpm restore:evidence-check -- --evidence=artifacts/restore/restore-evidence-<timestamp>.json
+pnpm restore:evidence-check -- --evidence=artifacts/restore/restore-evidence-<timestamp>.json --require-rc
 ```
 
 Use `docs/ops/templates/restore-evidence-template.json` to fill in evidence
