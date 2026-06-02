@@ -119,7 +119,7 @@ describe('VoicemailBoxService', () => {
     });
 
     it('validates greeting_prompt_id when provided', async () => {
-      vi.mocked(repo.findActivePrompt).mockResolvedValue({ id: PROMPT_ID });
+      vi.mocked(repo.findActivePrompt).mockResolvedValue({ id: PROMPT_ID, storage_uri: null });
       vi.mocked(repo.create).mockResolvedValue(makeBox({ greeting_prompt_id: PROMPT_ID }));
 
       await service.create({ tenant_id: TENANT_ID, name: 'S', mailbox_number: '1000', greeting_prompt_id: PROMPT_ID });

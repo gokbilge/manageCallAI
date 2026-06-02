@@ -11,10 +11,12 @@ function makeNumber(overrides: Partial<PhoneNumber> = {}): PhoneNumber {
   return {
     id: NUMBER_ID,
     tenant_id: TENANT_ID,
-    number: '+15551234567',
-    label: 'Main line',
+    e164_number: '+15551234567',
+    display_label: 'Main line',
     status: 'active',
-    inbound_route_id: null,
+    trunk_id: null,
+    assigned_target_type: null,
+    assigned_target_id: null,
     created_at: now,
     updated_at: now,
     ...overrides,
@@ -71,7 +73,7 @@ describe('PhoneNumberService', () => {
     it('delegates to repo and returns result', async () => {
       const number = makeNumber();
       vi.mocked(repo.create).mockResolvedValue(number);
-      const input = { tenant_id: TENANT_ID, number: '+15551234567', label: 'Main line' };
+      const input = { tenant_id: TENANT_ID, e164_number: '+15551234567' };
       expect(await service.create(input)).toBe(number);
       expect(repo.create).toHaveBeenCalledWith(input);
     });
@@ -79,14 +81,14 @@ describe('PhoneNumberService', () => {
 
   describe('update', () => {
     it('returns updated phone number', async () => {
-      const updated = makeNumber({ label: 'New label' });
+      const updated = makeNumber({ display_label: 'New label' });
       vi.mocked(repo.update).mockResolvedValue(updated);
-      expect(await service.update(NUMBER_ID, TENANT_ID, { label: 'New label' })).toBe(updated);
+      expect(await service.update(NUMBER_ID, TENANT_ID, { display_label: 'New label' })).toBe(updated);
     });
 
     it('throws PhoneNumberNotFoundError when repo returns null', async () => {
       vi.mocked(repo.update).mockResolvedValue(null);
-      await expect(service.update(NUMBER_ID, TENANT_ID, { label: 'X' })).rejects.toThrow(PhoneNumberNotFoundError);
+      await expect(service.update(NUMBER_ID, TENANT_ID, { display_label: 'X' })).rejects.toThrow(PhoneNumberNotFoundError);
     });
   });
 

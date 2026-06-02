@@ -19,11 +19,26 @@ function makeMockRepo(): PlatformRepository {
 }
 
 function makeTenantSummary(id = 'tenant-1'): TenantSummary {
-  return { id, name: 'Acme Corp', status: 'active', created_at: new Date() };
+  return {
+    id,
+    name: 'Acme Corp',
+    slug: 'acme-corp',
+    directory_domain: 'acme.example.com',
+    status: 'active',
+    created_at: new Date(),
+    updated_at: new Date(),
+  };
 }
 
 function makeRuntimeSummary(): PlatformRuntimeSummary {
-  return { active_sessions: 2, active_nodes: 1, pending_outbound_calls: 0 };
+  return {
+    active_sessions: 2,
+    completed_sessions_24h: 10,
+    failed_sessions_24h: 0,
+    call_events_24h: 50,
+    failed_runtime_ingestions_24h: 0,
+    pending_approvals: 1,
+  };
 }
 
 describe('PlatformService', () => {
@@ -81,7 +96,7 @@ describe('PlatformService', () => {
       const result = await service.runtimeHealth();
 
       expect(result.services.every((s) => s.status === 'unreachable')).toBe(true);
-      expect(result.services[0].detail).toBe('connection failed');
+      expect(result.services[0]!.detail).toBe('connection failed');
     });
 
     it('includes correct service names in result', async () => {
@@ -109,7 +124,7 @@ describe('PlatformService', () => {
 
       const result = await service.runtimeHealth();
 
-      expect(result.services[0].detail.length).toBeLessThanOrEqual(200);
+      expect(result.services[0]!.detail.length).toBeLessThanOrEqual(200);
     });
 
     it('handles mix of healthy and unreachable services', async () => {
