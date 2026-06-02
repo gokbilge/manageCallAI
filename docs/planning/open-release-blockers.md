@@ -10,20 +10,20 @@ for the authoritative and up-to-date list.
 
 ## Current Release Stage
 
-**Public Alpha Candidate** — approaching Public Alpha Ready.
+**Public Alpha Ready** — `v0.2.0-alpha` tagged 2026-06-02.
 
 - Internal alpha: ✅ Ready
-- Public alpha: 🟡 1 blocker remaining (clean-clone verification)
-- Public beta: ⛔ Not ready — 6+ blockers
-- Production: ⛔ Not ready — 5+ blockers
+- Public alpha: ✅ Ready (`v0.2.0-alpha`)
+- Public beta: ⛔ Not ready — 6 blockers (#131–135, #141)
+- Production: ⛔ Not ready — 5 blockers (#136–140)
 
 ---
 
-## Public Alpha — Milestone M6
+## Public Alpha — Milestone M6 ✅ All closed
 
 | # | Title | Priority | Status |
 |---|---|---|---|
-| [#130](https://github.com/gokbilge/manageCallAI/issues/130) | Clean-clone public alpha verification | P0 | Open |
+| [#130](https://github.com/gokbilge/manageCallAI/issues/130) | Clean-clone public alpha verification | P0 | ✅ Closed |
 
 ---
 

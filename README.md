@@ -60,11 +60,22 @@ manageCallAI replaces low-level telecom administration with safe business-level 
 
 ## Current Status
 
-**Alpha candidate. Not production-ready.**
+**Public alpha (`v0.2.0-alpha`). Not production-ready.**
 
 manageCallAI is suitable for local demos, internal evaluation, and contributor
-testing. Production deployment is not recommended until the beta/production
-gates in the release docs are complete.
+testing. The clean-clone demo loop passes. The CI smoke gate is provisioned
+and running. Do not deploy to production until all beta and production gates
+in the release docs are complete.
+
+| Stage | Status |
+|---|---|
+| Internal alpha | ✅ Ready |
+| Public alpha | ✅ Ready — `v0.2.0-alpha` |
+| Public beta | ⛔ Not ready — observability HUD, webhook/n8n/MCP/SDK, coverage (#131–135, #141) |
+| Production | ⛔ Not ready — retention API, live carrier re-test, RC smoke run, upgrade rehearsal, rate-limit evidence (#136–140) |
+
+See [docs/planning/open-release-blockers.md](docs/planning/open-release-blockers.md)
+for the current blocker list.
 
 Release readiness references:
 
