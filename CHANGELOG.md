@@ -21,9 +21,6 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
   Evidence: `docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json` (closes #138).
 - FreeSWITCH `from-domain` gateway parameter documented: required when FusionPBX
   domain differs from proxy IP (fixes SIP 403 Forbidden on registration).
-
-### Already added in previous Unreleased section
-
 - Retention API: `GET/PATCH /api/v1/tenant/retention` and
   `POST/DELETE/GET /api/v1/tenant/legal-hold(s)` — per-tenant retention policy
   management and full legal hold lifecycle with bounds validation, audit trail,
