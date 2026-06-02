@@ -10,12 +10,17 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ---
 
-## [Unreleased] — beta readiness
+## [Unreleased]
 
-### Changed
+---
 
-- Clarified current release posture as public beta candidate, not production
-  ready, and added a product release audit with strict evidence rules.
+## [0.2.0-beta.1] — 2026-06-02
+
+First public beta candidate. All beta-readiness implementation work has landed.
+FreeSWITCH runtime smoke run 26825030902 passed all gates on self-hosted runner
+(4m53s). Release evidence bundle passes `pnpm release:evidence-check`.
+Production readiness requires further evidence — see
+`docs/release/release-evidence-v0.2.0.json` for open production gates.
 
 ### Added
 
@@ -46,15 +51,49 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 - Upgrade and migration rehearsal evidence template
   (`docs/ops/upgrade-rehearsal-evidence.md`) with step-by-step procedure and
   JSON evidence record format (closes #140).
-- Release evidence stub `docs/release/release-evidence-v0.2.0.json` with RC
-  branch procedure and beta/production gate checklists (#137 partial).
+- Release evidence bundle `docs/release/release-evidence-v0.2.0.json` with all
+  beta gates evidenced and production-gate status documented (closes #150).
+- Product release audit `docs/release/product-release-audit.md` with full
+  validation results, per-area blocker tables, and remaining production gates.
+- Issue templates: beta_blocker, production_blocker, evidence_gate,
+  security_hardening forms.
 
 ### Changed
 
+- Clarified current release posture as public beta candidate, not production
+  ready; added a product release audit with strict evidence rules.
 - API coverage thresholds raised (62/52/64/64 → 64/54/66/66); beta exception
   documented with 70% beta-GA and 80% RC follow-up targets (closes #141).
 - `docs/ops/recording-voicemail-cdr-retention.md` updated to reflect completed
   retention API endpoints and integration tests.
+- CHANGELOG duplicate `[Unreleased]` section removed; footer links updated.
+
+### Known limitations
+
+- Production gates remain open: restore/upgrade rehearsal, SLO/soak (target
+  topology), multi-instance rate limiting, retention storage/export/DSR,
+  network hardening (target env), fraud controls (carrier-level), release
+  evidence bundle operator signoff for production.
+- SDK npm publish has not been exercised in a tagged release.
+- n8n and MCP end-to-end proof required for beta-ready promotion.
+- FreeSWITCH smoke runs on the self-hosted runner, not in standard hosted CI.
+
+### Smoke evidence (run 26825030902)
+
+All steps passed in 4m53s on `enlogy@10.0.0.32` (self-hosted runner):
+
+- API + PostgreSQL + FreeSWITCH + Go agent boot
+- DB migrations, contracts, constraints
+- FreeSWITCH ESL ready (port 8021)
+- FreeSWITCH TLS port ready (port 5081)
+- ESL profile check
+- Production runtime E2E (tenant, extension, directory, dialplan, IVR lifecycle)
+- SIP REGISTER smoke (UDP + TLS)
+- Go agent ESL connection smoke
+- Observability query smoke
+- FreeSWITCH hardening check (0 findings)
+- SIP TLS / SRTP / NAT smoke
+- Evidence artifact validated and uploaded (`freeswitch-smoke-26825030902`)
 
 ---
 
@@ -205,6 +244,7 @@ MCP, n8n, and CI quality gates all passing.
 - Security alerts, retention/legal hold admin UI pages absent from this release.
 - Visual IVR builder supports the alpha authoring workflow; beta still needs broader operator workflow validation.
 
-[Unreleased]: https://github.com/gokbilge/manageCallAI/compare/v0.2.0-alpha...HEAD
+[Unreleased]: https://github.com/gokbilge/manageCallAI/compare/v0.2.0-beta.1...HEAD
+[0.2.0-beta.1]: https://github.com/gokbilge/manageCallAI/compare/v0.2.0-alpha...v0.2.0-beta.1
 [0.2.0-alpha]: https://github.com/gokbilge/manageCallAI/compare/v0.1.0-alpha.1...v0.2.0-alpha
 [0.1.0-alpha.1]: https://github.com/gokbilge/manageCallAI/releases/tag/v0.1.0-alpha.1
