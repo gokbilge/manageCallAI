@@ -1,0 +1,40 @@
+{
+  "release_version": "v0.1.0",
+  "commit_sha": "3af8ddce934dc97353901bf290acae48fd4d2f70",
+  "generated_at": "2026-06-02T07:10:00Z",
+  "notes": "Pre-production release evidence bundle. All component gates passed. Carrier interop and two-way SRTP media are documented exceptions requiring re-test before live carrier traffic.",
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26804793341",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26804793283",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26804793311",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26804793287",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26803056139",
+
+  "production_preflight": "passed — production-runtime-e2e-2026-06-02 (smoke run 26803056139)",
+  "production_e2e": "passed — production-runtime-e2e-2026-06-02 (smoke run 26803056139): api health, tenant registration, extension create, freeswitch directory/dialplan lookup, IVR publish lifecycle, inbound route publish",
+  "production_soak": "passed — 1800s isolated soak via PR #116 (issue #100): failure rate 0, p95 readiness 8.78ms, p99 12.05ms",
+  "production_slo": "passed — runtime SLO gates met: directory lookup p95 12.8ms, dialplan lookup p95 17.19ms (PR #116 / issue #100)",
+  "restore_smoke": "passed — restore-evidence-2026-06-01T22-32-50-034Z.json via PR #116 (issue #98): migrations, DB contracts, constraints, restore smoke, production preflight all passed",
+  "rate_limit_topology": "passed — rate-limit-topology-check --check-config (issue #55 hardening; topology validated in integration tests and production-e2e)",
+  "carrier_interop": ["Lab SIP trunk (FreeSWITCH self-hosted smoke) / smoke-lab-v1 — docs/ops/carrier-interop-evidence-2026-06-02.json"],
+  "security_review": "completed — CodeQL (javascript-typescript, go) passes on main; CODEOWNERS review enforced on protected branch",
+  "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
+
+  "operator_signoff": {
+    "name": "fatih kucukpetek",
+    "role": "platform operator",
+    "approved_at": "2026-06-02T07:10:00Z"
+  },
+
+  "artifact_files": {
+    "carrier_interop_evidence": "docs/ops/carrier-interop-evidence-2026-06-02.json"
+  },
+
+  "component_evidence_refs": {
+    "freeswitch_hardening": "smoke run 26803056139 artifact: artifacts/hardening/freeswitch-hardening-2026-06-02T06-42-39Z.json (status: passed, mode: live)",
+    "sip_tls_srtp_nat": "smoke run 26803056139 artifact: artifacts/sip-tls/sip-tls-srtp-nat-evidence-2026-06-02T06-42-43Z.json (status: passed, tls: true, srtp negotiated)",
+    "tenant_isolation": "41/41 rbac-matrix integration tests pass including outbound call request isolation (PR #125, issue #91)",
+    "secret_rotation": "rotation rehearsal evidence validated via PR #124 (issue #94)",
+    "backup_retention": "docs/ops/backup-retention-policy.json validated (issue #99)"
+  }
+}
