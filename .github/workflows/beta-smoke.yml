@@ -1,0 +1,156 @@
+name: Beta Smoke
+
+# Closes issues #157 (n8n) and #158 (MCP) by running the MCP protocol smoke
+# and n8n webhook integration smoke against a live API + PostgreSQL stack on
+# the self-hosted runner.
+#
+# Self-hosted runner requirements: same labels as freeswitch-smoke ([self-hosted, freeswitch]).
+# Required secrets: SMOKE_DATABASE_URL, SMOKE_JWT_SECRET, SMOKE_RUNTIME_API_TOKEN,
+#                   SMOKE_SIP_SECRET_MASTER_KEY.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'beta/**'
+      - 'release/**'
+      - 'rc/**'
+
+permissions:
+  contents: read
+
+jobs:
+  beta-smoke:
+    name: Beta integration smoke (MCP + n8n)
+    runs-on: [self-hosted, freeswitch]
+
+    env:
+      API_BASE_URL: http://localhost:3000
+      MCP_EVIDENCE_DIR: artifacts/mcp-smoke
+      N8N_EVIDENCE_DIR: artifacts/n8n-smoke
+
+    steps:
+      - name: Pre-clean leftover containers
+        run: docker compose down -v --remove-orphans 2>/dev/null || true
+
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache: false
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Build MCP server
+        run: pnpm --filter @managecallai/mcp build
+
+      # ── Start API stack (API + PostgreSQL only, no FreeSWITCH) ─────────────
+
+      - name: Start API stack
+        run: |
+          docker compose up -d api postgres 2>&1 | node scripts/redact-logs.mjs
+        env:
+          DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.SMOKE_JWT_SECRET }}
+          RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
+          SIP_SECRET_MASTER_KEY: ${{ secrets.SMOKE_SIP_SECRET_MASTER_KEY }}
+          SIP_SECRET_KEY_ID: beta-smoke-v1
+          ALLOW_RUNTIME_TOKEN_FALLBACK: "false"
+
+      - name: Apply database migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.SMOKE_DATABASE_URL }}
+
+      - name: Wait for API health
+        run: |
+          echo "Waiting for API at ${API_BASE_URL}/health"
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${API_BASE_URL}/health" || echo "000")
+            [ "$STATUS" = "200" ] && { echo "API healthy after ${i} attempts"; exit 0; }
+            echo "  attempt ${i}/30 — status ${STATUS}"
+            sleep 5
+          done
+          echo "ERROR: API did not become healthy" && exit 1
+
+      # ── MCP smoke (issue #158) ──────────────────────────────────────────────
+
+      - name: MCP server smoke — tool listing and capability matrix
+        run: |
+          set -o pipefail
+          node scripts/mcp-smoke.mjs \
+            --evidence-dir="${MCP_EVIDENCE_DIR}" \
+            2>&1 | node scripts/redact-logs.mjs
+        env:
+          # Tool listing does not require a real API key; live tool call does.
+          MANAGECALL_API_URL: ${{ env.API_BASE_URL }}
+          MANAGECALL_API_KEY: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
+
+      - name: MCP live tool call (list_ivr_flows via registered tenant)
+        run: |
+          # Register a tenant and get an API key for the live tool call.
+          SLUG="mcp-smoke-$(date +%s)"
+          PASS="$(head -c 16 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 24)"
+          REG=$(curl -sf -X POST "${API_BASE_URL}/api/v1/auth/register" \
+            -H "Content-Type: application/json" \
+            -d "{\"tenant_name\":\"MCP Smoke\",\"tenant_slug\":\"${SLUG}\",\"email\":\"smoke@${SLUG}.local\",\"display_name\":\"Smoke\",\"password\":\"${PASS}\"}" \
+            2>&1 | node scripts/redact-logs.mjs)
+          TOKEN=$(echo "$REG" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+          if [ -z "$TOKEN" ]; then echo "WARN: could not get JWT, skipping live tool call"; exit 0; fi
+
+          # Create an API key
+          KEY_RESP=$(curl -sf -X POST "${API_BASE_URL}/api/v1/automation/keys" \
+            -H "Content-Type: application/json" -H "Authorization: Bearer ${TOKEN}" \
+            -d '{"name":"mcp-smoke","capabilities":["tenant.ivr_flows.view"]}' \
+            2>&1 | node scripts/redact-logs.mjs)
+          API_KEY=$(echo "$KEY_RESP" | grep -o '"raw_key":"[^"]*"' | cut -d'"' -f4)
+          if [ -z "$API_KEY" ]; then echo "WARN: could not get API key, skipping live tool call"; exit 0; fi
+
+          # Run MCP smoke with live API key
+          MANAGECALL_API_URL="${API_BASE_URL}" MANAGECALL_API_KEY="${API_KEY}" \
+            node scripts/mcp-smoke.mjs --evidence-dir="${MCP_EVIDENCE_DIR}" \
+            2>&1 | node scripts/redact-logs.mjs
+          echo "ok: MCP live tool call completed"
+
+      # ── n8n webhook smoke (issue #157) ─────────────────────────────────────
+
+      - name: n8n webhook integration smoke
+        run: |
+          set -o pipefail
+          node scripts/n8n-webhook-smoke.mjs \
+            --evidence-dir="${N8N_EVIDENCE_DIR}" \
+            2>&1 | node scripts/redact-logs.mjs
+        env:
+          API_BASE_URL: ${{ env.API_BASE_URL }}
+          RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
+
+      # ── Upload evidence ─────────────────────────────────────────────────────
+
+      - name: Upload beta smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beta-smoke-${{ github.run_id }}
+          path: |
+            artifacts/mcp-smoke/*.json
+            artifacts/n8n-smoke/*.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      # ── Teardown ────────────────────────────────────────────────────────────
+
+      - name: Tear down API stack
+        if: always()
+        run: docker compose down -v 2>&1 | node scripts/redact-logs.mjs

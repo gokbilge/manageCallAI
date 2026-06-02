@@ -1,6 +1,13 @@
 name: SDK Publish
 
-# Publishes @managecallai/sdk to GitHub Packages (npm registry) on version tags.
+# Builds, type-checks, and packs @managecallai/sdk on every version tag (dry-run
+# by default). Actual publish to GitHub Packages requires an explicit
+# workflow_dispatch with dry_run=false.
+#
+# Tag pushes intentionally run dry-run only: the @managecallai npm scope requires
+# a managecallai GitHub org, not the gokbilge user. When the org is configured,
+# change the condition on the Publish step to also include push events.
+#
 # The SDK types are generated from docs/api/openapi.yaml which must be committed
 # and up-to-date before tagging (enforced by the pre-release checklist in RELEASING.md).
 
@@ -55,7 +62,9 @@ jobs:
         run: npm pack --dry-run
 
       - name: Publish to GitHub Packages
-        if: ${{ github.event_name == 'push' || inputs.dry_run == false }}
+        # Only publishes when explicitly triggered via workflow_dispatch with dry_run=false.
+        # Tag pushes intentionally run build+pack only (dry-run) as evidence of publishability.
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == false }}
         run: pnpm --filter @managecallai/sdk publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
