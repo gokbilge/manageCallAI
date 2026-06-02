@@ -381,3 +381,108 @@ Do not build initially:
 - Full device provisioning UI
 - Advanced report builder
 - White-label theming
+
+---
+
+## 13. Implementation Status (as of v0.2.0-beta.1)
+
+Last updated: 2026-06-02.
+
+This section records what is actually built in `apps/web/` against the
+architecture above. It is the ground-truth complement to the design intent above.
+
+### Technology stack (implemented)
+
+| Capability | Planned | Implemented |
+|---|---|---|
+| Framework | React + TypeScript | React 18 + TypeScript 5 |
+| Build | Vite | Vite (with `@vitejs/plugin-react`) |
+| Routing | TanStack Router or React Router | React Router DOM v7 |
+| Server state | TanStack Query | TanStack Query v5 |
+| Forms | React Hook Form | React Hook Form v7 |
+| Schema validation | Zod | Zod v3 (via `@managecallai/contracts`) |
+| Flow builder | React Flow | ReactFlow v11 |
+| CSS | Tailwind CSS | Tailwind v4 (`@theme` tokens, no config file) |
+| Icons | Lucide React | Lucide React (exclusive, no emoji) |
+| Fonts | Inter + JetBrains Mono | Google Fonts CDN — Inter 400/500/600/700, JetBrains Mono 400/500/600 |
+| Component primitives | shadcn/ui-style | Custom design-system components in `components/ui/` and `components/data/` |
+
+### Design tokens (implemented)
+
+Tokens live in `apps/web/src/styles/tokens.css` as Tailwind `@theme` variables.
+They mirror the plain-CSS spec in `docs/design/ux-design.md`.
+
+Key token groups:
+
+- **Colors:** `--color-bg`, `--color-fg`, `--color-surface`, `--color-surface-muted`, `--color-border`, `--color-primary` (`#0f62fe`), `--color-platform` (`#4f46e5`), `--color-tenant` (`#0891b2`), semantic status colors
+- **Fonts:** `--font-sans` (Inter), `--font-mono` (JetBrains Mono)
+- **Radius:** `--radius-sm/md/lg/xl/2xl` (6 / 8 / 12 / 16 / 20 px)
+- **Shadow:** `--shadow-card` (barely-there 2-layer slate), `--shadow-popover`
+
+### Layout (implemented)
+
+The 3-column app shell is live:
+
+```text
+<TopBar />                                 64px sticky, blur-bg, brand mark + workspace badge
+<AlphaBanner />                            warning stripe, dismissible
+<div grid: 17rem | 1fr | 20rem>
+  <AppSidebar workspace={workspace} />     permission-filtered nav, workspace-coloured active state
+  <main><Outlet /></main>                  route content
+  <InspectorPanel workspace={workspace} /> context inspector, operator notes
+</div>
+```
+
+Route workspace detection from URL prefix (`/platform/*` → platform, `/tenant/*` → tenant).
+
+### Components (implemented)
+
+**Primitives (`components/ui/`):**
+- `Button` — 5 variants: primary, secondary, outline, ghost, destructive
+- `StatusBadge` — pill with Lucide icon; states: active, inactive, draft, published, validated, warning
+- `WorkspaceBadge` — workspace-coloured pill; platform (indigo) / tenant (cyan)
+- `AlphaBanner` — dismissible warning stripe (localStorage-persisted)
+
+**Data (`components/data/`):**
+- `DataCard` — white card, `--radius-2xl` corners, `--shadow-card`, title + optional description
+- `StatCard` — `DataCard` + large value + tinted icon tile (platform/tenant/info/success tone)
+
+**Layout (`components/layout/`):**
+- `TopBar` — brand mark, workspace switcher button, Bell, SignOut
+- `AppSidebar` — permission-filtered `NavLink` list, workspace-coloured active state, runtime posture tile
+- `PageHeader` — eyebrow (uppercase, muted, `0.16em` tracking) + H1 + description + optional actions
+- `InspectorPanel` — operator context notes card with ShieldAlert / Bot / Clock3 icons
+
+### Feature pages (implemented)
+
+| Route | Component | Status |
+|---|---|---|
+| `/auth` | `AuthPage` | Implemented — login/register tabs, `react-hook-form`, API-connected |
+| `/tenant/extensions` | `ExtensionsPage` | Implemented — live API, create form, SIP credential note |
+| `/tenant/cockpit` | `ObservabilityCockpitPage` | Implemented — SSE snapshot, stat tiles, sessions table, node health panel, webhook backlog |
+| `/tenant/ivr-flows/:id` | `IvrFlowDetailPage` + `IvrFlowBuilderNode` | Implemented — visual builder with toned nodes by type |
+| `/tenant/approvals` | `ApprovalsPage` | Implemented — approve/reject, policy list |
+| `/tenant/compliance` | `CompliancePage` | Implemented — retention policy + legal hold management |
+| `/tenant/security-alerts` | `SecurityAlertsPage` | Implemented |
+| `/platform` | `PlatformHomePage` | Implemented |
+| `/platform/tenants` | `PlatformTenantsPage` | Implemented |
+| `/platform/runtime` | `RuntimeHealthPage` | Implemented |
+
+All lazy-loaded pages use `React.lazy` + `Suspense`.
+
+### Brand assets (implemented)
+
+`apps/web/public/`:
+- `manageCallAILightBackground.svg` — black mark, transparent bg (light surfaces)
+- `manageCallAIDarkBackground.svg` — cyan `#00d1d1` mark, transparent bg (dark surfaces)
+- `manageCallAI.png` / `.jpg` — square avatar; `.png` used as favicon
+
+In-app logo lockup: `Shield` Lucide icon in a 40×40px dark rounded tile (top bar) paired with the "manageCallAI" wordmark.
+
+### Remaining UI work before beta-ready
+
+- n8n example workflows — 10 templates documented in `docs/ops/n8n-setup.md`; end-to-end import/run proof not yet evidenced
+- MCP capability matrix — setup guide at `docs/ops/mcp-setup.md`; end-to-end tool-call proof not yet evidenced
+- SDK publish — dry-run or publish evidence for the beta candidate (latest workflow run failed)
+- Broader operator workflow evidence — screenshots/tests for IVR approval flow, rollback, and observability HUD from a running stack
+- Accessibility audit — no formal a11y review yet; focus rings implemented, aria-hidden used, but no full audit

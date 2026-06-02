@@ -12,6 +12,28 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ## [Unreleased]
 
+### Added
+
+- `docs/design/ux-design.md` — design system reference: color tokens, typography,
+  spacing, component patterns, brand assets, icon vocabulary, and UX principles
+- Brand marks in `apps/web/public/` (light/dark SVGs, PNG/JPG square avatars);
+  PNG set as browser favicon in `index.html`
+- Google Fonts preconnect + stylesheet link in `index.html` for Inter 400–700 and
+  JetBrains Mono 400–600 (tokens declared the fonts but did not load them)
+- GitHub issues #157–#164 for open beta and production blockers
+
+### Changed
+
+- `docs/ui/UI_ARCHITECTURE.md` — added Section 13 "Implementation Status" recording
+  the actual Tailwind v4 stack, design tokens, layout implementation, component
+  inventory, feature page coverage, brand assets, and remaining beta-ready work
+- `docs/architecture/overview.md` — Section 5.1 updated to reflect the React 18 +
+  Tailwind v4 design system implementation, two-workspace model, and brand assets
+- `docs/planning/open-release-blockers.md` — updated to reflect v0.2.0-beta.1 tag,
+  closed issues, new GitHub issue links (#157–#164), and production evidence status
+- API coverage thresholds raised: statements 64→67, branches 54→56, lines 66→67
+  (measured from CI run 26834489441: 67.46% / 56.09% / 67.46%)
+
 ---
 
 ## [0.2.0-beta.1] — 2026-06-02
