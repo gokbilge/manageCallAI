@@ -1,14 +1,20 @@
-import { screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders as render } from '@/test/render';
 import { CompliancePage } from './compliance-page';
 
+const mutations = vi.hoisted(() => ({
+  updateRetentionPolicy: vi.fn(),
+  createLegalHold: vi.fn(),
+  releaseLegalHold: vi.fn(),
+}));
+
 vi.mock('@/lib/compliance/compliance-api', () => ({
   useRetentionPolicy: vi.fn(),
-  useUpdateRetentionPolicy: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useUpdateRetentionPolicy: vi.fn(() => ({ mutateAsync: mutations.updateRetentionPolicy, isPending: false })),
   useLegalHolds: vi.fn(),
-  useCreateLegalHold: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
-  useReleaseLegalHold: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useCreateLegalHold: vi.fn(() => ({ mutateAsync: mutations.createLegalHold, isPending: false })),
+  useReleaseLegalHold: vi.fn(() => ({ mutateAsync: mutations.releaseLegalHold, isPending: false })),
 }));
 
 vi.mock('@tanstack/react-query', async (imp) => {
@@ -45,6 +51,13 @@ const baseHold = {
 };
 
 describe('CompliancePage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mutations.updateRetentionPolicy.mockResolvedValue(basePolicy);
+    mutations.createLegalHold.mockResolvedValue(baseHold);
+    mutations.releaseLegalHold.mockResolvedValue({ ...baseHold, status: 'released' });
+  });
+
   it('shows loading state while policy is fetching', () => {
     vi.mocked(useRetentionPolicy).mockReturnValue({ isLoading: true, isError: false, data: undefined } as never);
     vi.mocked(useLegalHolds).mockReturnValue({ isLoading: true, isError: false, data: undefined } as never);
@@ -91,5 +104,44 @@ describe('CompliancePage', () => {
     vi.mocked(useLegalHolds).mockReturnValue({ isLoading: false, isError: false, data: [] } as never);
     render(<CompliancePage />);
     expect(screen.getByText(/could not load retention policy/i)).toBeInTheDocument();
+  });
+
+  it('submits retention policy updates with numeric and indefinite values', async () => {
+    vi.mocked(useRetentionPolicy).mockReturnValue({ isLoading: false, isError: false, data: basePolicy } as never);
+    vi.mocked(useLegalHolds).mockReturnValue({ isLoading: false, isError: false, data: [] } as never);
+    render(<CompliancePage />);
+
+    const inputs = screen.getAllByPlaceholderText('Leave empty for indefinite');
+    fireEvent.change(inputs[0]!, { target: { value: '30' } });
+    fireEvent.change(inputs[1]!, { target: { value: '' } });
+    fireEvent.change(inputs[2]!, { target: { value: '365' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Policy' }));
+
+    await waitFor(() => expect(mutations.updateRetentionPolicy).toHaveBeenCalledWith({
+      recording_retention_days: 30,
+      transcript_retention_days: null,
+      cdr_retention_days: 365,
+    }));
+  });
+
+  it('creates and releases legal holds through the page actions', async () => {
+    vi.mocked(useRetentionPolicy).mockReturnValue({ isLoading: false, isError: false, data: basePolicy } as never);
+    vi.mocked(useLegalHolds).mockReturnValue({ isLoading: false, isError: false, data: [baseHold] } as never);
+    render(<CompliancePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: '+ New Hold' }));
+    fireEvent.change(screen.getByPlaceholderText('CASE-001 (optional)'), { target: { value: 'CASE-999' } });
+    fireEvent.change(screen.getByPlaceholderText(/regulatory hold/i), { target: { value: 'Preserve call records' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Hold' }));
+
+    await waitFor(() => expect(mutations.createLegalHold).toHaveBeenCalledWith(expect.objectContaining({
+      resource_type: 'recording',
+      case_reference: 'CASE-999',
+      reason: 'Preserve call records',
+    })));
+
+    fireEvent.click(screen.getByLabelText(/release hold/i));
+
+    await waitFor(() => expect(mutations.releaseLegalHold).toHaveBeenCalledWith('hold-1'));
   });
 });

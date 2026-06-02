@@ -47,6 +47,12 @@ describe('get_ivr_flow', () => {
     expect(result.isError).toBeFalsy();
     expect(mockApiCall).toHaveBeenCalledWith('GET', '/api/v1/ivr-flows/abc');
   });
+
+  it('returns error when the API denies lookup', async () => {
+    mockApiCall.mockResolvedValueOnce(fail(404, { message: 'not found' }));
+    const result = await handleTool('get_ivr_flow', { flow_id: 'missing' });
+    expect(result).toEqual({ text: 'API error 404: {"message":"not found"}', isError: true });
+  });
 });
 
 describe('create_ivr_flow', () => {
@@ -66,6 +72,13 @@ describe('create_ivr_flow', () => {
       definition: def,
     });
   });
+
+  it('returns error when create is rejected', async () => {
+    mockApiCall.mockResolvedValueOnce(fail(400, { message: 'invalid graph' }));
+    const result = await handleTool('create_ivr_flow', { name: 'Broken' });
+    expect(result.isError).toBe(true);
+    expect(result.text).toContain('invalid graph');
+  });
 });
 
 describe('update_flow_definition', () => {
@@ -78,6 +91,13 @@ describe('update_flow_definition', () => {
       '/api/v1/ivr-flows/f1/versions/v1',
       { definition: def },
     );
+  });
+
+  it('returns error when draft update fails', async () => {
+    mockApiCall.mockResolvedValueOnce(fail(409, { message: 'version locked' }));
+    const result = await handleTool('update_flow_definition', { flow_id: 'f1', version_id: 'v1', definition: {} });
+    expect(result.isError).toBe(true);
+    expect(result.text).toContain('409');
   });
 });
 
@@ -110,12 +130,24 @@ describe('simulate_flow', () => {
       flow_id: 'f1',
       caller_number: '+14155550001',
       digits: ['1'],
+      collected_digits: '12',
       now: '2026-01-01T09:00:00Z',
+      force_timeout: true,
+      force_timeout_nodes: ['collect'],
+      force_invalid: true,
+      force_invalid_nodes: ['menu'],
+      variables: { tier: 'gold' },
     });
     expect(mockApiCall).toHaveBeenCalledWith('POST', '/api/v1/ivr-flows/f1/simulate', {
       caller_number: '+14155550001',
       digits: ['1'],
+      collected_digits: '12',
       now: '2026-01-01T09:00:00Z',
+      force_timeout: true,
+      force_timeout_nodes: ['collect'],
+      force_invalid: true,
+      force_invalid_nodes: ['menu'],
+      variables: { tier: 'gold' },
     });
   });
 
@@ -129,6 +161,13 @@ describe('simulate_flow', () => {
     mockApiCall.mockResolvedValueOnce(fail(422, { data: { error: 'dead end' } }));
     const result = await handleTool('simulate_flow', { flow_id: 'f1' });
     expect(result.isError).toBe(true);
+  });
+
+  it('returns hard error on non-validation API failures', async () => {
+    mockApiCall.mockResolvedValueOnce(fail(500, { message: 'runtime unavailable' }));
+    const result = await handleTool('simulate_flow', { flow_id: 'f1' });
+    expect(result.isError).toBe(true);
+    expect(result.text).toContain('API error 500');
   });
 });
 
@@ -156,5 +195,58 @@ describe('unknown tool', () => {
     const result = await handleTool('does_not_exist', {});
     expect(result.isError).toBe(true);
     expect(result.text).toContain('does_not_exist');
+  });
+});
+
+describe('run_simulation_suite', () => {
+  it('runs multiple labeled scenarios and returns a passed suite', async () => {
+    mockApiCall
+      .mockResolvedValueOnce(ok({ outcome: { status: 'passed', path: ['start', 'sales'], final_action: { type: 'transfer' }, errors: [] } }))
+      .mockResolvedValueOnce(ok({ outcome: { status: 'passed', path: ['start', 'support'], final_action: null, errors: [] } }));
+
+    const result = await handleTool('run_simulation_suite', {
+      flow_id: 'f1',
+      scenarios: [
+        { label: 'sales path', caller_number: '+14155550001', digits: ['1'], now: '2026-01-01T09:00:00Z' },
+        { digits: ['2'] },
+      ],
+    });
+
+    expect(result.isError).toBe(false);
+    expect(result.text).toContain('"suite_status": "passed"');
+    expect(result.text).toContain('"label": "sales path"');
+    expect(result.text).toContain('"label": "scenario_2"');
+    expect(mockApiCall).toHaveBeenNthCalledWith(1, 'POST', '/api/v1/ivr-flows/f1/simulate', {
+      caller_number: '+14155550001',
+      digits: ['1'],
+      now: '2026-01-01T09:00:00Z',
+    });
+    expect(mockApiCall).toHaveBeenNthCalledWith(2, 'POST', '/api/v1/ivr-flows/f1/simulate', {
+      digits: ['2'],
+    });
+  });
+
+  it('marks the suite failed for validation failures and hard API errors', async () => {
+    mockApiCall
+      .mockResolvedValueOnce(fail(422, { outcome: { status: 'failed', path: ['start'], final_action: null, errors: ['bad input'] } }))
+      .mockResolvedValueOnce(fail(503, { message: 'unavailable' }));
+
+    const result = await handleTool('run_simulation_suite', {
+      flow_id: 'f1',
+      scenarios: [{ label: 'invalid' }, { label: 'api down' }],
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.text).toContain('"suite_status": "failed"');
+    expect(result.text).toContain('"status": "failed"');
+    expect(result.text).toContain('"status": "error"');
+    expect(result.text).toContain('unavailable');
+  });
+
+  it('handles missing scenario arrays as an empty passing suite', async () => {
+    const result = await handleTool('run_simulation_suite', { flow_id: 'f1', scenarios: 'not-array' });
+    expect(result.isError).toBe(false);
+    expect(result.text).toContain('"suite_status": "passed"');
+    expect(mockApiCall).not.toHaveBeenCalled();
   });
 });
