@@ -85,12 +85,13 @@ export function useLiveSnapshot() {
  */
 export function useObservabilityStream(apiBase: string): { streamStatus: StreamStatus } {
   const { session } = useAuth();
+  const accessToken = session?.token;
   const [streamStatus, setStreamStatus] = useState<StreamStatus>('offline');
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!session?.token) {
+    if (!accessToken) {
       setStreamStatus('offline');
       return;
     }
@@ -102,7 +103,7 @@ export function useObservabilityStream(apiBase: string): { streamStatus: StreamS
     async function connect() {
       try {
         const response = await fetch(`${apiBase}/observability/stream`, {
-          headers: { Authorization: `Bearer ${session!.token}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
           signal: controller.signal,
         });
 
@@ -146,7 +147,7 @@ export function useObservabilityStream(apiBase: string): { streamStatus: StreamS
       controller.abort();
       readerRef.current?.cancel().catch(() => {});
     };
-  }, [session?.token, apiBase]);
+  }, [accessToken, apiBase]);
 
   return { streamStatus };
 }

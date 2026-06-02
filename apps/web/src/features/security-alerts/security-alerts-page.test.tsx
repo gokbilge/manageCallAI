@@ -1,15 +1,22 @@
-import { screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders as render } from '@/test/render';
 import { SecurityAlertsPage } from './security-alerts-page';
+
+const mutations = vi.hoisted(() => ({
+  acknowledgeAlert: vi.fn(),
+  resolveAlert: vi.fn(),
+  dismissAlert: vi.fn(),
+  deleteAlertRule: vi.fn(),
+}));
 
 vi.mock('@/lib/security-alerts/security-alerts-api', () => ({
   useSecurityAlerts: vi.fn(),
   useAlertRules: vi.fn(),
-  useAcknowledgeAlert: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
-  useResolveAlert: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
-  useDismissAlert: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
-  useDeleteAlertRule: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useAcknowledgeAlert: vi.fn(() => ({ mutateAsync: mutations.acknowledgeAlert, isPending: false })),
+  useResolveAlert: vi.fn(() => ({ mutateAsync: mutations.resolveAlert, isPending: false })),
+  useDismissAlert: vi.fn(() => ({ mutateAsync: mutations.dismissAlert, isPending: false })),
+  useDeleteAlertRule: vi.fn(() => ({ mutateAsync: mutations.deleteAlertRule, isPending: false })),
 }));
 
 vi.mock('@tanstack/react-query', async (imp) => {
@@ -53,6 +60,14 @@ const baseRule = {
 };
 
 describe('SecurityAlertsPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mutations.acknowledgeAlert.mockResolvedValue({ ...baseAlert, status: 'acknowledged' });
+    mutations.resolveAlert.mockResolvedValue({ ...baseAlert, status: 'resolved' });
+    mutations.dismissAlert.mockResolvedValue({ ...baseAlert, status: 'dismissed' });
+    mutations.deleteAlertRule.mockResolvedValue(undefined);
+  });
+
   it('shows loading state while alerts are fetching', () => {
     vi.mocked(useSecurityAlerts).mockReturnValue({ isLoading: true, isError: false, data: undefined } as never);
     vi.mocked(useAlertRules).mockReturnValue({ isLoading: true, isError: false, data: undefined } as never);
@@ -106,5 +121,35 @@ describe('SecurityAlertsPage', () => {
     expect(screen.queryByLabelText('Acknowledge')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Resolve')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Dismiss')).not.toBeInTheDocument();
+  });
+
+  it('invokes alert action mutations from row controls', async () => {
+    vi.mocked(useSecurityAlerts).mockReturnValue({ isLoading: false, isError: false, data: [baseAlert] } as never);
+    vi.mocked(useAlertRules).mockReturnValue({ isLoading: false, isError: false, data: [] } as never);
+    render(<SecurityAlertsPage />);
+
+    fireEvent.click(screen.getByLabelText('Acknowledge'));
+    fireEvent.click(screen.getByLabelText('Resolve'));
+    fireEvent.click(screen.getByLabelText('Dismiss'));
+
+    await waitFor(() => {
+      expect(mutations.acknowledgeAlert).toHaveBeenCalledWith('alert-1');
+      expect(mutations.resolveAlert).toHaveBeenCalledWith('alert-1');
+      expect(mutations.dismissAlert).toHaveBeenCalledWith('alert-1');
+    });
+  });
+
+  it('invokes rule deletion and changes the alert status filter', async () => {
+    vi.mocked(useSecurityAlerts).mockReturnValue({ isLoading: false, isError: false, data: [] } as never);
+    vi.mocked(useAlertRules).mockReturnValue({ isLoading: false, isError: false, data: [baseRule] } as never);
+    render(<SecurityAlertsPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    fireEvent.click(screen.getByLabelText('Delete rule SIP Failure Alert'));
+
+    await waitFor(() => {
+      expect(useSecurityAlerts).toHaveBeenLastCalledWith(undefined);
+      expect(mutations.deleteAlertRule).toHaveBeenCalledWith('rule-1');
+    });
   });
 });

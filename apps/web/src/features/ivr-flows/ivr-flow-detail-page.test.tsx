@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/test/render';
 import { IvrFlowDetailPage } from './ivr-flow-detail-page';
 
@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
     canRollback: true,
   },
   validateDraft: vi.fn(),
+  simulateDraft: vi.fn(),
+  rollbackFlow: vi.fn(),
   publishDraft: vi.fn(),
   updateVersion: vi.fn(),
 }));
@@ -53,9 +55,9 @@ vi.mock('@/lib/ivr-flows/ivr-flows-api', () => ({
   useFlowVersions: vi.fn(),
   useFlowHistory: vi.fn(),
   useValidateCurrentDraft: vi.fn(() => ({ mutateAsync: mocks.validateDraft, isPending: false, data: undefined })),
-  useSimulateCurrentDraft: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false, data: undefined })),
+  useSimulateCurrentDraft: vi.fn(() => ({ mutateAsync: mocks.simulateDraft, isPending: false, data: undefined })),
   usePublishFlowVersion: vi.fn(() => ({ mutateAsync: mocks.publishDraft, isPending: false, data: undefined })),
-  useRollbackFlow: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false, data: undefined })),
+  useRollbackFlow: vi.fn(() => ({ mutateAsync: mocks.rollbackFlow, isPending: false, data: undefined })),
   useUpdateFlowVersion: vi.fn(() => ({ mutateAsync: mocks.updateVersion, isPending: false })),
   useExtensionOptions: vi.fn(() => ({ data: [], isLoading: false, isError: false })),
   usePromptAssetOptions: vi.fn(() => ({ data: [], isLoading: false, isError: false })),
@@ -64,7 +66,16 @@ vi.mock('@/lib/ivr-flows/ivr-flows-api', () => ({
   useScheduleOptions: vi.fn(() => ({ data: [], isLoading: false, isError: false })),
 }));
 
-import { useFlowHistory, useFlowVersions, useIvrFlow } from '@/lib/ivr-flows/ivr-flows-api';
+import {
+  useExtensionOptions,
+  useFlowHistory,
+  useFlowVersions,
+  useIvrFlow,
+  usePromptAssetOptions,
+  useQueueOptions,
+  useScheduleOptions,
+  useVoicemailBoxOptions,
+} from '@/lib/ivr-flows/ivr-flows-api';
 
 const baseFlow = {
   id: 'flow-1',
@@ -115,13 +126,20 @@ function mockLoadedPage(overrides?: { flow?: unknown; versions?: unknown[]; hist
 }
 
 describe('IvrFlowDetailPage', () => {
-  afterEach(() => {
+  beforeEach(() => {
     vi.clearAllMocks();
     mocks.caps.canEdit = true;
     mocks.caps.canValidate = true;
     mocks.caps.canSimulate = true;
     mocks.caps.canPublish = true;
     mocks.caps.canRollback = true;
+    mocks.simulateDraft.mockResolvedValue({ outcome: { path: ['start', 'sales'], status: 'passed', errors: [] } });
+    mocks.rollbackFlow.mockResolvedValue({ status: 'published' });
+    vi.mocked(useExtensionOptions).mockReturnValue({ data: [], isLoading: false, isError: false } as never);
+    vi.mocked(usePromptAssetOptions).mockReturnValue({ data: [], isLoading: false, isError: false } as never);
+    vi.mocked(useQueueOptions).mockReturnValue({ data: [], isLoading: false, isError: false } as never);
+    vi.mocked(useVoicemailBoxOptions).mockReturnValue({ data: [], isLoading: false, isError: false } as never);
+    vi.mocked(useScheduleOptions).mockReturnValue({ data: [], isLoading: false, isError: false } as never);
   });
 
   it('shows loading state while flow is fetching', () => {
@@ -202,5 +220,70 @@ describe('IvrFlowDetailPage', () => {
     mockLoadedPage({ flow: { ...baseFlow, draft_version_id: null }, versions: [] });
     renderWithProviders(<IvrFlowDetailPage />);
     expect(await screen.findByText('No draft version available yet. Create or restore a draft before editing visually.')).toBeInTheDocument();
+  });
+
+  it('renders validation, simulation, publish, and audit history entries', async () => {
+    mockLoadedPage({
+      history: {
+        validations: [{ id: 'val-1', status: 'passed', created_at: '2026-01-01T00:00:00Z', version_id: 'v1' }],
+        simulations: [{ id: 'sim-1', status: 'passed', created_at: '2026-01-01T00:01:00Z', version_id: 'v1' }],
+        publishes: [{
+          id: 'pub-1',
+          action_type: 'publish',
+          result: 'success',
+          created_at: '2026-01-01T00:02:00Z',
+          version_id: 'v1',
+          approval_status: 'approved',
+        }],
+        audits: [{ id: 'audit-1', action: 'ivr.publish', created_at: '2026-01-01T00:03:00Z', actor_id: null, actor_type: 'system' }],
+      },
+    });
+
+    renderWithProviders(<IvrFlowDetailPage />);
+
+    expect(await screen.findByText('Validation Runs')).toBeInTheDocument();
+    expect(screen.getByText(/publish .* success/i)).toBeInTheDocument();
+    expect(screen.getByText('approval: approved')).toBeInTheDocument();
+    expect(screen.getByText(/ivr.publish/)).toBeInTheDocument();
+    expect(screen.getByText('system')).toBeInTheDocument();
+  });
+
+  it('runs a simulation with the default scenario', async () => {
+    mockLoadedPage();
+    renderWithProviders(<IvrFlowDetailPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Run Simulation' }));
+
+    await waitFor(() => {
+      expect(mocks.simulateDraft).toHaveBeenCalledWith(expect.objectContaining({
+        digits: ['1'],
+        caller_number: '+905551112233',
+        force_timeout: undefined,
+        force_invalid: undefined,
+      }));
+    });
+  });
+
+  it('calls rollback when an active version exists', () => {
+    mockLoadedPage({ flow: { ...baseFlow, active_version_id: 'v0' } });
+    renderWithProviders(<IvrFlowDetailPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rollback' }));
+
+    expect(mocks.rollbackFlow).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows builder dependency errors before rendering the builder', async () => {
+    mockLoadedPage();
+    vi.mocked(usePromptAssetOptions).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: new Error('prompt options failed'),
+    } as never);
+
+    renderWithProviders(<IvrFlowDetailPage />);
+
+    expect(await screen.findByText('prompt options failed')).toBeInTheDocument();
   });
 });
