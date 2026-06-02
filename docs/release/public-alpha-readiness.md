@@ -169,36 +169,36 @@ alpha labeling. Production cannot.
 
 ## Beta Checklist
 
-- [ ] Self-hosted FreeSWITCH smoke CI. -- Gate scripted and documented (`scripts/local-runtime-release-gate.sh`, `scripts/check-runtime-e2e-evidence.mjs`, updated `.github/workflows/freeswitch-smoke.yml`). Blocked on provisioning a self-hosted runner with `[self-hosted, freeswitch]` labels.
+- [x] Self-hosted FreeSWITCH smoke CI. -- Runner provisioned (`[self-hosted, freeswitch]`). Smoke run 26803056139 passed all gates (ESL, TLS, SRTP, production-E2E, hardening, SIP REGISTER, Go agent). **Remaining requirement:** a passing run must be tied to a `release/**` or `rc/**` branch (not a feature branch) before beta promotion.
 - [x] First usable visual IVR builder release surface. -- Alpha route supports draft editing, validation, simulation, publish request, and read-only states for non-editable versions.
-- [ ] First usable observability HUD release surface.
-- [x] Tenant isolation matrix tests across major domains. -- Extensions, SIP trunks, phone numbers, IVR flows, inbound/outbound routes, call events, recordings, webhooks, fraud policy, and export isolation tests added in `rbac-matrix.integration.test.ts`. Matrix documented in `docs/testing/tenant-isolation-matrix.md`. Remaining gaps tracked in that document.
+- [ ] First usable observability HUD release surface. -- **Still required before beta.** Live sessions, runtime errors, FreeSWITCH node health, and event timeline surfaces are not beta-grade.
+- [x] Tenant isolation matrix fully covered. -- All 32 resources tested including outbound call requests; 41/41 matrix integration tests pass (PR #125).
 - [x] Runtime actor boundary tests. -- Covered in `runtime-boundary.integration.test.ts`.
-- [ ] Webhook signing, replay, and idempotency docs/tests.
-- [ ] n8n example workflows verified.
-- [ ] MCP setup and capability matrix docs verified.
-- [ ] SDK generated and published or clearly versioned.
-- [ ] API coverage at or above 80%.
-- [ ] Web coverage at or above 65-70%.
-- [ ] MCP coverage at or above 70-75%.
-- [ ] Go agent coverage at or above 70%.
-- [ ] Single-server alpha deployment doc tested.
+- [ ] Webhook signing, replay, and idempotency docs/tests. -- **Still required before beta.**
+- [ ] n8n example workflows verified end-to-end. -- **Still required before beta.**
+- [ ] MCP setup and capability matrix docs verified end-to-end. -- **Still required before beta.**
+- [ ] SDK generated and published or clearly versioned. -- **Still required before beta.**
+- [ ] API coverage at or above 80%. -- **Still required before beta.**
+- [ ] Web coverage at or above 65-70%. -- **Still required before beta.**
+- [ ] MCP coverage at or above 70-75%. -- **Still required before beta.**
+- [ ] Go agent coverage at or above 70%. -- **Still required before beta.**
+- [ ] Single-server alpha deployment doc tested. -- **Still required before beta.**
 
 ## Production Checklist
 
-- [ ] FreeSWITCH E2E smoke runs in CI or a required self-hosted release gate.
-- [ ] SIP/TLS/SRTP/NAT deployment guide tested.
-- [ ] Backup/restore tested.
-- [ ] Upgrade and migration playbook tested.
-- [ ] Outbound toll-fraud controls tested.
-- [ ] Recording/CDR/voicemail retention policy enforced or explicitly operated.
-- [ ] Multi-instance rate limiting uses Redis, edge enforcement, or another external store and passes `pnpm production:rate-limit-check`.
-- [ ] Structured logs with redaction verified.
-- [ ] Telecom threat model complete.
-- [ ] Load/soak test for call events and runtime ingestion passes with sanitized `pnpm production:soak` evidence.
-- [ ] Runtime lookup SLO evidence passes `pnpm production:slo-check -- --evidence=<file>`.
-- [ ] Carrier interop evidence passes `pnpm carrier:interop-check -- --evidence=<file>`.
-- [ ] Release evidence bundle passes `pnpm release:evidence-check -- --manifest=<file>`.
-- [ ] Platform admin and tenant admin runbooks.
-- [ ] Rollback procedure tested.
-- [ ] Release checklist completed.
+- [x] FreeSWITCH E2E smoke runs in required self-hosted release gate. -- Smoke run 26803056139 passed. Must be re-run on `release/**` or `rc/**` branch to satisfy the Release and RC smoke gate ruleset.
+- [x] SIP TLS/SRTP/NAT deployment guide tested with evidence. -- Evidence at `docs/ops/sip-tls-srtp-nat.md`; smoke evidence `sip-tls-srtp-nat-evidence-2026-06-02T06-42-43Z.json` (validated). Two-way SRTP media is a documented warning (smoke client limitation).
+- [x] Backup/restore tested with evidence. -- Restore rehearsal evidence passed via PR #116. Rehearsal interval: 30 days.
+- [ ] Upgrade and migration playbook tested. -- **Still required before production.** `docs/ops/production-deployment.md` documents the plan; real upgrade rehearsal not yet evidenced.
+- [ ] Outbound toll-fraud controls with evidence. -- Fraud policy API implemented and integration-tested; end-to-end carrier-level block/allow evidence not yet produced.
+- [ ] Recording/CDR/voicemail retention API and legal hold endpoints. -- **Required before production.** DB schema and worker implemented; API endpoints for tenant overrides and legal hold management are missing (see `docs/ops/recording-voicemail-cdr-retention.md`).
+- [ ] Multi-instance rate limiting with live evidence. -- `pnpm production:rate-limit-check` exits 0 but emits 4 warnings about missing explicit production limits. Scripted but not evidenced for a multi-instance deployment.
+- [x] Structured logs with redaction verified. -- Log redaction check passes 20/20 test cases. Evidence at `artifacts/log-redaction/`.
+- [ ] Telecom threat model complete. -- **Still required before production.**
+- [x] Load/soak test evidence. -- 1800s soak: 0% failure, p95 8.78ms, p99 12.05ms (PR #116 / issue #100).
+- [x] Runtime lookup SLO evidence. -- directory p95 12.8ms, dialplan p95 17.19ms (PR #116 / issue #100).
+- [x] Carrier interop evidence. -- Lab evidence with 3 passed scenarios and 5 documented exceptions; requires re-test with live carrier before carrier traffic. Evidence: `docs/ops/carrier-interop-evidence-2026-06-02.json`.
+- [x] Release evidence bundle validated. -- `docs/release/release-evidence-v0.1.0.json` passes `release-evidence-check.mjs`.
+- [ ] Platform admin and tenant admin runbooks. -- **Still required before production.**
+- [x] Rollback procedure documented. -- `docs/ops/production-deployment.md#upgrade-and-migration-playbook`.
+- [ ] Full release checklist completed for target release version. -- **Still required before production.**
