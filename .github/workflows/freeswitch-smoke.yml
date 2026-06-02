@@ -301,6 +301,10 @@ jobs:
         run: |
           echo "--- FreeSWITCH container logs (last 100 lines) ---"
           docker logs "${FS_CONTAINER}" --tail 100 2>&1 | node scripts/redact-logs.mjs || echo "no container logs"
+          echo "--- API container dialplan/directory request logs (last 2 min) ---"
+          docker logs managecallai-api-1 --since=2m 2>&1 | grep -E "dialplan|directory|freeswitch" | node scripts/redact-logs.mjs || echo "no api logs"
+          echo "--- xml_curl.conf.xml in FreeSWITCH container ---"
+          docker exec "${FS_CONTAINER}" cat /usr/local/freeswitch/conf/autoload_configs/xml_curl.conf.xml 2>/dev/null | node scripts/redact-logs.mjs || echo "xml_curl.conf.xml not found"
 
       - name: Validate SIP TLS / SRTP / NAT evidence
         run: |

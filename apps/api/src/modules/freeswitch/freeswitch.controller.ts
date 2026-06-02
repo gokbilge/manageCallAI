@@ -135,7 +135,7 @@ export const freeswitchController: FastifyPluginAsyncZod = async (app) => {
     // Returns the echo dialplan in whatever context FreeSWITCH requested (e.g. 'public' for
     // the external profile, 'default' for the internal profile).
     const requestedContext = bodyParsed.context ?? 'default';
-    if ((destinationNumber === '*47' || destinationNumber === '747') && process.env.MANAGECALLAI_SMOKE_ECHO_ENABLED === 'true') {
+    if (destinationNumber === '747' && process.env.MANAGECALLAI_SMOKE_ECHO_ENABLED === 'true') {
       return { statusCode: 200, body: buildSmokeEchoDialplan(requestedContext) };
     }
 
@@ -564,7 +564,7 @@ function buildSmokeEchoDialplan(context = 'default'): string {
   <section name="dialplan">
     <context name="${xmlEscape(context)}">
       <extension name="smoke-echo">
-        <condition field="destination_number" expression="^(\\*47|747)$">
+        <condition field="destination_number" expression="^747$">
           <action application="answer"/>
           <action application="echo"/>
         </condition>
