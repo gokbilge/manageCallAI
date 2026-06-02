@@ -4,6 +4,7 @@ import { decryptSipPassword } from '../../crypto/sip-secret.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { ExtensionRepository } from '../extensions/extension.repository.js';
 import { RouteLookupRepository } from './route-lookup.repository.js';
+import { GatewayRepository } from './gateway.repository.js';
 import { sendInvalidArgument } from '../../errors/index.js';
 
 type DirectoryLookup = {
@@ -32,6 +33,7 @@ type DialplanLookup = {
 
 const extensionRepo = new ExtensionRepository(db);
 const routeLookupRepo = new RouteLookupRepository(db);
+const gatewayRepo = new GatewayRepository(db);
 
 export const freeswitchController: FastifyPluginAsyncZod = async (app) => {
   const handler = async (
@@ -265,6 +267,52 @@ export const freeswitchController: FastifyPluginAsyncZod = async (app) => {
         ...(req.query as DialplanLookup ?? {}),
       };
       const result = await dialplanHandler(merged);
+      return reply.code(result.statusCode).type('text/xml; charset=utf-8').send(result.body);
+    },
+  );
+
+  // ── Configuration endpoint (mod_xml_curl configuration section) ─────────────
+  // FreeSWITCH requests this when it needs Sofia gateway configuration.
+  // We serve the active SIP trunks as gateways on the external Sofia profile.
+  const configurationHandler = async (
+    keyName?: string,
+    keyValue?: string,
+  ): Promise<{ body: string; statusCode: number }> => {
+    // FreeSWITCH requests sofia.conf when loading gateways.
+    // All other configuration requests return an empty section so FS falls
+    // back to its on-disk defaults (we do not manage all config via xml_curl).
+    if (keyName !== 'name' || keyValue !== 'sofia.conf') {
+      return { statusCode: 200, body: buildEmptyConfiguration() };
+    }
+
+    const trunks = await gatewayRepo.findAllActiveTrunks();
+    return {
+      statusCode: 200,
+      body: buildGatewayConfiguration(trunks),
+    };
+  };
+
+  app.get(
+    '/configuration',
+    { preHandler: authenticateRuntime },
+    async (req, reply) => {
+      const q = req.query as { key_name?: string; key_value?: string };
+      const result = await configurationHandler(q.key_name, q.key_value);
+      return reply.code(result.statusCode).type('text/xml; charset=utf-8').send(result.body);
+    },
+  );
+
+  app.post(
+    '/configuration',
+    { preHandler: authenticateRuntime },
+    async (req, reply) => {
+      const body =
+        typeof req.body === 'string'
+          ? Object.fromEntries(new URLSearchParams(req.body as string).entries())
+          : (req.body as Record<string, string> ?? {});
+      const q = req.query as Record<string, string>;
+      const merged = { ...body, ...q };
+      const result = await configurationHandler(merged['key_name'], merged['key_value']);
       return reply.code(result.statusCode).type('text/xml; charset=utf-8').send(result.body);
     },
   );
@@ -570,6 +618,67 @@ function buildSmokeEchoDialplan(context = 'default'): string {
         </condition>
       </extension>
     </context>
+  </section>
+</document>`;
+}
+
+// ── Gateway configuration XML builders ───────────────────────────────────────
+
+export type TrunkGateway = {
+  id: string;
+  name: string;
+  direction: 'inbound' | 'outbound' | 'bidirectional';
+  realm: string;
+  proxy: string;
+  port: number;
+  transport: 'udp' | 'tcp' | 'tls';
+  auth_username: string;
+  auth_password: string;
+  dtmf_mode: 'rfc2833' | 'info' | 'inband' | 'auto';
+};
+
+export function buildGatewayConfiguration(trunks: TrunkGateway[]): string {
+  const gateways = trunks
+    .map((trunk) => {
+      const shouldRegister = trunk.direction !== 'inbound';
+      const proxyWithPort = `${xmlEscape(trunk.proxy)}:${trunk.port}`;
+      const dtmf = trunk.dtmf_mode === 'auto' ? 'rfc2833' : trunk.dtmf_mode;
+      return `          <gateway name="trunk-${xmlEscape(trunk.id)}">
+            <param name="username" value="${xmlEscape(trunk.auth_username)}" />
+            <param name="auth-username" value="${xmlEscape(trunk.auth_username)}" />
+            <param name="password" value="${xmlEscape(trunk.auth_password)}" />
+            <param name="realm" value="${xmlEscape(trunk.realm)}" />
+            <param name="from-domain" value="${xmlEscape(trunk.realm)}" />
+            <param name="proxy" value="${proxyWithPort}" />
+            <param name="register" value="${shouldRegister ? 'true' : 'false'}" />
+            <param name="register-transport" value="${xmlEscape(trunk.transport)}" />
+            <param name="expire-seconds" value="3600" />
+            <param name="retry-seconds" value="30" />
+            <param name="dtmf-type" value="${xmlEscape(dtmf)}" />
+          </gateway>`;
+    })
+    .join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="configuration">
+    <configuration name="sofia.conf" description="Sofia SIP — manageCallAI managed gateways">
+      <profiles>
+        <profile name="external">
+          <gateways>
+${gateways}
+          </gateways>
+        </profile>
+      </profiles>
+    </configuration>
+  </section>
+</document>`;
+}
+
+function buildEmptyConfiguration(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="configuration">
   </section>
 </document>`;
 }

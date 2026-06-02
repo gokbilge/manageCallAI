@@ -1,11 +1,30 @@
 <configuration name="xml_curl.conf" description="XML Curl">
   <bindings>
+    <!--
+      directory: resolves SIP extension credentials for REGISTER and INVITE auth.
+      FreeSWITCH calls this for every SIP authentication challenge.
+    -->
     <binding name="directory">
       <param name="gateway-url" value="__MANAGECALLAI_DIRECTORY_URL__" />
       <param name="method" value="POST" />
     </binding>
+
+    <!--
+      dialplan: resolves call routing for every inbound call.
+      Returns the dialplan XML for a given destination_number and domain.
+    -->
     <binding name="dialplan">
       <param name="gateway-url" value="__MANAGECALLAI_DIALPLAN_URL__" />
+      <param name="method" value="POST" />
+    </binding>
+
+    <!--
+      configuration: serves Sofia gateway configuration for SIP trunks.
+      FreeSWITCH calls this on startup and on "sofia profile external rescan"
+      to load gateway credentials for outbound/bidirectional SIP trunks.
+    -->
+    <binding name="configuration">
+      <param name="gateway-url" value="__MANAGECALLAI_CONFIGURATION_URL__" />
       <param name="method" value="POST" />
     </binding>
   </bindings>
