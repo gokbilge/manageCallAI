@@ -128,11 +128,13 @@ filled backup-retention-policy JSON against the minimum requirements:
 
 ```sh
 pnpm check:backup-retention-policy -- \
-  --policy=docs/ops/templates/backup-retention-policy-template.json
+  --policy=docs/ops/backup-retention-policy.json
 ```
 
-Use `docs/ops/templates/backup-retention-policy-template.json` as the starting
-template.
+The canonical production-candidate policy lives at
+`docs/ops/backup-retention-policy.json`. Use
+`docs/ops/templates/backup-retention-policy-template.json` only as the starting
+template for deployment-specific overrides.
 
 ## Related Documents
 

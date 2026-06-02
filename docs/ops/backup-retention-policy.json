@@ -1,0 +1,40 @@
+{
+  "policy_version": "1.0",
+  "effective_date": "2026-06-02",
+  "operator": "release-ops",
+  "environment": "production-candidate",
+  "rpo_minutes": 60,
+  "rto_minutes": 30,
+  "database": {
+    "frequency": "hourly-wal-plus-daily-full-dump",
+    "retention_days": 30,
+    "wal_retention_days": 7,
+    "encrypted_at_rest": true,
+    "encryption_algorithm": "AES-256-GCM",
+    "encryption_key_rotation_days": 90,
+    "offsite_copy": true,
+    "offsite_location": "separate-region-object-storage",
+    "restore_rehearsal_interval_days": 30
+  },
+  "recordings": {
+    "frequency": "daily",
+    "retention_days": 90,
+    "encrypted_at_rest": true,
+    "encryption_algorithm": "AES-256-GCM",
+    "offsite_copy": true,
+    "offsite_location": "separate-region-object-storage"
+  },
+  "secrets": {
+    "stored_separately_from_database": true,
+    "secrets_manager": "deployment-managed-secrets-manager",
+    "rotation_interval_days": 90
+  },
+  "alerting": {
+    "backup_failure_after_minutes": 15,
+    "missed_backup_threshold": 1,
+    "restore_rehearsal_overdue_days": 35,
+    "contact": "release-ops"
+  },
+  "legal_notes": "Retention periods are production defaults. Tenants with stricter legal or contractual requirements must override recording and CDR retention through a documented tenant policy before production use.",
+  "notes": "This policy is suitable for production-candidate validation. Replace offsite_location and secrets_manager with deployment-specific providers during environment provisioning."
+}

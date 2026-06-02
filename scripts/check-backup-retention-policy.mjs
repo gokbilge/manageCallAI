@@ -86,6 +86,20 @@ if (!db || typeof db !== 'object') {
     fail('database.offsite_copy', 'must be true — database backups must have an off-site copy');
   }
 
+  if (!db.offsite_location || typeof db.offsite_location !== 'string' || !db.offsite_location.trim()) {
+    fail('database.offsite_location', 'must name the off-site backup location class or provider');
+  }
+
+  if (!db.encryption_algorithm || typeof db.encryption_algorithm !== 'string' || !db.encryption_algorithm.trim()) {
+    fail('database.encryption_algorithm', 'must name the backup encryption algorithm');
+  }
+
+  if (typeof db.encryption_key_rotation_days !== 'number' || db.encryption_key_rotation_days < 1) {
+    fail('database.encryption_key_rotation_days', 'must be a positive integer');
+  } else if (db.encryption_key_rotation_days > 365) {
+    warn('database.encryption_key_rotation_days', 'encryption key rotation interval is longer than one year');
+  }
+
   if (typeof db.restore_rehearsal_interval_days !== 'number' || db.restore_rehearsal_interval_days < 1) {
     warn('database.restore_rehearsal_interval_days', 'restore rehearsal interval not set — recommend at most 30 days');
   } else if (db.restore_rehearsal_interval_days > 90) {
@@ -112,6 +126,18 @@ if (!rec || typeof rec !== 'object') {
   if (rec.encrypted_at_rest !== true) {
     fail('recordings.encrypted_at_rest', 'must be true — recording backups must be encrypted at rest');
   }
+
+  if (!rec.encryption_algorithm || typeof rec.encryption_algorithm !== 'string' || !rec.encryption_algorithm.trim()) {
+    fail('recordings.encryption_algorithm', 'must name the recording backup encryption algorithm');
+  }
+
+  if (rec.offsite_copy !== true) {
+    fail('recordings.offsite_copy', 'must be true — recording backups must have an off-site copy');
+  }
+
+  if (!rec.offsite_location || typeof rec.offsite_location !== 'string' || !rec.offsite_location.trim()) {
+    fail('recordings.offsite_location', 'must name the recording off-site backup location class or provider');
+  }
 }
 
 // ── Secrets ───────────────────────────────────────────────────────────────────
@@ -125,6 +151,25 @@ if (!secrets || typeof secrets !== 'object') {
   }
   if (!secrets.secrets_manager || typeof secrets.secrets_manager !== 'string' || !secrets.secrets_manager.trim()) {
     warn('secrets.secrets_manager', 'secrets manager not specified — name your secrets store (e.g. HashiCorp Vault, AWS Secrets Manager)');
+  }
+
+  if (typeof secrets.rotation_interval_days !== 'number' || secrets.rotation_interval_days < 1) {
+    warn('secrets.rotation_interval_days', 'secret rotation interval not set');
+  }
+}
+
+const alerting = policy.alerting;
+if (!alerting || typeof alerting !== 'object') {
+  fail('alerting', 'alerting configuration object is missing');
+} else {
+  if (typeof alerting.backup_failure_after_minutes !== 'number' || alerting.backup_failure_after_minutes < 1) {
+    fail('alerting.backup_failure_after_minutes', 'must be a positive integer');
+  }
+  if (typeof alerting.missed_backup_threshold !== 'number' || alerting.missed_backup_threshold < 1) {
+    fail('alerting.missed_backup_threshold', 'must be a positive integer');
+  }
+  if (!alerting.contact || typeof alerting.contact !== 'string' || !alerting.contact.trim()) {
+    fail('alerting.contact', 'must identify the escalation contact or team');
   }
 }
 
