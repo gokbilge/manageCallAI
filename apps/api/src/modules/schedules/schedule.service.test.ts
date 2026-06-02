@@ -104,4 +104,68 @@ describe('ScheduleService', () => {
     vi.mocked(repo.deactivate).mockResolvedValue(null);
     await expect(service.deactivate('missing', 'tenant-1')).rejects.toThrow(ScheduleNotFoundError);
   });
+
+  it('updates a schedule successfully', async () => {
+    const result = await service.update('sched-1', 'tenant-1', { name: 'Evening Hours' });
+    expect(result).toEqual(baseSchedule);
+    expect(repo.update).toHaveBeenCalled();
+  });
+
+  it('validates timezone during update', async () => {
+    await expect(service.update('sched-1', 'tenant-1', { timezone: 'Bogus/Zone' })).rejects.toThrow(ScheduleValidationError);
+  });
+
+  it('validates weekly_rules_json during update', async () => {
+    await expect(
+      service.update('sched-1', 'tenant-1', {
+        weekly_rules_json: [{ day_of_week: 8 as never, open_time: '09:00', close_time: '17:00' }],
+      }),
+    ).rejects.toThrow(ScheduleValidationError);
+  });
+
+  it('validates holiday_overrides_json during update', async () => {
+    await expect(
+      service.update('sched-1', 'tenant-1', {
+        holiday_overrides_json: [{ date: 'bad-date', closed: true }],
+      }),
+    ).rejects.toThrow(ScheduleValidationError);
+  });
+
+  it('throws ScheduleNotFoundError when update returns null', async () => {
+    vi.mocked(repo.update).mockResolvedValue(null);
+    await expect(service.update('missing', 'tenant-1', { name: 'X' })).rejects.toThrow(ScheduleNotFoundError);
+  });
+
+  it('rejects non-array weekly_rules_json', async () => {
+    await expect(
+      service.create({
+        tenant_id: 'tenant-1',
+        name: 'Bad',
+        timezone: 'UTC',
+        weekly_rules_json: 'not-an-array' as never,
+      }),
+    ).rejects.toThrow(ScheduleValidationError);
+  });
+
+  it('rejects non-array holiday_overrides_json', async () => {
+    await expect(
+      service.create({
+        tenant_id: 'tenant-1',
+        name: 'Bad',
+        timezone: 'UTC',
+        holiday_overrides_json: {} as never,
+      }),
+    ).rejects.toThrow(ScheduleValidationError);
+  });
+
+  it('rejects open override missing open_time', async () => {
+    await expect(
+      service.create({
+        tenant_id: 'tenant-1',
+        name: 'Bad',
+        timezone: 'UTC',
+        holiday_overrides_json: [{ date: '2026-12-26', closed: false, close_time: '14:00' }],
+      }),
+    ).rejects.toThrow(ScheduleValidationError);
+  });
 });
