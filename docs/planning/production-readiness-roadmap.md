@@ -5,12 +5,23 @@ lanes. It is intentionally stricter than the public-alpha gate.
 
 ## Current Recommendation
 
-- Internal alpha: ready.
-- Public alpha: almost ready after CodeQL/security triage and alpha docs.
-- Public beta: not ready.
-- Production: not ready.
+Last updated: 2026-06-02.
 
-## Stage A: Public Alpha Candidate
+- **Internal alpha:** ✅ Ready.
+- **Public alpha:** 🟡 Candidate — 2 unchecked items remain (clean-clone demo
+  loop verification and runtime proof on a clean machine). All other alpha
+  gates are closed.
+- **Public beta:** ⛔ Not ready — observability HUD, webhook/n8n/MCP/SDK
+  verification, and coverage thresholds remain open. The self-hosted smoke
+  runner is provisioned and run 26803056139 passed, but the smoke must be
+  tied to a `release/**` or `rc/**` branch before beta promotion.
+- **Production:** ⛔ Not ready — several production gates have evidence from
+  the lab (soak, SLO, restore, carrier, release bundle) but the following
+  remain open: retention API and legal hold endpoints, multi-instance
+  rate-limiting live evidence, upgrade/migration rehearsal, live carrier
+  re-test, and the RC smoke run on a `release/**` branch.
+
+## Stage A: Public Alpha Candidate — 🟡 In Progress
 
 Goal: make the repository honest, runnable, and safe for public evaluation.
 
@@ -26,7 +37,7 @@ Exit criteria:
 - local alpha deployment guide verified from a clean clone
 - demo/runtime proof result captured in release notes
 
-## Stage B: Public Beta Foundation
+## Stage B: Public Beta Foundation — ⛔ Not Ready
 
 Goal: prove the runtime path continuously and make the operator surfaces usable.
 
@@ -44,7 +55,7 @@ Exit criteria:
 - MCP/n8n docs and examples are verified end to end
 - API/Web/MCP/Go coverage meets beta thresholds
 
-## Stage C: Production Hardening
+## Stage C: Production Hardening — ⛔ Not Ready (partial lab evidence)
 
 Goal: prepare real operators to deploy, operate, recover, and secure the system.
 
