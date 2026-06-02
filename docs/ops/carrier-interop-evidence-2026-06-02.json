@@ -1,0 +1,51 @@
+{
+  "carrier_name": "Lab SIP trunk (FreeSWITCH self-hosted smoke)",
+  "trunk_profile": "smoke-lab-v1",
+  "tested_at": "2026-06-02T07:01:45Z",
+  "git_sha": "c188e58",
+  "mode": "live",
+  "test_environment": "self-hosted smoke runner (managecallai)",
+  "notes": "Evidence covers the lab smoke gate. Scenarios that require a live carrier SIP proxy are documented as exceptions with explicit risk acceptance. A real-carrier re-test must be run before traffic is moved to any carrier trunk.",
+  "scenarios": [
+    {
+      "name": "sip_register",
+      "status": "passed",
+      "detail": "Extension 1001 registered against the lab FreeSWITCH via SIP UDP (5080) and SIP TLS (5081). Confirmed by sip-register-smoke and sip-tls-srtp-smoke (smoke run 26803056139)."
+    },
+    {
+      "name": "inbound_call",
+      "status": "documented_exception",
+      "exception_reason": "No live carrier SIP trunk is connected to this lab environment. Inbound call flow (carrier DID → FreeSWITCH → IVR) is integration-tested via the production-runtime-e2e script (dialplan lookup, IVR publish, inbound-route publish) but end-to-end RTP from a carrier has not been exercised. Risk: must be re-tested when a carrier trunk is onboarded."
+    },
+    {
+      "name": "outbound_call",
+      "status": "documented_exception",
+      "exception_reason": "No live carrier SIP trunk is connected. The outbound-call API (POST /api/v1/runtime/outbound), service layer, fraud policy, and route resolution are covered by unit and integration tests. SIP INVITE dispatch to a real carrier has not been exercised. Risk: must be re-tested when a carrier trunk is onboarded."
+    },
+    {
+      "name": "dtmf_rfc2833",
+      "status": "documented_exception",
+      "exception_reason": "DTMF RFC 2833 requires an active call with media. No live carrier call was placed in the lab environment. FreeSWITCH mod_dptools DTMF handling is configured per default; functional verification deferred to carrier onboarding test. Risk: low — FreeSWITCH stock DTMF handling is well-tested upstream."
+    },
+    {
+      "name": "hangup_cdr",
+      "status": "documented_exception",
+      "exception_reason": "CDR and call-event writing requires an end-to-end call. The call-event ingest endpoint (/api/v1/runtime/call-events) is integration-tested and tenant-scoped (confirmed in runtime-boundary tests and production-e2e). CDR queryability via /api/v1/calls is covered by unit tests. End-to-end CDR from a carrier call is deferred to carrier onboarding. Risk: deferred, low — event ingest path is tested."
+    },
+    {
+      "name": "tls_or_documented_exception",
+      "status": "passed",
+      "detail": "SIP TLS verified in smoke run 26803056139: TLS REGISTER (200 OK) and SRTP-negotiated INVITE (200 OK with a=crypto AES_CM_128_HMAC_SHA1_80) against FreeSWITCH external profile on port 5081. Evidence at artifacts/sip-tls/sip-tls-srtp-nat-evidence-2026-06-02T06-42-43Z.json (validated by check-sip-tls-srtp-nat-evidence.mjs, exit 0)."
+    },
+    {
+      "name": "nat_media_path",
+      "status": "passed",
+      "detail": "ext-sip-ip and ext-rtp-ip configured (127.0.0.1 for smoke) and verified in evidence artifact. FREESWITCH_EXT_SIP_IP and FREESWITCH_EXT_RTP_IP are documented env vars. Production deployments must set these to public IPs. RTP port range 16384-32768 configured."
+    },
+    {
+      "name": "failover_or_documented_exception",
+      "status": "documented_exception",
+      "exception_reason": "Single-trunk lab deployment. No redundant SIP proxy or secondary trunk is present. Failover and load balancing are deferred to production carrier onboarding. FreeSWITCH sofia profiles support multiple gateways; configuration is documented in docs/ops/carrier-interop.md but has not been exercised."
+    }
+  ]
+}
