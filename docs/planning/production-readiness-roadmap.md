@@ -8,9 +8,9 @@ lanes. It is intentionally stricter than the public-alpha gate.
 Last updated: 2026-06-02.
 
 - **Internal alpha:** ✅ Ready.
-- **Public alpha:** 🟡 Candidate — 2 unchecked items remain (clean-clone demo
-  loop verification and runtime proof on a clean machine). All other alpha
-  gates are closed.
+- **Public alpha:** ✅ Ready — `v0.2.0-alpha` tagged. All alpha gates closed:
+  clean-clone demo loop executed (2026-06-02), runtime proof from CI smoke
+  run 26803056139, all CI quality gates passing.
 - **Public beta:** ⛔ Not ready — observability HUD, webhook/n8n/MCP/SDK
   verification, and coverage thresholds remain open. The self-hosted smoke
   runner is provisioned and run 26803056139 passed, but the smoke must be
@@ -21,7 +21,7 @@ Last updated: 2026-06-02.
   rate-limiting live evidence, upgrade/migration rehearsal, live carrier
   re-test, and the RC smoke run on a `release/**` branch.
 
-## Stage A: Public Alpha Candidate — 🟡 In Progress
+## Stage A: Public Alpha — ✅ Complete (`v0.2.0-alpha`)
 
 Goal: make the repository honest, runnable, and safe for public evaluation.
 
