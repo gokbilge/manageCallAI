@@ -271,7 +271,8 @@ Notable finding: `production:preflight` fails on 10 items in this environment (m
 
 - Backup and restore runbooks exist and are documented.
 - Historical restore evidence from PR #116 is referenced.
-- `restore:rehearsal` script exists and is wired to write evidence JSON.
+- `restore:rehearsal` script exists and is wired to write evidence JSON; RC
+  evidence must be validated with `pnpm restore:evidence-check -- --require-rc`.
 - Production promotion requires a current release-candidate restore rehearsal — not yet executed.
 - Upgrade/migration playbook exists as a template; real rehearsal not yet evidenced.
 - Retention/legal hold: DB schema, API endpoints, and purge worker all exist.
@@ -315,7 +316,7 @@ Notable finding: `production:preflight` fails on 10 items in this environment (m
 | Gate | Issue | Status | Required evidence | Next action |
 |---|---|---|---|---|
 | Production runtime E2E and RC smoke | [#137](https://github.com/gokbilge/manageCallAI/issues/137) | scripted; no RC manifest entry | RC-bound smoke run URL + uploaded runtime artifacts | Run on `rc/**` or `release/**` |
-| Restore rehearsal (RC environment) | [#98](https://github.com/gokbilge/manageCallAI/issues/98) | evidenced historically; RC evidence required | Restore rehearsal JSON for RC topology | Rerun `pnpm restore:rehearsal` |
+| Restore rehearsal (RC environment) | [#160](https://github.com/gokbilge/manageCallAI/issues/160) | evidenced historically; RC evidence required | Restore rehearsal JSON for RC topology validated with `--require-rc` | Rerun `pnpm restore:rehearsal -- --require-rc` |
 | Upgrade/migration rehearsal | [#140](https://github.com/gokbilge/manageCallAI/issues/140) | documented template; not yet executed | Upgrade + rollback rehearsal record | Execute rehearsal |
 | SIP TLS/SRTP/NAT evidence (RC) | [#92](https://github.com/gokbilge/manageCallAI/issues/92) | historical artifact exists; RC required | Validated SIP TLS/SRTP/NAT JSON for RC topology | Rerun for RC |
 | Runtime token/secret rotation evidence | [#94](https://github.com/gokbilge/manageCallAI/issues/94) | scripted/historical; RC evidence required | Rotation rehearsal JSON + log redaction linkage | Rerun for RC |

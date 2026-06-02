@@ -7,6 +7,10 @@ This is an alpha-stage operational guide. Adapt it to your deployment topology.
 Production deployments should add automated snapshots, off-site replication,
 and RTO/RPO tracking.
 
+Production release-candidate restore evidence must be tied to the candidate
+version, full commit SHA, target host, backup timestamp, and operator. A script
+or template alone is not evidence.
+
 The canonical production-candidate retention policy is
 `docs/ops/backup-retention-policy.json`. Validate it before restore rehearsals:
 
@@ -159,6 +163,34 @@ pnpm db:constraints
 pnpm restore:smoke
 pnpm production:preflight
 ```
+
+For production RC evidence, run the rehearsal with release metadata:
+
+```sh
+RESTORE_RELEASE_VERSION=v0.2.0-rc.1 \
+RESTORE_TARGET_HOST=<host-or-environment> \
+RESTORE_ENVIRONMENT=rc \
+RESTORE_OPERATOR="<operator>" \
+pnpm restore:rehearsal -- --require-rc
+```
+
+Validate the resulting artifact with:
+
+```sh
+pnpm restore:evidence-check -- \
+  --evidence=artifacts/restore/restore-evidence-<timestamp>.json \
+  --require-rc
+```
+
+The RC validator requires a full 40-character commit SHA, release version,
+target host, source backup filename, backup timestamp, PostgreSQL client version,
+Node/pnpm versions, and a non-development environment value. Store only sanitized
+JSON evidence; never commit database dumps or secrets.
+
+If `pg_dump`, `pg_restore`, or `psql` are not installed on the host, the rehearsal
+falls back to Docker with `postgres:17` and `--network host`. Override the image
+with `RESTORE_PG_TOOLS_IMAGE=postgres:<major>` when the target database requires
+a matching client major version.
 
 If the restored environment is allowed to run live runtime checks, run:
 

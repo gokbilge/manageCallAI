@@ -15,6 +15,7 @@ import { readFileSync, existsSync } from 'node:fs';
 
 const args = process.argv.slice(2);
 const checkConfigOnly = args.includes('--check-config');
+const requireRcEvidence = args.includes('--require-rc');
 
 if (checkConfigOnly) {
   console.log('restore evidence check configuration check passed');
@@ -51,16 +52,28 @@ function warn(field, message) {
   findings.push({ level: 'warn', field, message });
 }
 
+function isPresentString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isIsoDate(value) {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(value));
+}
+
 // Required string fields
 for (const field of ['restored_at', 'database_url_masked', 'operator']) {
-  if (!evidence[field] || typeof evidence[field] !== 'string' || !evidence[field].trim()) {
+  if (!isPresentString(evidence[field])) {
     fail(field, `required string field is missing or empty`);
   }
 }
 
 // restored_at must look like an ISO date
-if (evidence.restored_at && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(evidence.restored_at))) {
+if (evidence.restored_at && !isIsoDate(evidence.restored_at)) {
   fail('restored_at', 'must be an ISO 8601 datetime (e.g. 2026-06-01T14:00:00Z)');
+}
+
+if (evidence.backup_taken_at && !isIsoDate(evidence.backup_taken_at)) {
+  fail('backup_taken_at', 'must be an ISO 8601 datetime (e.g. 2026-06-01T13:55:00Z)');
 }
 
 // database_url_masked must mask any password (should contain *** or have no credentials)
@@ -98,6 +111,47 @@ if (!evidence.e2e_passed) {
 }
 if (!evidence.restore_duration_seconds) {
   warn('restore_duration_seconds', 'restore duration not recorded — useful for RTO tracking');
+}
+
+if (evidence.commit_sha && !/^[0-9a-f]{40}$/i.test(String(evidence.commit_sha))) {
+  fail('commit_sha', 'must be a full 40-character git commit SHA when present');
+}
+
+if (evidence.workflow_run_url) {
+  try {
+    const url = new URL(String(evidence.workflow_run_url));
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      fail('workflow_run_url', 'must be an http(s) URL');
+    }
+  } catch {
+    fail('workflow_run_url', 'must be a valid URL');
+  }
+}
+
+if (requireRcEvidence) {
+  for (const field of [
+    'release_version',
+    'commit_sha',
+    'target_host',
+    'source_backup_file',
+    'backup_taken_at',
+    'node_version',
+    'pnpm_version',
+    'postgres_version',
+    'api_image_tag',
+    'environment',
+  ]) {
+    if (!isPresentString(evidence[field])) {
+      fail(field, 'required for RC restore evidence');
+    }
+  }
+
+  if (
+    isPresentString(evidence.environment) &&
+    ['development', 'dev', 'local', 'test'].includes(String(evidence.environment).toLowerCase())
+  ) {
+    fail('environment', 'RC restore evidence must be produced from a staging, rc, or production-like environment');
+  }
 }
 
 // Must not contain real credentials

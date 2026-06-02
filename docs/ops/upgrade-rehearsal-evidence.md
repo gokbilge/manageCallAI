@@ -2,6 +2,12 @@
 
 This document records the upgrade rehearsal required before production promotion (issue #140).
 
+For production release-candidate restore evidence, use
+`pnpm restore:rehearsal -- --require-rc` and validate with
+`pnpm restore:evidence-check -- --require-rc --evidence=<file>`. The evidence
+must identify the release version, full commit SHA, target host, source backup,
+operator, and non-development environment.
+
 ---
 
 ## Rehearsal Procedure
@@ -63,6 +69,8 @@ Copy this template and fill it in for each rehearsal:
 
 ```json
 {
+  "release_version": "v0.2.0-rc.1",
+  "commit_sha": "<full 40-character commit SHA>",
   "rehearsal_date": "YYYY-MM-DDTHH:MM:SSZ",
   "source_version": "v0.X.Y",
   "target_version": "v0.X.Z",
