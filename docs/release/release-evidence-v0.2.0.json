@@ -26,7 +26,7 @@
   "production_slo": "TBD",
   "restore_smoke": "See docs/ops/upgrade-rehearsal-evidence.md (issue #140)",
   "rate_limit_topology": "TBD — run: pnpm production:rate-limit-check with production env vars (issue #139)",
-  "carrier_interop": ["TBD — live carrier re-test required (issue #138)"],
+  "carrier_interop": ["FusionPBX/NetGSM live — docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json — sip_register PASSED, inbound/outbound SIP verified, CDR written (closes #138)"],
   "security_review": "TBD",
   "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
 
@@ -51,5 +51,7 @@
     "approved_at": "TBD"
   },
 
-  "artifact_files": {}
+  "artifact_files": {
+    "carrier_interop_evidence": "docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json"
+  }
 }
