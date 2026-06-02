@@ -349,7 +349,7 @@ const evidence = {
     process.env.USER ||
     'local-rehearsal',
   environment: process.env.RESTORE_ENVIRONMENT || process.env.APP_ENV || 'development',
-  notes: `rehearsal — restore to temporary database ${restoreDbName}`,
+  notes: `rehearsal - restore to temporary database ${restoreDbName}`,
 };
 
 // Write evidence

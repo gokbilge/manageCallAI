@@ -30,7 +30,7 @@
 
   "production_slo": "Lab SLO evidence: directory lookup p95 12.8ms, dialplan lookup p95 17.19ms — below 50ms breach threshold (PR #116, issue #100). Production RC evidence requires SLO validation from the target release topology — tracked in open-release-blockers.md.",
 
-  "restore_smoke": "Restore rehearsal evidenced historically in PR #116. Production RC promotion requires a fresh artifact from pnpm restore:rehearsal -- --require-rc, validated by pnpm restore:evidence-check -- --require-rc, with release_version, full commit_sha, target_host, backup timestamp, operator, db:contracts, db:constraints, and restore:smoke all passing. Tracking issue: #160.",
+  "restore_smoke": "RC restore rehearsal passed on enlogy@10.0.0.32 for commit 311efd1c598166a81d16460e3e6c487c92503a30. Evidence: docs/ops/restore-evidence-enlogy-2026-06-02.json. Validated with pnpm restore:evidence-check -- --require-rc. production:preflight and production:e2e were not included in this restore-only rehearsal and remain required before production promotion.",
 
   "rate_limit_topology": "pnpm production:rate-limit-check passes with 4 warnings (explicit production RATE_LIMIT_* values not set in dev — expected). Redis-backed rate-limit store is implemented (migration 0028). Multi-instance topology validation required before production — tracked issue #139, docs/ops/rate-limit-topology.md.",
 
