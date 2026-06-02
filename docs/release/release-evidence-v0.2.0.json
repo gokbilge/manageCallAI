@@ -1,6 +1,6 @@
 {
   "release_version": "v0.2.0-beta.1",
-  "commit_sha": "30c0523",
+  "commit_sha": "cf60074311aa837d5345758049cc81c945545cfd",
   "generated_at": "2026-06-02T14:30:00Z",
   "stage": "beta",
   "notes": "Beta evidence bundle for the v0.2.0 line. RC-branch CI and smoke runs are in progress (triggered by push to rc/v0.2.0). Production-only gates are documented with current status; full production evidence is required before RC or production promotion. Tracking issue: #150.",
