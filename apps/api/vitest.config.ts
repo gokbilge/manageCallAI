@@ -25,11 +25,15 @@ export default defineConfig({
       // the large surface area of integration-only modules (FreeSWITCH XML,
       // SIP/ESL edge paths, streaming observability) that require a live runtime
       // to cover meaningfully. Target: reach 70% before beta GA; 80% before RC.
+      //
+      // Raised 2026-06-02 after adding unit tests for sip-trunk, phone-number,
+      // schedule (update path), voicemail-box, retention, and platform services
+      // (CI run 26834489441: statements 67.46%, branches 56.09%, lines 67.46%).
       thresholds: {
-        statements: 64,
-        branches: 54,
+        statements: 67,
+        branches: 56,
         functions: 66,
-        lines: 66,
+        lines: 67,
       },
     },
   },
