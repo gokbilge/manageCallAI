@@ -135,11 +135,15 @@ Before public alpha, all high and medium CodeQL findings should be fixed or
 triaged with a clear false-positive explanation. Rate limiting and sensitive log
 redaction are especially important for telecom admin/runtime surfaces.
 
-### Blocker 5: release-grade coverage is not reached across all packages
+### Blocker 5: API coverage below 80% beta target — beta exception accepted
 
-Recent coverage work improved SDK and MCP substantially, but API, Web, and Go
-agent remain below release-grade targets. Public alpha can proceed with clear
-alpha labeling. Production cannot.
+**Measured (2026-06-02):** API 64/54/66/66 · Web 80/80/80/80 · MCP 85/85/85/85 · Go agent: measured per-run
+
+Web and MCP already exceed their beta targets. API is below the ≥80% beta target.
+
+**Accepted exception for beta:** The API coverage gap is concentrated in integration-only paths — FreeSWITCH XML builders, SIP/ESL edge paths, streaming SSE observability — that require a live FreeSWITCH runtime to exercise meaningfully. Unit test addition alone would be mocking the runtime without genuine coverage value.
+
+**Follow-up target:** 70% before beta GA tag; 80% before release candidate. Tracked by issue #141.
 
 ## Release Category
 

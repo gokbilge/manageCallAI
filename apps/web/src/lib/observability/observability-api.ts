@@ -25,6 +25,11 @@ export type WebhookBacklog = {
   abandoned: number;
 };
 
+export type FreeswitchNodeHealth = {
+  active: number;
+  total: number;
+};
+
 export type LiveSnapshot = {
   tenant_id: string;
   active_session_count: number;
@@ -34,6 +39,7 @@ export type LiveSnapshot = {
   recent_call_events_5m: number;
   recent_session_failures_1h: number;
   pending_approvals: number;
+  freeswitch_nodes: FreeswitchNodeHealth;
   generated_at: string;
 };
 

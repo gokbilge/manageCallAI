@@ -26,6 +26,11 @@ export interface PlatformRuntimeSummary {
   failed_sessions_24h: number;
 }
 
+export interface FreeswitchNodeHealth {
+  active: number;
+  total: number;
+}
+
 export interface LiveSnapshot {
   tenant_id: string;
   active_session_count: number;
@@ -35,6 +40,7 @@ export interface LiveSnapshot {
   recent_call_events_5m: number;
   recent_session_failures_1h: number;
   pending_approvals: number;
+  freeswitch_nodes: FreeswitchNodeHealth;
   generated_at: string;
 }
 

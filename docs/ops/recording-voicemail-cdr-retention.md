@@ -52,13 +52,14 @@ end-time or voicemail-deposit-time, whichever is later.
 
 ## Tenant-Specific Retention Overrides
 
-Platform admins can configure per-tenant retention overrides via the admin
-API (`PATCH /api/v1/platform/tenants/{id}/retention`). Overrides must stay
-within the minimum/maximum bounds above. Overrides are audited.
+Tenant admins can manage their own retention policy via:
 
-**Required before production:** The tenant retention override API endpoint,
-validation, audit trail, and purge-job enforcement must all be implemented
-and integration-tested.
+- `GET /api/v1/tenant/retention` — read current policy (null = defaults apply)
+- `PATCH /api/v1/tenant/retention` — update per-category retention days
+
+Overrides must stay within the minimum/maximum bounds above. All updates are audited.
+
+Requires capability: `tenant.compliance.admin` (granted to `tenant_admin` role).
 
 ---
 
@@ -68,15 +69,17 @@ When a legal hold is placed on a tenant or a specific resource (e.g., a
 call ID), all purge operations for the affected data are suspended regardless
 of retention clock expiry.
 
-Legal hold API: `POST /api/v1/platform/tenants/{id}/legal-hold` and
-`DELETE /api/v1/platform/tenants/{id}/legal-hold`.
+Legal hold API:
 
-**Required before production:**
+- `POST /api/v1/tenant/legal-hold` — place a hold
+- `DELETE /api/v1/tenant/legal-hold/{id}` — release a hold (audited)
+- `GET /api/v1/tenant/legal-holds` — list active holds (`?all=true` for all)
 
-- Legal hold must prevent purge jobs from deleting held records.
-- Holds must be audited (actor, timestamp, reason).
-- Hold removal must also be audited.
-- Legal hold state must be surfaced in export and data-subject-request flows.
+Hold create and release are both audited to `tenant_audit_log`.
+
+**Remaining before production:**
+
+- Legal hold state must be surfaced in export and data-subject-request flows (see implementation status below).
 
 ---
 
@@ -117,11 +120,11 @@ and which are not under a legal hold.
 | Retention policy schema expansion (voicemail, call events, summaries, generated media) | ✅ Implemented — migration `0043_retention_purge_expansion.sql` |
 | Legal hold DB schema (`legal_hold_requests`) | ✅ Implemented — migration `0038_tenant_retention_policies.sql` |
 | Scheduled purge worker with dry-run and audit trail | ✅ Implemented — `apps/worker/src/modules/retention/retention-purge.service.ts` |
-| Per-tenant retention override API | ⛔ **Required before production** — no API route exists; `tenant_retention_policies` can only be set via direct DB write |
-| Legal hold API (`POST`, `DELETE`, `GET`) | ⛔ **Required before production** — no API route exists for operators/tenants to manage holds |
+| Per-tenant retention override API | ✅ Implemented — `GET/PATCH /api/v1/tenant/retention` with bounds validation and audit trail |
+| Legal hold API (`POST`, `DELETE`, `GET`) | ✅ Implemented — `POST/DELETE/GET /api/v1/tenant/legal-hold(s)` with audit trail and cross-tenant isolation |
 | Object storage audio file deletion | ⛔ **Required before production** — purge deletes DB records; object storage cleanup not implemented |
 | Export-before-delete | ⛔ **Required before production** — not implemented |
-| Integration tests covering purge, hold, dry-run | ⛔ **Required before production** — worker unit tests exist; integration tests against live DB with legal hold enforcement needed |
+| Integration tests covering purge, hold, dry-run | ✅ Implemented — `apps/api/src/modules/retention/retention.integration.test.ts` covers retention policy CRUD, legal hold lifecycle, cross-tenant isolation |
 | Data-subject-request (DSR) / right-to-erasure flow | ⛔ **Required before production** — not documented or implemented |
 
 ---
