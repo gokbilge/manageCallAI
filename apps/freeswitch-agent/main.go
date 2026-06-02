@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/config"
+	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/dispatcher"
 	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/esl"
 	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/logging"
 )
@@ -70,6 +71,12 @@ func runAgent(
 		defer cancel()
 		_ = healthServer.Shutdown(shutdownCtx)
 	}()
+
+	// Start the outbound call dispatcher — polls the API for pending outbound
+	// call requests and executes them via FreeSWITCH ESL originate commands.
+	cmdClient := esl.NewCommandClient(cfg, logger)
+	outboundDispatcher := dispatcher.NewOutboundDispatcher(cfg, cmdClient, logger)
+	go outboundDispatcher.Run(ctx, 2*time.Second)
 
 	if err := client.Connect(ctx); err != nil {
 		logger.Error("failed to initialize esl client", slog.String("error", err.Error()))

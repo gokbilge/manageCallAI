@@ -14,6 +14,29 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ### Added
 
+- FreeSWITCH gateway configuration via `mod_xml_curl`:
+  - New `POST /api/v1/freeswitch/configuration` endpoint serves Sofia gateway XML
+    for all active SIP trunks; credentials are decrypted on demand and never cached
+  - `gateway.repository.ts` fetches all active trunks (all tenants, platform-level)
+  - `buildGatewayConfiguration()` XML builder with golden-file tests (10 tests)
+  - `xml_curl.conf.xml.example` now binds the `configuration` section
+  - `entrypoint.sh` now injects `MANAGECALLAI_CONFIGURATION_URL` into FreeSWITCH config
+- FreeSWITCH outbound call execution via ESL originate:
+  - `esl/command_client.go` — dedicated one-shot ESL command connection for sending
+    `bgapi originate` without interfering with the event subscription stream
+  - `CommandClient.Originate()` wired as the `ESLDialer` in `main.go`
+  - `OutboundDispatcher` now runs in `main.go` (was implemented but never started)
+- Migration `0044_freeswitch_node_sip_profile.sql` — adds per-node SIP profile fields
+  to `freeswitch_nodes`: `sip_domain`, `external_sip_ip`, `external_rtp_ip`,
+  `sip_port`, `sip_tls_port`, `tls_enabled`, `srtp_policy`, `rtp_port_min/max`,
+  `codec_prefs`, `dtmf_type`
+
+### Fixed
+
+- Outbound calls were queued via the API but never dispatched to FreeSWITCH because
+  the `OutboundDispatcher` goroutine was not started in `main.go` and the
+  `ESLDialer.Originate` interface had no concrete implementation
+
 - `docs/design/ux-design.md` — design system reference: color tokens, typography,
   spacing, component patterns, brand assets, icon vocabulary, and UX principles
 - Brand marks in `apps/web/public/` (light/dark SVGs, PNG/JPG square avatars);
