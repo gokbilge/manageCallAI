@@ -30,7 +30,7 @@
 
   "production_slo": "Lab SLO evidence: directory lookup p95 12.8ms, dialplan lookup p95 17.19ms — below 50ms breach threshold (PR #116, issue #100). Production RC evidence requires SLO validation from the target release topology — tracked in open-release-blockers.md.",
 
-  "restore_smoke": "Restore rehearsal evidenced in PR #116 (issue #98): pg_dump, restore to temp DB, migrations, db:contracts, db:constraints, restore:smoke all passed. RC-environment restore rehearsal required before production — see docs/ops/backup-restore.md and docs/ops/upgrade-rehearsal-evidence.md.",
+  "restore_smoke": "Restore rehearsal evidenced historically in PR #116. Production RC promotion requires a fresh artifact from pnpm restore:rehearsal -- --require-rc, validated by pnpm restore:evidence-check -- --require-rc, with release_version, full commit_sha, target_host, backup timestamp, operator, db:contracts, db:constraints, and restore:smoke all passing. Tracking issue: #160.",
 
   "rate_limit_topology": "pnpm production:rate-limit-check passes with 4 warnings (explicit production RATE_LIMIT_* values not set in dev — expected). Redis-backed rate-limit store is implemented (migration 0028). Multi-instance topology validation required before production — tracked issue #139, docs/ops/rate-limit-topology.md.",
 
@@ -57,10 +57,10 @@
   "beta_gate_status": {
     "observability_hud": "implemented — live cockpit with active sessions, queues, runtime errors, FreeSWITCH node health panel; candidate UI evidence in docs/release/product-release-audit.md",
     "webhook_signing": "implemented and integration-tested — HMAC-SHA256 signing, replay protection, DLQ, idempotency; docs/design/webhooks.md; CI passes",
-    "n8n_workflows": "10 workflow templates documented in docs/ops/n8n-setup.md; end-to-end import/run proof required for beta-ready promotion (issue #133)",
-    "mcp_capability": "16 tools, drift checks pass in CI; setup guide at docs/ops/mcp-setup.md; end-to-end capability proof required for beta-ready promotion (issue #134)",
-    "sdk_dry_run": "SDK generate workflow exists; latest publish workflow run failed — dry-run/publish evidence required for beta-ready promotion (issue #135)",
-    "coverage": "API 64% / Web 80% / MCP 85% — beta exception for API documented (integration-only paths require live FreeSWITCH); 70% target before beta-GA; 80% before RC (issue #141)"
+    "n8n_workflows": "EVIDENCED — 9/9 workflow templates valid; HMAC-SHA256 signing algorithm end-to-end compatible with n8n webhook-verification.js; live webhook subscription + delivery proof in beta-smoke run 26845537361 (closes #157). Evidence artifact: beta-smoke-26845537361",
+    "mcp_capability": "EVIDENCED — 22/22 tools listed via MCP protocol; live list_ivr_flows tool call succeeded against running API; capability matrix updated in docs/ops/mcp-setup.md. Evidence artifact: beta-smoke-26845537361 (closes #158). Run: https://github.com/gokbilge/manageCallAI/actions/runs/26845537361",
+    "sdk_dry_run": "EVIDENCED — SDK build+pack dry-run passed in run 26845539137 (closes #159). Workflow fixed: tag pushes now run dry-run only; actual publish requires workflow_dispatch with dry_run=false. Run: https://github.com/gokbilge/manageCallAI/actions/runs/26845539137",
+    "coverage": "API 67.46% / Web 80%+ / MCP 85%+ — thresholds raised after adding 81 unit tests (CI run 26834489441). Beta target met. RC target (80%) tracked separately."
   },
 
   "production_gate_status": {
