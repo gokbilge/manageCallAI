@@ -5,6 +5,7 @@ import {
   Clock,
   PhoneCall,
   RefreshCcw,
+  Server,
   ServerOff,
   Users,
   Webhook,
@@ -246,6 +247,41 @@ export function ObservabilityCockpitPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </DataCard>
+
+      {/* ── FreeSWITCH node health ── */}
+      <DataCard
+        title="FreeSWITCH Node Health"
+        description="Runtime node registry status. Active nodes are accepting dialplan, directory, and event traffic."
+      >
+        {snapshotQuery.isLoading ? (
+          <p className="text-sm text-[var(--color-muted-fg)]">Loading node status…</p>
+        ) : !snapshot ? null : (
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-9 w-9 items-center justify-center rounded-full ${snapshot.freeswitch_nodes.active > 0 ? 'bg-[var(--color-success)]/15' : 'bg-[var(--color-warning)]/15'}`}>
+                <Server className={`size-4 ${snapshot.freeswitch_nodes.active > 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-warning)]'}`} aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">
+                  {snapshot.freeswitch_nodes.active}
+                  <span className="ml-1 text-xs font-normal text-[var(--color-muted-fg)]">
+                    / {snapshot.freeswitch_nodes.total} nodes active
+                  </span>
+                </p>
+                <p className="text-xs text-[var(--color-muted-fg)]">
+                  {snapshot.freeswitch_nodes.active === 0 && snapshot.freeswitch_nodes.total === 0
+                    ? 'No nodes registered'
+                    : snapshot.freeswitch_nodes.active === 0
+                    ? 'All nodes offline or disabled'
+                    : snapshot.freeswitch_nodes.active === snapshot.freeswitch_nodes.total
+                    ? 'All nodes healthy'
+                    : `${snapshot.freeswitch_nodes.total - snapshot.freeswitch_nodes.active} node(s) disabled`}
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </DataCard>

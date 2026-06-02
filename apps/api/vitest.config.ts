@@ -20,11 +20,16 @@ export default defineConfig({
       // counted more exhaustively). These values reflect the actual coverage
       // of the src/**/*.ts test suite without the double-run artifact from
       // vitest 3.x picking up both src/ and dist/ test files.
+      //
+      // Beta exception (issue #141): API is below the ≥80% beta target due to
+      // the large surface area of integration-only modules (FreeSWITCH XML,
+      // SIP/ESL edge paths, streaming observability) that require a live runtime
+      // to cover meaningfully. Target: reach 70% before beta GA; 80% before RC.
       thresholds: {
-        statements: 62,
-        branches: 52,
-        functions: 64,
-        lines: 64,
+        statements: 64,
+        branches: 54,
+        functions: 66,
+        lines: 66,
       },
     },
   },

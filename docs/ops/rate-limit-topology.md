@@ -22,7 +22,41 @@ For multi-instance deployments, at least one of the shared limiter paths is
 required. Otherwise, each instance enforces a separate quota and attackers can
 multiply allowed request volume by spreading traffic across instances.
 
-## Production Variables
+## Recommended Production Values
+
+Set these in your production `.env` or container environment to eliminate check warnings:
+
+```sh
+# Single-instance production (adjust to your capacity)
+MANAGECALLAI_INSTANCE_COUNT=1
+RATE_LIMIT_WINDOW_MS=60000        # 1-minute sliding window
+
+# Auth endpoints (login, register, token refresh)
+RATE_LIMIT_AUTH_MAX=20            # 20 auth requests per IP per minute
+
+# FreeSWITCH runtime callbacks (dialplan, directory, event ingest)
+RATE_LIMIT_RUNTIME_MAX=300        # 300 runtime calls per node per minute
+
+# Webhook inbound delivery (from automation consumers)
+RATE_LIMIT_WEBHOOK_MAX=100        # 100 webhook deliveries per tenant per minute
+
+# Outbound call dispatch
+RATE_LIMIT_OUTBOUND_MAX=30        # 30 outbound call requests per tenant per minute
+```
+
+For multi-instance production, also set one of:
+
+```sh
+# Option A: Edge enforced
+EDGE_RATE_LIMIT_ENFORCED=true
+
+# Option B: Redis shared store
+RATE_LIMIT_STORE=redis
+RATE_LIMIT_REDIS_URL=redis://redis:6379
+RATE_LIMIT_REDIS_KEY_PREFIX=managecallai:rate-limit
+```
+
+## All Production Variables
 
 - `MANAGECALLAI_INSTANCE_COUNT`
 - `RATE_LIMIT_WINDOW_MS`

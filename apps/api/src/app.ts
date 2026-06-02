@@ -39,6 +39,7 @@ import { channelMessageController } from './modules/channel-messages/channel-mes
 import { meetingSessionController } from './modules/meeting-sessions/meeting-session.controller.js';
 import { observabilityController } from './modules/observability/observability.controller.js';
 import { fraudController } from './modules/fraud/fraud.controller.js';
+import { retentionController } from './modules/retention/retention.controller.js';
 import { nodeRegistryController } from './modules/runtime/node-registry.controller.js';
 import { registerErrorHandler } from './errors/index.js';
 import { redactSensitiveUrl, registerLoggingHooks } from './logging/logger.js';
@@ -118,6 +119,7 @@ function registerPlatformModules(app: FastifyInstance): void {
   app.register(auditController, { prefix: '/api/v1/audit' });
   app.register(userController, { prefix: '/api/v1/users' });
   app.register(fraudController, { prefix: '/api/v1/fraud' });
+  app.register(retentionController, { prefix: '/api/v1/tenant' });
 }
 
 // ── App factory ───────────────────────────────────────────────────────────────

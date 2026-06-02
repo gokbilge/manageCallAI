@@ -18,6 +18,7 @@ function makeSnapshot(tenantId: string): LiveSnapshot {
     recent_call_events_5m: 5,
     recent_session_failures_1h: 0,
     pending_approvals: 0,
+    freeswitch_nodes: { active: 1, total: 1 },
     generated_at: new Date().toISOString(),
   };
 }

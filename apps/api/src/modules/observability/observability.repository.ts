@@ -19,11 +19,12 @@ export class ObservabilityRepository {
   constructor(private readonly db: Pool) {}
 
   async getSnapshot(tenantId: string): Promise<LiveSnapshot> {
-    const [sessions, queueDepths, webhookBacklog, counters] = await Promise.all([
+    const [sessions, queueDepths, webhookBacklog, counters, freeswitchNodes] = await Promise.all([
       this.getRunningSessions(tenantId),
       this.getQueueDepths(tenantId),
       this.getWebhookBacklog(tenantId),
       this.getCounters(tenantId),
+      this.getFreeswitchNodeHealth(),
     ]);
 
     return {
@@ -35,7 +36,21 @@ export class ObservabilityRepository {
       recent_call_events_5m: counters.recent_call_events_5m,
       recent_session_failures_1h: counters.recent_session_failures_1h,
       pending_approvals: counters.pending_approvals,
+      freeswitch_nodes: freeswitchNodes,
       generated_at: new Date().toISOString(),
+    };
+  }
+
+  private async getFreeswitchNodeHealth(): Promise<{ active: number; total: number }> {
+    const result = await this.db.query<{ active: string; total: string }>(
+      `SELECT COUNT(*) FILTER (WHERE status = 'active')::text AS active,
+              COUNT(*) FILTER (WHERE status != 'decommissioned')::text AS total
+       FROM freeswitch_nodes`,
+    );
+    const row = result.rows[0];
+    return {
+      active: parseInt(row?.active ?? '0', 10),
+      total: parseInt(row?.total ?? '0', 10),
     };
   }
 
