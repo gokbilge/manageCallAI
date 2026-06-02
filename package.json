@@ -64,6 +64,8 @@
     "check:sip-tls-srtp-nat-evidence": "node scripts/check-sip-tls-srtp-nat-evidence.mjs",
     "sip:tls-srtp-smoke": "node scripts/sip-tls-srtp-smoke.mjs",
     "check:runtime-token-rotation": "node scripts/check-runtime-token-rotation.mjs",
-    "check:production-readiness": "node scripts/check-production-readiness.mjs"
+    "check:production-readiness": "node scripts/check-production-readiness.mjs",
+    "beta:mcp-smoke": "node scripts/mcp-smoke.mjs",
+    "beta:n8n-smoke": "node scripts/n8n-webhook-smoke.mjs"
   }
 }

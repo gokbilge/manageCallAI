@@ -82,38 +82,43 @@ The API key must have the capabilities listed below for each tool category you i
 
 ---
 
-## Available Tools
+## Available Tools (22 total — verified by `pnpm beta:mcp-smoke`)
 
-### IVR Flows
+### IVR Flows (8 tools)
 - `list_ivr_flows` — list all flows for the tenant
 - `get_ivr_flow` — get flow details and current version
 - `create_ivr_flow` — create a new draft flow
-- `update_ivr_flow_definition` — update nodes and edges
-- `validate_ivr_flow` — run validation without publishing
-- `simulate_ivr_flow` — simulate a call path through the flow
-- `publish_ivr_flow` — publish validated flow to runtime
-- `rollback_ivr_flow` — revert to previous published version
+- `update_flow_definition` — update nodes and edges on a draft version
+- `validate_flow` — run validation without publishing
+- `simulate_flow` — simulate a call path through the flow
+- `request_publish` — submit a validated flow for publish (may require approval)
+- `run_simulation_suite` — run multiple scenarios in one call
 
-### Approvals
-- `list_approvals` — list pending approvals
+### Approvals (3 tools)
+- `list_approvals` — list pending approval requests
 - `get_approval` — get approval details
-- `decide_approval` — approve or reject
+- `decide_approval` — approve or reject a request
 
-### Runtime
-- `list_runtime_sessions` — view active IVR sessions
-- `get_session_replay` — replay a completed session path
+### Prompt Assets (2 tools)
+- `list_prompts` — list prompt assets for the tenant
+- `get_prompt` — get prompt asset details
 
-### Schedules
-- `list_schedules`, `create_schedule`, `get_schedule`
+### Runtime Sessions (2 tools)
+- `list_sessions` — list IVR sessions (active and recent)
+- `get_session` — get session details and step replay
 
-### Recordings
-- `list_recordings`, `get_recording`, `analyze_recording`
+### Schedules (1 tool)
+- `list_schedules` — list time-based routing schedules
 
-### Exports
-- `list_exports`, `request_export`
+### Recordings (4 tools)
+- `list_recordings` — list call recordings
+- `get_recording` — get recording metadata
+- `list_recording_analyses` — list analysis results for a recording
+- `get_recording_analysis` — get transcript/summary analysis result
 
-### Risk Assessment
-- `analyze_flow_risk` — assess risk profile of an IVR flow change
+### Exports (2 tools)
+- `export_call_events` — export call event records for the tenant
+- `export_sessions` — export IVR session records for the tenant
 
 ---
 
