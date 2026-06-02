@@ -187,3 +187,4 @@ All four gates must pass.  A failure in any gate blocks the merge.
 | `0040_freeswitch_node_registry.sql` | FreeSWITCH node registry and runtime nonce replay protection. |
 | `0041_tenant_outbound_policies.sql` | Tenant outbound fraud policy and global blocked destination prefixes. |
 | `0042_drop_legacy_role_tables.sql` | Drops unused legacy `roles`, `user_roles`, and `role_policies` tables; `users.role` remains the canonical tenant role source. |
+| `0043_retention_purge_expansion.sql` | Extends retention policies and legal holds for voicemail, call events, summaries, and generated media. |

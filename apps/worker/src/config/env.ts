@@ -17,4 +17,5 @@ function required(key: string): string {
 export const config = {
   port: parseInt(process.env['WORKER_PORT'] ?? '3400', 10),
   apiBaseUrl: required('API_BASE_URL').replace(/\/$/, ''),
+  databaseUrl: process.env['DATABASE_URL'] ?? '',
 } as const;

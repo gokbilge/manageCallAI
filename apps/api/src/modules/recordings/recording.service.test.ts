@@ -20,8 +20,12 @@ const basePolicy: TenantRetentionPolicy = {
   id: 'policy-1',
   tenant_id: 'tenant-1',
   recording_retention_days: 90,
+  voicemail_retention_days: 90,
   transcript_retention_days: 180,
+  ai_summary_retention_days: 180,
   cdr_retention_days: 365,
+  call_event_retention_days: 365,
+  generated_media_retention_days: 180,
   created_at: '2026-06-01T00:00:00Z',
   updated_at: '2026-06-01T00:00:00Z',
 };

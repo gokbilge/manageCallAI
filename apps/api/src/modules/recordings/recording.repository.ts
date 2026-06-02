@@ -159,8 +159,10 @@ export class RecordingRepository {
 
   async getRetentionPolicy(tenantId: string): Promise<TenantRetentionPolicy | null> {
     const result = await this.db.query<TenantRetentionPolicy>(
-      `SELECT id, tenant_id, recording_retention_days, transcript_retention_days,
-              cdr_retention_days, created_at, updated_at
+      `SELECT id, tenant_id, recording_retention_days, voicemail_retention_days,
+              transcript_retention_days, ai_summary_retention_days, cdr_retention_days,
+              call_event_retention_days, generated_media_retention_days,
+              created_at, updated_at
        FROM tenant_retention_policies
        WHERE tenant_id = $1`,
       [tenantId],
@@ -169,22 +171,42 @@ export class RecordingRepository {
   }
 
   async upsertRetentionPolicy(tenantId: string, input: UpdateRetentionPolicyInput): Promise<TenantRetentionPolicy> {
+    const has = (key: keyof UpdateRetentionPolicyInput) => Object.prototype.hasOwnProperty.call(input, key);
     const result = await this.db.query<TenantRetentionPolicy>(
       `INSERT INTO tenant_retention_policies
-         (tenant_id, recording_retention_days, transcript_retention_days, cdr_retention_days)
-       VALUES ($1, $2, $3, $4)
+         (tenant_id, recording_retention_days, voicemail_retention_days,
+          transcript_retention_days, ai_summary_retention_days, cdr_retention_days,
+          call_event_retention_days, generated_media_retention_days)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (tenant_id) DO UPDATE
-         SET recording_retention_days  = COALESCE($2, tenant_retention_policies.recording_retention_days),
-             transcript_retention_days = COALESCE($3, tenant_retention_policies.transcript_retention_days),
-             cdr_retention_days        = COALESCE($4, tenant_retention_policies.cdr_retention_days),
+         SET recording_retention_days  = CASE WHEN $9::boolean THEN $2 ELSE tenant_retention_policies.recording_retention_days END,
+             voicemail_retention_days  = CASE WHEN $10::boolean THEN $3 ELSE tenant_retention_policies.voicemail_retention_days END,
+             transcript_retention_days = CASE WHEN $11::boolean THEN $4 ELSE tenant_retention_policies.transcript_retention_days END,
+             ai_summary_retention_days = CASE WHEN $12::boolean THEN $5 ELSE tenant_retention_policies.ai_summary_retention_days END,
+             cdr_retention_days        = CASE WHEN $13::boolean THEN $6 ELSE tenant_retention_policies.cdr_retention_days END,
+             call_event_retention_days = CASE WHEN $14::boolean THEN $7 ELSE tenant_retention_policies.call_event_retention_days END,
+             generated_media_retention_days = CASE WHEN $15::boolean THEN $8 ELSE tenant_retention_policies.generated_media_retention_days END,
              updated_at                = NOW()
-       RETURNING id, tenant_id, recording_retention_days, transcript_retention_days,
-                 cdr_retention_days, created_at, updated_at`,
+       RETURNING id, tenant_id, recording_retention_days, voicemail_retention_days,
+                 transcript_retention_days, ai_summary_retention_days, cdr_retention_days,
+                 call_event_retention_days, generated_media_retention_days,
+                 created_at, updated_at`,
       [
         tenantId,
         input.recording_retention_days ?? null,
+        input.voicemail_retention_days ?? null,
         input.transcript_retention_days ?? null,
+        input.ai_summary_retention_days ?? null,
         input.cdr_retention_days ?? null,
+        input.call_event_retention_days ?? null,
+        input.generated_media_retention_days ?? null,
+        has('recording_retention_days'),
+        has('voicemail_retention_days'),
+        has('transcript_retention_days'),
+        has('ai_summary_retention_days'),
+        has('cdr_retention_days'),
+        has('call_event_retention_days'),
+        has('generated_media_retention_days'),
       ],
     );
     return result.rows[0]!;

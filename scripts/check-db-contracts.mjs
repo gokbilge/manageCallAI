@@ -88,6 +88,14 @@ const REQUIRED_COLUMNS = [
   ['call_events', 'call_id'],          // 0001_initial_schema
   // sip_trunks
   ['sip_trunks', 'srtp_policy'],       // 0037_sip_trunk_srtp_policy
+  // tenant_retention_policies
+  ['tenant_retention_policies', 'recording_retention_days'],        // 0038_tenant_retention_policies
+  ['tenant_retention_policies', 'transcript_retention_days'],       // 0038_tenant_retention_policies
+  ['tenant_retention_policies', 'cdr_retention_days'],              // 0038_tenant_retention_policies
+  ['tenant_retention_policies', 'voicemail_retention_days'],        // 0043_retention_purge_expansion
+  ['tenant_retention_policies', 'call_event_retention_days'],       // 0043_retention_purge_expansion
+  ['tenant_retention_policies', 'ai_summary_retention_days'],       // 0043_retention_purge_expansion
+  ['tenant_retention_policies', 'generated_media_retention_days'],  // 0043_retention_purge_expansion
 ];
 
 // ── Run check ──────────────────────────────────────────────────────────────────

@@ -70,20 +70,36 @@ export interface TenantRetentionPolicy {
   id: string;
   tenant_id: string;
   recording_retention_days: number | null;
+  voicemail_retention_days: number | null;
   transcript_retention_days: number | null;
+  ai_summary_retention_days: number | null;
   cdr_retention_days: number | null;
+  call_event_retention_days: number | null;
+  generated_media_retention_days: number | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface UpdateRetentionPolicyInput {
   recording_retention_days?: number | null;
+  voicemail_retention_days?: number | null;
   transcript_retention_days?: number | null;
+  ai_summary_retention_days?: number | null;
   cdr_retention_days?: number | null;
+  call_event_retention_days?: number | null;
+  generated_media_retention_days?: number | null;
 }
 
 export type LegalHoldStatus = 'active' | 'released' | 'expired';
-export type LegalHoldResourceType = 'recording' | 'transcript' | 'cdr' | 'all';
+export type LegalHoldResourceType =
+  | 'recording'
+  | 'voicemail'
+  | 'transcript'
+  | 'summary'
+  | 'cdr'
+  | 'call_event'
+  | 'generated_media'
+  | 'all';
 
 export interface LegalHold {
   id: string;

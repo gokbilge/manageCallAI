@@ -28,8 +28,12 @@ const basePolicy = {
   id: 'policy-1',
   tenant_id: 't1',
   recording_retention_days: 90,
+  voicemail_retention_days: 90,
   transcript_retention_days: 180,
+  ai_summary_retention_days: 180,
   cdr_retention_days: 365,
+  call_event_retention_days: 365,
+  generated_media_retention_days: 180,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -69,9 +73,9 @@ describe('CompliancePage', () => {
     vi.mocked(useRetentionPolicy).mockReturnValue({ isLoading: false, isError: false, data: basePolicy } as never);
     vi.mocked(useLegalHolds).mockReturnValue({ isLoading: false, isError: false, data: [] } as never);
     render(<CompliancePage />);
-    expect(screen.getByText('90 days')).toBeInTheDocument();
-    expect(screen.getByText('180 days')).toBeInTheDocument();
-    expect(screen.getByText('365 days')).toBeInTheDocument();
+    expect(screen.getAllByText('90 days')).toHaveLength(2);
+    expect(screen.getAllByText('180 days')).toHaveLength(3);
+    expect(screen.getAllByText('365 days')).toHaveLength(2);
   });
 
   it('shows indefinite retention when days is null', () => {
@@ -114,13 +118,17 @@ describe('CompliancePage', () => {
     const inputs = screen.getAllByPlaceholderText('Leave empty for indefinite');
     fireEvent.change(inputs[0]!, { target: { value: '30' } });
     fireEvent.change(inputs[1]!, { target: { value: '' } });
-    fireEvent.change(inputs[2]!, { target: { value: '365' } });
+    fireEvent.change(inputs[4]!, { target: { value: '365' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Policy' }));
 
     await waitFor(() => expect(mutations.updateRetentionPolicy).toHaveBeenCalledWith({
       recording_retention_days: 30,
+      voicemail_retention_days: null,
       transcript_retention_days: null,
+      ai_summary_retention_days: null,
       cdr_retention_days: 365,
+      call_event_retention_days: null,
+      generated_media_retention_days: null,
     }));
   });
 
