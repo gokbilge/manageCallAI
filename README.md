@@ -60,22 +60,31 @@ manageCallAI replaces low-level telecom administration with safe business-level 
 
 ## Current Status
 
-**Public alpha (`v0.2.0-alpha`). Not production-ready.**
+**Public beta candidate. Not production-ready.**
 
 manageCallAI is suitable for local demos, internal evaluation, and contributor
-testing. The clean-clone demo loop passes. The CI smoke gate is provisioned
-and running. Do not deploy to production until all beta and production gates
-in the release docs are complete.
+testing. Public alpha evidence exists for `v0.2.0-alpha`; current `main`
+includes beta-readiness implementation work, but the repository is not public
+beta ready until the beta evidence gates are tied to the release candidate.
+Do not deploy to production until all production gates in the release docs are
+complete with real artifacts.
 
 | Stage | Status |
 |---|---|
 | Internal alpha | ✅ Ready |
 | Public alpha | ✅ Ready — `v0.2.0-alpha` |
-| Public beta | ⛔ Not ready — observability HUD, webhook/n8n/MCP/SDK, coverage (#131–135, #141) |
-| Production | ⛔ Not ready — retention API, live carrier re-test, RC smoke run, upgrade rehearsal, rate-limit evidence (#136–140) |
+| Public beta candidate | ✅ Current stage — beta surfaces and docs implemented, release evidence still needs RC/tag proof |
+| Public beta ready | ⛔ Not ready — requires RC/tag-bound FreeSWITCH smoke evidence, SDK publish/dry-run evidence, n8n/MCP/webhook verification evidence, and coverage evidence |
+| Production release candidate | ⛔ Not ready — requires a complete release evidence manifest with RC commit, artifacts, and operator signoff |
+| Production ready | ⛔ Not ready — requires all production gates to pass with real artifacts tied to the release candidate commit |
 
-See [docs/planning/open-release-blockers.md](docs/planning/open-release-blockers.md)
-for the current blocker list.
+See [docs/release/product-release-audit.md](docs/release/product-release-audit.md)
+and [docs/planning/open-release-blockers.md](docs/planning/open-release-blockers.md)
+for the current blocker list and evidence requirements.
+
+Scripted gates are not evidence. Check-config mode is not release evidence.
+Release evidence must point to a release-candidate commit, workflow run, or
+sanitized artifact.
 
 Release readiness references:
 
@@ -114,6 +123,18 @@ contract covering 99 OpenAPI operations.
 - **n8n connector**: webhook trigger + API action patterns
 - **Schema contracts**: Zod schemas as single source of truth; OpenAPI spec generated from code
 - **Error standard**: gRPC-inspired RPC codes, global error handler, CI coverage gate
+
+### Scripted Or Implemented But Not Production Evidence
+
+- Release and RC FreeSWITCH smoke workflow exists, but the latest verified
+  passing smoke run is not tied to the current release-candidate commit.
+- Production soak, SLO, carrier interop, restore, rotation, log-redaction, and
+  release-bundle validators exist; each production promotion still needs
+  current artifacts for the target release candidate.
+- Retention policy and legal-hold APIs exist; production still needs
+  object-storage cleanup/export-before-delete evidence and operator signoff.
+- SDK publish workflow exists; beta readiness needs a successful dry-run or
+  publish evidence tied to the intended release.
 
 ### Planned / In Progress
 

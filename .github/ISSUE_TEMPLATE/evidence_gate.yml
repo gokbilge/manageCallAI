@@ -1,0 +1,49 @@
+name: Evidence gate
+description: Track a release gate that needs a real artifact or workflow run.
+title: "[Evidence gate]: "
+labels: ["evidence", "release-blocker"]
+body:
+  - type: dropdown
+    id: gate
+    attributes:
+      label: Gate
+      options:
+        - CI
+        - Runtime smoke
+        - Restore
+        - Upgrade
+        - SLO/soak
+        - Carrier
+        - Rate limit
+        - Security
+        - SDK
+        - MCP
+        - n8n
+        - Retention
+    validations:
+      required: true
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current state
+    validations:
+      required: true
+  - type: textarea
+    id: evidence_required
+    attributes:
+      label: Evidence required
+      description: Scripts, templates, docs, and check-config mode are not sufficient.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: release_impact
+    attributes:
+      label: Release impact
+    validations:
+      required: true

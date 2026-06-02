@@ -4,6 +4,30 @@ This document is the canonical product, design, and architecture reference for m
 
 If another document conflicts with this one, this document wins until an explicit architecture decision updates it.
 
+## 0. Current Release Posture
+
+Current stage: **Public beta candidate**.
+
+Public alpha evidence exists for `v0.2.0-alpha`, and current `main` contains
+the beta-readiness implementation work for operator surfaces, retention/legal
+hold APIs, runtime safety, SDK workflow, MCP/n8n docs, and evidence validators.
+The product is not public beta ready until beta evidence is tied to the intended
+release candidate or tag.
+
+The product is **not production-ready**. Production readiness requires every
+production evidence gate to pass with real artifacts tied to the release
+candidate commit, including runtime smoke/E2E, restore/upgrade, soak/SLO,
+carrier interop, multi-instance rate limiting, retention behavior, security
+hardening, and operator signoff.
+
+Evidence rules:
+
+- Scripts, templates, and docs are not evidence by themselves.
+- `--check-config` output is not release evidence.
+- Issue closure is not release evidence unless it links to the artifact,
+  workflow run, or release-candidate commit that proves the gate.
+- Production evidence must be current for the release candidate being promoted.
+
 ## 1. Purpose
 
 manageCallAI is an open-source telecom control plane built on top of FreeSWITCH.

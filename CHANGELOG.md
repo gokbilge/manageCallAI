@@ -12,6 +12,11 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ## [Unreleased] — beta readiness
 
+### Changed
+
+- Clarified current release posture as public beta candidate, not production
+  ready, and added a product release audit with strict evidence rules.
+
 ### Added
 
 - Live carrier SIP trunk interoperability verified against FusionPBX/NetGSM
@@ -128,28 +133,6 @@ Go agent ESL, production E2E, and all hardening checks.
 
 ---
 
-## [Unreleased]
-
-### Added
-- Runtime token and JWT rotation rehearsal evidence validation for beta and
-  production release gates (closes #94).
-- FreeSWITCH agent startup-path tests covering smoke-check mode, invalid
-  startup config, connect failure, and graceful shutdown (closes #104).
-- Release checklist tag governance for alpha, beta, RC, and production channels
-  (closes #105).
-- Security alert management UI (`/tenant/security-alerts`) -- view, acknowledge, resolve, dismiss alerts; manage alert rules (closes #54).
-- Compliance / retention UI (`/tenant/compliance`) -- tenant retention policy and legal hold management (closes #55).
-- Release notes policy for versioned GitHub releases, changelog updates, and SDK publish status (closes #71).
-- Visual IVR detail workflow coverage for draft editing, validate, publish, read-only version states, and empty builder state (closes #72).
-- Redis-backed API rate-limit store for multi-instance production deployments.
-
-### Fixed
-- `docker-compose.yml` `ALLOW_RUNTIME_TOKEN_FALLBACK` default changed from `true` to `false` -- the API already defaults to `false` in production; the compose default now matches (closes #57).
-- Production preflight now explicitly fails when `MANAGECALLAI_INSTANCE_COUNT > 1` without an external/edge rate limiter declared, and when `ALLOW_RUNTIME_TOKEN_FALLBACK=true` in production (closes #59).
-- IVR flow integration tests no longer truncate shared tenant data before every test, reducing PostgreSQL deadlock risk in parallel runs (closes #70).
-
----
-
 ## [0.1.0-alpha.1] -- 2026-06-01
 
 First public alpha candidate. Internal alpha validated. Core backend, IVR lifecycle,
@@ -222,5 +205,6 @@ MCP, n8n, and CI quality gates all passing.
 - Security alerts, retention/legal hold admin UI pages absent from this release.
 - Visual IVR builder supports the alpha authoring workflow; beta still needs broader operator workflow validation.
 
-[Unreleased]: https://github.com/gokbilge/manageCallAI/compare/v0.1.0-alpha.1...HEAD
+[Unreleased]: https://github.com/gokbilge/manageCallAI/compare/v0.2.0-alpha...HEAD
+[0.2.0-alpha]: https://github.com/gokbilge/manageCallAI/compare/v0.1.0-alpha.1...v0.2.0-alpha
 [0.1.0-alpha.1]: https://github.com/gokbilge/manageCallAI/releases/tag/v0.1.0-alpha.1

@@ -7,20 +7,21 @@ lanes. It is intentionally stricter than the public-alpha gate.
 
 Last updated: 2026-06-02.
 
-- **Internal alpha:** ✅ Ready.
-- **Public alpha:** ✅ Ready — `v0.2.0-alpha` tagged. All alpha gates closed:
+- **Internal alpha:** Ready.
+- **Public alpha:** Ready - `v0.2.0-alpha` tagged. All alpha gates closed:
   clean-clone demo loop executed (2026-06-02), runtime proof from CI smoke
-  run 26803056139, all CI quality gates passing.
-- **Public beta:** ⛔ Not ready — observability HUD, webhook/n8n/MCP/SDK
-  verification, and coverage thresholds remain open. The self-hosted smoke
-  runner is provisioned and run 26803056139 passed, but the smoke must be
-  tied to a `release/**` or `rc/**` branch before beta promotion.
-- **Production:** ⛔ Not ready — several production gates have evidence from
-  the lab (soak, SLO, restore, carrier, release bundle) but the following
-  remain open: retention API and legal hold endpoints, multi-instance
-  rate-limiting live evidence, upgrade/migration rehearsal, live carrier
-  re-test, and the RC smoke run on a `release/**` branch.
-
+  run 26803056139, and normal CI quality gates passing.
+- **Public beta candidate:** Current stage. Beta implementation work has landed,
+  including the observability cockpit, webhook/idempotency checks, MCP/n8n docs,
+  SDK workflow, retention/legal-hold APIs, live carrier evidence, and
+  rate-limit/upgrade documentation.
+- **Public beta ready:** Not ready until the beta evidence packet is tied to the
+  intended beta candidate: release/tag-bound smoke evidence, SDK dry-run/publish
+  evidence, MCP/n8n/webhook verification evidence, and coverage evidence.
+- **Production:** Not ready. Production requires a complete release-candidate
+  evidence manifest with current artifacts for runtime smoke, production E2E,
+  restore/upgrade, SLO/soak/load, carrier interop, multi-instance rate limiting,
+  retention/storage/export behavior, security gates, and operator signoff.
 ## Stage A: Public Alpha — ✅ Complete (`v0.2.0-alpha`)
 
 Goal: make the repository honest, runnable, and safe for public evaluation.

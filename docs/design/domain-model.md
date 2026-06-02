@@ -52,6 +52,11 @@ It describes the primary entities, their responsibilities, key relationships, li
 - Recording
 - RecordingAnalysisRequest
 - RuntimeIngestionRecord
+- FreeSwitchNode
+- SecurityAlertRule
+- SecurityAlert
+- TenantRetentionPolicy
+- LegalHoldRequest
 
 ### 3.5 Provider and Channel Integration
 
@@ -689,6 +694,57 @@ Invariants:
 - Snapshots must be tenant-scoped unless served to a platform operator aggregate view.
 - Snapshots must not expose raw FreeSWITCH payloads, provider secrets, or raw provider webhook bodies.
 - Historical reporting should use durable records, not transient live snapshots.
+
+### 8.7 FreeSwitchNode
+
+Represents a registered FreeSWITCH runtime node allowed to call runtime-internal
+API endpoints through node-scoped credentials.
+
+Key fields:
+
+- `id`
+- `nodeName`
+- `status`
+- `capabilities`
+- `allowedCidrs`
+- `activeTokenId`
+- `lastSeenAt`
+- `createdAt`
+- `updatedAt`
+
+Invariants:
+
+- Runtime node secrets are returned only at creation/rotation time.
+- Runtime requests must bind caller identity to node capability and tenant scope
+  where applicable.
+- Node registry state is operational control-plane state, not tenant desired state.
+
+### 8.8 SecurityAlertRule and SecurityAlert
+
+Represent business-level abuse and operational alerts such as registration
+bursts, outbound abuse attempts, runtime auth failures, webhook delivery
+pressure, and runtime degradation.
+
+Invariants:
+
+- Alerts use bounded normalized metadata, not raw FreeSWITCH or provider payloads.
+- Tenant-scoped alerts are visible only to authorized tenant actors; platform
+  aggregate views require platform-admin capability.
+
+### 8.9 TenantRetentionPolicy and LegalHoldRequest
+
+Represent tenant-specific retention overrides and legal holds for call-related
+data.
+
+Covered resources include recordings, voicemail, transcripts, summaries, CDRs,
+call events, generated media, and webhook delivery records.
+
+Invariants:
+
+- Legal holds block purge regardless of retention age.
+- Retention changes and hold create/release actions are audited.
+- Production promotion still requires evidence for object-storage cleanup,
+  export-before-delete, backup interaction, and operator signoff.
 
 ## 9. Provider and Channel Integration Entities
 

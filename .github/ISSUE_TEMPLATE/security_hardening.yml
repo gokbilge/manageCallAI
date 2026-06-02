@@ -1,0 +1,41 @@
+name: Security hardening
+description: Track security hardening required for beta or production.
+title: "[Security hardening]: "
+labels: ["security"]
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+    validations:
+      required: true
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current state
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: evidence_required
+    attributes:
+      label: Evidence required
+    validations:
+      required: true
+  - type: textarea
+    id: release_impact
+    attributes:
+      label: Release impact
+    validations:
+      required: true

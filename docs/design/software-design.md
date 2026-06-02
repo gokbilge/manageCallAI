@@ -46,6 +46,7 @@ Responsibilities:
 Implementation direction:
 
 - Node.js + TypeScript
+- Fastify route modules registered by domain area in `apps/api/src/app.ts`
 
 Responsibilities:
 
@@ -53,6 +54,9 @@ Responsibilities:
 - Enforce authentication and authorization
 - Coordinate domain services
 - Return business-level representations and action results
+- Own runtime-node authentication and node-scoped capability checks for
+  FreeSWITCH-facing endpoints
+- Own tenant retention/legal hold APIs and audit records for compliance actions
 
 ### 3.3 Domain Services
 
@@ -121,6 +125,9 @@ Responsibilities:
 - Emit business events
 - Accept approved automation entry points
 - Bridge external workflow systems to control-plane operations
+- Run the durable webhook delivery worker from the API process today; future
+  deployments may split delivery into a dedicated worker without moving
+  webhook lifecycle rules out of the API/domain model
 
 ### 3.7.1 Repository Governance Layer
 
@@ -167,6 +174,24 @@ Design constraints:
 - Provider metadata is diagnostic context only; it must not drive core business logic
 - WhatsApp, Telegram, Google Meet, and custom adapters run as independent services;
   `apps/api` exposes contracts and state transitions but does not host provider SDKs.
+
+### 3.9 Release Evidence Layer
+
+Implementation direction:
+
+- Release validators and smoke scripts under `scripts/`
+- Release and operations documentation under `docs/release/` and `docs/ops/`
+- GitHub Actions for normal CI, SDK publish, Docker image builds, CodeQL, and
+  self-hosted FreeSWITCH smoke
+
+Responsibilities:
+
+- Distinguish implementation, documentation, check-config validation, and real
+  release evidence.
+- Require runtime, restore/upgrade, soak/SLO, rate-limit, carrier, security,
+  and operator-signoff artifacts before production promotion.
+- Keep release manifests tied to the exact release-candidate commit or workflow
+  run. Scripts and templates are supporting tools, not evidence by themselves.
 
 ## 4. Core Domain Concepts
 

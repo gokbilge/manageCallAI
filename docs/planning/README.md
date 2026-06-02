@@ -18,6 +18,12 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [production-readiness-roadmap.md](production-readiness-roadmap.md)
   Public alpha, beta, and production readiness gates mapped to the next slices.
 
+- [open-release-blockers.md](open-release-blockers.md)
+  Current public beta candidate and production blocker matrix with evidence requirements.
+
+- [../release/product-release-audit.md](../release/product-release-audit.md)
+  Product release audit and release-stage decision.
+
 - [post-release-roadmap.md](post-release-roadmap.md)
   Seven post-release expansion workstreams that now map to explicit follow-on slices.
 

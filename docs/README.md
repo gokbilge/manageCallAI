@@ -77,6 +77,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [release/freeswitch-smoke-gate.md](release/freeswitch-smoke-gate.md)
   Required self-hosted FreeSWITCH smoke gate for release and RC branches.
 
+- [release/product-release-audit.md](release/product-release-audit.md)
+  Current product release audit, release-stage decision, and remaining evidence gates.
+
 ## UI Documents
 
 - [ui/UI_ARCHITECTURE.md](ui/UI_ARCHITECTURE.md)

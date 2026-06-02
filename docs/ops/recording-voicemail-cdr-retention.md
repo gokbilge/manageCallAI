@@ -3,9 +3,9 @@
 > **Status: Required before production.**
 >
 > The retention framework (policy document, DB schema, purge service, dry-run
-> mode, and audit trail) is a hard production gate. Do not accept production
-> traffic until all items in the Acceptance Criteria section below are
-> satisfied and evidenced.
+> mode, APIs, and audit trail) is implemented for database-backed resources.
+> Production promotion still requires evidence for storage-object cleanup,
+> export-before-delete, backup interaction, and operator signoff.
 
 ---
 
@@ -122,8 +122,8 @@ and which are not under a legal hold.
 | Scheduled purge worker with dry-run and audit trail | ✅ Implemented — `apps/worker/src/modules/retention/retention-purge.service.ts` |
 | Per-tenant retention override API | ✅ Implemented — `GET/PATCH /api/v1/tenant/retention` with bounds validation and audit trail |
 | Legal hold API (`POST`, `DELETE`, `GET`) | ✅ Implemented — `POST/DELETE/GET /api/v1/tenant/legal-hold(s)` with audit trail and cross-tenant isolation |
-| Object storage audio file deletion | ⛔ **Required before production** — purge deletes DB records; object storage cleanup not implemented |
-| Export-before-delete | ⛔ **Required before production** — not implemented |
+| Object storage audio file deletion | ⛔ **Required before production** — purge deletes DB records; object storage cleanup is not implemented/evidenced |
+| Export-before-delete | ⛔ **Required before production** — not implemented/evidenced |
 | Integration tests covering purge, hold, dry-run | ✅ Implemented — `apps/api/src/modules/retention/retention.integration.test.ts` covers retention policy CRUD, legal hold lifecycle, cross-tenant isolation |
 | Data-subject-request (DSR) / right-to-erasure flow | ⛔ **Required before production** — not documented or implemented |
 
@@ -144,16 +144,21 @@ deletion from backups, a backup purge procedure must be defined and executed.
 
 ## Acceptance Criteria (all required before production)
 
-- [ ] `tenant_retention_overrides` table exists and is migrated.
-- [ ] Per-tenant retention override API (`PATCH`, `GET`) implemented and
+- [x] `tenant_retention_policies` table exists and is migrated.
+- [x] Per-tenant retention override API (`PATCH`, `GET`) implemented and
   integration-tested.
-- [ ] Legal hold API (`POST`, `DELETE`, `GET`) implemented with audit log.
-- [ ] Purge job supports dry-run mode (`DRY_RUN=true`).
-- [ ] Purge job writes deletion audit events for every deleted record.
-- [ ] Purge job respects legal hold (held records are never deleted).
+- [x] Legal hold API (`POST`, `DELETE`, `GET`) implemented with audit log.
+- [x] Purge job supports dry-run mode.
+- [x] Purge job writes deletion audit events for deleted database records.
+- [x] Purge job respects legal hold (held records are never deleted).
 - [ ] Object storage files are deleted atomically with DB records.
-- [ ] Integration tests cover: normal purge, dry-run, legal hold bypass, export-before-delete.
-- [ ] `pnpm test` passes with retention-purge tests included.
+- [ ] Export-before-delete is implemented and tested.
+- [ ] Integration tests cover storage cleanup and export-before-delete.
+- [ ] Current release-candidate `pnpm test` passes with retention tests included.
+- [ ] Backup retention and DSR/right-to-erasure interaction is documented and
+  accepted by the release owner.
+
+Policy documented; enforcement implementation/evidence required before production.
 
 ---
 
