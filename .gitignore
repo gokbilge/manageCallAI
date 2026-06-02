@@ -1,4 +1,5 @@
 node_modules/
+uxdesign/
 .env
 .pnpm-store/
 dist/
