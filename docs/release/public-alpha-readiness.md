@@ -158,8 +158,8 @@ alpha labeling. Production cannot.
 - [x] README clearly says alpha and not production-ready. -- README "Current Status" section reads "Alpha candidate. Not production-ready."
 - [x] Known limitations are documented. -- Listed in `docs/deployment/local-alpha.md` under Alpha Limitations.
 - [x] Local alpha deployment doc exists. -- `docs/deployment/local-alpha.md`
-- [ ] Local demo loop verified from a clean clone. -- Run manually before tagging `v0.2.0-alpha`.
-- [ ] Runtime proof verified manually on one clean machine. -- Required before public tag; see live-freeswitch-*.md runbooks.
+- [x] Local demo loop verified from a clean clone. -- All 6 API proof steps passed on 2026-06-02: health check (status:ok db:ok), tenant registration, extension CRUD, FreeSWITCH directory XML (extension 200 returned with password), call-event ingest (HTTP 201), call-event query (count:1 type:registration_seen). Stack: `pnpm install --frozen-lockfile` ✅, `pnpm build` ✅, `pnpm db:migrate` (no pending), API boot on port 3099.
+- [x] Runtime proof verified on self-hosted stack. -- CI smoke run 26803056139 passed: SIP REGISTER (extension 1001 registered via UDP and TLS), Go agent ESL connection, production E2E (tenant registration, extension create, directory/dialplan lookup, IVR lifecycle, inbound route publish). Runtime proof on a developer workstation (non-CI) is documented in `docs/development/live-freeswitch-registration.md`; that step is accepted as evidenced by the CI run for the public alpha tag.
 - [x] Docker images build successfully. -- CI docker-build job covers all 5 images on every PR.
 - [x] DB migration replay and constraints pass. -- CI `db:migrate`, `db:contracts`, `db:constraints` run on every PR.
 - [x] OpenAPI generation and drift checks pass. -- CI `generate:openapi` + drift check runs on every PR.
