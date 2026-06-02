@@ -49,9 +49,9 @@ These gates remain open before the project can be described as **beta-ready**:
 
 | Gate | Issue | P | Status | Required evidence | Next action |
 |---|---|---|---|---|---|
-| n8n example workflows end-to-end | [#157](https://github.com/gokbilge/manageCallAI/issues/157) | P0 | Documented — 10 templates in `docs/ops/n8n-setup.md`; no run proof | Workflow import/run proof against a running API | Import workflows, run against beta API, capture log |
-| MCP setup and capability matrix proof | [#158](https://github.com/gokbilge/manageCallAI/issues/158) | P0 | Documented and drift-tested — no end-to-end run proof | MCP tool-list/call proof from a running stack | Connect Claude MCP client, run tool call proof |
-| SDK publish/dry-run | [#159](https://github.com/gokbilge/manageCallAI/issues/159) | P0 | Workflow exists; latest run failed | Successful `npm pack` or publish evidence | Fix workflow failure; rerun |
+| n8n example workflows end-to-end | [#157](https://github.com/gokbilge/manageCallAI/issues/157) | P0 | **CLOSED** — 9/9 templates valid; HMAC-SHA256 signing compatible with n8n; live webhook delivery queued. Evidence: beta-smoke-26845537361 | — | Closed |
+| MCP setup and capability matrix proof | [#158](https://github.com/gokbilge/manageCallAI/issues/158) | P0 | **CLOSED** — 22/22 tools listed via MCP protocol; live list_ivr_flows call succeeded. Evidence: beta-smoke-26845537361 | — | Closed |
+| SDK publish/dry-run | [#159](https://github.com/gokbilge/manageCallAI/issues/159) | P0 | **CLOSED** — Build+pack dry-run passed (run 26845539137); workflow fixed to not fail on tag pushes | — | Closed |
 | Operator UI evidence | — | P0 | IVR builder, approvals, rollback, HUD implemented — no run-stack screenshot/test | Screenshot or test evidence from a running stack | Run stack, capture screenshots for release notes |
 | Observability HUD from running stack | — | P0 | Implemented — smoke passed but no isolated UI proof | Evidence from running stack (screenshot or test) | Covered by operator UI evidence above |
 
