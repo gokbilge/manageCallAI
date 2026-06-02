@@ -5,14 +5,20 @@ All notable changes to manageCallAI are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Pre-1.0 versions use `0.MINOR.PATCH`. Alpha/beta releases carry a pre-release
-suffix: `0.1.0-alpha`, `0.2.0-beta.1`, etc.
+Pre-1.0 versions use `0.MINOR.PATCH`. Alpha/beta releases carry numbered
+pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ---
 
 ## [Unreleased]
 
 ### Added
+- Runtime token and JWT rotation rehearsal evidence validation for beta and
+  production release gates (closes #94).
+- FreeSWITCH agent startup-path tests covering smoke-check mode, invalid
+  startup config, connect failure, and graceful shutdown (closes #104).
+- Release checklist tag governance for alpha, beta, RC, and production channels
+  (closes #105).
 - Security alert management UI (`/tenant/security-alerts`) -- view, acknowledge, resolve, dismiss alerts; manage alert rules (closes #54).
 - Compliance / retention UI (`/tenant/compliance`) -- tenant retention policy and legal hold management (closes #55).
 - Release notes policy for versioned GitHub releases, changelog updates, and SDK publish status (closes #71).
@@ -26,7 +32,7 @@ suffix: `0.1.0-alpha`, `0.2.0-beta.1`, etc.
 
 ---
 
-## [0.1.0-alpha] -- 2026-06-01
+## [0.1.0-alpha.1] -- 2026-06-01
 
 First public alpha candidate. Internal alpha validated. Core backend, IVR lifecycle,
 MCP, n8n, and CI quality gates all passing.
@@ -98,5 +104,5 @@ MCP, n8n, and CI quality gates all passing.
 - Security alerts, retention/legal hold admin UI pages absent from this release.
 - Visual IVR builder supports the alpha authoring workflow; beta still needs broader operator workflow validation.
 
-[Unreleased]: https://github.com/gokbilge/manageCallAI/compare/v0.1.0-alpha...HEAD
-[0.1.0-alpha]: https://github.com/gokbilge/manageCallAI/releases/tag/v0.1.0-alpha
+[Unreleased]: https://github.com/gokbilge/manageCallAI/compare/v0.1.0-alpha.1...HEAD
+[0.1.0-alpha.1]: https://github.com/gokbilge/manageCallAI/releases/tag/v0.1.0-alpha.1

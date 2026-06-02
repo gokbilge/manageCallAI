@@ -10,6 +10,7 @@
  * Usage:
  *   pnpm check:runtime-token-rotation
  *   node scripts/check-runtime-token-rotation.mjs [--check-config]
+ *   node scripts/check-runtime-token-rotation.mjs --evidence=<rotation-rehearsal.json>
  *
  * Exit 0 — no failures (rotation may be in progress; info messages shown).
  * Exit 1 — one or more hard failures detected.
@@ -22,9 +23,17 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const evidenceArg = rawArgs.find((arg) => arg.startsWith('--evidence='));
+
 if (args.has('--check-config')) {
   console.log('runtime token rotation check configuration check passed');
+  process.exit(0);
+}
+
+if (evidenceArg) {
+  validateRotationEvidence(evidenceArg.slice('--evidence='.length));
   process.exit(0);
 }
 
@@ -138,4 +147,111 @@ if (secondary) {
   console.log('\nruntime token rotation check PASSED — rotation window is open');
 } else {
   console.log('\nruntime token rotation check PASSED — no active rotation');
+}
+
+function validateRotationEvidence(evidencePath) {
+  if (!existsSync(evidencePath)) {
+    console.error(`Evidence file not found: ${evidencePath}`);
+    process.exit(1);
+  }
+
+  let evidence;
+  try {
+    evidence = JSON.parse(readFileSync(evidencePath, 'utf8').replace(/^\uFEFF/, ''));
+  } catch (error) {
+    console.error(`Failed to parse evidence JSON: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+
+  const findings = [];
+  const fail = (field, message) => findings.push({ level: 'fail', field, message });
+  const warn = (field, message) => findings.push({ level: 'warn', field, message });
+
+  for (const field of ['rotated_at', 'git_sha', 'operator', 'environment']) {
+    if (!evidence[field] || typeof evidence[field] !== 'string' || !evidence[field].trim()) {
+      fail(field, 'required string field is missing or empty');
+    }
+  }
+
+  if (evidence.rotated_at && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(evidence.rotated_at))) {
+    fail('rotated_at', 'must be an ISO 8601 datetime');
+  }
+  if (evidence.mode !== 'live') {
+    fail('mode', 'must be "live"; check-config or dry-run evidence is not accepted');
+  }
+  if (evidence.status !== 'passed') {
+    fail('status', 'must be "passed"');
+  }
+
+  const jwt = evidence.jwt_rotation ?? {};
+  for (const field of [
+    'new_secret_deployed',
+    'overlap_window_verified',
+    'new_jwt_accepted_after_cutover',
+    'old_jwt_rejected_after_cutover',
+  ]) {
+    if (jwt[field] !== true) fail(`jwt_rotation.${field}`, 'must be true');
+  }
+
+  const runtime = evidence.runtime_token_rotation ?? {};
+  for (const field of [
+    'secondary_token_configured',
+    'primary_token_accepted_during_window',
+    'secondary_token_accepted_during_window',
+    'secondary_promoted_to_primary',
+    'promoted_token_accepted',
+    'old_primary_rejected_after_revocation',
+    'query_body_fallback_disabled_in_production',
+  ]) {
+    if (runtime[field] !== true) fail(`runtime_token_rotation.${field}`, 'must be true');
+  }
+
+  const audit = evidence.audit ?? {};
+  for (const field of ['jwt_rotation_event_found', 'runtime_token_rotation_event_found']) {
+    if (audit[field] !== true) fail(`audit.${field}`, 'must be true');
+  }
+  if (!Array.isArray(audit.event_ids) || audit.event_ids.length === 0) {
+    fail('audit.event_ids', 'must include at least one sanitized audit event id');
+  }
+
+  const logRedaction = evidence.log_redaction ?? {};
+  if (logRedaction.check_passed !== true) {
+    fail('log_redaction.check_passed', 'must be true');
+  }
+  if (!logRedaction.evidence_path || typeof logRedaction.evidence_path !== 'string') {
+    fail('log_redaction.evidence_path', 'must point to sanitized log-redaction evidence');
+  }
+
+  if (evidence.runtime_token_rotation_check_exit_code !== 0) {
+    fail('runtime_token_rotation_check_exit_code', 'must be 0');
+  }
+
+  const serialized = JSON.stringify(evidence);
+  const secretPatterns = [
+    ['authorization header', /\bauthorization\s*[:=]\s*(?:bearer|basic|digest)\s+(?!\[REDACTED\])\S+/i],
+    ['runtime token header', /\bx-managecallai-runtime-token\s*[:=]\s*(?!\[REDACTED\])\S+/i],
+    ['secret env var', /\b(?:JWT_SECRET|RUNTIME_API_TOKEN|RUNTIME_API_TOKEN_SECONDARY)\s*=\s*(?!\[REDACTED\])\S+/i],
+    ['secret field', /"(?:jwt_secret|runtime_token|old_token|new_token|secret|token)"\s*:\s*"(?!\[REDACTED\])[^"]{8,}"/i],
+  ];
+  for (const [name, pattern] of secretPatterns) {
+    if (pattern.test(serialized)) {
+      fail('secrets', `evidence contains an unredacted ${name}`);
+    }
+  }
+
+  if (!evidence.notes) {
+    warn('notes', 'recommended: include rollout scope, node count, and rollback observation');
+  }
+
+  for (const finding of findings) {
+    console.log(`${finding.level.toUpperCase()}: ${finding.field}: ${finding.message}`);
+  }
+
+  const failures = findings.filter((finding) => finding.level === 'fail');
+  if (failures.length > 0) {
+    console.error(`\nruntime token rotation evidence check FAILED with ${failures.length} blocking issue(s)`);
+    process.exit(1);
+  }
+
+  console.log(`runtime token rotation evidence check PASSED with ${findings.length} finding(s)`);
 }

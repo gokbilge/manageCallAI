@@ -144,6 +144,33 @@ This checks:
   and also meets minimum length (rotation is in progress)
 - `ALLOW_RUNTIME_TOKEN_FALLBACK` is false in production
 
+## File Rotation Rehearsal Evidence
+
+Beta and production release gates require filed evidence from a real staging or
+production-candidate rehearsal. Use the template at
+`docs/ops/templates/rotation-rehearsal-evidence-template.json` and write the
+filled artifact under ignored `artifacts/rotation/`:
+
+```sh
+cp docs/ops/templates/rotation-rehearsal-evidence-template.json \
+  artifacts/rotation/rotation-rehearsal-$(date -u +%Y-%m-%dT%H-%M-%SZ).json
+
+pnpm check:runtime-token-rotation -- \
+  --evidence=artifacts/rotation/rotation-rehearsal-<timestamp>.json
+```
+
+The validator rejects evidence unless it confirms:
+
+- old JWTs are rejected after JWT secret cutover
+- old runtime tokens are rejected after primary token revocation
+- the promoted runtime token is accepted
+- runtime query/body token fallback is disabled in production
+- JWT and runtime token rotation events are present in the audit log
+- log-redaction evidence passed and is linked
+
+Never place raw JWT secrets, runtime tokens, API keys, SIP credentials, or
+database passwords in evidence JSON.
+
 ## Related Documents
 
 - `docs/ops/secret-rotation.md` — rotation for all application secrets

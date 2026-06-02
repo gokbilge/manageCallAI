@@ -97,7 +97,16 @@ stored hashed in the database.
 ## Runtime Token Rotation
 
 See `docs/ops/runtime-token-rotation.md` for the zero-downtime rotation
-procedure using `RUNTIME_API_TOKEN_SECONDARY`.
+procedure using `RUNTIME_API_TOKEN_SECONDARY`. Release-gate evidence must be
+validated with:
+
+```sh
+pnpm check:runtime-token-rotation -- \
+  --evidence=artifacts/rotation/rotation-rehearsal-<timestamp>.json
+```
+
+Use `docs/ops/templates/rotation-rehearsal-evidence-template.json` and keep the
+filled artifact under ignored `artifacts/rotation/`.
 
 ## Post-Rotation Verification
 
@@ -114,5 +123,7 @@ decryption works with the new key.
 ## Related Documents
 
 - `docs/ops/runtime-token-rotation.md` — zero-downtime runtime token rotation
+- `docs/ops/templates/rotation-rehearsal-evidence-template.json` — required
+  filed evidence shape
 - `docs/ops/production-preflight.md` — preflight gate
 - `docs/ops/backup-restore.md` — restore from backup after key rotation
