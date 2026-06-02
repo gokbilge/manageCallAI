@@ -49,7 +49,7 @@ const PASSWORD = process.env.SIP_PASSWORD ?? 'PhonePass123!';
 const DOMAIN = process.env.SIP_DOMAIN ?? 'acme-demo.managecallai.local';
 const LOCAL_IP = process.env.SIP_LOCAL_IP ?? '127.0.0.1';
 const FS_VERSION = process.env.FREESWITCH_VERSION ?? 'unknown';
-const ECHO_EXT = '*47';
+const ECHO_EXT = '747';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -261,6 +261,20 @@ jobs:
             sed "s/='\(.*\)'$/=\1/" "${PRODUCTION_E2E_ARTIFACT_DIR}/sip-register.env" >> "${GITHUB_ENV}"
           fi
 
+      - name: Verify smoke echo dialplan endpoint
+        run: |
+          TOKEN=$(printf 'freeswitch:%s' "${RUNTIME_API_TOKEN}" | base64 -w0)
+          RESP=$(curl -sf -X POST http://localhost:3000/api/v1/freeswitch/dialplan \
+            -H "Authorization: Basic ${TOKEN}" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d 'destination_number=747&context=default' 2>&1 | node scripts/redact-logs.mjs)
+          echo "--- smoke echo dialplan response (ext 747) ---"
+          echo "$RESP"
+          echo "$RESP" | grep -q 'smoke-echo' && echo 'OK: smoke echo confirmed in dialplan response' \
+            || { echo 'ERROR: smoke echo NOT found in dialplan response for ext 747'; exit 1; }
+        env:
+          RUNTIME_API_TOKEN: ${{ secrets.SMOKE_RUNTIME_API_TOKEN }}
+
       - name: SIP TLS / SRTP / NAT smoke
         run: |
           set -o pipefail
@@ -276,6 +290,12 @@ jobs:
           FREESWITCH_EXT_RTP_IP: "127.0.0.1"
           APP_ENV: production
           GITHUB_SHA: ${{ github.sha }}
+
+      - name: Capture FreeSWITCH logs after TLS smoke
+        if: always()
+        run: |
+          echo "--- FreeSWITCH container logs (last 100 lines) ---"
+          docker logs "${FS_CONTAINER}" --tail 100 2>&1 | node scripts/redact-logs.mjs || echo "no container logs"
 
       - name: Validate SIP TLS / SRTP / NAT evidence
         run: |
