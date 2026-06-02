@@ -50,6 +50,30 @@ It maps the conceptual domain model into relational structures suitable for MVP 
 - `call_detail_records`
 - `call_events`
 - `runtime_ingestion_records`
+- `tenant_audit_log`
+- `security_alert_rules`
+- `security_alerts`
+- `security_alert_cooldowns`
+
+### 3.5 Runtime, Compliance, and Integration Operations
+
+- `ivr_flow_sessions`
+- `ivr_flow_session_steps`
+- `idempotency_records`
+- `webhook_delivery_log`
+- `webhook_delivery_queue`
+- `freeswitch_nodes`
+- `freeswitch_node_tokens`
+- `tenant_retention_policies`
+- `legal_hold_requests`
+- `recordings`
+- `recording_analysis_requests`
+- `voicemail_messages`
+- `provider_work_requests`
+- `channel_accounts`
+- `channel_messages`
+- `meeting_sessions`
+- `tenant_outbound_policies`
 
 ## 4. Table Intent
 
@@ -236,6 +260,42 @@ This table complements `ivr_flow_sessions`:
 - `ivr_flow_sessions` = current pinned runtime state
 - `ivr_flow_session_steps` = append-only replay history for that session
 
+### 4.17 idempotency_records
+
+Stores request fingerprints and response metadata for retry-safe automation and
+AI/tool calls that supply an `Idempotency-Key`. It applies to mutation routes
+where repeat delivery is expected.
+
+### 4.18 webhook_delivery_log and webhook_delivery_queue
+
+Store durable webhook delivery attempts, event IDs, retry/DLQ state, HMAC
+signature metadata, and delivery lifecycle timestamps. They support safe
+workflow retry without exposing raw runtime control.
+
+### 4.19 freeswitch_nodes and freeswitch_node_tokens
+
+Store platform-owned runtime node registry and hashed node credentials. Runtime
+node secrets are write-only: raw values are returned once on create/rotation and
+are never exposed in normal reads.
+
+### 4.20 tenant_retention_policies and legal_hold_requests
+
+Store per-tenant retention overrides and legal holds. Retention covers
+recordings, voicemail, transcripts, AI summaries, CDRs, call events, generated
+media, and webhook delivery records. Legal holds prevent purge for matching
+tenant/resource scope until released.
+
+### 4.21 security_alert_rules, security_alerts, security_alert_cooldowns
+
+Store tenant-scoped and platform-visible alert rules, alert instances, and
+cooldown state for abuse and runtime health signals.
+
+### 4.22 tenant_outbound_policies
+
+Stores tenant-level outbound fraud policy, including country/area-code
+allowlists, high-risk blocks, and attempt/call caps. Runtime outbound dispatch
+must enforce global blocks, tenant policy, and route policy before queuing work.
+
 ## 5. Versioning Strategy
 
 - `ivr_flows`, `inbound_routes`, and `outbound_routes` each store `draft_version_id` and `active_version_id`
@@ -260,6 +320,9 @@ This table complements `ivr_flow_sessions`:
 - Audit and publish records must remain append-only
 - Route and flow version records must not be reused across object identities
 - Raw SIP trunk passwords must not live long-term in general-purpose JSONB fields
+- Runtime node tokens, webhook secrets, and provider credentials must be stored
+  as hashed/encrypted/secret references and omitted from public responses
+- Retention purge must honor legal hold before deleting any record
 
 ## 8. Important Tradeoffs
 

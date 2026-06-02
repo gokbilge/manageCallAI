@@ -1,57 +1,77 @@
 {
-  "release_version": "v0.2.0",
-  "commit_sha": "TBD — set when RC branch is cut",
-  "generated_at": "TBD",
-  "notes": "Beta/RC evidence bundle. Gates required before production promotion. Smoke run must be triggered on rc/** or release/** branch to satisfy repository ruleset.",
+  "release_version": "v0.2.0-beta.1",
+  "commit_sha": "cf60074311aa837d5345758049cc81c945545cfd",
+  "generated_at": "2026-06-02T14:30:00Z",
+  "stage": "beta",
+  "notes": "Beta evidence bundle for the v0.2.0 line. RC-branch CI and smoke runs are in progress (triggered by push to rc/v0.2.0). Production-only gates are documented with current status; full production evidence is required before RC or production promotion. Tracking issue: #150.",
 
-  "ci_run_url": "TBD",
-  "codeql_run_url": "TBD",
-  "coverage_run_url": "TBD",
-  "docker_images_run_url": "TBD",
-  "freeswitch_smoke_run_url": "TBD — must be from rc/v0.2.0 or release/v0.2.0 branch (issue #137)",
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825072900",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825073180",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825072967",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825072790",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825030902",
 
   "rc_branch_procedure": {
     "step_1": "git checkout main && git pull",
     "step_2": "git checkout -b rc/v0.2.0",
     "step_3": "git push -u origin rc/v0.2.0",
-    "step_4": "GitHub Actions will trigger freeswitch-smoke.yml on rc/** branch",
+    "step_4": "GitHub Actions triggers freeswitch-smoke.yml on rc/** branch (self-hosted runner)",
     "step_5": "Confirm FreeSWITCH runtime smoke status check passes on rc/v0.2.0",
-    "step_6": "Update freeswitch_smoke_run_url above with the passing run URL",
-    "step_7": "Run scripts/release-evidence-check.mjs against this file"
+    "step_6": "Update freeswitch_smoke_run_url with the passing run URL",
+    "step_7": "Update ci_run_url, codeql_run_url, coverage_run_url, docker_images_run_url with rc-branch run URLs",
+    "step_8": "pnpm release:evidence-check -- --manifest=docs/release/release-evidence-v0.2.0.json"
   },
 
-  "production_preflight": "TBD",
-  "production_e2e": "TBD",
-  "production_soak": "TBD",
-  "production_slo": "TBD",
-  "restore_smoke": "See docs/ops/upgrade-rehearsal-evidence.md (issue #140)",
-  "rate_limit_topology": "TBD — run: pnpm production:rate-limit-check with production env vars (issue #139)",
-  "carrier_interop": ["FusionPBX/NetGSM live — docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json — sip_register PASSED, inbound/outbound SIP verified, CDR written (closes #138)"],
-  "security_review": "TBD",
+  "production_preflight": "pnpm production:preflight passes check-config. Fails in dev (10 items, all missing production env vars — expected). Target-environment validation required before production RC — tracked in open-release-blockers.md.",
+
+  "production_e2e": "Smoke run 26825030902 passed all production E2E steps: tenant registration, extension create, directory/dialplan lookup, IVR lifecycle (validate/simulate/publish), inbound route publish, SIP REGISTER (UDP+TLS), Go agent ESL, FreeSWITCH hardening check, SIP TLS/SRTP/NAT smoke, observability query. Artifact: freeswitch-smoke-26825030902 (retained 90 days). https://github.com/gokbilge/manageCallAI/actions/runs/26825030902",
+
+  "production_soak": "Lab soak evidence: 1800s run, 0% error rate, p95 8.78ms, p99 12.05ms (PR #116, issue #100). Production RC evidence requires soak from the target release topology — tracked in open-release-blockers.md.",
+
+  "production_slo": "Lab SLO evidence: directory lookup p95 12.8ms, dialplan lookup p95 17.19ms — below 50ms breach threshold (PR #116, issue #100). Production RC evidence requires SLO validation from the target release topology — tracked in open-release-blockers.md.",
+
+  "restore_smoke": "Restore rehearsal evidenced in PR #116 (issue #98): pg_dump, restore to temp DB, migrations, db:contracts, db:constraints, restore:smoke all passed. RC-environment restore rehearsal required before production — see docs/ops/backup-restore.md and docs/ops/upgrade-rehearsal-evidence.md.",
+
+  "rate_limit_topology": "pnpm production:rate-limit-check passes with 4 warnings (explicit production RATE_LIMIT_* values not set in dev — expected). Redis-backed rate-limit store is implemented (migration 0028). Multi-instance topology validation required before production — tracked issue #139, docs/ops/rate-limit-topology.md.",
+
+  "carrier_interop": [
+    "FusionPBX/NetGSM live interop — docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json: sip_register PASSED (REGED on ivr.velocize.com), bidirectional SIP INVITE signaling confirmed, FreeSWITCH CDR written, inbound INVITE received with real NetGSM caller-ID (+903124401820). Closes #138.",
+    "5 scenarios documented as exceptions requiring live carrier re-test before production carrier traffic (see docs/ops/carrier-interop.md)."
+  ],
+
+  "security_review": "CodeQL: https://github.com/gokbilge/manageCallAI/actions/runs/26825073180 (clean, no open high/medium alerts). FreeSWITCH hardening check: 0 findings (smoke run 26825030902). Log redaction: 20/20 test cases pass. Full telecom threat model and production security review required before production RC — tracked in open-release-blockers.md.",
+
   "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
 
-  "beta_gates_required": [
-    "pnpm test green (#131 HUD, #132 webhooks, #141 coverage)",
-    "MCP end-to-end verified (#134)",
-    "n8n workflows verified (#133)",
-    "SDK dry-run publish (#135)",
-    "FreeSWITCH smoke on rc/v0.2.0 (#137)"
-  ],
-
-  "production_gates_required": [
-    "Live carrier SIP trunk interop (#138)",
-    "Multi-instance rate limit evidence (#139)",
-    "Upgrade and migration rehearsal (#140)",
-    "Retention API integration tests green (#136)"
-  ],
-
   "operator_signoff": {
-    "name": "TBD",
-    "role": "platform operator",
-    "approved_at": "TBD"
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-02T14:30:00Z",
+    "notes": "Beta candidate signoff. Production RC and production promotion require a separate operator signoff after all production gates pass."
   },
 
   "artifact_files": {
     "carrier_interop_evidence": "docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json"
+  },
+
+  "beta_gate_status": {
+    "observability_hud": "implemented — live cockpit with active sessions, queues, runtime errors, FreeSWITCH node health panel; candidate UI evidence in docs/release/product-release-audit.md",
+    "webhook_signing": "implemented and integration-tested — HMAC-SHA256 signing, replay protection, DLQ, idempotency; docs/design/webhooks.md; CI passes",
+    "n8n_workflows": "10 workflow templates documented in docs/ops/n8n-setup.md; end-to-end import/run proof required for beta-ready promotion (issue #133)",
+    "mcp_capability": "16 tools, drift checks pass in CI; setup guide at docs/ops/mcp-setup.md; end-to-end capability proof required for beta-ready promotion (issue #134)",
+    "sdk_dry_run": "SDK generate workflow exists; latest publish workflow run failed — dry-run/publish evidence required for beta-ready promotion (issue #135)",
+    "coverage": "API 64% / Web 80% / MCP 85% — beta exception for API documented (integration-only paths require live FreeSWITCH); 70% target before beta-GA; 80% before RC (issue #141)"
+  },
+
+  "production_gate_status": {
+    "upgrade_rehearsal": "template documented at docs/ops/upgrade-rehearsal-evidence.md; execution required before production — issue #140",
+    "sip_tls_srtp_nat": "historical evidence from smoke run 26803056139 at docs/ops/sip-tls-srtp-nat.md; RC-topology evidence required before production — issue #92",
+    "token_rotation": "check:runtime-token-rotation passes; rotation rehearsal evidence required for production — issue #94",
+    "log_redaction_artifact": "check:log-redaction passes (20/20); sanitized log artifact from target deployment required for production",
+    "retention_storage": "retention API + worker implemented; object-storage cleanup and export-before-delete evidence required before production — issue #136",
+    "network_hardening": "docs and check-config pass with 4 NAT/RTP/SRTP warnings (expected in dev); target deployment validation required — issue #93",
+    "fraud_controls": "outbound policy API and integration tests implemented; carrier-level block/allow proof required before production",
+    "rate_limit_multi_instance": "Redis store implemented; topology proof required for multi-instance deployments",
+    "release_bundle_complete": "this manifest will be validated with pnpm release:evidence-check once rc-branch smoke URL and CI URLs are updated"
   }
 }

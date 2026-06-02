@@ -1,0 +1,55 @@
+name: Beta blocker
+description: Track work that blocks public beta readiness.
+title: "[Beta blocker]: "
+labels: ["release-blocker", "beta"]
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+    validations:
+      required: true
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current state
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence required
+      description: Link workflow runs, artifacts, screenshots, or logs. Scripts/templates/check-config do not count as evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: suggested_files
+    attributes:
+      label: Suggested files
+  - type: textarea
+    id: blocked_by
+    attributes:
+      label: Blocked by
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - blocks public beta or release gate
+        - P1 - required before production
+        - P2 - hardening/improvement
+        - P3 - docs/cleanup
+    validations:
+      required: true

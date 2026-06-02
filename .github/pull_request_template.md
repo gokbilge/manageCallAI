@@ -40,6 +40,26 @@ Closes #
 - [ ] No secrets, tokens, or `.env` values committed
 - [ ] Tenant isolation maintained for all new queries and routes
 
+## Release impact
+
+- [ ] No release impact
+- [ ] Alpha blocker
+- [ ] Beta blocker
+- [ ] Production blocker
+- [ ] Requires runtime evidence
+- [ ] Requires migration evidence
+- [ ] Requires security review
+- [ ] Requires docs update
+
+## Evidence
+
+- CI:
+- Runtime smoke:
+- Restore:
+- SLO/soak:
+- Carrier:
+- Security:
+
 ## Audit
 
 - [ ] This change introduces an open finding → linked issue: #

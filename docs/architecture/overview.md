@@ -18,17 +18,23 @@ It defines the runtime topology, major components, data boundaries, integration 
 ## 3. High-Level Architecture
 
 ```text
-manageCallAI API
-      |
-      v
-FreeSWITCH Adapter Service
-      |
-      v
-mod_xml_curl + ESL + Lua helpers
-      |
-      v
-Stock FreeSWITCH
+React Web UI
+   -> REST API
+      -> PostgreSQL desired state
+      -> validation / simulation / publish / rollback / audit
+      -> runtime artifact generation
+      -> FreeSWITCH mod_xml_curl directory/dialplan
+      -> Lua thin executor
+      -> Go ESL agent
+      -> call events / observability
+
+MCP / n8n
+   -> safe API abstractions only
 ```
+
+FreeSWITCH remains the media/signaling runtime. The API is the control plane and
+source of lifecycle authority. MCP and n8n must stay narrower than REST and must
+not expose raw ESL, raw XML, shell, SQL, or direct runtime control.
 
 ## 4. Architectural Style
 

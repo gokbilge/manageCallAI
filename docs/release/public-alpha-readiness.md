@@ -2,22 +2,18 @@
 
 ## Release Recommendation
 
-The current project is suitable for an internal alpha and can become a public
-alpha after the alpha gates in this document are closed.
+The project is public alpha ready and currently sits at public beta candidate.
 
-Recommended tag after those gates pass:
+Public alpha tag:
 
 ```text
 v0.2.0-alpha
 ```
 
-Until then, use:
-
-```text
-v0.1.0-alpha-candidate
-```
-
-Do not describe this project as production-ready yet.
+Do not describe this project as production-ready. Scripts, templates, docs,
+issue closure, and check-config output are not release evidence by themselves.
+Release evidence must be tied to a release-candidate commit, workflow run, or
+sanitized artifact.
 
 ## Positioning
 
@@ -26,9 +22,9 @@ domains, IVR lifecycle, MCP tools, automation hooks, and FreeSWITCH
 XML/runtime foundations are implemented. The project is suitable for local
 demos, internal evaluation, and contributor testing.
 
-Production deployment is not recommended until full FreeSWITCH smoke CI,
-deployment hardening, observability HUD polish, and
-expanded tenant-isolation/runtime tests are complete.
+Production deployment is not recommended until release-candidate runtime smoke,
+deployment hardening, restore/upgrade, SLO/soak/load, carrier, retention,
+security, and operator-signoff evidence are complete.
 
 ## What Is Ready
 
@@ -86,6 +82,17 @@ The documented demo loop has two proof levels:
 
 - API proof: auth, extension CRUD, directory endpoint, call-event ingest/query
 - Runtime proof: API proof plus real SIP REGISTER through FreeSWITCH
+
+## Status Vocabulary
+
+| Status | Meaning |
+|---|---|
+| done | Implemented or documented, but not necessarily release evidence |
+| scripted | Script/check exists but has no current release artifact |
+| documented | Runbook or template exists but has not been validated |
+| evidenced | Current workflow run/artifact proves the gate for the stated release |
+| blocked | Cannot promote until the item is resolved |
+| not started | No meaningful implementation or documentation exists |
 
 ## Not Ready Yet
 

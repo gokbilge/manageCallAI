@@ -7,12 +7,32 @@ Use this checklist before promoting manageCallAI beyond development or staging.
 | Release | Status | Minimum Gate |
 |---|---|---|
 | Internal alpha | Allowed | Main CI green, demo loop works locally, runtime proof verified manually |
-| Public alpha | Conditional | `docs/release/public-alpha-readiness.md` checklist complete |
-| Public beta | Blocked until gate evidence exists | Self-hosted FreeSWITCH smoke CI required on `release/**` / `rc/**`, usable visual IVR/HUD, broader isolation/runtime tests |
-| Production | Blocked | Runtime E2E release gate, tested deployment/backup/restore/upgrade, fraud controls, soak testing |
+| Public alpha | Complete for `v0.2.0-alpha` | `docs/release/public-alpha-readiness.md` checklist complete |
+| Public beta candidate | Current stage | Beta implementation present, but beta evidence must be current for the candidate |
+| Public beta ready | Blocked until gate evidence exists | Self-hosted FreeSWITCH smoke evidence tied to the beta candidate, SDK dry-run/publish evidence, verified MCP/n8n/webhook workflows, usable visual IVR/HUD evidence, coverage evidence |
+| Production release candidate | Blocked | Release evidence manifest with RC commit, CI/security/coverage/runtime/restore/soak/SLO/carrier/rate-limit artifacts, rollback plan, and operator signoff fields populated |
+| Production | Blocked | Production RC evidence bundle passes and operator signoff is complete |
 
 Do not describe manageCallAI as production-ready until the production checklist
 and release smoke evidence are complete.
+
+## Stage Gate Separation
+
+| Gate | Internal alpha | Public alpha | Public beta | Production RC | Production |
+|---|---|---|---|---|---|
+| Main CI | required | required | required | required | required |
+| Clean-clone demo | recommended | evidenced | evidenced | evidenced | evidenced |
+| FreeSWITCH smoke | manual acceptable | feature-branch evidence acceptable | candidate-bound evidence required | RC-bound evidence required | RC-bound evidence required |
+| SDK publish/dry run | not required | not required | required | required | required |
+| MCP/n8n workflow proof | documented | documented | evidenced | evidenced | evidenced |
+| Restore/upgrade | documented | documented | documented | evidenced | evidenced |
+| Soak/SLO/load | not required | lab evidence acceptable | lab/candidate evidence | RC evidence required | RC evidence required |
+| Carrier interop | documented | lab/live evidence acceptable | candidate evidence | RC evidence required | RC evidence required |
+| Retention/legal hold | documented | implemented | implemented and tested | evidenced including storage/export gaps | evidenced |
+| Operator signoff | not required | not required | recommended | required | required |
+
+Check-config mode may verify script wiring for normal CI, but it never satisfies
+a live release evidence gate.
 
 ## Required Gates
 
