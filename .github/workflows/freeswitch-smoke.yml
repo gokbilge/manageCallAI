@@ -46,6 +46,9 @@ jobs:
       PRODUCTION_E2E_ARTIFACT_DIR: artifacts/production-e2e
 
     steps:
+      - name: Pre-clean leftover containers
+        run: docker compose --profile freeswitch down -v --remove-orphans 2>/dev/null || true
+
       - name: Confirm smoke gate runner
         run: |
           echo "FreeSWITCH runtime smoke gate — $(hostname)"
