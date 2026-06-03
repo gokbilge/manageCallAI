@@ -1,6 +1,6 @@
-export type TenantRole = 'tenant_admin' | 'tenant_operator' | 'tenant_viewer';
+export type TenantRole = 'tenant_admin' | 'tenant_operator' | 'tenant_viewer' | 'end_user';
 
-export const TENANT_ROLES: readonly TenantRole[] = ['tenant_admin', 'tenant_operator', 'tenant_viewer'];
+export const TENANT_ROLES: readonly TenantRole[] = ['tenant_admin', 'tenant_operator', 'tenant_viewer', 'end_user'];
 
 export interface TenantUser {
   id: string;

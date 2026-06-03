@@ -129,6 +129,17 @@ describe('hasCapability', () => {
     });
   });
 
+  describe('end_user', () => {
+    it('has no tenant admin/operator/viewer capabilities', () => {
+      expect(hasCapability('end_user', CAPABILITIES.TENANT_DASHBOARD_VIEW)).toBe(false);
+      expect(hasCapability('end_user', CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(false);
+      expect(hasCapability('end_user', CAPABILITIES.TENANT_USERS_VIEW)).toBe(false);
+      expect(hasCapability('end_user', CAPABILITIES.TENANT_USERS_MANAGE)).toBe(false);
+      expect(hasCapability('end_user', CAPABILITIES.TENANT_OUTBOUND_CALLS_CREATE)).toBe(false);
+      expect(hasCapability('end_user', CAPABILITIES.PLATFORM_TENANTS_VIEW)).toBe(false);
+    });
+  });
+
   describe('missing or unknown role', () => {
     it('denies capabilities for missing roles', () => {
       expect(hasCapability(undefined, CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(false);

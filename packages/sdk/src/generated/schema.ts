@@ -5012,7 +5012,7 @@ export interface components {
             email: string;
             display_name: string;
             /** @enum {string} */
-            role: "tenant_admin" | "tenant_operator" | "tenant_viewer";
+            role: "tenant_admin" | "tenant_operator" | "tenant_viewer" | "end_user";
             status: string;
             /** Format: date-time */
             last_login_at: string | null;
@@ -5025,13 +5025,13 @@ export interface components {
             email: string;
             display_name: string;
             /** @enum {string} */
-            role: "tenant_admin" | "tenant_operator" | "tenant_viewer";
+            role: "tenant_admin" | "tenant_operator" | "tenant_viewer" | "end_user";
             password: string;
         };
         UpdateUserBody: {
             display_name?: string;
             /** @enum {string} */
-            role?: "tenant_admin" | "tenant_operator" | "tenant_viewer";
+            role?: "tenant_admin" | "tenant_operator" | "tenant_viewer" | "end_user";
         };
         ChangePasswordBody: {
             current_password: string;
@@ -5823,6 +5823,81 @@ export interface components {
             failed_sessions_24h: number;
             /** Format: date-time */
             generated_at: string;
+        };
+        FeatureCode: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            code: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            action_type: "voicemail_access" | "call_forward_enable" | "call_forward_disable" | "dnd_enable" | "dnd_disable" | "call_pickup" | "call_park" | "call_park_retrieve" | "conference_join";
+            action_config: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            status: "draft" | "active" | "disabled";
+            requires_approval: boolean;
+            /** Format: uuid */
+            created_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            published_at: string | null;
+        };
+        CreateFeatureCodeBody: {
+            code: string;
+            name: string;
+            description?: string | null;
+            /** @enum {string} */
+            action_type: "voicemail_access" | "call_forward_enable" | "call_forward_disable" | "dnd_enable" | "dnd_disable" | "call_pickup" | "call_park" | "call_park_retrieve" | "conference_join";
+            action_config?: {
+                [key: string]: unknown;
+            };
+            requires_approval?: boolean;
+        };
+        UpdateFeatureCodeBody: {
+            name?: string;
+            description?: string | null;
+            /** @enum {string} */
+            action_type?: "voicemail_access" | "call_forward_enable" | "call_forward_disable" | "dnd_enable" | "dnd_disable" | "call_pickup" | "call_park" | "call_park_retrieve" | "conference_join";
+            action_config?: {
+                [key: string]: unknown;
+            };
+            requires_approval?: boolean;
+        };
+        RuntimeApplyRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string | null;
+            /** @enum {string} */
+            triggered_by_type: "user" | "workflow" | "system";
+            /** Format: uuid */
+            triggered_by_id: string | null;
+            /** @enum {string} */
+            action_type: "reloadxml" | "sofia_profile_rescan" | "sofia_profile_killgw" | "sofia_profile_restartgw" | "sofia_status_gateway" | "sofia_status_profile";
+            /** Format: uuid */
+            target_node_id: string;
+            target_profile: string | null;
+            target_gateway: string | null;
+            object_type: string;
+            /** Format: uuid */
+            object_id: string;
+            /** @enum {string} */
+            status: "pending" | "applying" | "applied" | "failed" | "cancelled";
+            active_call_count: number | null;
+            /** Format: date-time */
+            applied_at: string | null;
+            error_message: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
     };
     responses: {

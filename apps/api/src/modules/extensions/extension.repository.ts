@@ -68,8 +68,10 @@ export class ExtensionRepository {
   async create(input: CreateExtensionRepoInput): Promise<Extension> {
     const result = await this.db.query<Extension>(
       `INSERT INTO extensions
-         (tenant_id, extension_number, display_name, sip_username, sip_password_ciphertext, sip_password_key_id, default_destination_type, default_destination_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         (tenant_id, extension_number, display_name, sip_username, sip_password_ciphertext, sip_password_key_id, default_destination_type, default_destination_id, owner_user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+         -- Only set owner_user_id if the supplied ID exists in users (API-key auth passes key ID, not user ID).
+         (SELECT id FROM users WHERE id = $9 LIMIT 1))
        RETURNING
          id,
          tenant_id,
@@ -90,6 +92,7 @@ export class ExtensionRepository {
         input.sip_password_key_id,
         input.default_destination_type ?? null,
         input.default_destination_id ?? null,
+        input.owner_user_id ?? null,
       ],
     );
     return result.rows[0]!;

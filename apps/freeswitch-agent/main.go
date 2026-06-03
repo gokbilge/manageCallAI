@@ -17,6 +17,7 @@ import (
 	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/dispatcher"
 	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/esl"
 	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/logging"
+	"github.com/gokbilge/manageCallAI/apps/freeswitch-agent/internal/status"
 )
 
 func main() {
@@ -83,6 +84,11 @@ func runAgent(
 	// sofia profile rescan, etc.) to apply trunk config changes without manual CLI.
 	applyDispatcher := dispatcher.NewApplyDispatcher(cfg, cmdClient, logger)
 	go applyDispatcher.Run(ctx, 3*time.Second)
+
+	// Start the status reporter — polls FreeSWITCH read-only status every 30 s
+	// and pushes snapshots to the API for operator visibility.
+	statusReporter := status.NewStatusReporter(cfg, cmdClient, logger)
+	go statusReporter.Run(ctx, 30*time.Second)
 
 	if err := client.Connect(ctx); err != nil {
 		logger.Error("failed to initialize esl client", slog.String("error", err.Error()))

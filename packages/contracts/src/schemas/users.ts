@@ -1,7 +1,7 @@
 import { z } from '../registry.js';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
-export const TenantRoleSchema = z.enum(['tenant_admin', 'tenant_operator', 'tenant_viewer']);
+export const TenantRoleSchema = z.enum(['tenant_admin', 'tenant_operator', 'tenant_viewer', 'end_user']);
 export type TenantRole = z.infer<typeof TenantRoleSchema>;
 
 export const UserStatusSchema = z.enum(['active', 'inactive', 'pending']);
