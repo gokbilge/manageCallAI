@@ -151,6 +151,37 @@ describe('Feature Codes API integration', () => {
     expect(getB.statusCode).toBe(404);
   });
 
+  it('GET /feature-codes/:id -> 404 for nonexistent', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/feature-codes/${randomUUID()}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('PATCH /feature-codes/:id -> 404 for nonexistent', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/feature-codes/${randomUUID()}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'X' },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('POST /feature-codes/:id/validate -> 404 for nonexistent', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/feature-codes/${randomUUID()}/validate`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
   it('list returns codes for tenant', async () => {
     const token = await register(randomUUID().slice(0, 8));
     await app.inject({

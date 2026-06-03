@@ -139,6 +139,37 @@ describe('Parking Lots API integration', () => {
     expect(res.statusCode).toBe(404);
   });
 
+  it('PATCH /parking-lots/:id -> 404 for nonexistent', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/parking-lots/${randomUUID()}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'X' },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('DELETE /parking-lots/:id -> 404 for nonexistent', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/parking-lots/${randomUUID()}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('GET /parking-lots/:id/parked-calls -> 404 for nonexistent lot', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/parking-lots/${randomUUID()}/parked-calls`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
   it('runtime park/retrieve via API callbacks', async () => {
     const token = await register(randomUUID().slice(0, 8));
     const create = await app.inject({
@@ -180,5 +211,85 @@ describe('Parking Lots API integration', () => {
     });
     expect(retrieve.statusCode).toBe(200);
     expect(retrieve.json<{ data: { status: string } }>().data.status).toBe('retrieved');
+  });
+
+  it('runtime park -> slot conflict returns 400', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/v1/parking-lots',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Conflict Lot', slot_range_start: 901, slot_range_end: 910 },
+    });
+    const { id: lotId } = create.json<{ data: { id: string } }>().data;
+    const tenantRow = await db.query<{ tenant_id: string }>('SELECT tenant_id FROM parking_lots WHERE id = $1', [lotId]);
+    const tenantId = tenantRow.rows[0]!.tenant_id;
+
+    // Park first call
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/runtime/parking/park',
+      headers: { authorization: `Bearer ${process.env.RUNTIME_API_TOKEN}` },
+      payload: { tenant_id: tenantId, slot: 901, call_id: 'call-a' },
+    });
+
+    // Try to park a second call on the same slot — should conflict
+    const conflict = await app.inject({
+      method: 'POST',
+      url: '/api/v1/runtime/parking/park',
+      headers: { authorization: `Bearer ${process.env.RUNTIME_API_TOKEN}` },
+      payload: { tenant_id: tenantId, slot: 901, call_id: 'call-b' },
+    });
+    expect(conflict.statusCode).toBe(400);
+  });
+
+  it('runtime park -> slot not in any lot returns 400', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const tenantRow = await db.query<{ id: string }>('SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1');
+    const tenantId = tenantRow.rows[0]!.id;
+    // Ensure there's at least one lot so the tenant exists
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/parking-lots',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Small Lot', slot_range_start: 851, slot_range_end: 852 },
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/runtime/parking/park',
+      headers: { authorization: `Bearer ${process.env.RUNTIME_API_TOKEN}` },
+      payload: { tenant_id: tenantId, slot: 999, call_id: 'call-x' },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('runtime timeout endpoint works', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/v1/parking-lots',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Timeout Lot', slot_range_start: 921, slot_range_end: 930 },
+    });
+    const { id: lotId } = create.json<{ data: { id: string } }>().data;
+    const tenantRow = await db.query<{ tenant_id: string }>('SELECT tenant_id FROM parking_lots WHERE id = $1', [lotId]);
+    const tenantId = tenantRow.rows[0]!.tenant_id;
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/runtime/parking/park',
+      headers: { authorization: `Bearer ${process.env.RUNTIME_API_TOKEN}` },
+      payload: { tenant_id: tenantId, slot: 921, call_id: 'call-timeout' },
+    });
+
+    const timeout = await app.inject({
+      method: 'POST',
+      url: '/api/v1/runtime/parking/timeout',
+      headers: { authorization: `Bearer ${process.env.RUNTIME_API_TOKEN}` },
+      payload: { tenant_id: tenantId, slot: 921 },
+    });
+    expect(timeout.statusCode).toBe(200);
+    expect(timeout.json<{ data: { status: string } }>().data.status).toBe('timed_out');
   });
 });

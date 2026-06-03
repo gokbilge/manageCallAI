@@ -153,6 +153,27 @@ describe('Conference Rooms API integration', () => {
     expect(getB.statusCode).toBe(404);
   });
 
+  it('PATCH /conference-rooms/:id -> 404 for nonexistent', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/conference-rooms/${randomUUID()}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'X' },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('DELETE /conference-rooms/:id -> 404 for nonexistent', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/conference-rooms/${randomUUID()}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
   it('runtime conference join/leave via callbacks', async () => {
     const token = await register(randomUUID().slice(0, 8));
     const create = await app.inject({
