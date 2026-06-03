@@ -334,6 +334,26 @@ Notable finding: `production:preflight` fails on 10 items in this environment (m
 
 ---
 
+## PBX Completeness Audit
+
+Audit date: 2026-06-03.
+
+| Capability | Current status | Release impact | Required design docs | Required implementation | Required evidence |
+|---|---|---|---|---|---|
+| Feature codes | Designed, not implemented | P1 production | docs/pbx/feature-codes.md | feature_codes table, service, controller, Lua executor, runtime callback, UI | DTMF smoke on self-hosted runner |
+| Call parking | Designed, not implemented | P1 production | docs/pbx/call-parking.md | parking_lots + parked_calls tables, service, controller, Go agent event listener, UI | valet_park smoke with Go agent event ingestion |
+| Native conferencing | Designed, not implemented | P1 production | docs/pbx/conferencing.md | conference_rooms table, service, controller, mod_xml_curl projection, UI | mod_conference two-caller smoke |
+| Gateway reload on trunk change | Designed, not implemented | P0 production | docs/pbx/gateway-reload-on-trunk-change.md | runtime_apply_requests/results tables, service with allowlist, Go agent RuntimeApplyClient, UI | trunk change → REGED confirmation on self-hosted runner |
+| End-user self-service portal | Designed, not implemented | P2 production | docs/pbx/end-user-self-service.md | end_user role, self_service_policies table, /me/* endpoints, portal UI | integration test matrix |
+| FreeSWITCH runtime management (read-only) | Designed, not implemented | P1 production | docs/pbx/freeswitch-runtime-management.md | Go agent /status endpoint, platform/nodes/:id/* endpoints, UI | Node status visible in platform dashboard |
+| FreeSWITCH runtime management (actions) | Designed, not implemented | P1/P2 production | docs/pbx/freeswitch-runtime-management.md | runtime_operations table, allowlist enforcement, approval gate, Go agent execute-operation | reloadxml/rescan action smoke |
+
+**Summary:** The PBX Completeness Layer is **designed and planned** as of 2026-06-03.
+No features are implemented, tested, or evidenced. None of these capabilities
+should be counted in the current release stage.
+
+---
+
 ## CHANGELOG consistency finding
 
 This audit found a duplicate `[Unreleased]` section in `CHANGELOG.md` containing

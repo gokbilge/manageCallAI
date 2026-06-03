@@ -33,12 +33,12 @@ export class OutboundRouteRepository {
   async create(input: CreateOutboundRouteInput): Promise<OutboundRoute> {
     const r = await this.db.query<OutboundRoute>(
       `INSERT INTO outbound_routes
-         (
-           tenant_id, name, match_prefix, priority, sip_trunk_id,
+       (
+           tenant_id, name, status, destination_pattern, match_prefix, priority, sip_trunk_id,
            fallback_sip_trunk_id, max_calls_per_minute, allowed_caller_id_numbers_json,
            allowed_destination_prefixes_json, blocked_destination_prefixes_json
          )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10::jsonb)
+       VALUES ($1, $2, 'active', $3, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10::jsonb)
        RETURNING ${COLUMNS}`,
       [
         input.tenant_id,
@@ -62,7 +62,10 @@ export class OutboundRouteRepository {
     let idx = 1;
 
     if (input.name !== undefined) { fields.push(`name = $${idx++}`); values.push(input.name); }
-    if (input.match_prefix !== undefined) { fields.push(`match_prefix = $${idx++}`); values.push(input.match_prefix); }
+    if (input.match_prefix !== undefined) {
+      fields.push(`destination_pattern = $${idx}, match_prefix = $${idx++}`);
+      values.push(input.match_prefix);
+    }
     if (input.priority !== undefined) { fields.push(`priority = $${idx++}`); values.push(input.priority); }
     if (input.sip_trunk_id !== undefined) { fields.push(`sip_trunk_id = $${idx++}`); values.push(input.sip_trunk_id); }
     if ('fallback_sip_trunk_id' in input) { fields.push(`fallback_sip_trunk_id = $${idx++}`); values.push(input.fallback_sip_trunk_id ?? null); }

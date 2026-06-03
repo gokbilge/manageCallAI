@@ -4,9 +4,18 @@
 # via a global Fastify onRequest hook (registerRateLimitHook in apps/api/src/app.ts)
 # that covers all /api/v1/* routes. CodeQL cannot trace this cross-file registration,
 # so it incorrectly flags route handlers as missing rate limiting.
+#
+# js/insufficient-password-hash is disabled because AutomationRepository.hashKey
+# hashes API keys, not user passwords. API keys are generated from randomBytes(32)
+# — 256 bits of cryptographic randomness — making SHA-256 appropriate. Adaptive
+# hashing (bcrypt) is designed for low-entropy user-chosen passwords; applying it
+# to random 256-bit tokens would add per-request latency with no security benefit.
+# User passwords are hashed with bcrypt(12) in auth.service.ts as expected.
 
 disable-default-queries: false
 
 query-filters:
   - exclude:
       id: js/missing-rate-limiting
+  - exclude:
+      id: js/insufficient-password-hash

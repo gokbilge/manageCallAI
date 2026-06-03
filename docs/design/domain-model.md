@@ -33,6 +33,19 @@ It describes the primary entities, their responsibilities, key relationships, li
 - PromptAsset
 - IVRFlow
 
+### 3.2.1 PBX Completeness Layer (designed, not implemented)
+
+- FeatureCode
+- ParkingLot
+- ParkedCall
+- ConferenceRoom
+- ConferenceParticipantSnapshot
+- RuntimeApplyRequest
+- RuntimeApplyResult
+- EndUserSelfServicePolicy
+- RuntimeOperation
+- RuntimeOperationPolicy
+
 ### 3.3 Lifecycle and Governance
 
 - FlowVersion
@@ -1046,7 +1059,92 @@ Suggested lifecycle:
 
 - UI terminology should mirror domain terms such as flow, route, prompt, validation, simulation, publish, and rollback
 
-## 14. Open Modeling Questions
+## 14. PBX Completeness Layer Entities (designed, not implemented)
+
+These entities are designed in `docs/pbx/` and proposed for implementation in
+SLICE-60 through SLICE-66. They follow the same invariants as the core entities
+above.
+
+### 14.1 FeatureCode
+
+Tenant-scoped DTMF feature code mapping to a safe PBX action.
+
+Key fields: `id`, `tenant_id`, `code`, `name`, `action_type`, `action_config`,
+`status`, `requires_approval`, `created_by`, `published_at`.
+
+Invariants:
+- `code` must be unique within `tenant_id`.
+- `code` must not collide with extension number ranges, emergency numbers, or
+  outbound route prefixes.
+- Publish requires validation pass.
+
+### 14.2 ParkingLot
+
+Tenant-scoped call parking slot range.
+
+Key fields: `id`, `tenant_id`, `name`, `slot_range_start`, `slot_range_end`,
+`retrieve_prefix`, `timeout_seconds`, `timeout_target_type`, `timeout_target_id`,
+`music_on_hold`, `status`.
+
+Invariants:
+- Slot ranges must not overlap within a tenant.
+
+### 14.3 ParkedCall
+
+Runtime record of a call in a parking slot.
+
+Key fields: `id`, `tenant_id`, `parking_lot_id`, `slot_number`, `call_id`,
+`parked_at`, `timeout_at`, `retrieved_at`, `status`.
+
+Invariants:
+- At most one `parked` record per `(tenant_id, parking_lot_id, slot_number)`.
+- Operational data — not desired state.
+
+### 14.4 ConferenceRoom
+
+Tenant-scoped conference room backed by `mod_conference`.
+
+Key fields: `id`, `tenant_id`, `room_number`, `name`, `pin_hash`,
+`moderator_pin_hash`, `max_participants`, `recording_policy`, `join_muted`,
+`wait_for_moderator`, `status`.
+
+Invariants:
+- `room_number` must be unique within `tenant_id`.
+- PINs are never stored in plaintext or returned in responses.
+
+### 14.5 RuntimeApplyRequest
+
+Tracks a safe ESL command sequence applied after a SIP trunk change.
+
+Key fields: `id`, `tenant_id`, `action_type`, `target_node_id`, `object_type`,
+`object_id`, `status`, `requires_approval`, `approval_request_id`.
+
+Invariants:
+- `action_type` must be from the explicit safe allowlist.
+- Not a general-purpose ESL passthrough.
+
+### 14.6 EndUserSelfServicePolicy
+
+Per-tenant policy controlling which self-service capabilities end users may access.
+
+Key fields: `id`, `tenant_id`, `voicemail_view`, `dnd_manage`,
+`call_forward_manage`, `sip_credential_reset`, ...
+
+Invariants:
+- One policy per tenant.
+
+### 14.7 RuntimeOperation
+
+Platform-level controlled FreeSWITCH runtime operation (reloadxml, sofia rescan, etc.).
+
+Key fields: `id`, `target_node_id`, `action_type`, `action_params`, `actor_type`,
+`status`, `requires_approval`.
+
+Invariants:
+- `action_type` must be from the platform allowlist.
+- High-risk actions (profile restart) require approval.
+
+## 15. Open Modeling Questions
 
 - Final queue, ring group, and agent abstractions if call-center features are added
 - Whether routes share one generic versioning model or distinct inbound and outbound version types

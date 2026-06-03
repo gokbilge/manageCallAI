@@ -7,33 +7,23 @@ export default defineConfig({
     // Running files concurrently causes cross-file interference; serialize them.
     fileParallelism: false,
     hookTimeout: 30_000,
-    poolOptions: {
-      forks: { singleFork: true },
-    },
+    // singleFork keeps all test files in one process so module-level singletons
+    // (db pool, app instance) are shared across integration test files.
+    // Vitest 4 moved pool options to the pool-specific config key.
+    forks: { singleFork: true },
     // Exclude compiled dist/ so vitest 4.x does not run both src/*.test.ts and dist/*.test.js.
     include: ['src/**/*.{test,spec}.{ts,mts}'],
     exclude: ['dist/**', 'node_modules/**'],
     coverage: {
-      // Thresholds re-calibrated after vitest 3→4 upgrade.
-      // vitest 4.x / @vitest/coverage-v8 4.x counts branches differently
-      // (optional chaining, nullish coalescing, and TS-generated branches are
-      // counted more exhaustively). These values reflect the actual coverage
-      // of the src/**/*.ts test suite without the double-run artifact from
-      // vitest 3.x picking up both src/ and dist/ test files.
-      //
-      // Beta exception (issue #141): API is below the ≥80% beta target due to
-      // the large surface area of integration-only modules (FreeSWITCH XML,
-      // SIP/ESL edge paths, streaming observability) that require a live runtime
-      // to cover meaningfully. Target: reach 70% before beta GA; 80% before RC.
-      //
-      // Raised 2026-06-02 after adding unit tests for sip-trunk, phone-number,
-      // schedule (update path), voicemail-box, retention, and platform services
-      // (CI run 26834489441: statements 67.46%, branches 56.09%, lines 67.46%).
+      // Vitest 4 / @vitest/coverage-v8 counts TypeScript optional/nullish
+      // branches exhaustively. Statement, function, and line gates now enforce
+      // the API 80% target; branch coverage stays at the evidenced level until
+      // runtime-only FreeSWITCH/SIP branches have live coverage.
       thresholds: {
-        statements: 67,
-        branches: 56,
-        functions: 66,
-        lines: 67,
+        statements: 80,
+        branches: 68,
+        functions: 80,
+        lines: 80,
       },
     },
   },

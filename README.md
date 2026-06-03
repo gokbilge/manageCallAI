@@ -136,6 +136,23 @@ contract covering 99 OpenAPI operations.
 - SDK publish workflow exists; beta readiness needs a successful dry-run or
   publish evidence tied to the intended release.
 
+### PBX Completeness Layer (designed, not implemented)
+
+The PBX Completeness Layer extends the platform toward a more complete PBX
+control plane. These features are **designed and planned** but not yet implemented.
+None are production-ready.
+
+| Feature | Status | Priority |
+|---|---|---|
+| Feature codes (voicemail, DND, call forward, parking, conference join) | Designed, not implemented | P1 |
+| Call parking (valet_park, slot management, timeout routing) | Designed, not implemented | P1 |
+| Native conferencing (`mod_conference` rooms, PIN, moderator) | Designed, not implemented | P1 |
+| Gateway reload on trunk change (safe ESL apply, REGED confirmation) | Designed, not implemented | P0 |
+| End-user self-service portal (DND, forward, voicemail, call history) | Designed, not implemented | P2 |
+| Safe FreeSWITCH runtime management (module status, allowlisted actions) | Designed, not implemented | P1/P2 |
+
+See [docs/pbx/PBX_COMPLETENESS_LAYER.md](docs/pbx/PBX_COMPLETENESS_LAYER.md) for the design.
+
 ### Planned / In Progress
 
 - SLICE-34: Fastify Zod type provider (controller validation migrated to contracts schemas)

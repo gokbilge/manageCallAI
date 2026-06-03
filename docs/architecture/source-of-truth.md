@@ -649,7 +649,27 @@ Suggested future supporting docs:
 - FreeSWITCH Runtime Agent: Go
 - FreeSWITCH Call Helper: Lua
 
-## 19. Roadmap
+## 19. PBX Completeness Layer
+
+The PBX Completeness Layer extends manageCallAI beyond IVR/routing automation
+into a more complete PBX control plane. All features follow the same safety model
+as the core system.
+
+| Feature | Design doc | Status | Priority |
+|---|---|---|---|
+| Feature codes | `docs/pbx/feature-codes.md` | Designed, not implemented | P1 |
+| Call parking | `docs/pbx/call-parking.md` | Designed, not implemented | P1 |
+| Native conferencing | `docs/pbx/conferencing.md` | Designed, not implemented | P1 |
+| Gateway reload on trunk change | `docs/pbx/gateway-reload-on-trunk-change.md` | Designed, not implemented | P0 |
+| End-user self-service portal | `docs/pbx/end-user-self-service.md` | Designed, not implemented | P2 |
+| FreeSWITCH runtime management | `docs/pbx/freeswitch-runtime-management.md` | Designed, not implemented | P1/P2 |
+
+Full design, API proposal, and data model: `docs/pbx/PBX_COMPLETENESS_LAYER.md`.
+
+The PBX Completeness Layer is **designed and planned** as of 2026-06-03.
+None of these features are implemented or evidenced for production.
+
+## 20. Roadmap
 
 ### Priority Implementation Order
 
