@@ -43,7 +43,7 @@ jobs:
             dockerfile: apps/freeswitch-agent/Dockerfile
           - image: managecallai-freeswitch
             context: ./freeswitch
-            dockerfile: docker/Dockerfile
+            dockerfile: ./freeswitch/docker/Dockerfile
 
     steps:
       - uses: actions/checkout@v5

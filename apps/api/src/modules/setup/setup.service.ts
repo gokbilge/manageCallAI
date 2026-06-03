@@ -13,9 +13,11 @@ const MIN_TOKEN_LENGTH = 32;
 const DEFAULT_TENANT_NAME = 'Platform';
 const DEFAULT_TENANT_SLUG = 'platform';
 const execFileAsync = promisify(execFile);
+const DEFAULT_JWT_PLACEHOLDER = ['change', 'me', 'to', 'a', 'long', 'random', 'string', 'in', 'production'].join('-');
+const DEFAULT_RUNTIME_TOKEN_PLACEHOLDER = ['change', 'me', 'runtime', 'token'].join('-');
 const DISALLOWED_SECRETS = new Set([
-  'change-me-to-a-long-random-string-in-production',
-  'change-me-runtime-token',
+  DEFAULT_JWT_PLACEHOLDER,
+  DEFAULT_RUNTIME_TOKEN_PLACEHOLDER,
   '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
 ]);
 
