@@ -1,6 +1,6 @@
 # Open Release Blockers
 
-Last updated: 2026-06-02.
+Last updated: 2026-06-03.
 
 Authoritative issue state lives in GitHub. This file records release gates and
 evidence requirements so closed issues are not mistaken for production evidence.
@@ -15,9 +15,10 @@ to the release-candidate commit.
 Decision:         Public beta candidate
 Tag:              v0.2.0-beta.1 (cut 2026-06-02 from main at b51cdd5)
 Evidence status:  Beta evidence manifest passes pnpm release:evidence-check
+                  and explicitly records beta-stage metadata
                   Smoke run 26825030902 passed all gates on self-hosted runner
-Next step:        n8n / MCP / SDK end-to-end evidence before beta-ready promotion
-                  Full production evidence bundle before RC promotion
+Next step:        Final beta-ready UI evidence, then cut an rc/** branch and
+                  assemble the production evidence bundle for issue #164
 ```
 
 ## What closed since the last update (2026-06-02)
