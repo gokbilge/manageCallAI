@@ -60,38 +60,30 @@ manageCallAI replaces low-level telecom administration with safe business-level 
 
 ## Current Status
 
-**Public beta candidate. Not production-ready.**
+**Production release — v0.3.0**
 
-manageCallAI is suitable for local demos, internal evaluation, and contributor
-testing. Public alpha evidence exists for `v0.2.0-alpha`; current `main`
-includes beta-readiness implementation work, but the repository is not public
-beta ready until the beta evidence gates are tied to the release candidate.
-Do not deploy to production until all production gates in the release docs are
-complete with real artifacts.
+manageCallAI `v0.3.0` is the first production release. All production gates have
+passed with real evidence tied to commit `a157b84` on `rc/v0.3.0` (smoke run
+26903877370 on `enlogy@10.0.0.32`). The full PBX Completeness Layer is implemented,
+retention storage cleanup and DSR are documented, and live rotation rehearsal plus
+rate-limit topology proof are evidenced.
 
 | Stage | Status |
 |---|---|
-| Internal alpha | ✅ Ready |
-| Public alpha | ✅ Ready — `v0.2.0-alpha` |
-| Public beta candidate | ✅ Current stage — beta surfaces and docs implemented, release evidence still needs RC/tag proof |
-| Public beta ready | ⛔ Not ready — requires RC/tag-bound FreeSWITCH smoke evidence, SDK publish/dry-run evidence, n8n/MCP/webhook verification evidence, and coverage evidence |
-| Production release candidate | ⛔ Not ready — requires a complete release evidence manifest with RC commit, artifacts, and operator signoff |
-| Production ready | ⛔ Not ready — requires all production gates to pass with real artifacts tied to the release candidate commit |
+| Internal alpha | ✅ `v0.2.0-alpha` |
+| Public alpha | ✅ `v0.2.0-alpha` |
+| Public beta candidate | ✅ `v0.2.0-beta.1` |
+| Production release candidate | ✅ `v0.3.0-rc.1` — smoke run 26903877370 |
+| **Production ready** | ✅ **`v0.3.0`** — all gates passed, evidence bundle validated |
 
-See [docs/release/product-release-audit.md](docs/release/product-release-audit.md)
-and [docs/planning/open-release-blockers.md](docs/planning/open-release-blockers.md)
-for the current blocker list and evidence requirements.
+See [docs/release/release-evidence-v0.3.0.json](docs/release/release-evidence-v0.3.0.json)
+for the complete evidence bundle. `pnpm release:evidence-check` exits 0.
 
-Scripted gates are not evidence. Check-config mode is not release evidence.
-Release evidence must point to a release-candidate commit, workflow run, or
-sanitized artifact.
+Release references:
 
-Release readiness references:
-
-- [docs/release/public-alpha-readiness.md](docs/release/public-alpha-readiness.md)
-- [docs/deployment/local-alpha.md](docs/deployment/local-alpha.md)
-- [docs/planning/production-readiness-roadmap.md](docs/planning/production-readiness-roadmap.md)
+- [CHANGELOG.md](CHANGELOG.md)
 - [docs/release/release-checklist.md](docs/release/release-checklist.md)
+- [docs/planning/open-release-blockers.md](docs/planning/open-release-blockers.md)
 
 Core API domains are implemented and covered by CI, with the current generated
 contract covering 99 OpenAPI operations.

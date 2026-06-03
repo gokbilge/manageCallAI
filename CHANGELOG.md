@@ -12,6 +12,95 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ## [Unreleased]
 
+---
+
+## [0.3.0] — 2026-06-03
+
+First production release. All production gates passed. Live rotation rehearsal
+and rate-limit topology proof completed on `enlogy@10.0.0.32`. FreeSWITCH smoke
+run 26903877370 passed on `rc/v0.3.0`. Evidence:
+`docs/release/release-evidence-v0.3.0.json` — `pnpm release:evidence-check`
+exits 0. GitHub release: https://github.com/gokbilge/manageCallAI/releases/tag/v0.3.0
+
+### Added
+
+- **PBX Completeness Layer** — all six production features implemented (issues #172–#178):
+  - Tenant-scoped feature codes with DTMF Lua callback, publish/rollback lifecycle,
+    and audit trail (closes #172)
+  - Call parking via `mod_valet_parking`: `parking_lots` desired-state table, Go agent
+    `CHANNEL_PARK` event ingestion, slot retrieval path (closes #173)
+  - Native conferencing via `mod_conference`: `conference_rooms` lifecycle, PIN
+    enforcement, two-caller bridge path (closes #174)
+  - Safe gateway reload on SIP trunk change: `runtime_apply_requests` table, Go agent
+    ESL `sofia rescan`, REGED confirmation path (closes #175)
+  - End-user self-service portal: `end_user` role, `/me/extension`, `/me/dnd`,
+    `/me/call-forward` endpoints scoped to JWT sub, tenant capability policy, DND and
+    call-forward audit events, cross-tenant isolation tests (closes #176)
+  - FreeSWITCH runtime management Phase 1: Go agent status reporter (safe ESL reads
+    every 30 s), `freeswitch_node_status_snapshots` table, platform admin
+    status/modules/gateways/channels/registrations endpoints, tenant gateway-status
+    endpoint (closes #177)
+  - PBX evidence gates added to release checklist and `check:production-readiness`
+    (closes #178); parent issue #171 closed
+- **Retention storage cleanup** (closes #161):
+  - `StorageBackend` interface + `LocalStorageBackend` (ENOENT-tolerant filesystem
+    deletion, swappable for S3/GCS)
+  - `RetentionPurgeService` now collects `storage_path` pre-purge for `recording` and
+    `voicemail` categories and deletes files after DB records are removed; failures
+    counted in audit metadata as `storage_delete_failures`, non-fatal
+  - DSR / right-to-erasure procedure documented in
+    `docs/ops/recording-voicemail-cdr-retention.md`: manual operator steps, data
+    categories, accepted limitations (backup snapshots, cross-tenant CDRs)
+  - Export-before-delete decision recorded: explicitly deferred with risk acceptance
+- **RC and production evidence** (closes #162, #163, #164):
+  - RC-topology SLO evidence (`docs/ops/runtime-slo-evidence-2026-06-03.json`):
+    directory p99 15 ms, dialplan p99 22 ms, health/ready p99 8 ms — all within
+    thresholds; `pnpm production:slo-check` exits 0
+  - FusionPBX/NetGSM carrier interop 6/8 scenarios passed (sip_register, inbound_call,
+    outbound_call, hangup_cdr, tls_or_documented_exception, nat_media_path);
+    2 documented exceptions (dtmf_rfc2833, failover); `pnpm carrier:interop-check`
+    exits 0
+  - Live rotation rehearsal (`docs/ops/rotation-rehearsal-2026-06-03.json`):
+    TOKEN_A → TOKEN_B with overlap window verified (both tokens accepted simultaneously),
+    JWT_SECRET rotated concurrently, old token confirmed rejected;
+    `pnpm check:runtime-token-rotation --evidence` exits 0
+  - Log redaction scan of API container logs: 0 findings;
+    `docs/ops/log-redaction-rotation-2026-06-03.json`
+  - Network config evidence: all production env vars set, 0 findings in smoke context;
+    `docs/ops/network-config-rc-v0.3.0.json`
+  - Single-instance rate-limit topology proof on `enlogy@10.0.0.32`: `APP_ENV=production`,
+    all `RATE_LIMIT_*` limits set, `pnpm production:rate-limit-check` exits 0
+  - `rotation-rehearsal.mjs` script added: exercises live API token rotation and writes
+    JSON evidence artifact; `--check-config` runs in smoke CI
+  - `check-production-network-config.mjs` extended with `--json-output` flag; network
+    config step in `freeswitch-smoke.yml` now eliminates all 4 previous warnings
+  - Log redaction CI gate added to `freeswitch-smoke.yml`: scans API container logs
+    after E2E run, uploads artifact, validates 0 findings
+  - Evidence bundle validation hardened: placeholder-pattern detection, `github_release`
+    field required for RC/production manifests, `log_redaction`, `rotation_rehearsal`,
+    `network_config` fields required
+  - RC evidence manifest `docs/release/release-evidence-v0.3.0-rc.1.json` (stage: rc)
+  - Production evidence manifest `docs/release/release-evidence-v0.3.0.json` (stage:
+    production) — all 18 required evidence fields reference real artifacts
+
+### Changed
+
+- `docs/ops/recording-voicemail-cdr-retention.md` — all acceptance criteria checked;
+  DSR, export-before-delete, and storage deletion sections added
+- `docs/planning/open-release-blockers.md` — updated to v0.3.0 production release;
+  all production blockers closed
+- `README.md` — stage table updated to production-ready; project posture updated
+
+---
+
+## [0.2.0-beta.1] — 2026-06-02
+
+First public beta candidate. All beta-readiness implementation work has landed.
+FreeSWITCH runtime smoke run 26825030902 passed all gates on self-hosted runner
+(4m53s). Release evidence bundle passes `pnpm release:evidence-check`.
+Production readiness requires further evidence — see
+`docs/release/release-evidence-v0.2.0.json` for open production gates.
+
 ### Added
 
 - FreeSWITCH gateway configuration via `mod_xml_curl`:
@@ -289,7 +378,8 @@ MCP, n8n, and CI quality gates all passing.
 - Security alerts, retention/legal hold admin UI pages absent from this release.
 - Visual IVR builder supports the alpha authoring workflow; beta still needs broader operator workflow validation.
 
-[Unreleased]: https://github.com/gokbilge/manageCallAI/compare/v0.2.0-beta.1...HEAD
+[Unreleased]: https://github.com/gokbilge/manageCallAI/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/gokbilge/manageCallAI/compare/v0.2.0-beta.1...v0.3.0
 [0.2.0-beta.1]: https://github.com/gokbilge/manageCallAI/compare/v0.2.0-alpha...v0.2.0-beta.1
 [0.2.0-alpha]: https://github.com/gokbilge/manageCallAI/compare/v0.1.0-alpha.1...v0.2.0-alpha
 [0.1.0-alpha.1]: https://github.com/gokbilge/manageCallAI/releases/tag/v0.1.0-alpha.1
