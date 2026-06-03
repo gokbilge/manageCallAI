@@ -141,31 +141,7 @@ async function probeRuntimeToken(label, token) {
   return true;
 }
 
-async function probeTokenRejected(label, token) {
-  const encoded = Buffer.from(`freeswitch:${token}`).toString('base64');
-  let statusCode;
-  try {
-    const resp = await fetch(`${apiRoot}/api/v1/freeswitch/dialplan`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${encoded}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'destination_number=0&context=default',
-    });
-    statusCode = resp.status;
-  } catch (err) {
-    fail(label, `network error: ${err instanceof Error ? err.message : String(err)}`);
-    return false;
-  }
 
-  if (statusCode !== 401) {
-    fail(label, `token should have been rejected but API returned ${statusCode}`);
-    return false;
-  }
-  pass(label, `token correctly rejected — API returned 401`);
-  return true;
-}
 
 // ── Health check ──────────────────────────────────────────────────────────────
 
