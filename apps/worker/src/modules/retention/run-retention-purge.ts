@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { config } from '../../config/env.js';
 import { RetentionPurgeService } from './retention-purge.service.js';
+import { LocalStorageBackend } from './storage-backend.js';
 
 function hasFlag(flag: string): boolean {
   return process.argv.includes(flag);
@@ -16,7 +17,8 @@ if (!config.databaseUrl) {
 const pool = new Pool({ connectionString: config.databaseUrl });
 
 try {
-  const service = new RetentionPurgeService(pool);
+  const storage = dryRun ? undefined : new LocalStorageBackend();
+  const service = new RetentionPurgeService(pool, undefined, storage);
   const result = await service.run({ dryRun, actorId: 'worker:retention-purge' });
 
   if (jsonOutput) {

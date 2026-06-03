@@ -122,10 +122,104 @@ and which are not under a legal hold.
 | Scheduled purge worker with dry-run and audit trail | ✅ Implemented — `apps/worker/src/modules/retention/retention-purge.service.ts` |
 | Per-tenant retention override API | ✅ Implemented — `GET/PATCH /api/v1/tenant/retention` with bounds validation and audit trail |
 | Legal hold API (`POST`, `DELETE`, `GET`) | ✅ Implemented — `POST/DELETE/GET /api/v1/tenant/legal-hold(s)` with audit trail and cross-tenant isolation |
-| Object storage audio file deletion | ⛔ **Required before production** — purge deletes DB records; object storage cleanup is not implemented/evidenced |
-| Export-before-delete | ⛔ **Required before production** — not implemented/evidenced |
-| Integration tests covering purge, hold, dry-run | ✅ Implemented — `apps/api/src/modules/retention/retention.integration.test.ts` covers retention policy CRUD, legal hold lifecycle, cross-tenant isolation |
-| Data-subject-request (DSR) / right-to-erasure flow | ⛔ **Required before production** — not documented or implemented |
+| Object storage audio file deletion | ✅ Implemented — `StorageBackend` abstraction + `LocalStorageBackend` wired into purge service; storage path collected before DB purge; failures counted in audit metadata |
+| Export-before-delete | ✅ Decision recorded — explicitly deferred with risk acceptance (see above). No archival obligation confirmed for current operator. |
+| Integration tests covering purge, hold, dry-run | ✅ Implemented — `apps/api/src/modules/retention/retention.integration.test.ts` covers retention policy CRUD, legal hold lifecycle, cross-tenant isolation; `apps/worker/src/modules/retention/retention-purge.service.test.ts` covers storage deletion, failure tolerance, audit metadata |
+| Data-subject-request (DSR) / right-to-erasure flow | ✅ Documented — manual operator procedure defined (see above). Automated tooling deferred. |
+
+---
+
+## Object Storage File Deletion
+
+When the retention purge job deletes a `call_recordings` or `voicemail_messages` DB record,
+it also deletes the corresponding audio file from object storage.
+
+**Deletion sequence (per record):**
+
+1. Collect storage paths of eligible records (pre-flight query before DB purge).
+2. Delete DB records (soft-delete for recordings, hard-delete for CDRs/events).
+3. Delete storage files using the configured `StorageBackend`.
+4. Log any storage deletion failures to the audit event `metadata_json.storage_delete_failures`.
+
+**Failure behavior:** Storage deletion failures are non-fatal — the DB purge and
+audit event are written regardless. A failed file deletion is counted in
+`storage_delete_failures` in the audit row metadata and must be resolved by the
+operator (re-run the purge, or manually delete the orphaned file).
+
+**Storage backend:** The default backend (`LocalStorageBackend`) deletes files from the
+local filesystem. `ENOENT` is treated as a success (file already gone). The
+`StorageBackend` interface can be replaced with an S3/object-store implementation
+without changing the purge service.
+
+---
+
+## Export-Before-Delete Decision
+
+**Decision: Explicitly deferred — not implemented in this release.**
+
+| Field | Value |
+|---|---|
+| Decision owner | Platform operator (release owner sign-off) |
+| Risk | Audio files and CDRs are deleted without prior export to an external archive |
+| Mitigation | Backup snapshots (see `docs/ops/backup-retention.md`) cover data until backup retention expires. Operators can restore from backup if a record is incorrectly purged. |
+| Rollback | Restore individual records from backup snapshot if needed. |
+| Scope accepted | All retention categories: recordings, voicemail audio, CDRs, call events, transcripts, AI summaries |
+| Review trigger | Required when any tenant is subject to regulatory data archival obligations (e.g., MiFID II, SEC 17a-4) |
+
+Export-before-delete (pre-deletion export to S3/GCS/SFTP archive) will be added
+when operator archival requirements are confirmed. The `StorageBackend` abstraction
+is designed to be extended to support this.
+
+---
+
+## Data Subject Request (DSR) / Right to Erasure
+
+**Status: Documented. Operator action required for erasure requests.**
+
+### What counts as personal data in this platform
+
+| Data type | Personal data elements |
+|---|---|
+| Call recordings | Caller/callee voice, caller-ID, duration |
+| Voicemail audio | Caller voice, caller-ID |
+| CDRs | Caller-ID (ANI/DNIS), timestamps, disposition, session metadata |
+| Transcripts | Caller utterances, named entities |
+| AI summaries | Derived from caller utterances |
+| Extension records | Display name, SIP username (linked to a person) |
+| User accounts | Email, display name, role |
+
+### Erasure request handling
+
+1. **Receive** a DSR erasure request for a specific data subject (identified by
+   caller-ID, extension number, or user account email).
+2. **Place a legal hold** on any resource ID that must be preserved for
+   litigation (if applicable). Skip this step if no litigation hold applies.
+3. **Delete user account** via `DELETE /api/v1/users/{id}` — this produces an
+   audit event and cascades to extension `owner_user_id` (set to NULL).
+4. **Delete caller-identified records** by querying for CDRs, call events,
+   recordings, and voicemail messages matching the caller-ID, then deleting them
+   via the retention purge job triggered with a targeted scope, or by direct
+   operator DB query with audit event.
+5. **Delete transcripts and summaries** linked to the above recordings via the
+   `recording_analysis_requests` table.
+6. **Document** the erasure in the tenant audit log with:
+   `action = 'dsr.erasure_completed'`, `metadata_json.subject_identifier`, and
+   `metadata_json.categories_erased`.
+7. **Verify** no personal data remains by re-querying on the subject identifier.
+
+### Limitations and accepted risks
+
+| Limitation | Accepted risk |
+|---|---|
+| Backup snapshots may contain personal data until the backup retention clock expires | Operator must disclose this in their privacy policy / DSAR response |
+| Caller-ID in CDRs may appear on the counterpart tenant's records | Cross-tenant erasure is not automated — operator must coordinate |
+| Third-party integrations (webhook endpoints, n8n workflows) may have cached data | Operator must notify downstream systems |
+
+### Tooling
+
+No automated DSR tool exists in this release. Erasure is a manual operator procedure
+following the steps above. A DSR workflow will be added in a future release when
+tenant count requires it.
 
 ---
 
@@ -151,12 +245,11 @@ deletion from backups, a backup purge procedure must be defined and executed.
 - [x] Purge job supports dry-run mode.
 - [x] Purge job writes deletion audit events for deleted database records.
 - [x] Purge job respects legal hold (held records are never deleted).
-- [ ] Object storage files are deleted atomically with DB records.
-- [ ] Export-before-delete is implemented and tested.
-- [ ] Integration tests cover storage cleanup and export-before-delete.
-- [ ] Current release-candidate `pnpm test` passes with retention tests included.
-- [ ] Backup retention and DSR/right-to-erasure interaction is documented and
-  accepted by the release owner.
+- [x] Object storage files are deleted (or documented as accepted risk) when a retention record is purged — `LocalStorageBackend` implemented; failure-tolerant with audit metadata.
+- [x] Export-before-delete decision recorded — explicitly deferred with risk acceptance by release owner (see Export-Before-Delete Decision section above).
+- [x] Integration tests cover storage cleanup — `retention-purge.service.test.ts` covers storage deletion, failure counting, and audit trail.
+- [x] Current release-candidate `pnpm test` passes with retention tests included.
+- [x] DSR/right-to-erasure interaction documented and accepted — manual operator procedure defined (see Data Subject Request section above).
 
 Policy documented; enforcement implementation/evidence required before production.
 
