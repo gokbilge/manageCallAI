@@ -1,0 +1,93 @@
+{
+  "release_version": "v0.3.0-rc.1",
+  "commit_sha": "a157b847639440865cb40573d8944fd34d3a62ff",
+  "generated_at": "2026-06-03T18:30:00Z",
+  "stage": "rc",
+  "notes": "RC evidence bundle for v0.3.0-rc.1. FreeSWITCH smoke run 26903877370 passed on rc/v0.3.0 (self-hosted runner enlogy@10.0.0.32). PBX Completeness Layer fully implemented and evidenced. Retention storage cleanup, DSR doc, and export-before-delete decision recorded. Soak/SLO and carrier interop evidenced from RC topology. All production gate checks pass; live rotation rehearsal and multi-instance rate-limit proof remain for final production promotion.",
+
+  "github_release": {
+    "tag": "v0.3.0-rc.1",
+    "url": "https://github.com/gokbilge/manageCallAI/releases/tag/v0.3.0-rc.1",
+    "published_at": "2026-06-03T18:30:00Z",
+    "is_prerelease": true
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823982",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885824161",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823998",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885824002",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26903877370",
+
+  "production_preflight": "pnpm production:preflight --check-config passes in dev. Target-environment run required before production promotion; API_BASE_URL, RUNTIME_API_TOKEN, and all production env vars must be set.",
+
+  "production_e2e": "FreeSWITCH smoke run 26903877370 passed all production E2E steps on enlogy@10.0.0.32: API health, DB contracts (18 columns, 29 constraints), FreeSWITCH ESL profile, runtime directory/dialplan lookup, IVR lifecycle, SIP REGISTER, Go agent ESL, FreeSWITCH hardening (0 findings), SIP TLS/SRTP/NAT smoke, and observability query. Evidence artifact: freeswitch-smoke-26903877370 (90-day retention). https://github.com/gokbilge/manageCallAI/actions/runs/26903877370",
+
+  "production_soak": "RC-topology soak evidence from enlogy@10.0.0.32 (smoke run 26903877370, 2026-06-03). API running as Docker containers; 0% error rate across directory/dialplan/health-ready probes in the E2E path. Lab 1800s soak (PR #116) showed p95 8.78ms, p99 12.05ms at this topology. SLO artifact: docs/ops/runtime-slo-evidence-2026-06-03.json (passes pnpm production:slo-check).",
+
+  "production_slo": "RC-topology SLO evidence (docs/ops/runtime-slo-evidence-2026-06-03.json): /health/ready p99 8ms (target <20ms), /api/v1/freeswitch/directory p99 15ms (target <50ms), /api/v1/freeswitch/dialplan p99 22ms (target <100ms). All within breach thresholds. pnpm production:slo-check exits 0.",
+
+  "restore_smoke": "RC restore rehearsal passed on enlogy@10.0.0.32 for commit 311efd1c598166a81d16460e3e6c487c92503a30. Evidence: docs/ops/restore-evidence-enlogy-2026-06-02.json. Validated with pnpm restore:evidence-check -- --require-rc (exit 0). Backup retention policy validated: docs/ops/backup-retention-policy.json (pnpm check:backup-retention-policy passes, 0 findings).",
+
+  "rate_limit_topology": "Redis-backed rate limiting is implemented and pnpm production:rate-limit-check passes in dev mode. Multi-instance production topology proof is deferred to final production promotion. Rate-limit middleware is tenant-scoped, capability-aware, and uses Redis for shared state across instances.",
+
+  "carrier_interop": [
+    "FusionPBX/NetGSM live carrier interop (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json): sip_register PASSED (REGED on ivr.velocize.com), inbound_call PASSED (INVITE from FusionPBX + real NetGSM caller-ID +903124401820 received), outbound_call PASSED (INVITE to FusionPBX via fusionpbx-carrier gateway), hangup_cdr PASSED (5 CDR entries in FreeSWITCH Master.csv), tls_or_documented_exception PASSED (SIP TLS + SRTP confirmed in smoke run 26803056139), nat_media_path PASSED (STUN public IP 88.247.152.29). dtmf_rfc2833: documented exception (no answered call in test; low risk). failover: documented exception (single trunk; deferred to production carrier onboarding). pnpm carrier:interop-check exits 0."
+  ],
+
+  "log_redaction": "Log redaction evidence artifact from FreeSWITCH smoke run 26903877370 on rc/v0.3.0: artifacts/log-redaction/log-redaction-evidence-2026-06-03T18-17-12Z.json — log redaction evidence check PASSED with 0 scan finding(s). 20/20 redaction pattern test cases pass including JWT bearer, runtime token header, env var secrets, SIP password, database URL credentials. Artifact uploaded by run 26903877370.",
+
+  "rotation_rehearsal": "Runtime token rotation configuration validated in FreeSWITCH smoke run 26903877370 (rotation rehearsal configuration check passed). A live rotation rehearsal must be performed before production promotion: deploy secondary token, verify overlap window, promote secondary to primary, verify old primary rejected, confirm audit events written. Template: docs/ops/templates/rotation-rehearsal-evidence-template.json. Script: pnpm rotation:rehearsal.",
+
+  "network_config": "Production network config evidence from FreeSWITCH smoke run 26903877370 on rc/v0.3.0: artifacts/network-config/network-config-2026-06-03T18-17-07Z.json — production network config check PASSED with 0 finding(s). All required env vars set: FREESWITCH_ESL_HOST (non-default bind), FREESWITCH_ESL_PASSWORD (non-stock), FREESWITCH_EXTERNAL_SIP_IP, FREESWITCH_EXTERNAL_RTP_IP, RTP port range, SIP_TLS_ENABLED, SRTP_POLICY. Artifact uploaded by run 26903877370.",
+
+  "security_review": "CodeQL run 26885824161 is clean (no open high/medium alerts). FreeSWITCH hardening check 0 findings (smoke run 26903877370). Log redaction: 20/20 test cases pass and 0 scan findings from deployment logs (smoke run 26903877370). CodeQL exclusions applied for RFC 3261-mandated MD5 use (sip-tls-srtp-smoke.mjs, js/weak-cryptographic-algorithm) and CI self-signed TLS (js/disabling-certificate-validation). Production promotion requires additional telecom threat model review.",
+
+  "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
+
+  "operator_signoff": {
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-03T18:30:00Z",
+    "notes": "RC signoff for v0.3.0-rc.1. All implemented features pass CI, smoke, and evidence gates. Remaining production-only gates (live rotation rehearsal, multi-instance rate-limit proof) are explicitly noted in rotation_rehearsal and rate_limit_topology fields and must be completed before final production promotion."
+  },
+
+  "artifact_files": {
+    "carrier_interop_evidence": "docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json",
+    "runtime_slo": "docs/ops/runtime-slo-evidence-2026-06-03.json",
+    "restore_evidence": "docs/ops/restore-evidence-enlogy-2026-06-02.json",
+    "backup_retention_policy": "docs/ops/backup-retention-policy.json"
+  },
+
+  "pbx_evidence": {
+    "gateway_reload": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823982",
+      "artifact": "PR #179: safe gateway reload on SIP trunk PATCH — runtime_apply_requests lifecycle, Go agent ESL sofia rescan, REGED confirmation path. Integration-tested. Issue #175."
+    },
+    "feature_codes": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823982",
+      "artifact": "PR #179: tenant-scoped feature codes — DTMF code Lua callback path, publish lifecycle, and audit coverage. Issue #172."
+    },
+    "call_parking": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823982",
+      "artifact": "PR #179: parking_lots desired state, valet_park retrieval path, CHANNEL_PARK event ingestion. Issue #173."
+    },
+    "conferencing": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823982",
+      "artifact": "PR #179: conference_rooms lifecycle, mod_conference integration, PIN enforcement, bridge path. Issue #174."
+    },
+    "self_service": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823982",
+      "artifact": "PR #180: end_user role, /me/extension, /me/dnd, /me/call-forward endpoints, tenant policy gates, DND/forward audit events, cross-tenant isolation tests. Issue #176."
+    },
+    "runtime_management": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823982",
+      "artifact": "PR #180: Phase 1 read-only runtime status — Go agent status reporter (safe ESL reads every 30s), freeswitch_node_status_snapshots, platform admin status endpoints, tenant gateway-status endpoint. Issue #177."
+    }
+  }
+}

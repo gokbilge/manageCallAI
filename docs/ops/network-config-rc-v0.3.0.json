@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-06-03T18:10:47.375Z",
+  "git_sha": "local",
+  "mode": "live",
+  "status": "passed",
+  "app_env": "development",
+  "checks_performed": [
+    "FREESWITCH_ESL_HOST",
+    "FREESWITCH_ESL_PASSWORD",
+    "MANAGECALLAI_TRUST_PROXY",
+    "FREESWITCH_EXTERNAL_SIP_IP",
+    "FREESWITCH_EXTERNAL_RTP_IP",
+    "FREESWITCH_RTP_PORT_MIN",
+    "FREESWITCH_RTP_PORT_MAX",
+    "SIP_TLS_ENABLED",
+    "SRTP_POLICY"
+  ],
+  "env_snapshot": {
+    "FREESWITCH_ESL_HOST": "127.0.0.1",
+    "MANAGECALLAI_TRUST_PROXY": "(not set)",
+    "FREESWITCH_EXTERNAL_SIP_IP": "(not set)",
+    "FREESWITCH_EXTERNAL_RTP_IP": "(not set)",
+    "FREESWITCH_RTP_PORT_MIN": "(not set)",
+    "FREESWITCH_RTP_PORT_MAX": "(not set)",
+    "SIP_TLS_ENABLED": "(not set)",
+    "SRTP_POLICY": "(not set)",
+    "APP_ENV": "(not set)"
+  },
+  "findings": [
+    {
+      "level": "warn",
+      "name": "FREESWITCH_EXTERNAL_SIP_IP",
+      "message": "not set — if FreeSWITCH is behind NAT, set this to the public SIP IP (e.g. 203.0.113.1 or auto-nat); see docs/ops/sip-tls-srtp-nat.md"
+    },
+    {
+      "level": "warn",
+      "name": "FREESWITCH_EXTERNAL_RTP_IP",
+      "message": "not set — if FreeSWITCH is behind NAT, set this to the public RTP IP; see docs/ops/sip-tls-srtp-nat.md"
+    },
+    {
+      "level": "warn",
+      "name": "FREESWITCH_RTP_PORT_MIN / FREESWITCH_RTP_PORT_MAX",
+      "message": "RTP port range not documented — set FREESWITCH_RTP_PORT_MIN and FREESWITCH_RTP_PORT_MAX to match the range in FreeSWITCH vars.xml; this ensures firewall rules cover the correct range"
+    },
+    {
+      "level": "warn",
+      "name": "SRTP_POLICY",
+      "message": "SRTP policy not documented — set SRTP_POLICY to disabled, optional, or required to declare the deployment media security posture; see docs/ops/sip-tls-srtp-nat.md"
+    }
+  ],
+  "failure_count": 0,
+  "warning_count": 4
+}
