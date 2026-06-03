@@ -4,26 +4,26 @@
 
 This document defines the core business domain model for `manageCallAI`.
 
-It describes the primary entities, their responsibilities, key relationships, lifecycle states, and model invariants that should remain consistent across UI, API, MCP, workflow, and persistence layers.
+It describes the primary entities, their responsibilities, key relationships, and invariants that should remain consistent across UI, API, MCP, workflow, and persistence layers.
 
-## 2. Modeling Principles
+## 2. Modeling principles
 
-- Model telecom intent as business objects rather than raw switch artifacts
-- Keep desired state separate from generated runtime artifacts
-- Treat publishable configuration as versioned state
-- Make validation, simulation, publish, and rollback explicit lifecycle concepts
-- Keep the same vocabulary across product surfaces
+- model telecom intent as business objects rather than raw switch artifacts
+- keep desired state separate from generated runtime artifacts
+- treat publishable configuration as versioned state where applicable
+- make validation, simulation, publish, and rollback explicit lifecycle concepts
+- keep the same vocabulary across product surfaces
 
-## 3. Top-Level Entity Groups
+## 3. Top-level entity groups
 
-### 3.1 Identity and Access
+### 3.1 Identity and access
 
 - Tenant
 - User
 - Role
 - Policy
 
-### 3.2 Core Telecom Configuration
+### 3.2 Core telecom configuration
 
 - Extension
 - SIPTrunk
@@ -32,21 +32,12 @@ It describes the primary entities, their responsibilities, key relationships, li
 - OutboundRoute
 - PromptAsset
 - IVRFlow
-
-### 3.2.1 PBX Completeness Layer (designed, not implemented)
-
 - FeatureCode
 - ParkingLot
-- ParkedCall
 - ConferenceRoom
-- ConferenceParticipantSnapshot
-- RuntimeApplyRequest
-- RuntimeApplyResult
 - EndUserSelfServicePolicy
-- RuntimeOperation
-- RuntimeOperationPolicy
 
-### 3.3 Lifecycle and Governance
+### 3.3 Lifecycle and governance
 
 - FlowVersion
 - RouteVersion
@@ -55,1100 +46,163 @@ It describes the primary entities, their responsibilities, key relationships, li
 - SimulationResult
 - ApprovalRequest
 - AuditEvent
-- AuditFinding
-- IssueReference
 
-### 3.4 Runtime Observation
+### 3.4 Runtime observation
 
 - CallDetailRecord
 - CallEvent
 - Recording
-- RecordingAnalysisRequest
-- RuntimeIngestionRecord
+- RuntimeApplyRequest
+- ParkedCall
+- ConferenceParticipantSnapshot
 - FreeSwitchNode
-- SecurityAlertRule
-- SecurityAlert
-- TenantRetentionPolicy
-- LegalHoldRequest
+- FreeSwitchNodeStatusSnapshot
 
-### 3.5 Provider and Channel Integration
+### 3.5 Platform bootstrap
 
-- PromptGenerationRequest
-- IvrAiTurnRequest
-- ChannelAccount
-- ChannelMessage
-- ChannelVoiceSession
+- SetupState
 
-## 4. Core Entities
+## 4. Core identity entities
 
 ### 4.1 Tenant
 
 Represents an isolated customer or logical operating boundary.
 
-Key fields:
-
-- `id`
-- `name`
-- `slug`
-- `status`
-- `createdAt`
-- `updatedAt`
-
 Relationships:
 
-- Owns users
-- Owns telecom configuration
-- Owns audit and operational records
-
-Notes:
-
-- MVP may begin as single-tenant, but the domain should avoid hard-coding global ownership assumptions.
+- owns users
+- owns telecom configuration
+- owns audit and operational records
 
 ### 4.2 User
 
 Represents a human operator or service identity acting through approved interfaces.
 
-Key fields:
-
-- `id`
-- `tenantId`
-- `email`
-- `displayName`
-- `status`
-- `lastLoginAt`
-- `createdAt`
-- `updatedAt`
-
 Relationships:
 
-- Belongs to one tenant
-- Has exactly one persisted tenant role
-- Creates or modifies configuration and audit records
+- belongs to one tenant
+- has one persisted tenant role
+- may own one or more extensions for `/me/*` self-service flows
 
 ### 4.3 Role
 
 Represents a bounded application role used to derive capabilities.
 
-Key fields:
+Current persisted tenant roles in the code line:
 
-- `name`
-- `description`
+- `tenant_admin`
+- `tenant_operator`
+- `tenant_viewer`
+- `end_user`
 
-Relationships:
+`platform_admin` is computed at login from `PLATFORM_OPERATOR_EMAILS` and issued in JWTs rather than stored as a normal tenant role.
 
-- A tenant user stores one role in `users.role`
-- `platform_admin` is computed from `PLATFORM_OPERATOR_EMAILS` and issued only in JWTs
-- Maps to fixed capability sets in application code
-
-### 4.4 Policy
-
-Represents capability restrictions or safety rules applied to users, automations, or publish operations.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `name`
-- `policyType`
-- `rules`
-- `status`
-
-Relationships:
-
-- Can gate publish or outbound routing actions
-
-### 4.5 AuditFinding
-
-Represents a discrete issue discovered during an audit.
-
-Key fields:
-
-- `id`
-- `auditFile`
-- `title`
-- `severity`
-- `status`
-- `location`
-- `finding`
-- `fix`
-- `resolvedCommit`
-- `issueUrl`
-
-Relationships:
-
-- Belongs to one audit record
-- May link to one GitHub issue when unresolved after the audit session
-
-Invariants:
-
-- Findings are never deleted from audit records
-- Unresolved findings must have a GitHub issue or a documented reason why an
-  existing issue already tracks the same risk
-- Issue links must be updated when findings are resolved or accepted
-
-### 4.6 IssueReference
-
-Represents the GitHub tracking link for unresolved audit work.
-
-Key fields:
-
-- `url`
-- `number`
-- `state`
-- `labels`
-- `milestone`
-- `project`
-
-Relationships:
-
-- Tracks one or more related audit findings
-- May be closed when all linked findings are resolved
-
-## 5. Telecom Configuration Entities
+## 5. Core telecom entities
 
 ### 5.1 Extension
 
 Represents an internal callable identity.
 
-Key fields:
+Key implemented fields include:
 
-- `id`
 - `tenantId`
 - `extensionNumber`
 - `displayName`
 - `status`
-- `defaultDestinationType`
-- `defaultDestinationId`
-- `createdAt`
-- `updatedAt`
-
-Relationships:
-
-- May route to an IVR flow, user endpoint, queue, or other supported destination
-- Can be referenced by inbound or outbound routing logic
+- `ownerUserId`
+- `dndEnabled`
+- `callForwardEnabled`
+- `callForwardTarget`
 
 Invariants:
 
-- `extensionNumber` must be unique within tenant scope
-- Inactive extensions must not be selected as active destinations unless explicitly allowed by policy
+- `extensionNumber` is unique within tenant scope
+- `callForwardTarget` is blank when call forwarding is disabled
 
 ### 5.2 SIPTrunk
 
 Represents an external telephony connectivity definition used by FreeSWITCH.
 
-Key fields:
-
-- `id`
-- `tenantId`
-- `name`
-- `direction`
-- `status`
-- `providerName`
-- `authenticationProfile`
-- `networkProfile`
-- `createdAt`
-- `updatedAt`
-
-Relationships:
-
-- Referenced by inbound and outbound routing
-
-Notes:
-
-- Sensitive credentials should not be treated as plain domain fields in public interfaces.
+Sensitive credentials are treated as secret material, not normal public domain fields.
 
 ### 5.3 PhoneNumber
 
 Represents a DID or other routable phone number.
 
-Key fields:
-
-- `id`
-- `tenantId`
-- `e164Number`
-- `displayLabel`
-- `status`
-- `assignedTargetType`
-- `assignedTargetId`
-- `trunkId`
-- `createdAt`
-- `updatedAt`
-
-Relationships:
-
-- May be associated with a SIP trunk
-- May map to an inbound route or another supported destination
-
-Invariants:
-
-- `e164Number` must be unique within relevant ownership scope
-
 ### 5.4 InboundRoute
 
 Represents logic for handling inbound calls from a number or trunk context.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `name`
-- `matchType`
-- `matchValue`
-- `targetType`
-- `targetId`
-- `status`
-- `draftVersionId`
-- `activeVersionId`
-- `createdAt`
-- `updatedAt`
-
-Relationships:
-
-- References destination objects such as extension or IVR flow
-- Has version history through route versions
-
-Invariants:
-
-- An active route must reference a valid active destination
-- Conflicting active matches must be rejected by validation
 
 ### 5.5 OutboundRoute
 
 Represents policy-controlled outbound dialing behavior.
 
-Key fields:
-
-- `id`
-- `tenantId`
-- `name`
-- `matchStrategy`
-- `destinationPattern`
-- `trunkSelectionStrategy`
-- `allowedDestinationPrefixes`
-- `blockedDestinationPrefixes`
-- `status`
-- `draftVersionId`
-- `activeVersionId`
-- `createdAt`
-- `updatedAt`
-
-Relationships:
-
-- References one or more trunks
-- Governed by outbound safety policies
-
-Invariants:
-
-- Active outbound routes must conform to destination allowlists and policy constraints
-- Outbound calls without an active matching route are rejected before dispatch
-- Emergency and premium-rate destinations are blocked by global safety policy
-
-### Queue Runtime Policy
-
-Represents desired-state queue behavior for call-center style routing.
-
-Key fields:
-
-- `ringTimeoutSeconds`
-- `retryDelaySeconds`
-- `maxWaitSeconds`
-- `musicOnHold`
-- `overflowTargetType`
-- `overflowTargetId`
-
-Invariants:
-
-- Queue timing values must stay within bounded operational ranges
-- Overflow target type and ID must be set or cleared together
-- Queue runtime actions must include queue behavior, not only member extensions
-
 ### 5.6 PromptAsset
 
-Represents an audio or prompt artifact used by IVR flows.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `name`
-- `mediaType`
-- `language`
-- `storageUri`
-- `checksum`
-- `status`
-- `createdAt`
-- `updatedAt`
-
-Relationships:
-
-- Referenced by IVR flow nodes or prompts
-
-Invariants:
-
-- Referenced active prompts must exist and be retrievable
+Represents reusable prompt metadata used by IVR and voicemail surfaces.
 
 ### 5.7 IVRFlow
 
-Represents a publishable call-flow definition.
+Represents desired-state IVR behavior with draft/version lifecycle, validation, simulation, publish, and rollback operations.
 
-Key fields:
+### 5.8 FeatureCode
 
-- `id`
-- `tenantId`
-- `name`
-- `description`
-- `status`
-- `draftVersionId`
-- `activeVersionId`
-- `createdAt`
-- `updatedAt`
+Represents a tenant-scoped DTMF feature code definition validated and managed by the API, then executed through runtime callbacks.
 
-Relationships:
+### 5.9 ParkingLot
 
-- Owns many flow versions
-- References prompt assets, routes, transfer targets, and branch logic
+Represents a tenant-configured call parking range.
 
-Invariants:
+### 5.10 ConferenceRoom
 
-- Only one active version may exist per flow at a time
-- Draft and active versions must remain explicitly distinguishable
+Represents a tenant-scoped conference bridge definition.
 
-## 6. Versioned Entities
+### 5.11 EndUserSelfServicePolicy
 
-### 6.1 FlowVersion
+Represents tenant policy controlling what an `end_user` can change on their own extension.
 
-Represents a versioned snapshot of an IVR flow.
+## 6. Lifecycle and operational entities
 
-Key fields:
+### 6.1 FlowVersion and RouteVersion
 
-- `id`
-- `flowId`
-- `versionNumber`
-- `state`
-- `definition`
-- `createdBy`
-- `createdAt`
-- `validatedAt`
-- `simulatedAt`
-- `publishedAt`
+Represent immutable snapshots used for publish and rollback workflows.
 
-States:
+### 6.2 PublishRecord
 
-- `draft`
-- `validated`
-- `simulated`
-- `published`
-- `superseded`
-- `rolled_back`
+Represents publish and rollback history.
 
-Invariants:
+### 6.3 ValidationResult and SimulationResult
 
-- `versionNumber` must increase monotonically per flow
-- Published versions must have passed validation
+Represent persisted outcomes for validation and simulation runs.
 
-### 6.2 RouteVersion
+### 6.4 ApprovalRequest
 
-Represents a versioned snapshot for inbound or outbound routing definitions where publish history matters.
+Represents approval-gated publish or rollback operations.
 
-Key fields:
+### 6.5 AuditEvent
 
-- `id`
-- `routeType`
-- `routeId`
-- `versionNumber`
-- `state`
-- `definition`
-- `createdBy`
-- `createdAt`
-- `validatedAt`
-- `publishedAt`
+Represents immutable actor-attributed operational history.
 
-## 7. Governance and Lifecycle Entities
+### 6.6 RuntimeApplyRequest
 
-### 7.1 PublishRecord
+Represents a bounded runtime apply/reload request targeted at a FreeSWITCH node after a desired-state change.
 
-Represents an immutable record of a publish or rollback event.
+### 6.7 ParkedCall
 
-Key fields:
+Represents operational state for a parked call in a parking slot.
 
-- `id`
-- `tenantId`
-- `objectType`
-- `objectId`
-- `versionId`
-- `actionType`
-- `triggeredByType`
-- `triggeredById`
-- `approvalRequestId`
-- `result`
-- `createdAt`
+### 6.8 ConferenceParticipantSnapshot
 
-Relationships:
+Represents normalized participant state observed for a conference room.
 
-- Links a publishable object version to an actor and outcome
+### 6.9 FreeSwitchNodeStatusSnapshot
 
-### 7.2 ValidationResult
+Represents normalized operational status for a FreeSWITCH node as reported by the Go agent, including module, gateway, channel, and registration summaries.
 
-Represents the result of a validation run against a draft or versioned object.
+## 7. Platform bootstrap entity
 
-Key fields:
+### 7.1 SetupState
 
-- `id`
-- `tenantId`
-- `objectType`
-- `objectId`
-- `versionId`
-- `validatorVersion`
-- `status`
-- `errors`
-- `warnings`
-- `createdAt`
+Represents platform bootstrap completion state.
 
-Statuses:
-
-- `passed`
-- `failed`
-- `warning_only`
-
-### 7.3 SimulationResult
-
-Represents the result of a simulation run.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `objectType`
-- `objectId`
-- `versionId`
-- `scenario`
-- `status`
-- `resultPayload`
-- `createdAt`
-
-Statuses:
-
-- `passed`
-- `failed`
-- `inconclusive`
-
-### 7.4 ApprovalRequest
-
-Represents a human or policy-gated approval step for risky operations.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `objectType`
-- `objectId`
-- `versionId`
-- `requestedBy`
-- `status`
-- `decisionBy`
-- `decisionAt`
-- `reason`
-- `createdAt`
-
-Statuses:
-
-- `pending`
-- `approved`
-- `rejected`
-- `expired`
-
-### 7.5 AuditEvent
-
-Represents a durable audit trail event for domain mutations or sensitive reads.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `actorType`
-- `actorId`
-- `action`
-- `objectType`
-- `objectId`
-- `metadata`
-- `createdAt`
-
-Actor types:
-
-- `user`
-- `workflow`
-- `ai_agent`
-- `system`
-
-## 8. Runtime Observation Entities
-
-### 8.1 CallDetailRecord
-
-Represents a normalized record of a completed or observed call.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `callId`
-- `direction`
-- `fromNumber`
-- `toNumber`
-- `startTime`
-- `endTime`
-- `durationSeconds`
-- `terminationReason`
-- `finalDisposition`
-- `ingestedAt`
-
-### 8.2 CallEvent
-
-Represents a normalized event in the call lifecycle.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `callId`
-- `eventType`
-- `eventTime`
-- `source`
-- `payload`
-- `ingestedAt`
-
-### 8.3 RuntimeIngestionRecord
-
-Represents a technical record of adapter ingestion work for traceability.
-
-Key fields:
-
-- `id`
-- `sourceType`
-- `sourceReference`
-- `status`
-- `receivedAt`
-- `processedAt`
-- `errorMessage`
-
-### 8.4 Recording
-
-Represents recorded call or voicemail media metadata. The media itself may live in
-filesystem or object storage; the domain object stores only a controlled reference.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `callId`
-- `callEventId`
-- `storageReference`
-- `durationSeconds`
-- `sizeBytes`
-- `status`
-- `recordedAt`
-- `createdAt`
-
-### 8.5 RecordingAnalysisRequest
-
-Represents a provider-neutral request to transcribe or summarize a recording. The
-request is part of the core domain contract even if the processor is an external
-plugin or future AI service.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `recordingId`
-- `requestedOutputs`
-- `languageHint`
-- `status`
-- `transcriptText`
-- `summaryText`
-- `errorMessage`
-- `providerMetadata`
-- `createdAt`
-- `completedAt`
-
-Statuses:
-
-- `queued`
-- `processing`
-- `completed`
-- `failed`
-- `cancelled`
-
-Invariants:
-
-- Analysis requests must stay scoped to the same tenant as the parent recording.
-- Public APIs must not expose raw media storage paths or provider secrets.
-- Transcript and summary values are nullable until processing completes.
-
-### 8.6 LiveOperationalSnapshot
-
-Represents a short-lived, derived view of current operational state for live UI
-streams. It is not the canonical source of truth; it is assembled from runtime
-sessions, call events, queue state, runtime health, webhook delivery state, and
-adapter work queues.
-
-Key fields:
-
-- `tenantId`
-- `activeCallCount`
-- `activeIvrSessionCount`
-- `queueDepths`
-- `runtimeServices`
-- `recentFailures`
-- `webhookBacklog`
-- `adapterBacklog`
-- `generatedAt`
-
-Invariants:
-
-- Snapshots must be tenant-scoped unless served to a platform operator aggregate view.
-- Snapshots must not expose raw FreeSWITCH payloads, provider secrets, or raw provider webhook bodies.
-- Historical reporting should use durable records, not transient live snapshots.
-
-### 8.7 FreeSwitchNode
-
-Represents a registered FreeSWITCH runtime node allowed to call runtime-internal
-API endpoints through node-scoped credentials.
-
-Key fields:
-
-- `id`
-- `nodeName`
-- `status`
-- `capabilities`
-- `allowedCidrs`
-- `activeTokenId`
-- `lastSeenAt`
-- `createdAt`
-- `updatedAt`
-
-Invariants:
-
-- Runtime node secrets are returned only at creation/rotation time.
-- Runtime requests must bind caller identity to node capability and tenant scope
-  where applicable.
-- Node registry state is operational control-plane state, not tenant desired state.
-
-### 8.8 SecurityAlertRule and SecurityAlert
-
-Represent business-level abuse and operational alerts such as registration
-bursts, outbound abuse attempts, runtime auth failures, webhook delivery
-pressure, and runtime degradation.
-
-Invariants:
-
-- Alerts use bounded normalized metadata, not raw FreeSWITCH or provider payloads.
-- Tenant-scoped alerts are visible only to authorized tenant actors; platform
-  aggregate views require platform-admin capability.
-
-### 8.9 TenantRetentionPolicy and LegalHoldRequest
-
-Represent tenant-specific retention overrides and legal holds for call-related
-data.
-
-Covered resources include recordings, voicemail, transcripts, summaries, CDRs,
-call events, generated media, and webhook delivery records.
-
-Invariants:
-
-- Legal holds block purge regardless of retention age.
-- Retention changes and hold create/release actions are audited.
-- Production promotion still requires evidence for object-storage cleanup,
-  export-before-delete, backup interaction, and operator signoff.
-
-## 9. Provider and Channel Integration Entities
-
-### 9.1 PromptGenerationRequest
-
-Represents a provider-neutral request to generate prompt media from text or SSML-like
-input. A provider such as a text-to-speech service may fulfill it later, but the
-domain contract stays independent of that provider.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `promptAssetId`
-- `requestedOutputs`
-- `inputText`
-- `languageHint`
-- `voiceHint`
-- `providerHint`
-- `status`
-- `generatedPromptAssetId`
-- `errorMessage`
-- `providerMetadata`
-- `createdAt`
-- `completedAt`
-
-Statuses:
-
-- `queued`
-- `processing`
-- `completed`
-- `failed`
-- `cancelled`
-
-Invariants:
-
-- Generated prompt assets must stay tenant-scoped to the request tenant.
-- Provider hints are optional routing preferences, not required business state.
-- Public responses must not expose provider credentials or temporary media URLs.
-
-### 9.2 IvrAiTurnRequest
-
-Represents a bounded AI-assisted turn in an IVR runtime session. It lets a flow
-delegate a customer question or request to an external AI adapter without giving
-the provider direct control over call execution.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `runtimeSessionId`
-- `callId`
-- `flowId`
-- `nodeId`
-- `inputMode`
-- `inputText`
-- `requestedOutputs`
-- `providerHint`
-- `status`
-- `answerText`
-- `nextAction`
-- `confidence`
-- `errorMessage`
-- `providerMetadata`
-- `createdAt`
-- `completedAt`
-
-Statuses:
-
-- `queued`
-- `processing`
-- `completed`
-- `failed`
-- `cancelled`
-
-Invariants:
-
-- The result may suggest a bounded next action, but core IVR execution remains in
-  the backend runtime resolver.
-- Provider output must be validated before it can route, transfer, or mutate state.
-- Failed or timed-out turns must fall back to configured flow behavior.
-
-### 9.3 ChannelAccount
-
-Represents a tenant-owned account or integration endpoint for an external channel
-such as WhatsApp, Telegram, Google Meet, or a custom adapter.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `provider`
-- `displayName`
-- `status`
-- `capabilities`
-- `externalAccountRef`
-- `credentialRef`
-- `createdAt`
-- `updatedAt`
-
-Capabilities:
-
-- `message_inbound`
-- `message_outbound`
-- `voice_message`
-- `native_call`
-- `meeting`
-- `sip_bridge`
-- `transcript_artifacts`
-- `recording_artifacts`
-
-Invariants:
-
-- Credentials are referenced only by secret handle and are never returned publicly.
-- Features must be gated by declared capability instead of provider name alone.
-- The account describes an external adapter integration; provider SDKs and delivery
-  workers are not part of the control-plane API.
-
-### 9.4 ChannelMessage
-
-Represents an inbound or outbound message normalized across channel providers.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `channelAccountId`
-- `provider`
-- `direction`
-- `messageKind`
-- `externalConversationRef`
-- `externalMessageRef`
-- `fromRef`
-- `toRef`
-- `text`
-- `mediaRefs`
-- `status`
-- `providerMetadata`
-- `createdAt`
-- `deliveredAt`
-
-Directions:
-
-- `inbound`
-- `outbound`
-
-Message kinds:
-
-- `text`
-- `voice`
-- `audio`
-- `image`
-- `file`
-- `interactive`
-
-Invariants:
-
-- Raw provider event bodies are not the canonical message model.
-- Media references must be controlled storage or provider artifact references, not
-  unbounded public URLs.
-- Outbound messages are first stored as provider-neutral work. External adapter
-  services claim the work, deliver it, and report sent or failed results.
-
-### 9.5 ChannelVoiceSession
-
-Represents a provider-backed voice, voice-message, meeting, or SIP-bridge
-interaction related to a channel account.
-
-Key fields:
-
-- `id`
-- `tenantId`
-- `channelAccountId`
-- `provider`
-- `capability`
-- `externalSessionRef`
-- `callId`
-- `meetingUrl`
-- `status`
-- `startedAt`
-- `endedAt`
-- `providerMetadata`
-- `createdAt`
-
-Invariants:
-
-- A session capability must be declared on the parent channel account.
-- Meeting or native-call sessions must not imply FreeSWITCH call control unless
-  explicitly bridged through a supported SIP or runtime adapter.
-
-## 10. Relationship Summary
-
-At a high level:
-
-```text
-Tenant
-  -> User
-  -> Role
-  -> Policy
-  -> Extension
-  -> SIPTrunk
-  -> PhoneNumber
-  -> InboundRoute
-  -> OutboundRoute
-  -> PromptAsset
-  -> IVRFlow
-  -> PublishRecord
-  -> ValidationResult
-  -> SimulationResult
-  -> ApprovalRequest
-  -> AuditEvent
-  -> CallDetailRecord
-  -> CallEvent
-  -> Recording
-  -> RecordingAnalysisRequest
-  -> PromptGenerationRequest
-  -> IvrAiTurnRequest
-  -> ChannelAccount
-  -> ChannelMessage
-  -> ChannelVoiceSession
-
-IVRFlow
-  -> FlowVersion
-
-InboundRoute / OutboundRoute
-  -> RouteVersion
-
-FlowVersion / RouteVersion
-  -> ValidationResult
-  -> SimulationResult
-  -> PublishRecord
-  -> ApprovalRequest
-
-ChannelAccount
-  -> ChannelMessage
-  -> ChannelVoiceSession
-
-Recording
-  -> RecordingAnalysisRequest
-```
-
-## 11. Lifecycle Rules
-
-### 11.1 Publishable Object Lifecycle
-
-Suggested lifecycle:
-
-1. Draft created
-2. Draft edited
-3. Validation executed
-4. Simulation executed where applicable
-5. Approval requested if required
-6. Version published
-7. Prior version remains rollback-capable
-
-### 11.2 State Transition Rules
-
-- A `draft` version may transition to `validated` only if validation passes
-- A `validated` version may transition to `published` directly or after simulation and approval depending on policy
-- A `published` version may transition to `superseded` when replaced by a newer active version
-- A prior `published` or `superseded` version may become active again through rollback
-
-### 11.3 Provider Work Request Lifecycle
-
-Suggested lifecycle:
-
-1. Request created as `queued`
-2. Trusted adapter claims request as `processing`
-3. Adapter completes with bounded result or failure
-4. Completed result remains readable through business APIs
-5. Failed request remains auditable and may be retried by policy
-
-## 12. Domain Invariants
-
-- There is exactly one canonical desired-state owner for each configuration object
-- Active versions are explicit, never implicit
-- Publish actions are auditable and attributable
-- AI-facing operations must remain within the constrained business vocabulary
-- Runtime artifacts are derived outputs, not canonical domain entities
-- Live observability snapshots are derived views, not canonical domain entities
-- External provider outputs are inputs to domain workflows, not direct authority
-- Provider capabilities must be explicit before channel-specific actions are accepted
-
-## 13. Mapping Guidance
-
-### 13.1 API Mapping
-
-- Public endpoints should expose these domain nouns directly
-- Public payloads should avoid leaking FreeSWITCH-specific implementation details unless operationally necessary
-- Provider-specific payloads should be represented as bounded metadata, not as the
-  primary public contract
-
-### 13.2 Database Mapping
-
-- Tables may be normalized differently from the conceptual model, but ownership and invariants must remain intact
-- Versioned object content may be stored in structured relational or document-like form as long as validation and auditability remain strong
-
-### 13.3 UI Mapping
-
-- UI terminology should mirror domain terms such as flow, route, prompt, validation, simulation, publish, and rollback
-
-## 14. PBX Completeness Layer Entities (designed, not implemented)
-
-These entities are designed in `docs/pbx/` and proposed for implementation in
-SLICE-60 through SLICE-66. They follow the same invariants as the core entities
-above.
-
-### 14.1 FeatureCode
-
-Tenant-scoped DTMF feature code mapping to a safe PBX action.
-
-Key fields: `id`, `tenant_id`, `code`, `name`, `action_type`, `action_config`,
-`status`, `requires_approval`, `created_by`, `published_at`.
-
-Invariants:
-- `code` must be unique within `tenant_id`.
-- `code` must not collide with extension number ranges, emergency numbers, or
-  outbound route prefixes.
-- Publish requires validation pass.
-
-### 14.2 ParkingLot
-
-Tenant-scoped call parking slot range.
-
-Key fields: `id`, `tenant_id`, `name`, `slot_range_start`, `slot_range_end`,
-`retrieve_prefix`, `timeout_seconds`, `timeout_target_type`, `timeout_target_id`,
-`music_on_hold`, `status`.
-
-Invariants:
-- Slot ranges must not overlap within a tenant.
-
-### 14.3 ParkedCall
-
-Runtime record of a call in a parking slot.
-
-Key fields: `id`, `tenant_id`, `parking_lot_id`, `slot_number`, `call_id`,
-`parked_at`, `timeout_at`, `retrieved_at`, `status`.
-
-Invariants:
-- At most one `parked` record per `(tenant_id, parking_lot_id, slot_number)`.
-- Operational data — not desired state.
-
-### 14.4 ConferenceRoom
-
-Tenant-scoped conference room backed by `mod_conference`.
-
-Key fields: `id`, `tenant_id`, `room_number`, `name`, `pin_hash`,
-`moderator_pin_hash`, `max_participants`, `recording_policy`, `join_muted`,
-`wait_for_moderator`, `status`.
-
-Invariants:
-- `room_number` must be unique within `tenant_id`.
-- PINs are never stored in plaintext or returned in responses.
-
-### 14.5 RuntimeApplyRequest
-
-Tracks a safe ESL command sequence applied after a SIP trunk change.
-
-Key fields: `id`, `tenant_id`, `action_type`, `target_node_id`, `object_type`,
-`object_id`, `status`, `requires_approval`, `approval_request_id`.
-
-Invariants:
-- `action_type` must be from the explicit safe allowlist.
-- Not a general-purpose ESL passthrough.
-
-### 14.6 EndUserSelfServicePolicy
-
-Per-tenant policy controlling which self-service capabilities end users may access.
-
-Key fields: `id`, `tenant_id`, `voicemail_view`, `dnd_manage`,
-`call_forward_manage`, `sip_credential_reset`, ...
-
-Invariants:
-- One policy per tenant.
-
-### 14.7 RuntimeOperation
-
-Platform-level controlled FreeSWITCH runtime operation (reloadxml, sofia rescan, etc.).
-
-Key fields: `id`, `target_node_id`, `action_type`, `action_params`, `actor_type`,
-`status`, `requires_approval`.
-
-Invariants:
-- `action_type` must be from the platform allowlist.
-- High-risk actions (profile restart) require approval.
-
-## 15. Open Modeling Questions
-
-- Final queue, ring group, and agent abstractions if call-center features are added
-- Whether routes share one generic versioning model or distinct inbound and outbound version types
-- Final approval policy attachment model
-- Exact representation of IVR node graphs and simulation scenarios
-- Final provider adapter installation and credential storage model
-- Exact channel capability matrix by provider and deployment environment
+The current implementation uses `system_config.setup_complete=true` as the first-run sentinel.

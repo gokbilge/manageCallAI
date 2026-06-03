@@ -2,229 +2,82 @@
 
 [![CI](https://github.com/gokbilge/manageCallAI/actions/workflows/ci.yml/badge.svg)](https://github.com/gokbilge/manageCallAI/actions/workflows/ci.yml)
 
-**AI-native telecom control plane over FreeSWITCH with MCP, n8n, REST API, visual IVR, validation, simulation, and rollback.**
+AI-native telecom control plane over FreeSWITCH with REST, MCP, n8n, visual IVR, validation, simulation, rollback, and runtime safety controls.
 
-manageCallAI is an open-source platform for building programmable PBX, IVR, and telecom automation systems on top of FreeSWITCH.
+manageCallAI is an open-source platform for building programmable PBX, IVR, and telecom automation systems on top of stock FreeSWITCH. The control plane lives in TypeScript and PostgreSQL. FreeSWITCH remains runtime-only. Lua remains thin. The Go agent handles ESL/runtime integration.
 
-It is designed for humans, workflows, and AI agents.
-
-Instead of exposing SIP, RTP, FreeSWITCH XML, ESL commands, dialplans, and low-level telecom complexity directly, manageCallAI provides safe, high-level telecom abstractions through:
-
-- A modern React admin panel
-- A visual IVR / call-flow builder
-- A Node.js / TypeScript control plane
-- A REST API
-- A TypeScript MCP server for AI agents
-- n8n-compatible workflow automation
-- A Go FreeSWITCH adapter service
-- Minimal Lua helpers inside stock FreeSWITCH
-
-The goal is simple:
-
-> Turn telecom into safe, composable tools for humans, workflows, and AI agents.
-
-## Canonical Project Doc
-
-The main project design and architecture reference lives here:
+## Canonical docs
 
 - [docs/architecture/source-of-truth.md](docs/architecture/source-of-truth.md)
-- [docs/README.md](docs/README.md)
-- [docs/requirements/srs.md](docs/requirements/srs.md)
-- [docs/design/domain-model.md](docs/design/domain-model.md)
-- [docs/api/rest-api.md](docs/api/rest-api.md)
-- [docs/design/database-schema.md](docs/design/database-schema.md)
-- [db/README.md](db/README.md)
-- [docs/design/software-design.md](docs/design/software-design.md)
 - [docs/architecture/overview.md](docs/architecture/overview.md)
-- [docs/development/demo-loop.md](docs/development/demo-loop.md)
-- [docs/development/ivr-flow-foundation-proof.md](docs/development/ivr-flow-foundation-proof.md)
-- [docs/development/ivr-runtime-resolver-proof.md](docs/development/ivr-runtime-resolver-proof.md)
-- [docs/development/first-vertical-slice.md](docs/development/first-vertical-slice.md)
-- [docs/development/live-freeswitch-registration.md](docs/development/live-freeswitch-registration.md)
-- [docs/development/live-freeswitch-ivr-loop.md](docs/development/live-freeswitch-ivr-loop.md)
-- [docs/ivr/IVR_ARCHITECTURE.md](docs/ivr/IVR_ARCHITECTURE.md)
-- [docs/planning/README.md](docs/planning/README.md)
-- [packages/sdk/README.md](packages/sdk/README.md)
+- [docs/architecture/runtime-boundaries.md](docs/architecture/runtime-boundaries.md)
+- [docs/design/software-design.md](docs/design/software-design.md)
+- [docs/design/domain-model.md](docs/design/domain-model.md)
+- [docs/design/database-schema.md](docs/design/database-schema.md)
+- [docs/design/setup-bootstrap.md](docs/design/setup-bootstrap.md)
+- [docs/README.md](docs/README.md)
 
-If other documents drift, the source-of-truth document is the canonical reference until updated.
+## Implemented in the repository
 
-## Why manageCallAI?
+Source inspection shows implemented support for:
 
-Traditional PBX platforms are usually built for manual administration.
+- multi-tenant auth and tenant-scoped PBX objects
+- extensions, trunks, phone numbers, schedules, inbound/outbound routes
+- queues, call groups, voicemail boxes, prompt assets, recordings, and call events
+- IVR draft, validate, simulate, publish, rollback, and approval-aware flows
+- FreeSWITCH directory and dialplan callbacks over `mod_xml_curl`
+- Go FreeSWITCH agent runtime/event integration
+- tenant and platform runtime visibility surfaces
+- feature codes, parking, conference rooms, runtime apply requests, and end-user self-service
+- first-run setup/bootstrap through `/setup` or headless `SETUP_*` environment variables
+- deployment packaging with `docker-compose.prod.yml`, `install.sh`, and a Helm chart scaffold
 
-manageCallAI replaces low-level telecom administration with safe business-level operations for:
+## Release posture
 
-- Human operators
-- Workflow systems
-- AI agents
+Release posture must be derived from release evidence, not from source inspection alone.
 
-## Current Status
+- Implementation in the tree is not evidence.
+- Scripts, templates, and `--check-config` modes are not evidence.
+- Production claims require artifacts tied to the release-candidate commit and workflow runs.
 
-**Production release — v0.3.0**
+Use these documents for current stage and blockers:
 
-manageCallAI `v0.3.0` is the first production release. All production gates have
-passed with real evidence tied to commit `a157b84` on `rc/v0.3.0` (smoke run
-26903877370 on `enlogy@10.0.0.32`). The full PBX Completeness Layer is implemented,
-retention storage cleanup and DSR are documented, and live rotation rehearsal plus
-rate-limit topology proof are evidenced.
-
-| Stage | Status |
-|---|---|
-| Internal alpha | ✅ `v0.2.0-alpha` |
-| Public alpha | ✅ `v0.2.0-alpha` |
-| Public beta candidate | ✅ `v0.2.0-beta.1` |
-| Production release candidate | ✅ `v0.3.0-rc.1` — smoke run 26903877370 |
-| **Production ready** | ✅ **`v0.3.0`** — all gates passed, evidence bundle validated |
-
-See [docs/release/release-evidence-v0.3.0.json](docs/release/release-evidence-v0.3.0.json)
-for the complete evidence bundle. `pnpm release:evidence-check` exits 0.
-
-Release references:
-
-- [CHANGELOG.md](CHANGELOG.md)
 - [docs/release/release-checklist.md](docs/release/release-checklist.md)
+- [docs/release/product-release-audit.md](docs/release/product-release-audit.md)
+- [docs/release/public-alpha-readiness.md](docs/release/public-alpha-readiness.md)
 - [docs/planning/open-release-blockers.md](docs/planning/open-release-blockers.md)
 
-Core API domains are implemented and covered by CI, with the current generated
-contract covering 99 OpenAPI operations.
-
-### Implemented
-
-- **Auth**: multi-tenant register / login, JWT with role claim, platform admin support
-- **Extensions**: CRUD + AES-256-GCM encrypted SIP credentials
-- **SIP Trunks, Phone Numbers, Schedules, Outbound Routes**: full CRUD
-- **Call Groups, Queues**: CRUD + member management (simultaneous / sequential ring strategies)
-- **Voicemail Boxes**: CRUD + greeting prompt assignment
-- **Prompt Assets**: metadata CRUD; provider-neutral TTS generation contract (provider-work)
-- **IVR Flows**: draft -> validate -> simulate -> publish -> rollback, approval gating, full history
-- **Inbound Routes**: draft -> publish lifecycle with version control
-- **Runtime (IVR)**: live session start/advance; FreeSWITCH Lua executor closes the loop
-- **Outbound Calls**: dispatch via outbound route resolution, route policy, and tenant fraud policy checks
-- **Call Events**: ingestion from Go ESL agent + tenant query
-- **Recordings**: metadata ingestion + analysis request contract (transcript / summary)
-- **Automation**: API key management + webhook subscriptions + durable delivery queue
-- **Users**: tenant user CRUD + role management
-- **Approvals**: approval-gating for IVR publish/rollback
-- **Audit, Export**: read access + tenant data export
-- **Channels**: account, message, and meeting-session adapters (WhatsApp / Telegram / Google Meet)
-- **IVR AI**: provider-neutral AI turn contract
-- **Platform ops**: tenant list, runtime health, session summary, and FreeSWITCH node registry (platform_admin)
-- **FreeSWITCH integration**: `mod_xml_curl` directory + dialplan endpoints; Go ESL adapter; node-scoped HMAC runtime auth
-- **Fraud and runtime safety**: tenant outbound policy, security alerts, token redaction, production preflight, rate-limit topology, soak/SLO/carrier/release-evidence gates
-- **MCP server**: safe read, draft mutation, validation, simulation, approval-request, and export tools for AI agents
-- **n8n connector**: webhook trigger + API action patterns
-- **Schema contracts**: Zod schemas as single source of truth; OpenAPI spec generated from code
-- **Error standard**: gRPC-inspired RPC codes, global error handler, CI coverage gate
-
-### PBX Completeness Layer (v0.3.0)
-
-The PBX Completeness Layer is **fully implemented** in v0.3.0 (PRs #179, #180).
-
-| Feature | Status |
-|---|---|
-| Feature codes — DTMF, DND, call forward, parking, conference join | ✅ Implemented |
-| Call parking — `mod_valet_parking`, slot management, timeout routing | ✅ Implemented |
-| Native conferencing — `mod_conference`, PIN enforcement, bridge path | ✅ Implemented |
-| Gateway reload on trunk change — safe ESL rescan, REGED confirmation | ✅ Implemented |
-| End-user self-service portal — DND, call forward, `/me/*` endpoints | ✅ Implemented |
-| FreeSWITCH runtime management — read-only status, module checklist | ✅ Phase 1 implemented |
-
-See [docs/pbx/PBX_COMPLETENESS_LAYER.md](docs/pbx/PBX_COMPLETENESS_LAYER.md) for design.
-
-### What's next — v0.3.5
-
-First-time setup and deployment packaging (SLICE-60):
-- Setup wizard at `/setup` (web-based, locked after first run)
-- ENV-VAR headless bootstrap for Docker / Kubernetes
-- `docker-compose.prod.yml` with GHCR images
-- `install.sh` one-command VPS installer
-- Helm chart for Kubernetes
-- Docker Hub publishing
-
-**Run the full demo loop in one sitting:**
+## Architecture summary
 
 ```text
-docs/development/demo-loop.md
+React Web UI
+   -> REST API
+      -> PostgreSQL desired state
+      -> validation / simulation / publish / rollback / audit
+      -> runtime artifact generation
+      -> FreeSWITCH mod_xml_curl directory/dialplan
+      -> Lua thin executor
+      -> Go ESL agent
+      -> call events / observability
+
+MCP / n8n
+   -> safe API abstractions only
 ```
 
-The initial target is a safe IVR and routing control plane where an AI agent or workflow can create, validate, simulate, and publish a working IVR on FreeSWITCH without direct knowledge of FreeSWITCH internals.
-
-The IVR architecture and foundation runbook now live here:
-
-- [docs/ivr/IVR_ARCHITECTURE.md](docs/ivr/IVR_ARCHITECTURE.md)
-- [docs/development/ivr-flow-foundation-proof.md](docs/development/ivr-flow-foundation-proof.md)
-- [docs/development/ivr-runtime-resolver-proof.md](docs/development/ivr-runtime-resolver-proof.md)
-- [docs/development/live-freeswitch-ivr-loop.md](docs/development/live-freeswitch-ivr-loop.md)
-
-The current IVR foundation now includes:
-
-- tenant-scoped IVR flow + version CRUD
-- structural validation
-- deterministic draft/version simulation
-- approval-aware publish / rollback attempts
-
-## Technology Stack
-
-- Frontend: React + TypeScript
-- Main API / Control Plane: Node.js + TypeScript
-- Database: PostgreSQL
-- Workflow: n8n + Webhooks
-- AI: MCP server in TypeScript
-- FreeSWITCH Adapter Service: Go
-- FreeSWITCH Call Helper: Lua
-
-## FreeSWITCH Strategy
-
-manageCallAI does not fork or replace FreeSWITCH.
-
-It runs on top of stock FreeSWITCH through supported extension interfaces:
-`mod_xml_curl`, `ESL` / `mod_event_socket`, and Lua helpers.
-
-This is much better for adoption because users can bring their existing FreeSWITCH installation.
-
-My recommendation:
-
-1. Use stock FreeSWITCH.
-2. Do not fork.
-3. Build a FreeSWITCH adapter service.
-4. Build Lua helper scripts as thin executors only.
-5. Build an `xml_curl` config provider.
-6. Build an ESL event/control layer.
-7. Provide a Dockerized reference FreeSWITCH runtime.
-
-## Project Philosophy
-
-- Business logic: manageCallAI backend
-- AI / MCP / n8n logic: manageCallAI backend
-- Call execution: FreeSWITCH
-- Optional call-session helper: Lua
-- Runtime event/control agent: Go or Node
-
-## Quick Start
+## Quick start
 
 ```sh
-# Start core services
+pnpm install
 pnpm db:up
 pnpm db:migrate
 pnpm --filter @managecallai/api dev
-
-# With FreeSWITCH runtime
-pnpm runtime:up
 ```
 
-Runbooks:
-- **Demo loop**: `docs/development/demo-loop.md`
-- **Live IVR proof**: `docs/development/live-freeswitch-ivr-loop.md`
-- **IVR architecture**: `docs/ivr/IVR_ARCHITECTURE.md`
-- **Node support matrix**: `docs/ivr/NODE_SUPPORT_MATRIX.md`
+For packaging and first boot:
 
-## FreeSWITCH Strategy
+- [docs/ops/quickstart.md](docs/ops/quickstart.md)
+- [docker-compose.prod.yml](docker-compose.prod.yml)
+- [.env.production.example](.env.production.example)
+- [install.sh](install.sh)
 
-manageCallAI does not fork or replace FreeSWITCH. It runs on top of stock FreeSWITCH through supported extension interfaces: `mod_xml_curl`, ESL / `mod_event_socket`, and Lua helpers.
-
-**Lua helpers are thin executors only** -- they carry out runtime actions (play, collect, transfer, hangup) and call back to the API. All business logic lives in the Node.js control plane.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-Please read the [Code of Conduct](CODE_OF_CONDUCT.md) before opening issues or pull requests.
+manageCallAI is not production-ready unless all production evidence gates pass with real artifacts tied to the release candidate commit.

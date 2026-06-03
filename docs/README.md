@@ -65,6 +65,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [design/software-design.md](design/software-design.md)
   Software Design Description covering modules, services, domain model responsibilities, workflows, interfaces, and design decisions.
 
+- [design/setup-bootstrap.md](design/setup-bootstrap.md)
+  First-run setup, headless bootstrap, and deployment packaging design.
+
 - [architecture/overview.md](architecture/overview.md)
   System architecture reference covering runtime topology, component boundaries, integration points, data flow, and deployment model.
 

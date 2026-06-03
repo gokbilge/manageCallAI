@@ -2,27 +2,27 @@
 
 ## 1. Purpose
 
-This document defines the initial PostgreSQL schema direction for `manageCallAI`.
+This document defines the PostgreSQL schema direction implemented by `manageCallAI`.
 
-It maps the conceptual domain model into relational structures suitable for MVP implementation while preserving versioning, auditability, and clear ownership of desired state.
+It maps the conceptual domain model into relational structures while preserving tenant scoping, auditability, lifecycle control, and clear ownership of desired state.
 
-## 2. Design Principles
+## 2. Design principles
 
 - PostgreSQL is the canonical store for desired state
-- Runtime artifacts are derived outputs, not primary records of business intent
-- Publishable objects use explicit version tables
-- Mutable operational state and immutable audit history are separated
-- JSONB is allowed for flexible definitions and result payloads, but core ownership and lookup fields remain relational
+- runtime artifacts are derived outputs, not primary records of business intent
+- publishable objects use explicit version tables
+- mutable operational state and immutable audit history are separated
+- JSONB is allowed for flexible definitions and result payloads, but core ownership and lookup fields stay relational
 
-## 3. Schema Areas
+## 3. Schema areas
 
-### 3.1 Identity and Access
+### 3.1 Identity and access
 
 - `tenants`
 - `users`
 - `policies`
 
-### 3.2 Core Telecom Configuration
+### 3.2 Core telecom configuration
 
 - `extensions`
 - `sip_trunks`
@@ -34,8 +34,12 @@ It maps the conceptual domain model into relational structures suitable for MVP 
 - `ivr_flows`
 - `inbound_routes`
 - `outbound_routes`
+- `feature_codes`
+- `parking_lots`
+- `conference_rooms`
+- `end_user_self_service_policies`
 
-### 3.3 Versioned Lifecycle Data
+### 3.3 Versioned lifecycle data
 
 - `flow_versions`
 - `route_versions`
@@ -44,349 +48,198 @@ It maps the conceptual domain model into relational structures suitable for MVP 
 - `approval_requests`
 - `publish_records`
 
-### 3.4 Observability and Audit
+### 3.4 Observability and audit
 
 - `audit_events`
 - `call_detail_records`
 - `call_events`
 - `runtime_ingestion_records`
-- `tenant_audit_log`
+- `recordings`
+- `voicemail_messages`
+- `parked_calls`
+- `conference_participant_snapshots`
+- `freeswitch_nodes`
+- `freeswitch_node_status_snapshots`
 - `security_alert_rules`
 - `security_alerts`
 - `security_alert_cooldowns`
 
-### 3.5 Runtime, Compliance, and Integration Operations
+### 3.5 Runtime, bootstrap, and integration operations
 
 - `ivr_flow_sessions`
 - `ivr_flow_session_steps`
 - `idempotency_records`
 - `webhook_delivery_log`
 - `webhook_delivery_queue`
-- `freeswitch_nodes`
-- `freeswitch_node_tokens`
-- `tenant_retention_policies`
-- `legal_hold_requests`
-- `recordings`
-- `recording_analysis_requests`
-- `voicemail_messages`
+- `runtime_apply_requests`
 - `provider_work_requests`
 - `channel_accounts`
 - `channel_messages`
 - `meeting_sessions`
 - `tenant_outbound_policies`
+- `tenant_retention_policies`
+- `legal_hold_requests`
+- `system_config`
 
-## 4. Table Intent
+## 4. Table intent
 
-### 4.1 tenants
+### 4.1 `users`
 
-Owns the tenant boundary. MVP may operate with a single tenant, but schema design should remain tenant-aware.
+`users.role` is the canonical persisted tenant role source. The current code line supports persisted tenant roles `tenant_admin`, `tenant_operator`, `tenant_viewer`, and `end_user`. `platform_admin` is computed from `PLATFORM_OPERATOR_EMAILS` and issued in JWTs rather than stored as a normal tenant role.
 
-### 4.2 users and policies
-
-`users.role` is the canonical persisted tenant role source. Supported persisted
-tenant roles are `tenant_admin`, `tenant_operator`, and `tenant_viewer`; the
-`platform_admin` role is computed at login from `PLATFORM_OPERATOR_EMAILS` and
-issued in the JWT rather than stored for normal tenant users.
-
-The legacy `roles`, `user_roles`, and `role_policies` tables from the initial
-schema are removed by `0042_drop_legacy_role_tables.sql`. New authorization work
-must extend the explicit capability model rather than reusing those table names.
-
-`policies` stores tenant-level governance rules such as approval requirements.
-It is not a role-assignment table.
-
-### 4.3 extensions
+### 4.2 `extensions`
 
 Stores internal callable identities and their default destinations.
 
 Secret-handling for SIP credentials:
 
-- `sip_username` — stored in plaintext; used as the SIP registration username.
-- `sip_password_ciphertext` — AES-256-GCM ciphertext; format `base64(iv).base64(authTag).base64(ciphertext)`.
-- `sip_password_key_id` — identifies the symmetric key used; enables key rotation without re-encrypting in SQL.
-- The API accepts plaintext `sip_password` on create/update and encrypts before storage.
-- The API never returns plaintext or ciphertext to HTTP clients.
-- The FreeSWITCH directory endpoint decrypts only at XML generation time.
-- Future direction: replace the symmetric key with an external secret store (e.g. Vault, AWS Secrets Manager).
+- `sip_username` is stored in plaintext for runtime lookup
+- `sip_password_ciphertext` stores AES-256-GCM ciphertext
+- `sip_password_key_id` identifies the encryption key
 
-### 4.4 sip_trunks
+Current self-service additions:
 
-Stores trunk definitions and metadata.
+- `dnd_enabled boolean not null default false`
+- `call_forward_enabled boolean not null default false`
+- `call_forward_target text`
+- `owner_user_id uuid references users(id) on delete set null`
 
-Secret-handling rule:
+### 4.3 `sip_trunks`
 
-- Never store raw SIP trunk passwords directly in normal JSONB long-term.
-- Use encrypted columns initially.
-- Migrate to an external secret provider later.
+Stores trunk definitions and metadata. Secret material is stored in dedicated encrypted columns rather than normal public payload fields.
 
-Practical design direction:
-
-- Use explicit non-secret metadata columns:
-  - `name`
-  - `direction`
-  - `realm`
-  - `proxy`
-  - `port`
-  - `transport`
-  - `username`
-  - `auth_username`
-  - `dtmf_mode`
-  - `codec_prefs`
-  - `srtp_policy`
-- Store secret material in dedicated encrypted columns:
-  - `auth_password_ciphertext`
-  - `auth_password_key_id`
-- The API accepts plaintext `auth_password` on create/update and encrypts it before persistence.
-- The API never returns plaintext, ciphertext, or key-id fields in normal trunk responses.
-- Treat external secret-provider integration as the long-term target rather than the initial blocker.
-
-### 4.5 phone_numbers
+### 4.4 `phone_numbers`
 
 Stores DIDs and their assigned targets.
 
-`phone_numbers` also provide the canonical DID inventory for inbound route binding.
-When an inbound route links `phone_number_id`, the application normalizes the route
-`match_value` from the referenced `e164_number` so business routing stays aligned
-with number inventory.
+### 4.5 `prompt_assets`
 
-### 4.6 prompt_assets
+Stores prompt metadata including name, media type, language, storage URI, checksum, and status.
 
-Stores metadata for IVR prompt media.
+### 4.6 `queues` and `queue_members`
 
-Practical runtime fields:
+Store tenant-scoped ring targets and queue membership without exposing raw FreeSWITCH queue internals.
 
-- `name` - tenant-scoped stable human label
-- `media_type` - expected media MIME type such as `audio/wav`
-- `language` - optional locale hint
-- `storage_uri` - runtime-resolvable media path or URI used by the IVR resolver
-- `checksum` - optional integrity marker for deployment/media sync
-- `status` - active/inactive lifecycle gate
-
-### 4.7 queues, queue_members
-
-Store tenant-scoped ring targets without exposing raw FreeSWITCH queue internals.
-
-Practical fields:
-
-- `queues.name`
-- `queues.strategy` - currently `simultaneous` or `sequential`
-- `queues.ring_timeout_seconds`
-- `queues.status`
-- `queue_members.extension_id`
-- `queue_members.position`
-
-The desired-state queue resource remains business-level. Runtime translation into
-bridge strings or later queue applications happens in backend/runtime adapters,
-not through public raw dialplan editing.
-
-### 4.8 voicemail_boxes
+### 4.7 `voicemail_boxes`
 
 Store tenant-scoped voicemail destinations and greeting references.
 
-Practical fields:
+### 4.8 `ivr_flows` and `flow_versions`
 
-- `name`
-- `mailbox_number`
-- `greeting_prompt_id`
-- `status`
+Store durable IVR flow identity and immutable version snapshots.
 
-The box stores business ownership and prompt linkage. FreeSWITCH execution still
-occurs through constrained runtime/dialplan projection rather than raw user-authored
-switch internals.
+### 4.9 `inbound_routes`, `outbound_routes`, and `route_versions`
 
-### 4.9 ivr_flows and flow_versions
+Store durable route identity and immutable version snapshots.
 
-`ivr_flows` stores the durable business object identity and current pointers.
+### 4.10 `audit_events`
 
-`flow_versions` stores versioned flow definitions and lifecycle timestamps.
+Stores actor-attributed immutable operational audit history.
 
-### 4.10 inbound_routes, outbound_routes, route_versions
-
-Route tables store the durable route identity and active or draft pointers.
-
-`route_versions` stores versioned definitions for both inbound and outbound route types.
-
-`inbound_routes.phone_number_id` is optional and is used for DID-backed routes that
-should bind to a real tenant phone number instead of relying on free-form text only.
-
-`inbound_routes.target_type` now also supports `queue` and `voicemail_box` in
-addition to the earlier `flow`, `extension`, and `call_group` targets.
-
-### 4.11 validation_results and simulation_results
-
-Store execution outcomes for validation and simulation by object and version.
-
-### 4.12 approval_requests and publish_records
-
-Represent change governance and publish or rollback history.
-
-### 4.13 audit_events
-
-Stores actor-attributed, immutable operational audit history.
-
-### 4.14 call_detail_records, call_events, runtime_ingestion_records
+### 4.11 `call_detail_records`, `call_events`, and `runtime_ingestion_records`
 
 Store normalized runtime and ingestion visibility from FreeSWITCH integration paths.
 
-### 4.15 ivr_flow_sessions
+### 4.12 `ivr_flow_sessions` and `ivr_flow_session_steps`
 
-Stores per-call runtime execution state for the backend IVR resolver.
+Store runtime execution state and append-only replay history for backend-owned IVR session handling.
 
-Core intent:
+### 4.13 `idempotency_records`
 
-- pin the published `flow_version_id` used for the call
-- correlate `call_id`, `tenant_id`, and `flow_id`
-- track the current actionable node awaiting a runtime result
-- persist `last_digits` and runtime variables between steps
-- keep the last emitted constrained action for debugging and recovery
+Store request fingerprints and response metadata for retry-safe automation and AI/tool calls.
 
-This table is operational state, not desired state. It should be treated as
-ephemeral runtime coordination data, while `ivr_flows` and `flow_versions`
-remain the source of truth for behavior design.
+### 4.14 `webhook_delivery_log` and `webhook_delivery_queue`
 
-### 4.16 ivr_flow_session_steps
+Store durable webhook delivery attempts, retry state, and delivery lifecycle timestamps.
 
-Stores the durable per-step execution trace for an IVR runtime session.
+### 4.15 `freeswitch_nodes`
 
-Core intent:
+Stores platform-owned runtime node registry and hashed node credentials.
 
-- preserve the operator-visible replay path for each call session
-- record the phase (`start` or `advance`) and reported outcome
-- retain the next emitted constrained action for debugging
-- keep replay inside backend-owned abstractions instead of forcing raw FreeSWITCH inspection
+### 4.16 `runtime_apply_requests`
 
-This table complements `ivr_flow_sessions`:
+Stores bounded requests for runtime apply/reload work targeted at a specific FreeSWITCH node after a desired-state change.
 
-- `ivr_flow_sessions` = current pinned runtime state
-- `ivr_flow_session_steps` = append-only replay history for that session
+Current implementation:
 
-### 4.17 idempotency_records
+- introduced by `0045_runtime_apply_requests.sql`
+- indexed by target node, tenant, and source object
 
-Stores request fingerprints and response metadata for retry-safe automation and
-AI/tool calls that supply an `Idempotency-Key`. It applies to mutation routes
-where repeat delivery is expected.
+### 4.17 `feature_codes`
 
-### 4.18 webhook_delivery_log and webhook_delivery_queue
+Stores tenant-scoped DTMF feature code definitions.
 
-Store durable webhook delivery attempts, event IDs, retry/DLQ state, HMAC
-signature metadata, and delivery lifecycle timestamps. They support safe
-workflow retry without exposing raw runtime control.
+Current implementation:
 
-### 4.19 freeswitch_nodes and freeswitch_node_tokens
+- introduced by `0046_feature_codes.sql`
+- supports actions including DND, call-forward enable/disable, parking, and conference join
 
-Store platform-owned runtime node registry and hashed node credentials. Runtime
-node secrets are write-only: raw values are returned once on create/rotation and
-are never exposed in normal reads.
+### 4.18 `parking_lots` and `parked_calls`
 
-### 4.20 tenant_retention_policies and legal_hold_requests
+Store tenant-defined call parking configuration and operational parked-call state.
 
-Store per-tenant retention overrides and legal holds. Retention covers
-recordings, voicemail, transcripts, AI summaries, CDRs, call events, generated
-media, and webhook delivery records. Legal holds prevent purge for matching
-tenant/resource scope until released.
+Current implementation:
 
-### 4.21 security_alert_rules, security_alerts, security_alert_cooldowns
+- introduced by `0047_parking.sql`
+- `parking_lots` holds slot range configuration
+- `parked_calls` holds operational slot occupancy and retrieval/timeout state
 
-Store tenant-scoped and platform-visible alert rules, alert instances, and
-cooldown state for abuse and runtime health signals.
+### 4.19 `conference_rooms` and `conference_participant_snapshots`
 
-### 4.22 tenant_outbound_policies
+Store conference-room desired state and normalized runtime participant observations.
 
-Stores tenant-level outbound fraud policy, including country/area-code
-allowlists, high-risk blocks, and attempt/call caps. Runtime outbound dispatch
-must enforce global blocks, tenant policy, and route policy before queuing work.
+Current implementation:
 
-### 3.6 PBX Completeness Layer (designed, not yet migrated)
+- introduced by `0048_conference_rooms.sql`
+- `conference_rooms.pin_ciphertext` stores encrypted PIN material
 
-The following tables are proposed in `docs/pbx/pbx-data-model-and-api-proposal.md`.
-Do not add migrations until implementation work begins for each feature.
+### 4.20 `freeswitch_node_status_snapshots`
 
-- `feature_codes` — tenant-scoped DTMF feature code definitions
-- `parking_lots` — tenant-scoped call parking lot config
-- `parked_calls` — operational record of calls in parking slots
-- `conference_rooms` — tenant-scoped conference rooms (mod_conference)
-- `conference_participant_snapshots` — runtime participant state (operational)
-- `runtime_apply_requests` — safe ESL apply requests after trunk changes
-- `runtime_apply_results` — per-node results for apply requests
-- `end_user_self_service_policies` — per-tenant self-service capability policy
-- `runtime_operations` — platform-level safe FreeSWITCH runtime operations
-- `runtime_operation_policy` — per-action approval and risk policy
+Stores runtime status snapshots posted by the Go agent for platform and tenant operational visibility.
 
-Extensions table additions (proposed):
-- `dnd_enabled` — Do Not Disturb flag
-- `call_forward_enabled` — call forward active flag
-- `call_forward_target` — forward-to number
-- `voicemail_pin_hash` — bcrypt-hashed voicemail PIN
+Current implementation:
 
-New role addition:
-- `end_user` — added to `users.role` check constraint; self-service only
+- introduced by `0049_node_status_snapshots.sql`
+- includes module, gateway, channel, registration, and missing-module summaries
 
-Suggested migration sequence (implement when features are built):
+### 4.21 `end_user_self_service_policies`
 
-| Migration | Scope |
-|---|---|
-| `0050_feature_codes.sql` | `feature_codes` |
-| `0051_parking.sql` | `parking_lots`, `parked_calls` |
-| `0052_conference_rooms.sql` | `conference_rooms`, `conference_participant_snapshots` |
-| `0053_runtime_apply.sql` | `runtime_apply_requests`, `runtime_apply_results` |
-| `0054_self_service_policy.sql` | `end_user_self_service_policies`, extension columns |
-| `0055_runtime_operations.sql` | `runtime_operations`, `runtime_operation_policy` |
+Stores per-tenant self-service permissions for `end_user` actors.
 
-## 5. Versioning Strategy
+Current implementation:
 
-- `ivr_flows`, `inbound_routes`, and `outbound_routes` each store `draft_version_id` and `active_version_id`
-- Version tables store immutable snapshots
-- Publish activates an existing version rather than mutating it in place
-- Rollback moves the active pointer to a previous eligible version and records a publish record
+- introduced by `0050_self_service.sql`
 
-## 6. Suggested SQL Conventions
+### 4.22 `tenant_outbound_policies`
 
-- Use `uuid` primary keys with `gen_random_uuid()`
-- Use `timestamptz` for operational timestamps
-- Use `jsonb` for flexible definitions, rules, metadata, validation details, and simulation payloads
-- Prefer unique indexes for business identifiers within tenant scope
-- Use check constraints for bounded status fields in MVP
-- Do not treat normal JSONB columns as the long-term storage location for raw telecom credentials
+Stores tenant-level outbound fraud policy including allowlists, blocks, and attempt/call caps.
 
-## 7. Key Integrity Rules
+### 4.23 `tenant_retention_policies` and `legal_hold_requests`
 
-- Tenant-scoped business identifiers must be unique where required
-- A flow or route may have at most one active version pointer
-- Published versions must remain immutable
-- Audit and publish records must remain append-only
-- Route and flow version records must not be reused across object identities
-- Raw SIP trunk passwords must not live long-term in general-purpose JSONB fields
-- Runtime node tokens, webhook secrets, and provider credentials must be stored
-  as hashed/encrypted/secret references and omitted from public responses
-- Retention purge must honor legal hold before deleting any record
+Store per-tenant retention overrides and legal holds.
 
-## 8. Important Tradeoffs
+### 4.24 `system_config`
 
-- `jsonb` allows rapid iteration for flow definitions and policy rules, but too much unstructured data would weaken queryability
-- A shared `route_versions` table keeps route versioning consistent, but increases conditional logic compared with separate inbound and outbound version tables
-- Storing actor IDs as nullable references where actors may be user, workflow, or system is pragmatic for MVP, but may be refined later into a more formal principal model
-- Encrypted trunk-secret columns are a pragmatic first step, but an external secret provider should replace them when operational maturity requires stronger secret lifecycle management
+Stores platform-level configuration sentinels and other singleton settings.
 
-## 9. Initial Migration Scope
+Current implementation:
 
-The initial migration should create:
+- introduced by `0052_system_config.sql`
+- currently used for `setup_complete`
+- gates whether `/setup` is registered at API startup
 
-- Core identity tables
-- Core telecom configuration tables
-- Flow and route versioning tables
-- Validation, simulation, approval, publish, and audit tables
-- Runtime observation tables
-- Basic indexes and unique constraints
+## 5. Versioning strategy
 
-## 10. Migration Layout
+- `ivr_flows`, `inbound_routes`, and `outbound_routes` store `draft_version_id` and `active_version_id`
+- version tables store immutable snapshots
+- publish activates an existing version rather than mutating it in place
+- rollback moves the active pointer to a previous eligible version and records a publish record
 
-- `db/migrations/0001_initial_schema.sql` is the canonical schema baseline
-- Future database changes should be added as new ordered migration files
-- `db/README.md` documents the migration directory conventions
+## 6. Integrity rules
 
-## 11. Related Files
-
-- [../api/openapi.yaml](../api/openapi.yaml)
-- [domain-model.md](domain-model.md)
-- [../../db/README.md](../../db/README.md)
-- [../../db/migrations/0001_initial_schema.sql](../../db/migrations/0001_initial_schema.sql)
+- tenant-scoped business identifiers must be unique where required
+- published versions remain immutable
+- audit and publish records remain append-only
+- route and flow version records are not reused across object identities
+- raw SIP trunk passwords do not live in general-purpose JSONB fields
+- runtime node tokens, webhook secrets, and provider credentials are stored as hashed, encrypted, or indirect secret references and omitted from public responses
