@@ -49,6 +49,7 @@ describe('SipTrunkService', () => {
 
   beforeEach(() => {
     repo = makeMockRepo();
+    // No apply service — apply requests are optional and return [] when service is absent.
     service = new SipTrunkService(repo);
   });
 
@@ -80,7 +81,7 @@ describe('SipTrunkService', () => {
       const trunk = makeTrunk();
       vi.mocked(repo.create).mockResolvedValue(trunk);
 
-      const result = await service.create({
+      const { trunk: result, applyRequests } = await service.create({
         tenant_id: TENANT_ID,
         name: 'PSTN Trunk',
         direction: 'bidirectional',
@@ -96,6 +97,7 @@ describe('SipTrunkService', () => {
         auth_password_key_id: 'key-1',
       }));
       expect(result).toBe(trunk);
+      expect(applyRequests).toEqual([]);
     });
   });
 
@@ -105,13 +107,14 @@ describe('SipTrunkService', () => {
       const trunk = makeTrunk({ name: 'Updated' });
       vi.mocked(repo.update).mockResolvedValue(trunk);
 
-      await service.update(TRUNK_ID, TENANT_ID, { name: 'Updated', auth_password: 'newsecret' });
+      const { trunk: result } = await service.update(TRUNK_ID, TENANT_ID, { name: 'Updated', auth_password: 'newsecret' });
 
       expect(encryptSipPassword).toHaveBeenCalledWith('newsecret');
       expect(repo.update).toHaveBeenCalledWith(TRUNK_ID, TENANT_ID, expect.objectContaining({
         auth_password_ciphertext: 'encrypted',
         auth_password_key_id: 'key-1',
       }));
+      expect(result).toBe(trunk);
     });
 
     it('skips re-encryption when auth_password is omitted', async () => {
@@ -135,7 +138,8 @@ describe('SipTrunkService', () => {
     it('deactivates and returns trunk', async () => {
       const trunk = makeTrunk({ status: 'inactive' });
       vi.mocked(repo.deactivate).mockResolvedValue(trunk);
-      expect(await service.deactivate(TRUNK_ID, TENANT_ID)).toBe(trunk);
+      const { trunk: result } = await service.deactivate(TRUNK_ID, TENANT_ID);
+      expect(result).toBe(trunk);
     });
 
     it('throws SipTrunkNotFoundError when repo returns null', async () => {

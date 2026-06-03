@@ -7375,3 +7375,212 @@ components:
         - completed_sessions_24h
         - failed_sessions_24h
         - generated_at
+    FeatureCode:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        action_type:
+          type: string
+          enum: &a31
+            - voicemail_access
+            - call_forward_enable
+            - call_forward_disable
+            - dnd_enable
+            - dnd_disable
+            - call_pickup
+            - call_park
+            - call_park_retrieve
+            - conference_join
+        action_config:
+          type: object
+          additionalProperties: {}
+        status:
+          type: string
+          enum:
+            - draft
+            - active
+            - disabled
+        requires_approval:
+          type: boolean
+        created_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        published_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - code
+        - name
+        - description
+        - action_type
+        - action_config
+        - status
+        - requires_approval
+        - created_by
+        - created_at
+        - updated_at
+        - published_at
+    CreateFeatureCodeBody:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 20
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        action_type:
+          type: string
+          enum: *a31
+        action_config:
+          type: object
+          additionalProperties: {}
+        requires_approval:
+          type: boolean
+      required:
+        - code
+        - name
+        - action_type
+    UpdateFeatureCodeBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        action_type:
+          type: string
+          enum: *a31
+        action_config:
+          type: object
+          additionalProperties: {}
+        requires_approval:
+          type: boolean
+    RuntimeApplyRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        triggered_by_type:
+          type: string
+          enum:
+            - user
+            - workflow
+            - system
+        triggered_by_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        action_type:
+          type: string
+          enum:
+            - reloadxml
+            - sofia_profile_rescan
+            - sofia_profile_killgw
+            - sofia_profile_restartgw
+            - sofia_status_gateway
+            - sofia_status_profile
+        target_node_id:
+          type: string
+          format: uuid
+        target_profile:
+          type:
+            - string
+            - "null"
+        target_gateway:
+          type:
+            - string
+            - "null"
+        object_type:
+          type: string
+        object_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending
+            - applying
+            - applied
+            - failed
+            - cancelled
+        active_call_count:
+          type:
+            - integer
+            - "null"
+        applied_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        error_message:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - triggered_by_type
+        - triggered_by_id
+        - action_type
+        - target_node_id
+        - target_profile
+        - target_gateway
+        - object_type
+        - object_id
+        - status
+        - active_call_count
+        - applied_at
+        - error_message
+        - created_at
+        - updated_at

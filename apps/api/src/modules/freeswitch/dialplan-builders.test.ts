@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildCallGroupDialplanResponse,
+  buildConferenceConfiguration,
+  buildConferenceDialplanResponse,
+  buildFeatureCodeDialplanResponse,
   buildIvrDialplanResponse,
   buildQueueDialplanResponse,
   buildVoicemailDialplanResponse,
@@ -146,5 +149,56 @@ describe('buildVoicemailDialplanResponse', () => {
 
     expect(xml).toContain('file:///prompts/a&amp;b.wav');
     expect(xml).toContain('default tenant&amp;sip.example.com 50&amp;1');
+  });
+});
+
+describe('buildFeatureCodeDialplanResponse', () => {
+  it('routes feature code to feature_code_handler.lua', () => {
+    const xml = buildFeatureCodeDialplanResponse(TENANT_ID, '*72');
+    expect(xml).toContain('<action application="luarun" data="feature_code_handler.lua" />');
+    expect(xml).toContain(`managecall_tenant_id=${TENANT_ID}`);
+    expect(xml).toContain('managecall_feature_code=*72');
+    expect(xml).toContain('section name="dialplan"');
+  });
+
+  it('escapes XML special chars in tenant_id', () => {
+    const xml = buildFeatureCodeDialplanResponse('tenant&id', '*99');
+    expect(xml).toContain('managecall_tenant_id=tenant&amp;id');
+  });
+
+  it('builds regex pattern from code', () => {
+    const xml = buildFeatureCodeDialplanResponse(TENANT_ID, '*72');
+    expect(xml).toContain('expression="^\\*72$"');
+  });
+});
+
+describe('buildConferenceDialplanResponse', () => {
+  const ROOM_ID = '00000000-0000-0000-0000-000000000099';
+
+  it('routes to conference application without PIN', () => {
+    const xml = buildConferenceDialplanResponse({ tenantId: TENANT_ID, roomId: ROOM_ID, roomNumber: '8100', pin: null });
+    expect(xml).toContain('<action application="conference" data="room-' + ROOM_ID + '@managecallai" />');
+    expect(xml).toContain(`managecall_conference_room_id=${ROOM_ID}`);
+    expect(xml).toContain(`managecall_tenant_id=${TENANT_ID}`);
+    expect(xml).toContain('expression="^8100$"');
+  });
+
+  it('includes PIN in conference application data when set', () => {
+    const xml = buildConferenceDialplanResponse({ tenantId: TENANT_ID, roomId: ROOM_ID, roomNumber: '8100', pin: '1234' });
+    expect(xml).toContain('room-' + ROOM_ID + '@managecallai+pin:1234');
+  });
+
+  it('escapes XML special chars in room number', () => {
+    const xml = buildConferenceDialplanResponse({ tenantId: TENANT_ID, roomId: ROOM_ID, roomNumber: '8100', pin: null });
+    expect(xml).toContain('section name="dialplan"');
+  });
+});
+
+describe('buildConferenceConfiguration', () => {
+  it('returns a conference.conf with managecallai profile', () => {
+    const xml = buildConferenceConfiguration();
+    expect(xml).toContain('configuration name="conference.conf"');
+    expect(xml).toContain('profile name="managecallai"');
+    expect(xml).toContain('section name="configuration"');
   });
 });

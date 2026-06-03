@@ -30,3 +30,5 @@ export * from './schemas/meeting-sessions.js';
 export * from './schemas/provider-work.js';
 export * from './schemas/platform.js';
 export * from './schemas/responses.js';
+export * from './schemas/feature-codes.js';
+export * from './schemas/runtime-apply.js';

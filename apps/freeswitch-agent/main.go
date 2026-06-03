@@ -78,6 +78,12 @@ func runAgent(
 	outboundDispatcher := dispatcher.NewOutboundDispatcher(cfg, cmdClient, logger)
 	go outboundDispatcher.Run(ctx, 2*time.Second)
 
+	// Start the gateway apply dispatcher — polls the API for pending
+	// runtime_apply_requests and executes allowlisted ESL commands (reloadxml,
+	// sofia profile rescan, etc.) to apply trunk config changes without manual CLI.
+	applyDispatcher := dispatcher.NewApplyDispatcher(cfg, cmdClient, logger)
+	go applyDispatcher.Run(ctx, 3*time.Second)
+
 	if err := client.Connect(ctx); err != nil {
 		logger.Error("failed to initialize esl client", slog.String("error", err.Error()))
 		return 1
