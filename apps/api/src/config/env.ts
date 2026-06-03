@@ -68,12 +68,17 @@ const configValues = {
   allowRuntimeTokenFallback: parseBoolean('ALLOW_RUNTIME_TOKEN_FALLBACK', !isProduction),
   platformOperatorEmails: (process.env['PLATFORM_OPERATOR_EMAILS'] ?? '')
     .split(',')
-    .map((e) => e.trim())
+    .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
   platformApiHealthUrl: process.env['PLATFORM_API_HEALTH_URL'] ?? 'http://localhost:3000/health',
   platformWorkerHealthUrl: process.env['PLATFORM_WORKER_HEALTH_URL'] ?? 'http://localhost:3400/health',
   platformFreeswitchAgentHealthUrl:
     process.env['PLATFORM_FREESWITCH_AGENT_HEALTH_URL'] ?? 'http://localhost:3500/health',
+  allowRemoteSetup: parseBoolean('ALLOW_REMOTE_SETUP', false),
+  setupAdminEmail: process.env['SETUP_ADMIN_EMAIL']?.trim() || null,
+  setupAdminPassword: process.env['SETUP_ADMIN_PASSWORD'] ?? null,
+  setupTenantName: process.env['SETUP_TENANT_NAME']?.trim() || null,
+  setupTenantSlug: process.env['SETUP_TENANT_SLUG']?.trim() || null,
   webhookWorkerIntervalMs: parseInt(process.env['WEBHOOK_WORKER_INTERVAL_MS'] ?? '1000', 10),
   recordingStorageRoot: resolve(process.env['RECORDING_STORAGE_ROOT'] ?? 'recordings'),
   rateLimitWindowMs: parsePositiveInt('RATE_LIMIT_WINDOW_MS', 60_000),

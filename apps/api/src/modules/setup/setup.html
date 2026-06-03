@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>manageCallAI Setup</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #07131f;
+      --panel: #102132;
+      --panel-2: #173149;
+      --text: #eef6ff;
+      --muted: #aac0d5;
+      --accent: #37c4ff;
+      --accent-2: #1e89ff;
+      --danger: #ff8d8d;
+      --border: #214360;
+      --ok: #7de6af;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    p { color: var(--muted); line-height: 1.5; }
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .steps {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      margin-bottom: 20px;
+    }
+    .step {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 82px;
+    }
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 12px;
+      color: var(--muted);
+    }
+    input {
+      width: 100%;
+      margin-top: 6px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #091825;
+      color: var(--text);
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      background: var(--accent-2);
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+    }
+    code, pre {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 13px;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #091825;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      color: var(--muted);
+      min-height: 92px;
+    }
+    .status.ok { color: var(--ok); }
+    .status.error { color: var(--danger); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>manageCallAI setup</h1>
+    <p>Use this once to validate the runtime, create the bootstrap tenant, and create the first operator account. After completion, <code>/setup</code> is locked.</p>
+
+    <section class="steps" aria-label="setup steps">
+      <div class="step"><strong>1. Welcome</strong><span>Confirm this host is the intended runtime target.</span></div>
+      <div class="step"><strong>2. Database</strong><span>Verify PostgreSQL access and pending migrations.</span></div>
+      <div class="step"><strong>3. Secrets</strong><span>Use production env values before completing setup.</span></div>
+      <div class="step"><strong>4. Bootstrap tenant</strong><span>Create the tenant slug used for the first login.</span></div>
+      <div class="step"><strong>5. Admin</strong><span>Create the first operator account.</span></div>
+      <div class="step"><strong>6. FreeSWITCH</strong><span>Optional ESL connectivity check.</span></div>
+      <div class="step"><strong>7. Done</strong><span>Login with the tenant slug and admin email.</span></div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Validation</h2>
+        <div class="actions">
+          <button id="check-db" type="button">Test database</button>
+          <button id="check-esl" type="button" class="secondary">Test ESL</button>
+        </div>
+        <pre id="validation-log" aria-live="polite">No checks run yet.</pre>
+      </section>
+
+      <section class="panel">
+        <h2>Complete setup</h2>
+        <form id="setup-form">
+          <label>Tenant name
+            <input name="tenantName" value="Platform" autocomplete="organization" />
+          </label>
+          <label>Tenant slug
+            <input name="tenantSlug" value="platform" autocomplete="off" />
+          </label>
+          <label>Admin email
+            <input name="adminEmail" type="email" autocomplete="email" required />
+          </label>
+          <label>Admin password
+            <input name="adminPassword" type="password" minlength="12" autocomplete="new-password" required />
+          </label>
+          <label>ESL host
+            <input name="eslHost" value="127.0.0.1" />
+          </label>
+          <label>ESL port
+            <input name="eslPort" type="number" value="8021" />
+          </label>
+          <label>ESL password
+            <input name="eslPassword" type="password" />
+          </label>
+          <div class="actions">
+            <button type="submit">Complete setup</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top: 16px;">
+      <h2>Result</h2>
+      <pre id="result-log" aria-live="polite">Waiting for setup.</pre>
+    </section>
+  </main>
+
+  <script>
+    const validationLog = document.getElementById('validation-log');
+    const resultLog = document.getElementById('result-log');
+    const form = document.getElementById('setup-form');
+
+    async function postJson(url, payload) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const text = await response.text();
+      let body;
+      try { body = JSON.parse(text); } catch { body = { raw: text }; }
+      return { ok: response.ok, status: response.status, body };
+    }
+
+    document.getElementById('check-db').addEventListener('click', async () => {
+      validationLog.textContent = 'Checking database...';
+      const result = await postJson('/setup/validate', { type: 'db' });
+      validationLog.textContent = JSON.stringify(result.body, null, 2);
+    });
+
+    document.getElementById('check-esl').addEventListener('click', async () => {
+      const data = new FormData(form);
+      validationLog.textContent = 'Checking ESL...';
+      const result = await postJson('/setup/validate', {
+        type: 'esl',
+        eslHost: data.get('eslHost'),
+        eslPort: Number(data.get('eslPort')),
+        eslPassword: data.get('eslPassword')
+      });
+      validationLog.textContent = JSON.stringify(result.body, null, 2);
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      resultLog.textContent = 'Completing setup...';
+      const result = await postJson('/setup/complete', {
+        tenantName: data.get('tenantName'),
+        tenantSlug: data.get('tenantSlug'),
+        adminEmail: data.get('adminEmail'),
+        adminPassword: data.get('adminPassword')
+      });
+      resultLog.textContent = JSON.stringify(result.body, null, 2);
+      if (result.ok) {
+        resultLog.textContent += '\n\nSetup is complete. Use the tenant slug above to log in.';
+      }
+    });
+  </script>
+</body>
+</html>

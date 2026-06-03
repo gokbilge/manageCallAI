@@ -1,0 +1,6 @@
+apiVersion: v2
+name: managecallai
+description: manageCallAI control plane chart
+type: application
+version: 0.3.5
+appVersion: "v0.3.5"

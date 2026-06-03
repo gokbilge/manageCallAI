@@ -1,0 +1,65 @@
+image:
+  registry: ghcr.io/gokbilge
+  tag: latest
+  pullPolicy: IfNotPresent
+
+bootstrap:
+  tenantName: Platform
+  tenantSlug: platform
+  platformOperatorEmails: admin@example.com
+  adminEmail: admin@example.com
+  adminPassword: ""
+  allowRemoteSetup: false
+
+secrets:
+  databaseUrl: ""
+  jwtSecret: ""
+  runtimeApiToken: ""
+  sipSecretMasterKey: ""
+  sipSecretKeyId: v1
+  freeswitchEslPassword: ""
+
+config:
+  appEnv: production
+  apiPort: 3000
+  workerPort: 3400
+  healthPort: 3500
+  apiBaseUrl: http://managecallai-api:3000
+  recordingStorageRoot: /recordings
+  rateLimitWindowMs: 60000
+  rateLimitAuthMax: 20
+  rateLimitRuntimeMax: 300
+  rateLimitWebhookMax: 100
+  rateLimitOutboundMax: 30
+  rateLimitApiMax: 300
+  rateLimitScrapeMax: 30
+
+freeswitch:
+  eslHost: 127.0.0.1
+  eslPort: 8021
+  externalSipIp: ""
+  externalRtpIp: ""
+
+api:
+  replicaCount: 1
+
+worker:
+  replicaCount: 1
+
+agent:
+  replicaCount: 1
+  tenantId: ""
+  nodeId: ""
+
+storage:
+  recordings:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+
+ingress:
+  enabled: false
+  className: ""
+  hostname: ""
+  tls: false
+  annotations: {}

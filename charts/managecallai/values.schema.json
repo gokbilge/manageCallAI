@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["secrets", "bootstrap"],
+  "properties": {
+    "image": {
+      "type": "object",
+      "properties": {
+        "registry": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string", "minLength": 1 },
+        "pullPolicy": { "type": "string", "minLength": 1 }
+      },
+      "required": ["registry", "tag", "pullPolicy"]
+    },
+    "bootstrap": {
+      "type": "object",
+      "required": ["platformOperatorEmails", "adminEmail", "adminPassword"],
+      "properties": {
+        "tenantName": { "type": "string", "minLength": 2 },
+        "tenantSlug": { "type": "string", "minLength": 2 },
+        "platformOperatorEmails": { "type": "string", "minLength": 3 },
+        "adminEmail": { "type": "string", "format": "email" },
+        "adminPassword": { "type": "string", "minLength": 12 },
+        "allowRemoteSetup": { "type": "boolean" }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "required": [
+        "databaseUrl",
+        "jwtSecret",
+        "runtimeApiToken",
+        "sipSecretMasterKey",
+        "sipSecretKeyId",
+        "freeswitchEslPassword"
+      ],
+      "properties": {
+        "databaseUrl": { "type": "string", "minLength": 1 },
+        "jwtSecret": { "type": "string", "minLength": 32 },
+        "runtimeApiToken": { "type": "string", "minLength": 32 },
+        "sipSecretMasterKey": { "type": "string", "minLength": 64 },
+        "sipSecretKeyId": { "type": "string", "minLength": 1 },
+        "freeswitchEslPassword": { "type": "string", "minLength": 12 }
+      }
+    }
+  }
+}

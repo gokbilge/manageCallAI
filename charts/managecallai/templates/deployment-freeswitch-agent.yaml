@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "managecallai.fullname" . }}-freeswitch-agent
+  labels:
+    {{- include "managecallai.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.agent.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "managecallai.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: freeswitch-agent
+  template:
+    metadata:
+      labels:
+        {{- include "managecallai.labels" . | nindent 8 }}
+        app.kubernetes.io/component: freeswitch-agent
+    spec:
+      containers:
+        - name: freeswitch-agent
+          image: "{{ .Values.image.registry }}/managecallai-freeswitch-agent:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "managecallai.fullname" . }}-config
+            - secretRef:
+                name: {{ include "managecallai.fullname" . }}-secrets
+          ports:
+            - containerPort: {{ .Values.config.healthPort }}
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
