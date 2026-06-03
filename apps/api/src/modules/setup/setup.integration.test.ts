@@ -3,6 +3,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'pg';
 
+const originalEnv = { ...process.env };
+
 describe('setup bootstrap integration', () => {
   let app: FastifyInstance;
   let db: Pool;
@@ -30,6 +32,8 @@ describe('setup bootstrap integration', () => {
   afterAll(async () => {
     await app.close();
     await db.end();
+    for (const key of Object.keys(process.env)) delete process.env[key];
+    Object.assign(process.env, originalEnv);
   });
 
   beforeEach(async () => {
