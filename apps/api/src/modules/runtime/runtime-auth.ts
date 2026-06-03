@@ -21,6 +21,10 @@ export async function authenticateRuntime(
   const credential = extractRuntimeCredential(req);
 
   if (!isValidToken(credential.token)) {
+    // Auth failure has no tenant scope. fireAuditEvent guards against writing
+    // empty tenant_id to the UUID column — the event is captured at the
+    // intent level and silently skipped at the DB level until a platform-level
+    // audit log is available.
     fireAuditEvent({
       tenant_id: '',
       actor_id: null,

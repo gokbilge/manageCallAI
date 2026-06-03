@@ -131,6 +131,23 @@ Primary resources:
 - `fraud/outbound-policy`
 - `platform/nodes`
 
+**PBX Completeness Layer resources (designed, not yet implemented):**
+
+- `feature-codes` — tenant-scoped DTMF feature code definitions
+- `parking-lots` — call parking lot configuration
+- `parked-calls` — live parked call observation (runtime)
+- `conference-rooms` — mod_conference room management
+- `me/*` — end-user self-service endpoints (own extension, voicemail, DND, forward)
+- `tenant/self-service-policy` — tenant admin policy for end-user self-service
+- `sip-trunks/:id/apply-requests` — runtime apply requests for trunk changes
+- `runtime/apply-requests` — runtime apply request management
+- `platform/runtime-operations` — safe FreeSWITCH runtime operations (platform admin)
+- `platform/nodes/:id/status` — FreeSWITCH node health and module status
+
+See `docs/pbx/pbx-data-model-and-api-proposal.md` for the full endpoint list,
+request/response examples, and authorization model. These endpoints do not exist
+in the current OpenAPI spec; they will be added as implementation proceeds.
+
 ## 5. Error Model
 
 All errors follow the RPC error standard. Every error response includes a

@@ -318,6 +318,21 @@ Each boundary requires authentication, authorization, input validation, and oper
 - Telecom runtime: FreeSWITCH
 - Provider adapters: external workers or plugins behind stable internal contracts
 
+## 13.1 PBX Completeness Layer (designed, not implemented)
+
+The PBX Completeness Layer extends the system toward a more complete PBX control
+plane. The architectural boundaries are unchanged:
+
+- API owns desired state (feature codes, parking lots, conference rooms).
+- PostgreSQL stores tenant-scoped desired state.
+- FreeSWITCH executes runtime behavior (valet_park, mod_conference, gateways).
+- Lua remains a thin executor (feature_code_handler.lua).
+- Go agent handles FreeSWITCH runtime integration (park/retrieve events,
+  gateway apply commands, conference events).
+- MCP/n8n expose read-only views only; no raw ESL/XML/module commands.
+
+Feature design docs: `docs/pbx/`.
+
 ## 14. Architecture Decisions To Track
 
 - Multi-tenant isolation model

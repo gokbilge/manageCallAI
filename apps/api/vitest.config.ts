@@ -7,9 +7,10 @@ export default defineConfig({
     // Running files concurrently causes cross-file interference; serialize them.
     fileParallelism: false,
     hookTimeout: 30_000,
-    poolOptions: {
-      forks: { singleFork: true },
-    },
+    // singleFork keeps all test files in one process so module-level singletons
+    // (db pool, app instance) are shared across integration test files.
+    // Vitest 4 moved pool options to the pool-specific config key.
+    forks: { singleFork: true },
     // Exclude compiled dist/ so vitest 4.x does not run both src/*.test.ts and dist/*.test.js.
     include: ['src/**/*.{test,spec}.{ts,mts}'],
     exclude: ['dist/**', 'node_modules/**'],

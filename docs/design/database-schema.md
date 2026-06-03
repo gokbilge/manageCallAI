@@ -296,6 +296,42 @@ Stores tenant-level outbound fraud policy, including country/area-code
 allowlists, high-risk blocks, and attempt/call caps. Runtime outbound dispatch
 must enforce global blocks, tenant policy, and route policy before queuing work.
 
+### 3.6 PBX Completeness Layer (designed, not yet migrated)
+
+The following tables are proposed in `docs/pbx/pbx-data-model-and-api-proposal.md`.
+Do not add migrations until implementation work begins for each feature.
+
+- `feature_codes` — tenant-scoped DTMF feature code definitions
+- `parking_lots` — tenant-scoped call parking lot config
+- `parked_calls` — operational record of calls in parking slots
+- `conference_rooms` — tenant-scoped conference rooms (mod_conference)
+- `conference_participant_snapshots` — runtime participant state (operational)
+- `runtime_apply_requests` — safe ESL apply requests after trunk changes
+- `runtime_apply_results` — per-node results for apply requests
+- `end_user_self_service_policies` — per-tenant self-service capability policy
+- `runtime_operations` — platform-level safe FreeSWITCH runtime operations
+- `runtime_operation_policy` — per-action approval and risk policy
+
+Extensions table additions (proposed):
+- `dnd_enabled` — Do Not Disturb flag
+- `call_forward_enabled` — call forward active flag
+- `call_forward_target` — forward-to number
+- `voicemail_pin_hash` — bcrypt-hashed voicemail PIN
+
+New role addition:
+- `end_user` — added to `users.role` check constraint; self-service only
+
+Suggested migration sequence (implement when features are built):
+
+| Migration | Scope |
+|---|---|
+| `0050_feature_codes.sql` | `feature_codes` |
+| `0051_parking.sql` | `parking_lots`, `parked_calls` |
+| `0052_conference_rooms.sql` | `conference_rooms`, `conference_participant_snapshots` |
+| `0053_runtime_apply.sql` | `runtime_apply_requests`, `runtime_apply_results` |
+| `0054_self_service_policy.sql` | `end_user_self_service_policies`, extension columns |
+| `0055_runtime_operations.sql` | `runtime_operations`, `runtime_operation_policy` |
+
 ## 5. Versioning Strategy
 
 - `ivr_flows`, `inbound_routes`, and `outbound_routes` each store `draft_version_id` and `active_version_id`

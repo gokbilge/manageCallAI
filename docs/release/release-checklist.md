@@ -226,6 +226,23 @@ gates that are not set to `true`.
 
 See `docs/ops/backup-restore.md` for the full restore procedure.
 
+## PBX Completeness Gates (add when features are implemented)
+
+When PBX Completeness Layer features are implemented, add the following to the
+production evidence checklist for each feature:
+
+| Feature | Required evidence gate |
+|---|---|
+| Feature codes | Passing DTMF smoke run on self-hosted runner with audit event proof |
+| Call parking | Passing valet_park smoke with Go agent event ingestion proof |
+| Native conferencing | Passing mod_conference two-caller smoke |
+| Gateway reload | Passing trunk change → REGED confirmation smoke on self-hosted runner |
+| Self-service portal | Integration test matrix: end_user isolation, policy gating, PIN redaction |
+| Runtime management | Passing reloadxml/rescan action smoke with approval gate proof |
+
+These gates are **not required** for the current public beta stage.
+They apply only when the corresponding features ship.
+
 ## Safety Review
 
 Before release, verify:

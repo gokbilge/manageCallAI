@@ -101,6 +101,31 @@ Exit criteria:
 | `SLICE-58` | Production | runtime lookup latency regressions in live call path |
 | `SLICE-59` | Production | scattered release evidence and unaudited promotion decisions |
 
+## PBX Completeness Layer
+
+The PBX Completeness Layer extends manageCallAI into a more complete PBX control
+plane. These slices are **planned, not implemented** as of 2026-06-03.
+
+| Slice | Feature | Release Gate |
+|---|---|---|
+| SLICE-60 | Feature codes | Public beta |
+| SLICE-61 | Call parking | Production |
+| SLICE-62 | Native conferencing | Production |
+| SLICE-63 | Gateway reload on trunk change | Public beta / production |
+| SLICE-64 | End-user self-service portal | Production |
+| SLICE-65 | SIP profile management API + UI | Public beta |
+| SLICE-66 | Safe FreeSWITCH runtime management | Production |
+
+Status of each feature:
+
+- Designed — architecture, domain model, API, and DB design complete.
+- Not implemented — no code, no migrations, no tests.
+- Not evidenced — no runtime smoke for any of these features.
+
+Do not count these features as part of the current release stage.
+Do not claim production readiness for these features until implementation,
+tenant isolation tests, and runtime evidence are present.
+
 ## Do Not Reclassify As Production Until
 
 - runtime E2E is automated or required as a release gate
