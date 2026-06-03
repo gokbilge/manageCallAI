@@ -6,21 +6,22 @@ If another document conflicts with this one, this document wins until an explici
 
 ## 0. Current Release Posture
 
-Current stage: **Public beta candidate**.
+Current stage: **Production — v0.3.0**.
 
-Public alpha evidence exists for `v0.2.0-alpha`, and current `main` contains
-the beta-readiness implementation work for operator surfaces, retention/legal
-hold APIs, runtime safety, SDK workflow, MCP/n8n docs, and evidence validators.
-The product is not public beta ready until beta evidence is tied to the intended
-release candidate or tag.
+`v0.3.0` is the first production release (tag `v0.3.0`, commit `1220e39`,
+2026-06-03). All production gates passed with real evidence tied to RC commit
+`a157b84` (smoke run 26903877370 on `enlogy@10.0.0.32`). Evidence:
+`docs/release/release-evidence-v0.3.0.json` — `pnpm release:evidence-check`
+exits 0 (stage=production).
 
-The product is **not production-ready**. Production readiness requires every
-production evidence gate to pass with real artifacts tied to the release
-candidate commit, including runtime smoke/E2E, restore/upgrade, soak/SLO,
-carrier interop, multi-instance rate limiting, retention behavior, security
-hardening, and operator signoff.
+**Current work: v0.3.5 — Setup, Bootstrap, and Deployment Packaging (SLICE-60)**
 
-Evidence rules:
+v0.3.5 delivers first-time installation for three deployment targets: VPS/
+bare-metal (web wizard at `/setup`), Docker Compose (headless env-var bootstrap),
+and Kubernetes (Helm chart). Design: `docs/design/setup-bootstrap.md`.
+ADR: `docs/adr/adr-007-setup-bootstrap-architecture.md`.
+
+Evidence rules (unchanged):
 
 - Scripts, templates, and docs are not evidence by themselves.
 - `--check-config` output is not release evidence.

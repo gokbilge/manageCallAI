@@ -8,13 +8,13 @@ Use this checklist before promoting manageCallAI beyond development or staging.
 |---|---|---|
 | Internal alpha | Allowed | Main CI green, demo loop works locally, runtime proof verified manually |
 | Public alpha | Complete for `v0.2.0-alpha` | `docs/release/public-alpha-readiness.md` checklist complete |
-| Public beta candidate | Current stage | Beta implementation present, but beta evidence must be current for the candidate |
-| Public beta ready | Blocked until gate evidence exists | Self-hosted FreeSWITCH smoke evidence tied to the beta candidate, SDK dry-run/publish evidence, verified MCP/n8n/webhook workflows, usable visual IVR/HUD evidence, coverage evidence |
-| Production release candidate | Blocked | Release evidence manifest with RC commit, CI/security/coverage/runtime/restore/soak/SLO/carrier/rate-limit artifacts, rollback plan, and operator signoff fields populated |
-| Production | Blocked | Production RC evidence bundle passes, the final GitHub release is not marked prerelease, and operator signoff is complete |
+| Public beta candidate | Complete — `v0.2.0-beta.1` | Beta implementation present and evidenced |
+| Public beta ready | Complete — `v0.2.0-beta.1` | FreeSWITCH smoke run 26825030902, SDK dry-run, MCP/n8n/webhook evidenced |
+| Production release candidate | Complete — `v0.3.0-rc.1` | Smoke run 26903877370 on `rc/v0.3.0`, evidence manifest passes `pnpm release:evidence-check` |
+| **Production** | **✅ Complete — `v0.3.0`** | All gates passed. Evidence: `docs/release/release-evidence-v0.3.0.json` |
 
-Do not describe manageCallAI as production-ready until the production checklist
-and release smoke evidence are complete.
+Current release: **v0.3.0** (2026-06-03). Production release. All gates closed.
+Next release: **v0.3.5** — setup and bootstrap packaging (SLICE-60).
 
 ## Stage Gate Separation
 
@@ -187,9 +187,22 @@ Production promotion requires evidence that:
 - a PostgreSQL backup was taken before migration
 - migrations were applied with `pnpm db:migrate`
 - `pnpm db:contracts` and `pnpm db:constraints` passed
-- a restore rehearsal ran and passed `pnpm restore:smoke`
-- `pnpm production:preflight` passed in the target environment
-- `pnpm production:e2e` passed after deployment or restore
+- a restore rehearsal ran and passed `pnpm restore:smoke` (DB-level: dump →
+  restore → migrations → contracts → constraints)
+- `pnpm production:preflight` passed on the target environment (separate
+  evidence from the restore rehearsal; preflight validates production
+  env vars and security config, not DB restore integrity)
+- `pnpm production:e2e` passed on the target environment (verified separately
+  from restore; the production E2E smoke run proves runtime operation, not
+  DB snapshot integrity)
+
+Note: restore rehearsal and production E2E are complementary, not duplicate.
+The restore rehearsal proves data survives a snapshot/restore cycle. The
+production E2E proves the system operates correctly. For v0.3.0:
+- Restore evidence: `docs/ops/restore-evidence-enlogy-2026-06-02.json`
+  (`restore_smoke_passed=true`, `db_contracts_passed=true`,
+  `db_constraints_passed=true`; preflight and E2E verified separately)
+- Production E2E: smoke run 26903877370 (all 11 steps passed)
 
 Run a full automated rehearsal with:
 

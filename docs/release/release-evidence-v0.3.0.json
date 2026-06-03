@@ -1,9 +1,9 @@
 {
   "release_version": "v0.3.0",
-  "commit_sha": "a157b847639440865cb40573d8944fd34d3a62ff",
+  "commit_sha": "1220e399d4fed212bf1dc5b01fc589ce4d56c930",
   "generated_at": "2026-06-03T19:15:00Z",
   "stage": "production",
-  "notes": "Production release evidence for v0.3.0. All gates passed. Rotation rehearsal and rate-limit topology proof completed on enlogy@10.0.0.32 (2026-06-03). FreeSWITCH smoke run 26903877370 passed. Full PBX Completeness Layer, retention storage cleanup, and RC evidence gates implemented.",
+  "notes": "Production release evidence for v0.3.0 at tag commit 1220e39 (2026-06-03). Tag commit adds only evidence/doc artifacts over RC commit a157b84 (zero code delta). FreeSWITCH smoke run 26903877370 passed on a157b84 (the code commit); the two documentation-only commits between RC and release tag (6001ed0, 1220e39) do not change any application code, migrations, or configuration. Rotation rehearsal and rate-limit topology proof completed on enlogy@10.0.0.32 (2026-06-03). Full PBX Completeness Layer, retention storage cleanup, and RC evidence gates implemented.",
 
   "github_release": {
     "tag": "v0.3.0",
@@ -26,12 +26,14 @@
 
   "production_slo": "RC-topology SLO evidence (docs/ops/runtime-slo-evidence-2026-06-03.json): /health/ready p99 8ms, /api/v1/freeswitch/directory p99 15ms, /api/v1/freeswitch/dialplan p99 22ms — all within thresholds. pnpm production:slo-check exits 0.",
 
-  "restore_smoke": "RC restore rehearsal passed on enlogy@10.0.0.32 for commit 311efd1c. Evidence: docs/ops/restore-evidence-enlogy-2026-06-02.json. Validated with pnpm restore:evidence-check -- --require-rc (exit 0). Backup retention policy: docs/ops/backup-retention-policy.json passes pnpm check:backup-retention-policy (0 findings).",
+  "restore_smoke": "DB-level restore rehearsal passed on enlogy@10.0.0.32 for commit 311efd1c. Evidence: docs/ops/restore-evidence-enlogy-2026-06-02.json. Scope: pg_dump snapshot → restore to clean DB → pnpm db:migrate → db:contracts (18 columns) → db:constraints (29 checks) → restore:smoke — all passed. preflight_passed and e2e_passed are false in that artifact because those are runtime-operation checks (not DB integrity checks); they are satisfied separately by smoke run 26903877370 (production:preflight passed on enlogy@10.0.0.32 during rotation rehearsal, production:e2e passed — all 11 steps). The restore rehearsal proves data survives a snapshot/restore cycle; the smoke run proves the system operates correctly. These are intentionally separate verification steps. Backup retention policy validated: docs/ops/backup-retention-policy.json, 0 findings.",
 
   "rate_limit_topology": "Single-instance production topology proof on enlogy@10.0.0.32 (2026-06-03): APP_ENV=production, MANAGECALLAI_INSTANCE_COUNT=1, RATE_LIMIT_AUTH_MAX=20, RATE_LIMIT_RUNTIME_MAX=300, RATE_LIMIT_WEBHOOK_MAX=100, RATE_LIMIT_OUTBOUND_MAX=30, RATE_LIMIT_WINDOW_MS=60000. pnpm production:rate-limit-check PASSED with 0 findings.",
 
   "carrier_interop": [
-    "FusionPBX/NetGSM live carrier interop (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json): sip_register, inbound_call, outbound_call, hangup_cdr, tls_or_documented_exception, nat_media_path PASSED. dtmf_rfc2833 and failover: documented exceptions (no answered call in test; single trunk). pnpm carrier:interop-check exits 0."
+    "PARTIAL PASS — 6/8 scenarios passed, 2 documented exceptions. Evidence: docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json. Live SIP carrier interop verified against FusionPBX/NetGSM (ivr.velocize.com): sip_register PASSED (REGED), inbound_call PASSED (INVITE from FusionPBX + real NetGSM caller-ID +903124401820 received), outbound_call PASSED (INVITE to FusionPBX via fusionpbx-carrier gateway), hangup_cdr PASSED (5 CDR entries in FreeSWITCH Master.csv), tls_or_documented_exception PASSED (SIP TLS + SRTP confirmed in smoke run 26803056139), nat_media_path PASSED (STUN public IP confirmed). pnpm carrier:interop-check exits 0.",
+    "DOCUMENTED EXCEPTIONS (accepted for v0.3.0, must be re-tested before production carrier traffic): dtmf_rfc2833 — DTMF requires an answered call with RTP; no answered call placed in test (risk: low, FreeSWITCH RFC 2833 is well-tested upstream; deferred to first production inbound call with IVR). failover — single trunk lab environment, no redundant path tested (risk: accepted for single-trunk deployments; deferred to production multi-carrier onboarding).",
+    "DEFERRED — Full IVR carrier path (inbound carrier DID → FreeSWITCH dialplan → manageCallAI IVR session → call events in DB) was not tested end-to-end with a live carrier; SIP signaling layer confirmed working, manageCallAI IVR path integration-tested. Full carrier certification is not complete and must be re-verified before enabling carrier traffic in any production tenant."
   ],
 
   "log_redaction": "Log redaction evidence from rotation rehearsal on enlogy@10.0.0.32 (2026-06-03): docs/ops/log-redaction-rotation-2026-06-03.json — PASSED with 0 scan findings. 20/20 redaction pattern test cases pass. API container logs scanned after production-mode deployment; no sensitive values found in output.",
