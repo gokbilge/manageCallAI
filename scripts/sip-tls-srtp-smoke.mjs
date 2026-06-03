@@ -59,7 +59,7 @@ const ECHO_EXT = '747';
 // positive: MD5 is mandated by the SIP Digest Auth protocol, not chosen for
 // security strength.
 function md5(v) {
-  return crypto.createHash('md5').update(v, 'utf8').digest('hex'); // CodeQL[js/weak-cryptographic-algorithm] RFC 3261 Digest Auth requires MD5 — not a password hash or security primitive
+  return crypto.createHash('md5').update(v, 'utf8').digest('hex'); // codeql[js/weak-cryptographic-algorithm] RFC 3261 Digest Auth requires MD5 — not a password hash or security primitive
 }
 
 function randHex(n) {
@@ -103,7 +103,7 @@ function sipConnect(host, port) {
     // rejectUnauthorized: false is intentional for smoke testing against the
     // self-signed FreeSWITCH TLS cert. Production deployments use a CA-signed
     // cert; this script only runs in isolated smoke environments.
-    const sock = tls.connect({ host, port, rejectUnauthorized: false }, () => resolve(sock)); // CodeQL[js/disabling-certificate-validation] smoke-only: self-signed cert in an isolated test environment
+    const sock = tls.connect({ host, port, rejectUnauthorized: false }, () => resolve(sock)); // codeql[js/disabling-certificate-validation] smoke-only: self-signed cert in an isolated test environment
     sock.on('error', reject);
     sock.setTimeout(10000, () => { sock.destroy(); reject(new Error('TLS connect timeout')); });
   });
