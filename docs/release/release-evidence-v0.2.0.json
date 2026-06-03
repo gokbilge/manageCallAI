@@ -36,6 +36,9 @@
     "FusionPBX/NetGSM interop evidence exists in docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json with sip_register, inbound_call, outbound_call, hangup_cdr, tls_or_documented_exception, and nat_media_path recorded.",
     "A production release still requires RC-bound carrier evidence and operator approval of any documented exceptions."
   ],
+  "log_redaction": "Log-redaction coverage is implemented and the validator passes. A candidate log artifact is still required before production promotion.",
+  "rotation_rehearsal": "Runtime token rotation coverage is implemented and the validator passes. A candidate rotation rehearsal artifact is still required before production promotion.",
+  "network_config": "Production network-config validation exists and must still be rerun against the promoted RC environment before production promotion.",
   "security_review": "CodeQL runs are green and the FreeSWITCH hardening check passes on the beta-candidate smoke stack. Production promotion still requires candidate-level rotation, log-redaction, and target-environment hardening artifacts.",
   "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
   "operator_signoff": {

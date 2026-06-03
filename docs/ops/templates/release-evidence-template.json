@@ -24,6 +24,9 @@
   "carrier_interop": [
     "<artifact ref or summary>"
   ],
+  "log_redaction": "<artifact ref or summary>",
+  "rotation_rehearsal": "<artifact ref or summary>",
+  "network_config": "<artifact ref or summary>",
   "security_review": "<artifact ref or summary>",
   "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
   "operator_signoff": {

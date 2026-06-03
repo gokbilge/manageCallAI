@@ -50,6 +50,9 @@ const validBetaManifest = {
   restore_smoke: 'Restore rehearsal artifact recorded for the candidate line.',
   rate_limit_topology: 'Single-instance beta topology validated.',
   carrier_interop: ['Lab interop artifact attached for beta candidate context.'],
+  log_redaction: 'Sanitized redaction artifact attached for the candidate line.',
+  rotation_rehearsal: 'Rotation rehearsal artifact attached for the candidate line.',
+  network_config: 'Target network configuration review artifact attached for the candidate line.',
   security_review: 'CodeQL and security review artifacts attached.',
   rollback_plan: 'docs/ops/production-deployment.md#upgrade-and-migration-playbook',
   operator_signoff: {
@@ -167,6 +170,9 @@ test('valid production manifest passes', () => {
     production_slo: 'RC-topology SLO artifact attached.',
     restore_smoke: 'RC restore rehearsal artifact attached.',
     rate_limit_topology: 'Multi-instance Redis topology artifact attached.',
+    log_redaction: 'Sanitized redaction artifact attached.',
+    rotation_rehearsal: 'Rotation rehearsal artifact attached.',
+    network_config: 'Target network configuration artifact attached.',
     security_review: 'Security review and CodeQL artifacts attached.',
     operator_signoff: {
       name: 'Release Manager',

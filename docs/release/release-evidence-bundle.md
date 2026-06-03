@@ -32,6 +32,9 @@ pnpm release:evidence-check -- --manifest=artifacts/release/release-evidence.jso
   "restore_smoke": "passed",
   "rate_limit_topology": "passed",
   "carrier_interop": ["example-carrier/prod-us-east-1"],
+  "log_redaction": "passed",
+  "rotation_rehearsal": "passed",
+  "network_config": "passed",
   "security_review": "completed",
   "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
   "pbx_evidence": {
@@ -128,6 +131,7 @@ respective check script. Check-config mode does not count.
 | Backup retention policy | Policy JSON validated against schema | `scripts/check-backup-retention-policy.mjs` |
 | Runtime token rotation | Rotation rehearsal evidence or clean-rotation confirmation | `scripts/check-runtime-token-rotation.mjs` |
 | Log redaction | Redaction evidence with all test cases passing | `scripts/check-log-redaction.mjs` |
+| Network configuration | Production network validation evidence | `scripts/check-production-network-config.mjs` |
 | Rate-limit topology | Rate-limit check passing with 0 warnings | `scripts/rate-limit-topology-check.mjs` |
 | Production soak | Soak evidence JSON with `failure_rate: 0` and SLO thresholds met | `scripts/production-soak.mjs` |
 | Runtime SLO | SLO evidence JSON with p95/p99 within declared thresholds | `scripts/production-slo-check.mjs` |
