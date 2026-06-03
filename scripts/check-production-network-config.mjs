@@ -25,18 +25,22 @@
  * Exit 1 — one or more hard failures detected.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 
-const args = new Set(process.argv.slice(2));
+const argList = process.argv.slice(2);
+const args = new Set(argList);
 if (args.has('--check-config')) {
   console.log('production network config check configuration check passed');
   process.exit(0);
 }
+
+const jsonOutputArg = argList.find((a) => a.startsWith('--json-output='));
+const jsonOutputPath = jsonOutputArg ? jsonOutputArg.slice('--json-output='.length) : null;
 
 // Load .env only for vars not already set
 const envPath = path.join(rootDir, '.env');
@@ -163,6 +167,47 @@ for (const f of findings) {
 }
 
 const failures = findings.filter((f) => f.level === 'fail');
+const status = failures.length > 0 ? 'failed' : 'passed';
+
+if (jsonOutputPath) {
+  const evidence = {
+    generated_at: new Date().toISOString(),
+    git_sha: (process.env.GITHUB_SHA ?? '').slice(0, 12) || 'local',
+    mode: 'live',
+    status,
+    app_env: env('APP_ENV') || 'development',
+    checks_performed: [
+      'FREESWITCH_ESL_HOST',
+      'FREESWITCH_ESL_PASSWORD',
+      'MANAGECALLAI_TRUST_PROXY',
+      'FREESWITCH_EXTERNAL_SIP_IP',
+      'FREESWITCH_EXTERNAL_RTP_IP',
+      'FREESWITCH_RTP_PORT_MIN',
+      'FREESWITCH_RTP_PORT_MAX',
+      'SIP_TLS_ENABLED',
+      'SRTP_POLICY',
+    ],
+    env_snapshot: {
+      FREESWITCH_ESL_HOST: eslHost || '(not set)',
+      MANAGECALLAI_TRUST_PROXY: trustProxy || '(not set)',
+      FREESWITCH_EXTERNAL_SIP_IP: env('FREESWITCH_EXTERNAL_SIP_IP') || '(not set)',
+      FREESWITCH_EXTERNAL_RTP_IP: env('FREESWITCH_EXTERNAL_RTP_IP') || '(not set)',
+      FREESWITCH_RTP_PORT_MIN: env('FREESWITCH_RTP_PORT_MIN') || '(not set)',
+      FREESWITCH_RTP_PORT_MAX: env('FREESWITCH_RTP_PORT_MAX') || '(not set)',
+      SIP_TLS_ENABLED: sipTlsEnabled || '(not set)',
+      SRTP_POLICY: env('SRTP_POLICY') || '(not set)',
+      APP_ENV: env('APP_ENV') || '(not set)',
+    },
+    findings,
+    failure_count: failures.length,
+    warning_count: findings.filter((f) => f.level === 'warn').length,
+  };
+  const dir = path.dirname(jsonOutputPath);
+  if (dir && dir !== '.') mkdirSync(dir, { recursive: true });
+  writeFileSync(jsonOutputPath, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
+  console.log(`\nEvidence written to: ${jsonOutputPath}`);
+}
+
 if (failures.length > 0) {
   console.error(
     `\nproduction network config check FAILED with ${failures.length} blocking issue(s)`,

@@ -257,6 +257,27 @@ jobs:
           APP_ENV: production
           GITHUB_SHA: ${{ github.sha }}
 
+      # ── Production network config check ────────────────────────────────────
+
+      - name: Production network config check
+        run: |
+          set -o pipefail
+          node scripts/check-production-network-config.mjs \
+            --json-output=artifacts/network-config/network-config-$(date -u +%Y-%m-%dT%H-%M-%SZ).json \
+            2>&1 | node scripts/redact-logs.mjs
+        env:
+          FREESWITCH_ESL_HOST: 127.0.0.1
+          FREESWITCH_ESL_PASSWORD: ${{ secrets.SMOKE_FREESWITCH_ESL_PASSWORD }}
+          FREESWITCH_EXTERNAL_SIP_IP: "127.0.0.1"
+          FREESWITCH_EXTERNAL_RTP_IP: "127.0.0.1"
+          FREESWITCH_RTP_PORT_MIN: "16384"
+          FREESWITCH_RTP_PORT_MAX: "32768"
+          SIP_TLS_ENABLED: "true"
+          SRTP_POLICY: "optional"
+          MANAGECALLAI_TRUST_PROXY: "1"
+          APP_ENV: production
+          GITHUB_SHA: ${{ github.sha }}
+
       # ── SIP TLS / SRTP / NAT smoke ──────────────────────────────────────────
 
       - name: Export SIP credentials for TLS smoke
@@ -320,6 +341,32 @@ jobs:
           if [ -z "$EVIDENCE" ]; then echo "ERROR: no SIP TLS evidence found" && exit 1; fi
           node scripts/check-sip-tls-srtp-nat-evidence.mjs --evidence="$EVIDENCE"
 
+      # ── Log capture and redaction check ────────────────────────────────────
+
+      - name: Capture container logs for redaction check
+        if: always()
+        run: |
+          mkdir -p logs/smoke
+          docker logs managecallai-api-1 2>&1 | node scripts/redact-logs.mjs > logs/smoke/api.log || echo "api container not found"
+          docker logs "${FS_CONTAINER}" 2>&1 | node scripts/redact-logs.mjs > logs/smoke/freeswitch.log || echo "freeswitch container not found"
+          echo "Captured $(wc -l < logs/smoke/api.log) API log lines and $(wc -l < logs/smoke/freeswitch.log) FreeSWITCH log lines"
+
+      - name: Log redaction check
+        run: |
+          set -o pipefail
+          node scripts/check-log-redaction.mjs \
+            --scan-dir=logs/smoke \
+            --output=artifacts/log-redaction/log-redaction-evidence-$(date -u +%Y-%m-%dT%H-%M-%SZ).json \
+            2>&1 | node scripts/redact-logs.mjs
+        env:
+          LOG_REDACTION_OPERATOR: ci-smoke
+          GITHUB_SHA: ${{ github.sha }}
+
+      # ── Rotation rehearsal config check ────────────────────────────────────
+
+      - name: Rotation rehearsal config check
+        run: node scripts/rotation-rehearsal.mjs --check-config
+
       # ── Validate E2E evidence ───────────────────────────────────────────────
 
       - name: Validate evidence artifact
@@ -336,7 +383,9 @@ jobs:
             artifacts/production-e2e/*.json
             artifacts/hardening/*.json
             artifacts/sip-tls/*.json
-            logs/smoke-*.log
+            artifacts/log-redaction/*.json
+            artifacts/network-config/*.json
+            logs/smoke/*.log
           if-no-files-found: warn
           retention-days: 90
 

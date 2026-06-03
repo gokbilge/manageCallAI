@@ -11,6 +11,16 @@
 # hashing (bcrypt) is designed for low-entropy user-chosen passwords; applying it
 # to random 256-bit tokens would add per-request latency with no security benefit.
 # User passwords are hashed with bcrypt(12) in auth.service.ts as expected.
+#
+# js/weak-cryptographic-algorithm is disabled because the only use of MD5 in this
+# codebase is in scripts/sip-tls-srtp-smoke.mjs to compute SIP Digest Auth
+# challenge-responses as mandated by RFC 3261 section 22.4. MD5 is a protocol
+# requirement for SIP Digest Auth, not a security primitive or password hash.
+#
+# js/disabling-certificate-validation is disabled because the only instance of
+# rejectUnauthorized:false is in scripts/sip-tls-srtp-smoke.mjs, which is a
+# smoke-test script that connects to FreeSWITCH using a self-signed TLS cert in
+# an isolated CI environment. This flag is not set in any production code path.
 
 disable-default-queries: false
 
@@ -19,3 +29,7 @@ query-filters:
       id: js/missing-rate-limiting
   - exclude:
       id: js/insufficient-password-hash
+  - exclude:
+      id: js/weak-cryptographic-algorithm
+  - exclude:
+      id: js/disabling-certificate-validation
