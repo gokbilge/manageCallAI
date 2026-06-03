@@ -11,8 +11,15 @@ pnpm release:evidence-check -- --manifest=artifacts/release/release-evidence.jso
 ```json
 {
   "release_version": "v0.3.0-rc.1",
-  "commit_sha": "0123456789abcdef",
+  "commit_sha": "0123456789abcdef0123456789abcdef01234567",
   "generated_at": "2026-06-01T00:00:00Z",
+  "stage": "rc",
+  "github_release": {
+    "tag": "v0.3.0-rc.1",
+    "url": "https://github.com/example/manageCallAI/releases/tag/v0.3.0-rc.1",
+    "published_at": "2026-06-01T00:00:00Z",
+    "is_prerelease": true
+  },
   "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/1",
   "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/2",
   "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/3",
@@ -25,6 +32,9 @@ pnpm release:evidence-check -- --manifest=artifacts/release/release-evidence.jso
   "restore_smoke": "passed",
   "rate_limit_topology": "passed",
   "carrier_interop": ["example-carrier/prod-us-east-1"],
+  "log_redaction": "passed",
+  "rotation_rehearsal": "passed",
+  "network_config": "passed",
   "security_review": "completed",
   "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
   "pbx_evidence": {
@@ -71,6 +81,21 @@ pnpm release:evidence-check -- --manifest=artifacts/release/release-evidence.jso
 }
 ```
 
+Use `docs/ops/templates/release-evidence-template.json` as the canonical
+starting point.
+
+## Stage Rules
+
+- `stage: beta`: may reference prerelease GitHub release metadata and may retain
+  `production_gate_status` entries that are still `required`.
+- `stage: rc`: must reference a prerelease GitHub release and the exact RC tag.
+- `stage: production`: must reference a full GitHub release
+  (`github_release.is_prerelease=false`) and must not contain deferred-production
+  placeholder language in notes, evidence fields, signoff, or `production_gate_status`.
+
+The shipped `docs/release/release-evidence-v0.2.0.json` file is a **beta-candidate**
+manifest. It is not the final production RC or production release bundle.
+
 The `freeswitch_smoke_run_url` field must point to a **passing** self-hosted `FreeSWITCH runtime smoke`
 workflow run from the RC or release branch. This is the required status check enforced by the
 `Release and RC smoke gate` repository ruleset. The run URL is available in GitHub Actions after the
@@ -106,6 +131,7 @@ respective check script. Check-config mode does not count.
 | Backup retention policy | Policy JSON validated against schema | `scripts/check-backup-retention-policy.mjs` |
 | Runtime token rotation | Rotation rehearsal evidence or clean-rotation confirmation | `scripts/check-runtime-token-rotation.mjs` |
 | Log redaction | Redaction evidence with all test cases passing | `scripts/check-log-redaction.mjs` |
+| Network configuration | Production network validation evidence | `scripts/check-production-network-config.mjs` |
 | Rate-limit topology | Rate-limit check passing with 0 warnings | `scripts/rate-limit-topology-check.mjs` |
 | Production soak | Soak evidence JSON with `failure_rate: 0` and SLO thresholds met | `scripts/production-soak.mjs` |
 | Runtime SLO | SLO evidence JSON with p95/p99 within declared thresholds | `scripts/production-slo-check.mjs` |

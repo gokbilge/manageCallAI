@@ -43,6 +43,7 @@ const requiredFiles = [
   'docs/release/freeswitch-smoke-gate.md',
   'docs/release/production-runtime-e2e.md',
   'docs/release/release-evidence-bundle.md',
+  'docs/ops/templates/release-evidence-template.json',
   'docs/ops/production-preflight.md',
   'docs/ops/production-soak-testing.md',
   'docs/ops/runtime-slo-gate.md',

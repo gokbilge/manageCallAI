@@ -11,7 +11,7 @@ Use this checklist before promoting manageCallAI beyond development or staging.
 | Public beta candidate | Current stage | Beta implementation present, but beta evidence must be current for the candidate |
 | Public beta ready | Blocked until gate evidence exists | Self-hosted FreeSWITCH smoke evidence tied to the beta candidate, SDK dry-run/publish evidence, verified MCP/n8n/webhook workflows, usable visual IVR/HUD evidence, coverage evidence |
 | Production release candidate | Blocked | Release evidence manifest with RC commit, CI/security/coverage/runtime/restore/soak/SLO/carrier/rate-limit artifacts, rollback plan, and operator signoff fields populated |
-| Production | Blocked | Production RC evidence bundle passes and operator signoff is complete |
+| Production | Blocked | Production RC evidence bundle passes, the final GitHub release is not marked prerelease, and operator signoff is complete |
 
 Do not describe manageCallAI as production-ready until the production checklist
 and release smoke evidence are complete.
@@ -253,7 +253,8 @@ pnpm release:evidence-check -- --manifest=<release-evidence.json>
 ```
 
 Evidence JSON must include `pbx_evidence` fields for each implemented feature.
-See `docs/ops/templates/release-evidence-template.json` for required fields.
+See `docs/ops/templates/release-evidence-template.json` for the required fields
+and stage-specific metadata (`stage`, `github_release`, and operator signoff).
 
 These gates are required for production promotion of each PBX feature.
 They are **not required** for the current public beta stage (beta gates pass without PBX evidence).

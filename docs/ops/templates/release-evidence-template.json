@@ -1,0 +1,76 @@
+{
+  "release_version": "<release version or tag, e.g. v0.2.0-rc.1 or v0.2.0>",
+  "commit_sha": "<40-character git sha>",
+  "generated_at": "<ISO-8601 timestamp>",
+  "stage": "rc",
+  "notes": "<short factual summary of what this manifest covers>",
+  "github_release": {
+    "tag": "<tag name that matches release_version>",
+    "url": "https://github.com/<owner>/<repo>/releases/tag/<tag>",
+    "published_at": "<ISO-8601 timestamp>",
+    "is_prerelease": true
+  },
+  "ci_run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+  "codeql_run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+  "coverage_run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+  "docker_images_run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+  "freeswitch_smoke_run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+  "production_preflight": "<artifact ref or summary>",
+  "production_e2e": "<artifact ref or summary>",
+  "production_soak": "<artifact ref or summary>",
+  "production_slo": "<artifact ref or summary>",
+  "restore_smoke": "<artifact ref or summary>",
+  "rate_limit_topology": "<artifact ref or summary>",
+  "carrier_interop": [
+    "<artifact ref or summary>"
+  ],
+  "log_redaction": "<artifact ref or summary>",
+  "rotation_rehearsal": "<artifact ref or summary>",
+  "network_config": "<artifact ref or summary>",
+  "security_review": "<artifact ref or summary>",
+  "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
+  "operator_signoff": {
+    "name": "<operator name>",
+    "role": "<operator role>",
+    "approved_at": "<ISO-8601 timestamp>",
+    "notes": "<optional stage-specific note>"
+  },
+  "artifact_files": {
+    "runtime_slo": "<local sanitized artifact path>"
+  },
+  "pbx_evidence": {
+    "feature_codes": {
+      "status": "passed",
+      "run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+      "artifact": "<artifact ref or summary>"
+    },
+    "call_parking": {
+      "status": "passed",
+      "run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+      "artifact": "<artifact ref or summary>"
+    },
+    "conferencing": {
+      "status": "passed",
+      "run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+      "artifact": "<artifact ref or summary>"
+    },
+    "gateway_reload": {
+      "status": "passed",
+      "run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+      "artifact": "<artifact ref or summary>"
+    },
+    "self_service": {
+      "status": "passed",
+      "run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+      "artifact": "<artifact ref or summary>"
+    },
+    "runtime_management": {
+      "status": "passed",
+      "run_url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
+      "artifact": "<artifact ref or summary>"
+    }
+  },
+  "production_gate_status": {
+    "optional_for_beta_or_rc": "Use this object to track remaining production-only gates before final promotion. Omit or fully resolve it for a production manifest."
+  }
+}
