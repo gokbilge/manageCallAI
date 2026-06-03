@@ -32,13 +32,17 @@ vi.mock('./setup.service.js', () => ({
 }));
 
 describe('setupController', () => {
+  const originalEslPassword = process.env['FREESWITCH_ESL_PASSWORD'];
+
   beforeEach(() => {
     vi.clearAllMocks();
     isSetupComplete.mockResolvedValue(false);
+    process.env['FREESWITCH_ESL_PASSWORD'] = originalEslPassword;
   });
 
   afterEach(async () => {
     vi.resetModules();
+    process.env['FREESWITCH_ESL_PASSWORD'] = originalEslPassword;
   });
 
   async function buildTestApp() {
@@ -64,6 +68,8 @@ describe('setupController', () => {
   });
 
   it('rejects ESL validation when no password is provided', async () => {
+    process.env['FREESWITCH_ESL_PASSWORD'] = '';
+
     const app = await buildTestApp();
     const response = await app.inject({
       method: 'POST',
