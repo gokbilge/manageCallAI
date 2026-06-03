@@ -108,4 +108,25 @@ describe('runBootstrapIfNeeded', () => {
     );
     await app.close();
   });
+
+  it('does not log completion when headless bootstrap returns no new result', async () => {
+    isSetupComplete.mockResolvedValue(false);
+    getHeadlessBootstrapVarsFromEnv.mockReturnValue({
+      tenantName: 'Platform',
+      tenantSlug: 'platform',
+      adminEmail: 'admin@example.com',
+      adminPassword: 'supersecret123',
+    });
+    runHeadlessBootstrap.mockResolvedValue(null);
+
+    const { runBootstrapIfNeeded } = await import('./app.js');
+    const app = Fastify();
+    const logSpy = vi.spyOn(app.log, 'info');
+
+    await runBootstrapIfNeeded(app);
+
+    expect(runHeadlessBootstrap).toHaveBeenCalledTimes(1);
+    expect(logSpy).not.toHaveBeenCalled();
+    await app.close();
+  });
 });
