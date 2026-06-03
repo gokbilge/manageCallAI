@@ -20,8 +20,10 @@ const requiredFiles = [
   'scripts/check-sip-tls-srtp-nat-evidence.mjs',
   'docs/ops/templates/sip-tls-srtp-nat-evidence-template.json',
   'scripts/check-runtime-token-rotation.mjs',
+  'scripts/rotation-rehearsal.mjs',
   'docs/ops/secret-rotation.md',
   'docs/ops/runtime-token-rotation.md',
+  'docs/ops/templates/rotation-rehearsal-evidence-template.json',
   'scripts/redact-logs.mjs',
   'scripts/check-log-redaction.mjs',
   'docs/ops/log-redaction.md',
@@ -80,6 +82,9 @@ if (existsSync('.github/workflows/freeswitch-smoke.yml')) {
     "docker compose --profile freeswitch up",
     "docker compose --profile freeswitch down",
     "check-runtime-e2e-evidence.mjs",
+    "check-log-redaction.mjs",
+    "check-production-network-config.mjs",
+    "rotation-rehearsal.mjs --check-config",
     "actions/upload-artifact",
   ];
 
