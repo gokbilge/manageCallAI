@@ -1,3 +1,6 @@
+import type { StorageBackend } from './storage-backend.js';
+import { NoOpStorageBackend } from './storage-backend.js';
+
 export type RetentionCategory =
   | 'recording'
   | 'voicemail'
@@ -34,6 +37,7 @@ export interface RetentionPurgeCategoryResult {
   cutoff: string;
   record_count: number;
   dry_run: boolean;
+  storage_delete_failures?: number;
 }
 
 export interface RetentionPurgeResult {
@@ -76,6 +80,7 @@ export class RetentionPurgeService {
   constructor(
     private readonly db: Queryable,
     private readonly defaults: RetentionDefaults = PRODUCTION_RETENTION_DEFAULTS,
+    private readonly storage: StorageBackend = new NoOpStorageBackend(),
   ) {}
 
   async run(options: RetentionPurgeOptions): Promise<RetentionPurgeResult> {
@@ -87,17 +92,33 @@ export class RetentionPurgeService {
       for (const plan of this.buildPlans(policy)) {
         if (plan.days == null) continue;
         const cutoff = subtractDays(startedAt, plan.days);
-        const recordCount = options.dryRun
-          ? await this.countEligible(policy.tenant_id, plan.category, cutoff)
-          : await this.purgeEligible(policy.tenant_id, plan.category, cutoff);
 
-        const result = {
+        let recordCount = 0;
+        let storageDeleteFailures = 0;
+
+        if (options.dryRun) {
+          recordCount = await this.countEligible(policy.tenant_id, plan.category, cutoff);
+        } else if (plan.category === 'recording' || plan.category === 'voicemail') {
+          // Collect storage paths before deleting DB records so we can clean up files.
+          const paths = await this.collectStoragePaths(policy.tenant_id, plan.category, cutoff);
+          recordCount = await this.purgeEligible(policy.tenant_id, plan.category, cutoff);
+          // Delete storage files after DB records are gone. Failures are logged but non-fatal.
+          for (const path of paths) {
+            const ok = await this.storage.delete(path);
+            if (!ok) storageDeleteFailures++;
+          }
+        } else {
+          recordCount = await this.purgeEligible(policy.tenant_id, plan.category, cutoff);
+        }
+
+        const result: RetentionPurgeCategoryResult = {
           tenant_id: policy.tenant_id,
           category: plan.category,
           retention_days: plan.days,
           cutoff: cutoff.toISOString(),
           record_count: recordCount,
           dry_run: options.dryRun,
+          ...(storageDeleteFailures > 0 ? { storage_delete_failures: storageDeleteFailures } : {}),
         };
         results.push(result);
 
@@ -113,6 +134,12 @@ export class RetentionPurgeService {
       finished_at: new Date().toISOString(),
       results,
     };
+  }
+
+  private async collectStoragePaths(tenantId: string, category: 'recording' | 'voicemail', cutoff: Date): Promise<string[]> {
+    const sql = category === 'recording' ? collectRecordingPathsSql : collectVoicemailPathsSql;
+    const rows = await this.db.query<{ storage_path: string }>(sql, [tenantId, cutoff.toISOString()]);
+    return rows.rows.map(r => r.storage_path);
   }
 
   private async loadTenantPolicies(): Promise<TenantPolicyRow[]> {
@@ -199,6 +226,7 @@ export class RetentionPurgeService {
           cutoff: result.cutoff,
           retention_days: result.retention_days,
           dry_run: false,
+          ...(result.storage_delete_failures != null ? { storage_delete_failures: result.storage_delete_failures } : {}),
         }),
       ],
     );
@@ -217,6 +245,14 @@ const recordingHoldWhere = `
       AND (h.resource_type = 'all'
         OR (h.resource_type = 'recording' AND (h.resource_id IS NULL OR h.resource_id = r.id::text OR h.resource_id = r.call_id)))
   )`;
+
+const collectRecordingPathsSql = `
+  SELECT storage_path
+  FROM call_recordings r
+  WHERE r.tenant_id = $1
+    AND r.status <> 'deleted'
+    AND COALESCE(r.retain_until, r.recorded_at) < $2::timestamptz
+    AND ${recordingHoldWhere}`;
 
 const countRecordingsSql = `
   SELECT COUNT(*)::text AS count
@@ -248,6 +284,14 @@ const voicemailHoldWhere = `
       AND (h.resource_type = 'all'
         OR (h.resource_type = 'voicemail' AND (h.resource_id IS NULL OR h.resource_id = v.id::text OR h.resource_id = v.call_id)))
   )`;
+
+const collectVoicemailPathsSql = `
+  SELECT storage_path
+  FROM voicemail_messages v
+  WHERE v.tenant_id = $1
+    AND v.deleted_at IS NULL
+    AND v.recorded_at < $2::timestamptz
+    AND ${voicemailHoldWhere}`;
 
 const countVoicemailSql = `
   SELECT COUNT(*)::text AS count
