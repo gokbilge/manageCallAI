@@ -1,0 +1,48 @@
+{
+  "checked_at": "2026-06-03T18:57:22.526Z",
+  "git_sha": "local",
+  "operator": "enlogy",
+  "mode": "live",
+  "status": "passed",
+  "log_bundle_root": "/home/enlogy/actions-runner/_work/manageCallAI/manageCallAI/artifacts/log-redaction",
+  "log_categories_scanned": [
+    "api-logs-redacted.txt",
+    "log-redaction-evidence-2026-06-03T18-17-12Z.json"
+  ],
+  "files_scanned": [
+    "api-logs-redacted.txt",
+    "log-redaction-evidence-2026-06-03T18-17-12Z.json"
+  ],
+  "patterns_verified": [
+    "JWT Bearer token",
+    "Basic auth header",
+    "X-ManageCallAI-Runtime-Token header",
+    "JWT_SECRET env var",
+    "RUNTIME_API_TOKEN env var",
+    "SIP_SECRET_MASTER_KEY env var",
+    "FREESWITCH_ESL_PASSWORD env var",
+    "WEBHOOK_SIGNING_SECRET env var",
+    "DATABASE_URL with credentials",
+    "runtime_token query param",
+    "token query param",
+    "secret query param",
+    "access_token query param",
+    "signing_secret query param",
+    "JSON password field",
+    "JSON sip_password field",
+    "JSON token field",
+    "JSON secret field",
+    "JSON authorization field",
+    "PostgreSQL URL with password in log line",
+    "live scan: authorization header",
+    "live scan: runtime token header",
+    "live scan: secret environment variable",
+    "live scan: secret query parameter",
+    "live scan: json secret field",
+    "live scan: postgres url password"
+  ],
+  "redact_function_passes_all_patterns": true,
+  "url_redaction_covers_query_params": true,
+  "no_raw_tokens_in_audit_events": true,
+  "production_error_responses_no_stack_traces": true
+}
