@@ -55,10 +55,11 @@ const ECHO_EXT = '747';
 
 // MD5 is required by SIP Digest Authentication (RFC 3261 section 22.4).
 // This is NOT password storage — it computes the challenge-response that
-// FreeSWITCH expects. CodeQL js/insufficient-password-hash and
-// js/weak-cryptographic-algorithm are false positives for this protocol helper.
+// FreeSWITCH expects. The weak-cryptographic-algorithm finding is a false
+// positive: MD5 is mandated by the SIP Digest Auth protocol, not chosen for
+// security strength.
 function md5(v) {
-  return crypto.createHash('md5').update(v, 'utf8').digest('hex'); // CodeQL [js/insufficient-password-hash] RFC 3261 Digest Auth, not a password hash
+  return crypto.createHash('md5').update(v, 'utf8').digest('hex'); // CodeQL[js/weak-cryptographic-algorithm] RFC 3261 Digest Auth requires MD5 — not a password hash or security primitive
 }
 
 function randHex(n) {
@@ -99,9 +100,10 @@ function randomSrtp30Bytes() {
 
 function sipConnect(host, port) {
   return new Promise((resolve, reject) => {
-    // rejectUnauthorized: false — acceptable for smoke testing with a self-signed cert.
-    // Production deployments use a CA-signed cert and this flag would be true. // CodeQL [js/disabling-certificate-validation] intentional for smoke self-signed cert
-    const sock = tls.connect({ host, port, rejectUnauthorized: false }, () => resolve(sock));
+    // rejectUnauthorized: false is intentional for smoke testing against the
+    // self-signed FreeSWITCH TLS cert. Production deployments use a CA-signed
+    // cert; this script only runs in isolated smoke environments.
+    const sock = tls.connect({ host, port, rejectUnauthorized: false }, () => resolve(sock)); // CodeQL[js/disabling-certificate-validation] smoke-only: self-signed cert in an isolated test environment
     sock.on('error', reject);
     sock.setTimeout(10000, () => { sock.destroy(); reject(new Error('TLS connect timeout')); });
   });
