@@ -1,6 +1,22 @@
 # End-User Self-Service Portal — Design
 
-Status: **Designed, not implemented.**
+Status: **Partially implemented.**
+
+Implemented in the issue-176 slice:
+
+- `end_user` tenant role in the database/API role model.
+- Tenant-level self-service policy for DND, call forwarding, voicemail-view,
+  voicemail-PIN-change, and call-history-view capability flags.
+- Extension owner linkage via `extensions.owner_user_id`.
+- `/api/v1/me/extension`, `/api/v1/me/dnd`, and `/api/v1/me/call-forward`.
+- `/api/v1/tenant/self-service-policy` for tenant admins.
+
+Still deferred:
+
+- End-user portal UI at `/portal`.
+- `/me/voicemail-messages`, `/me/voicemail-pin`, `/me/call-history`,
+  `/me/recordings`, `/me/devices`, and `/me/sip-credential/reset`.
+- Runtime evidence that DND/forward changes are consumed by live FreeSWITCH.
 Priority: P2 — should not block public beta unless the product scope promises it.
 
 ---

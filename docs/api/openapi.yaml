@@ -5278,6 +5278,7 @@ components:
             - tenant_admin
             - tenant_operator
             - tenant_viewer
+            - end_user
         status:
           type: string
         last_login_at:

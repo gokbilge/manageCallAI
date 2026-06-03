@@ -24,6 +24,15 @@ const requiredEvidence = [
   'operator_signoff',
 ];
 
+const requiredPbxEvidence = [
+  'feature_codes',
+  'call_parking',
+  'conferencing',
+  'gateway_reload',
+  'self_service',
+  'runtime_management',
+];
+
 if (checkConfigOnly) {
   console.log('release evidence configuration check passed');
   process.exit(0);
@@ -55,6 +64,21 @@ try {
 
   for (const key of requiredEvidence) {
     if (!hasValue(manifest[key])) failures.push(`${key} evidence is required`);
+  }
+
+  if (!manifest.pbx_evidence || typeof manifest.pbx_evidence !== 'object') {
+    failures.push('pbx_evidence is required');
+  } else {
+    for (const key of requiredPbxEvidence) {
+      const evidence = manifest.pbx_evidence[key];
+      if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) {
+        failures.push(`pbx_evidence.${key} must be an object with status, run_url, and artifact`);
+        continue;
+      }
+      for (const field of ['status', 'run_url', 'artifact']) {
+        if (!hasValue(evidence[field])) failures.push(`pbx_evidence.${key}.${field} is required`);
+      }
+    }
   }
 
   for (const [key, value] of Object.entries(manifest.artifact_files ?? {})) {

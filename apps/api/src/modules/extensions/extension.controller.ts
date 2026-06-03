@@ -2,7 +2,6 @@ import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { CreateExtensionBodySchema, UpdateExtensionBodySchema, UuidParamsSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
-import { authenticate } from '../auth/authenticate.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
@@ -22,7 +21,7 @@ function replyNotFound(err: unknown, reply: FastifyReply): void {
 export const extensionController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/',
-    { preHandler: authenticate },
+    { preHandler: requireCapability(CAPABILITIES.TENANT_EXTENSIONS_VIEW) },
     async (req) => {
       const user = req.user as AuthClaims;
       const extensions = await service.listByTenant(user.tenant_id);
@@ -41,6 +40,7 @@ export const extensionController: FastifyPluginAsyncZod = async (app) => {
       const ext = await service.create({
         ...req.body,
         tenant_id: user.tenant_id,
+        owner_user_id: user.sub,
       });
       return reply.code(201).send({ data: ext });
     },
@@ -49,7 +49,7 @@ export const extensionController: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/:id',
     {
-      preHandler: authenticate,
+      preHandler: requireCapability(CAPABILITIES.TENANT_EXTENSIONS_VIEW),
       schema: { params: UuidParamsSchema },
     },
     async (req, reply) => {

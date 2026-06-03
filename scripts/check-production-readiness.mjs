@@ -103,6 +103,42 @@ if (existsSync('docs/release/release-checklist.md')) {
   if (!releaseChecklist.includes('FreeSWITCH runtime smoke')) {
     failures.push('Release checklist must name FreeSWITCH runtime smoke as the required release/RC status check');
   }
+  // PBX completeness: evidence gate section must be present and not still a placeholder.
+  if (!releaseChecklist.includes('Gateway reload') || !releaseChecklist.includes('Feature codes')) {
+    failures.push('Release checklist must document PBX completeness evidence gates (gateway reload, feature codes, parking, conferencing)');
+  }
+  if (releaseChecklist.includes('add when features are implemented')) {
+    failures.push('PBX Completeness Gates section still has placeholder text — update it now that features are implemented');
+  }
+}
+
+// Verify PBX design docs are present (design-first rule).
+const pbxDesignDocs = [
+  'docs/pbx/PBX_COMPLETENESS_LAYER.md',
+  'docs/pbx/feature-codes.md',
+  'docs/pbx/call-parking.md',
+  'docs/pbx/conferencing.md',
+  'docs/pbx/gateway-reload-on-trunk-change.md',
+  'docs/pbx/end-user-self-service.md',
+  'docs/pbx/freeswitch-runtime-management.md',
+];
+
+for (const doc of pbxDesignDocs) {
+  if (!existsSync(doc)) failures.push(`PBX design doc missing: ${doc}`);
+}
+
+// Verify PBX migration files are present.
+const pbxMigrations = [
+  'db/migrations/0045_runtime_apply_requests.sql',
+  'db/migrations/0046_feature_codes.sql',
+  'db/migrations/0047_parking.sql',
+  'db/migrations/0048_conference_rooms.sql',
+  'db/migrations/0049_node_status_snapshots.sql',
+  'db/migrations/0050_self_service.sql',
+];
+
+for (const migration of pbxMigrations) {
+  if (!existsSync(migration)) failures.push(`PBX migration missing: ${migration}`);
 }
 
 const sliceFiles = existsSync('docs/planning/slices')

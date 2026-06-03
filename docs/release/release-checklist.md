@@ -226,22 +226,37 @@ gates that are not set to `true`.
 
 See `docs/ops/backup-restore.md` for the full restore procedure.
 
-## PBX Completeness Gates (add when features are implemented)
+## PBX Completeness Gates
 
-When PBX Completeness Layer features are implemented, add the following to the
-production evidence checklist for each feature:
+PBX Completeness Layer features are implemented. The following evidence gates
+apply before any PBX feature is promoted to production:
 
-| Feature | Required evidence gate |
-|---|---|
-| Feature codes | Passing DTMF smoke run on self-hosted runner with audit event proof |
-| Call parking | Passing valet_park smoke with Go agent event ingestion proof |
-| Native conferencing | Passing mod_conference two-caller smoke |
-| Gateway reload | Passing trunk change → REGED confirmation smoke on self-hosted runner |
-| Self-service portal | Integration test matrix: end_user isolation, policy gating, PIN redaction |
-| Runtime management | Passing reloadxml/rescan action smoke with approval gate proof |
+| Feature | Status | Required evidence gate |
+|---|---|---|
+| Gateway reload (#175) | Implemented | Trunk PATCH → Go agent ESL commands → gateway REGED state confirmed on self-hosted runner |
+| Feature codes (#172) | Implemented | DTMF code dialed → Lua executor → API callback → audit event written — smoke on self-hosted runner |
+| Call parking (#173) | Implemented | `valet_park` smoke: call parked, Go agent CHANNEL_PARK event ingested, slot retrieved — smoke on self-hosted runner |
+| Conferencing (#174) | Implemented | `mod_conference` two-caller smoke: PIN enforced, callers bridged — smoke on self-hosted runner |
+| Self-service portal (#176) | Implemented | Integration test matrix: `end_user` isolation, policy gating, DND/call-forward audited |
+| Runtime management (#177) | Implemented | Go agent status push to API → node status endpoint returns snapshot; reloadxml smoke with result recorded |
 
-These gates are **not required** for the current public beta stage.
-They apply only when the corresponding features ship.
+To run PBX evidence gates:
+
+```sh
+pnpm check:pbx-evidence -- --manifest=<release-evidence.json>
+```
+
+Or as part of the full evidence bundle:
+
+```sh
+pnpm release:evidence-check -- --manifest=<release-evidence.json>
+```
+
+Evidence JSON must include `pbx_evidence` fields for each implemented feature.
+See `docs/ops/templates/release-evidence-template.json` for required fields.
+
+These gates are required for production promotion of each PBX feature.
+They are **not required** for the current public beta stage (beta gates pass without PBX evidence).
 
 ## Safety Review
 

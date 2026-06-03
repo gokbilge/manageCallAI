@@ -25,7 +25,7 @@ export interface CreateExtensionBody {
 }
 
 // Full service input - controller adds tenant_id from JWT.
-export type CreateExtensionInput = CreateExtensionBody & { tenant_id: string };
+export type CreateExtensionInput = CreateExtensionBody & { tenant_id: string; owner_user_id?: string | null };
 
 // What the service passes to the repository after encrypting the password.
 export interface CreateExtensionRepoInput {
@@ -37,6 +37,7 @@ export interface CreateExtensionRepoInput {
   sip_password_key_id: string;
   default_destination_type?: DestinationType;
   default_destination_id?: string;
+  owner_user_id?: string | null;
 }
 
 // What the HTTP client sends on PATCH - sip_password is plaintext; service encrypts.

@@ -45,6 +45,8 @@ import { observabilityController } from './modules/observability/observability.c
 import { fraudController } from './modules/fraud/fraud.controller.js';
 import { retentionController } from './modules/retention/retention.controller.js';
 import { nodeRegistryController } from './modules/runtime/node-registry.controller.js';
+import { nodeStatusController, tenantGatewayStatusController } from './modules/runtime/node-status.controller.js';
+import { selfServiceMeController, selfServicePolicyController } from './modules/self-service/self-service.controller.js';
 import { registerErrorHandler } from './errors/index.js';
 import { redactSensitiveUrl, registerLoggingHooks } from './logging/logger.js';
 import { idempotencyPlugin } from './modules/idempotency/idempotency.plugin.js';
@@ -62,6 +64,8 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(featureCodeController, { prefix: '/api/v1/feature-codes' });
   app.register(parkingLotController, { prefix: '/api/v1/parking-lots' });
   app.register(conferenceRoomController, { prefix: '/api/v1/conference-rooms' });
+  // End-user self-service: /me/* endpoints.
+  app.register(selfServiceMeController, { prefix: '/api/v1/me' });
   app.register(phoneNumberController, { prefix: '/api/v1/phone-numbers' });
   app.register(promptAssetController, { prefix: '/api/v1/prompts' });
   app.register(ivrFlowController, { prefix: '/api/v1/ivr-flows' });
@@ -95,6 +99,8 @@ function registerRuntimeModules(app: FastifyInstance): void {
   // Parking and conference runtime callbacks (Go agent HMAC).
   app.register(parkingRuntimeController, { prefix: '/api/v1/runtime' });
   app.register(conferenceRuntimeController, { prefix: '/api/v1/runtime' });
+  // Tenant gateway status (tenant admin — own gateways).
+  app.register(tenantGatewayStatusController, { prefix: '/api/v1/runtime' });
 }
 
 /**
@@ -128,10 +134,13 @@ function registerPlatformModules(app: FastifyInstance): void {
   app.register(authController, { prefix: '/api/v1/auth' });
   app.register(platformController, { prefix: '/api/v1/platform' });
   app.register(nodeRegistryController, { prefix: '/api/v1/platform' });
+  // Node status: platform admin reads + Go agent push (prefix /api/v1/platform for reads)
+  app.register(nodeStatusController, { prefix: '/api/v1/platform' });
   app.register(auditController, { prefix: '/api/v1/audit' });
   app.register(userController, { prefix: '/api/v1/users' });
   app.register(fraudController, { prefix: '/api/v1/fraud' });
   app.register(retentionController, { prefix: '/api/v1/tenant' });
+  app.register(selfServicePolicyController, { prefix: '/api/v1/tenant' });
 }
 
 // ── App factory ───────────────────────────────────────────────────────────────

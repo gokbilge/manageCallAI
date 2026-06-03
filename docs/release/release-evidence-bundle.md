@@ -27,6 +27,38 @@ pnpm release:evidence-check -- --manifest=artifacts/release/release-evidence.jso
   "carrier_interop": ["example-carrier/prod-us-east-1"],
   "security_review": "completed",
   "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
+  "pbx_evidence": {
+    "feature_codes": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/6",
+      "artifact": "artifacts/pbx/feature-codes-smoke.json"
+    },
+    "call_parking": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/7",
+      "artifact": "artifacts/pbx/call-parking-smoke.json"
+    },
+    "conferencing": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/8",
+      "artifact": "artifacts/pbx/conferencing-smoke.json"
+    },
+    "gateway_reload": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/9",
+      "artifact": "artifacts/pbx/gateway-reload-smoke.json"
+    },
+    "self_service": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/10",
+      "artifact": "artifacts/pbx/self-service-integration.json"
+    },
+    "runtime_management": {
+      "status": "passed",
+      "run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/11",
+      "artifact": "artifacts/pbx/runtime-management-smoke.json"
+    }
+  },
   "operator_signoff": {
     "name": "Release Manager",
     "role": "platform operator",
@@ -78,6 +110,12 @@ respective check script. Check-config mode does not count.
 | Production soak | Soak evidence JSON with `failure_rate: 0` and SLO thresholds met | `scripts/production-soak.mjs` |
 | Runtime SLO | SLO evidence JSON with p95/p99 within declared thresholds | `scripts/production-slo-check.mjs` |
 | Carrier interop | Carrier evidence JSON, all 8 scenarios passed or documented_exception | `scripts/carrier-interop-check.mjs` |
+| PBX feature codes | DTMF code on real FreeSWITCH, Lua/API callback, action applied | `scripts/release-evidence-check.mjs` manifest field `pbx_evidence.feature_codes` |
+| PBX call parking | `valet_park` smoke with event ingestion and slot retrieval | `scripts/release-evidence-check.mjs` manifest field `pbx_evidence.call_parking` |
+| PBX conferencing | `mod_conference` two-caller smoke with PIN enforcement | `scripts/release-evidence-check.mjs` manifest field `pbx_evidence.conferencing` |
+| PBX gateway reload | Trunk PATCH, Go agent ESL command, REGED confirmation | `scripts/release-evidence-check.mjs` manifest field `pbx_evidence.gateway_reload` |
+| PBX self-service | Integration matrix for policy gates and self-scope isolation | `scripts/release-evidence-check.mjs` manifest field `pbx_evidence.self_service` |
+| PBX runtime management | Runtime status/action smoke with Go agent result artifact | `scripts/release-evidence-check.mjs` manifest field `pbx_evidence.runtime_management` |
 | Security / fraud review | Confirmation that CodeQL and fraud controls are reviewed | Structural check |
 | Rollback plan | Link to tested upgrade/migration rollback procedure | Structural check |
 | Operator signoff | Name, role, timestamp in manifest | `scripts/release-evidence-check.mjs` |
