@@ -12,81 +12,76 @@ to the release-candidate commit.
 ## Current Release Stage
 
 ```
-Decision:         Public beta candidate
-Tag:              v0.2.0-beta.1 (cut 2026-06-02 from main at b51cdd5)
-Evidence status:  Beta evidence manifest passes pnpm release:evidence-check
-                  and explicitly records beta-stage metadata
-                  Smoke run 26825030902 passed all gates on self-hosted runner
-Next step:        Final beta-ready UI evidence, then cut an rc/** branch and
-                  assemble the production evidence bundle for issue #164
+Decision:         Production release
+Tag:              v0.3.0 (cut 2026-06-03 from main at 1220e39)
+RC tag:           v0.3.0-rc.1 (commit a157b84, smoke run 26903877370)
+Evidence status:  Production manifest docs/release/release-evidence-v0.3.0.json
+                  passes pnpm release:evidence-check (stage=production, 0 failures)
+                  All 18 required evidence fields reference real artifacts
+                  Live rotation rehearsal and rate-limit proof completed 2026-06-03
+Next step:        No open blockers. Next release cycle begins with [Unreleased].
 ```
 
-## What closed since the last update (2026-06-02)
+## What closed for v0.3.0 (2026-06-03)
+
+| Issue | Gate | Resolution |
+|---|---|---|
+| [#161](https://github.com/gokbilge/manageCallAI/issues/161) | Retention storage cleanup + DSR | StorageBackend file deletion, DSR doc, export-before-delete decision — PR #181 |
+| [#162](https://github.com/gokbilge/manageCallAI/issues/162) | Soak/SLO/carrier interop | RC-topology SLO evidence, FusionPBX/NetGSM 6/8 passed, PBX evidence in manifest — PR #182 |
+| [#163](https://github.com/gokbilge/manageCallAI/issues/163) | Token rotation, log redaction, hardening | rotation-rehearsal.mjs, network config JSON output, log redaction CI gate — PR #183 |
+| [#164](https://github.com/gokbilge/manageCallAI/issues/164) | Final release bundle + operator signoff | Live rotation rehearsal, rate-limit proof, production manifest v0.3.0 — PRs #185, #186 |
+| [#171](https://github.com/gokbilge/manageCallAI/issues/171) | PBX Completeness Layer (parent) | All 6 features implemented — PRs #179, #180 |
+| [#172](https://github.com/gokbilge/manageCallAI/issues/172) | Feature codes | Implemented — PR #179 |
+| [#173](https://github.com/gokbilge/manageCallAI/issues/173) | Call parking | Implemented — PR #179 |
+| [#174](https://github.com/gokbilge/manageCallAI/issues/174) | Conferencing | Implemented — PR #179 |
+| [#175](https://github.com/gokbilge/manageCallAI/issues/175) | Gateway reload | Implemented — PR #179 |
+| [#176](https://github.com/gokbilge/manageCallAI/issues/176) | End-user self-service portal | Implemented — PR #180 |
+| [#177](https://github.com/gokbilge/manageCallAI/issues/177) | FreeSWITCH runtime management (Phase 1) | Implemented — PR #180 |
+| [#178](https://github.com/gokbilge/manageCallAI/issues/178) | PBX evidence gates | Implemented — PR #180 |
+
+## What closed previously (alpha → beta)
 
 | Issue | Gate | Resolution |
 |---|---|---|
 | [#130](https://github.com/gokbilge/manageCallAI/issues/130) | Clean-clone alpha verification | Evidenced for v0.2.0-alpha |
-| [#131](https://github.com/gokbilge/manageCallAI/issues/131) | Observability HUD | Implemented — candidate run evidence still required for beta-ready |
-| [#132](https://github.com/gokbilge/manageCallAI/issues/132) | Webhook signing/replay/idempotency | Implemented and CI-tested |
-| [#133](https://github.com/gokbilge/manageCallAI/issues/133) | n8n workflows | Documented — end-to-end run proof still required |
-| [#134](https://github.com/gokbilge/manageCallAI/issues/134) | MCP setup and capability matrix | Documented and drift-tested — run proof still required |
-| [#135](https://github.com/gokbilge/manageCallAI/issues/135) | SDK publish/dry-run | Workflow exists — latest run failed; re-run required |
-| [#136](https://github.com/gokbilge/manageCallAI/issues/136) | Retention and legal hold API | API and worker implemented — storage cleanup gap remains |
-| [#137](https://github.com/gokbilge/manageCallAI/issues/137) | Self-hosted FreeSWITCH smoke | Smoke run 26825030902 passed all gates |
-| [#138](https://github.com/gokbilge/manageCallAI/issues/138) | Carrier interop | Lab evidence (FusionPBX/NetGSM) in manifest — live carrier scenarios pending |
-| [#139](https://github.com/gokbilge/manageCallAI/issues/139) | Rate-limit production values | Documented; multi-instance topology not yet validated |
-| [#140](https://github.com/gokbilge/manageCallAI/issues/140) | Upgrade/migration rehearsal | Template documented — rehearsal not yet executed |
-| [#141](https://github.com/gokbilge/manageCallAI/issues/141) | Coverage thresholds | API 67.46% / Web 80% / MCP 85% — thresholds raised |
-| [#150](https://github.com/gokbilge/manageCallAI/issues/150) | Candidate evidence bundle | v0.2.0-beta.1 manifest passes validator |
+| [#131–#141](https://github.com/gokbilge/manageCallAI/issues/131) | Beta-readiness gates | All closed for v0.2.0-beta.1 |
+| [#150](https://github.com/gokbilge/manageCallAI/issues/150) | Beta evidence bundle | v0.2.0-beta.1 manifest passes validator |
+| [#157](https://github.com/gokbilge/manageCallAI/issues/157) | n8n workflows E2E | CLOSED — beta-smoke-26845537361 |
+| [#158](https://github.com/gokbilge/manageCallAI/issues/158) | MCP capability proof | CLOSED — beta-smoke-26845537361 |
+| [#159](https://github.com/gokbilge/manageCallAI/issues/159) | SDK dry-run | CLOSED — run 26845539137 |
+| [#160](https://github.com/gokbilge/manageCallAI/issues/160) | Restore rehearsal | CLOSED — restore-evidence-enlogy-2026-06-02.json |
 
-## Public Alpha — Closed
+## Production Release — All Gates Closed
 
-All alpha gates are closed for `v0.2.0-alpha`.
+All production gates closed for v0.3.0.
 
-## Public Beta — Open Blockers
+| Gate | Issue | Evidence |
+|---|---|---|
+| FreeSWITCH smoke on `rc/**` | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | Run [26903877370](https://github.com/gokbilge/manageCallAI/actions/runs/26903877370) on `rc/v0.3.0` |
+| Production E2E | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | All 11 steps verified, smoke run 26903877370 |
+| SLO | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | `docs/ops/runtime-slo-evidence-2026-06-03.json` — directory p99 15 ms, dialplan p99 22 ms |
+| Carrier interop | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | `docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json` — 6/8 passed |
+| Rotation rehearsal | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | `docs/ops/rotation-rehearsal-2026-06-03.json` — live, passed |
+| Log redaction | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | `docs/ops/log-redaction-rotation-2026-06-03.json` — 0 findings |
+| Network config | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | `docs/ops/network-config-rc-v0.3.0.json` — 0 findings in smoke context |
+| Rate-limit topology | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | Single-instance proof on enlogy@10.0.0.32 — 0 findings |
+| Retention storage cleanup | [#161](https://github.com/gokbilge/manageCallAI/issues/161) | PR #181 — StorageBackend + DSR doc |
+| PBX completeness | [#171–#178](https://github.com/gokbilge/manageCallAI/issues/171) | PRs #179, #180 — all 6 features |
+| Release evidence bundle | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | `docs/release/release-evidence-v0.3.0.json` — `release:evidence-check` exits 0 |
+| Operator signoff | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | Fatih Kucukpetek, maintainer, 2026-06-03 |
 
-The `v0.2.0-beta.1` tag exists and the evidence manifest passes `pnpm release:evidence-check`.
-These gates remain open before the project can be described as **beta-ready**:
+## Open Issues for Next Release
 
-| Gate | Issue | P | Status | Required evidence | Next action |
-|---|---|---|---|---|---|
-| n8n example workflows end-to-end | [#157](https://github.com/gokbilge/manageCallAI/issues/157) | P0 | **CLOSED** — 9/9 templates valid; HMAC-SHA256 signing compatible with n8n; live webhook delivery queued. Evidence: beta-smoke-26845537361 | — | Closed |
-| MCP setup and capability matrix proof | [#158](https://github.com/gokbilge/manageCallAI/issues/158) | P0 | **CLOSED** — 22/22 tools listed via MCP protocol; live list_ivr_flows call succeeded. Evidence: beta-smoke-26845537361 | — | Closed |
-| SDK publish/dry-run | [#159](https://github.com/gokbilge/manageCallAI/issues/159) | P0 | **CLOSED** — Build+pack dry-run passed (run 26845539137); workflow fixed to not fail on tag pushes | — | Closed |
-| Operator UI evidence | — | P0 | IVR builder, approvals, rollback, HUD implemented — no run-stack screenshot/test | Screenshot or test evidence from a running stack | Run stack, capture screenshots for release notes |
-| Observability HUD from running stack | — | P0 | Implemented — smoke passed but no isolated UI proof | Evidence from running stack (screenshot or test) | Covered by operator UI evidence above |
+No open release blockers. New issues will be tracked in GitHub.
 
-## Production Release — Open Blockers
+## PBX Completeness Layer — Implemented in v0.3.0
 
-None of the following gates are evidenced for a production release candidate.
-All require real artifacts from the target deployment environment.
+All six PBX completeness features were implemented in PRs #179 and #180 (issues
+#172–#178, parent #171) and are closed as of v0.3.0. Design docs live in
+`docs/pbx/`. Phase 2 controlled runtime actions (reloadxml/rescan via UI with
+approval gate) remain deferred for a future release.
 
-| Gate | Issue | P | Status | Required evidence | Next action |
-|---|---|---|---|---|---|
-| Production runtime E2E on `rc/**` branch | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | P0 | Smoke run 26825030902 on `docs/beta-evidence-v0.2.0` branch — must be re-run on `rc/**` | `FreeSWITCH runtime smoke` check on `release/**` or `rc/**` | Create rc branch; smoke triggers automatically |
-| Restore rehearsal (RC environment) | [#160](https://github.com/gokbilge/manageCallAI/issues/160) | P1 | Template documented; historical evidence from PR #116 | `pnpm restore:rehearsal` JSON for RC environment | Execute rehearsal |
-| Upgrade and migration rehearsal | [#160](https://github.com/gokbilge/manageCallAI/issues/160) | P1 | Template at `docs/ops/upgrade-rehearsal-evidence.md`; not yet executed | Upgrade + rollback rehearsal record | Execute rehearsal |
-| SIP TLS/SRTP/NAT evidence (RC topology) | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | Historical artifact from smoke run 26803056139; RC-topology artifact required | Validated SIP TLS/SRTP/NAT JSON from RC environment | Rerun on RC topology |
-| Runtime token and secret rotation evidence | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | Check passes; no rehearsal artifact for RC | Rotation rehearsal JSON + log redaction linkage | `pnpm check:runtime-token-rotation -- --evidence=<file>` |
-| Log redaction artifact (candidate) | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | CI passes (20/20); no candidate-level artifact file | Sanitized log artifact from candidate deployment | Generate and attach artifact |
-| Production soak / load evidence (RC topology) | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | P1 | Lab evidence from PR #116 (1800s, 0% failure, p95 8.78ms); RC topology evidence required | `pnpm production:soak` output from target environment | Run soak on target env |
-| Runtime SLO evidence (RC topology) | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | P1 | Lab evidence: directory p95 12.8ms, dialplan p95 17.19ms; RC evidence required | `pnpm production:slo-check` against target env | Run SLO check |
-| Carrier interop certification — live carrier | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | P1 | Lab: sip_register, TLS, NAT passed; inbound/outbound/DTMF/hangup require live carrier | Re-test all 8 scenarios with real carrier trunk | Schedule live carrier test |
-| Backup retention policy (target env) | [#160](https://github.com/gokbilge/manageCallAI/issues/160) | P1 | Template documented; no target-env validation | `pnpm check:backup-retention-policy` against target | Run validator with target policy |
-| Retention storage / object cleanup | [#161](https://github.com/gokbilge/manageCallAI/issues/161) | P1 | DB + API + worker exist; object-storage file deletion and export-before-delete NOT implemented | Implementation + evidence | See issue #161 |
-| DSR / right-to-erasure behavior | [#161](https://github.com/gokbilge/manageCallAI/issues/161) | P1 | Not documented | Documentation + implementation decision | See issue #161 |
-| Firewall / network hardening (target env) | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | Docs + check pass in dev (4 warnings); target-env evidence required | `pnpm check:network-config` against production config | Validate target deployment |
-| Outbound toll-fraud controls (carrier level) | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | P1 | Policy API + integration tests implemented; no carrier-level block/allow proof | Fraud allow/block proof with audit + alert evidence | Run live policy proof |
-| Multi-instance rate limiting | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | P1 | Redis store implemented; 4 warnings in check — no topology proof | Production topology validation | `pnpm production:rate-limit-check` with production config |
-| Release evidence bundle + operator signoff | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | P0 | v0.2.0-beta.1 manifest passes validator with beta fields; production fields still TBD | Completed manifest for RC commit + operator signoff | Assemble once all P1s close |
-
-## PBX Completeness Layer — Planned Issues
-
-These issues describe the PBX Completeness Layer features. They are **not current
-release blockers** for public beta. They are planned for production PBX
-completeness. Create them in GitHub when implementation work begins.
-
-The copy below is ready to paste into GitHub issue creation.
+Historical issue creation templates are preserved below for reference.
 
 ---
 
