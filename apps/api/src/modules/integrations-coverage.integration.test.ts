@@ -7,10 +7,12 @@ import type { Pool } from 'pg';
 describe('Integration surface coverage', () => {
   let app: FastifyInstance;
   let db: Pool;
+  let runtimeToken: string;
 
   beforeAll(async () => {
     process.env.RUNTIME_API_TOKEN ??= 'test-runtime-token';
     process.env.JWT_SECRET ??= 'test-jwt-secret';
+    runtimeToken = process.env.RUNTIME_API_TOKEN;
     process.env.SIP_SECRET_MASTER_KEY ??=
       '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
     process.env.SIP_SECRET_KEY_ID ??= 'test-v1';
@@ -161,7 +163,7 @@ describe('Integration surface coverage', () => {
     const inbound = await app.inject({
       method: 'POST',
       url: `/api/v1/channel/accounts/${accountId}/webhook`,
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: {
         tenant_id: tenantId,
         message_type: 'text',
@@ -208,7 +210,7 @@ describe('Integration surface coverage', () => {
     const claim = await app.inject({
       method: 'POST',
       url: '/api/v1/channel/messages/outbound/internal/claim',
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: { tenant_id: tenantId, channel_account_id: accountId, processor_id: 'worker-1' },
     });
     expect(claim.statusCode).toBe(200);
@@ -217,7 +219,7 @@ describe('Integration surface coverage', () => {
     const complete = await app.inject({
       method: 'POST',
       url: `/api/v1/channel/messages/outbound/${requestId}/internal/result`,
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: {
         status: 'sent',
         external_id: 'provider-msg-1',
@@ -229,7 +231,7 @@ describe('Integration surface coverage', () => {
     const noClaim = await app.inject({
       method: 'POST',
       url: '/api/v1/channel/messages/outbound/internal/claim',
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: { tenant_id: tenantId, channel_account_id: accountId, processor_id: 'worker-1' },
     });
     expect(noClaim.statusCode).toBe(200);
@@ -471,7 +473,7 @@ describe('Integration surface coverage', () => {
     const ingest = await app.inject({
       method: 'POST',
       url: '/api/v1/recordings/internal/ingest',
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: {
         tenant_id: tenantId,
         call_id: 'rec-call-1',
@@ -517,7 +519,7 @@ describe('Integration surface coverage', () => {
     const claim = await app.inject({
       method: 'POST',
       url: `/api/v1/recording-analysis/internal/${requestId}/claim`,
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: { processor_id: 'analysis-worker-1' },
     });
     expect(claim.statusCode).toBe(200);
@@ -525,7 +527,7 @@ describe('Integration surface coverage', () => {
     const result = await app.inject({
       method: 'POST',
       url: `/api/v1/recording-analysis/internal/${requestId}/result`,
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: {
         status: 'completed',
         language: 'en',
@@ -645,7 +647,7 @@ describe('Integration surface coverage', () => {
     const resolve = await app.inject({
       method: 'POST',
       url: '/api/v1/outbound-routes/resolve',
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: { tenant_id: tenantId, dial_number: '+15551234567' },
     });
     expect(resolve.statusCode).toBe(200);
@@ -676,7 +678,7 @@ describe('Integration surface coverage', () => {
     const claimPrompt = await app.inject({
       method: 'POST',
       url: `/api/v1/prompt-generation/internal/${promptRequestId}/claim`,
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: { processor_id: 'prompt-worker-1' },
     });
     expect(claimPrompt.statusCode).toBe(200);
@@ -684,7 +686,7 @@ describe('Integration surface coverage', () => {
     const completePrompt = await app.inject({
       method: 'POST',
       url: `/api/v1/prompt-generation/internal/${promptRequestId}/result`,
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: {
         status: 'completed',
         generated_prompt_asset_id: promptId,
@@ -697,7 +699,7 @@ describe('Integration surface coverage', () => {
     const ivrTurn = await app.inject({
       method: 'POST',
       url: '/api/v1/runtime/ivr-ai/turns',
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: {
         tenant_id: tenantId,
         call_id: 'ai-call-1',
@@ -714,7 +716,7 @@ describe('Integration surface coverage', () => {
     const claimTurn = await app.inject({
       method: 'POST',
       url: `/api/v1/ivr-ai/internal/${ivrTurnId}/claim`,
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: { processor_id: 'ivr-worker-1' },
     });
     expect(claimTurn.statusCode).toBe(200);
@@ -722,7 +724,7 @@ describe('Integration surface coverage', () => {
     const completeTurn = await app.inject({
       method: 'POST',
       url: `/api/v1/ivr-ai/internal/${ivrTurnId}/result`,
-      headers: { authorization: 'Bearer test-runtime-token' },
+      headers: { authorization: `Bearer ${runtimeToken}` },
       payload: {
         status: 'completed',
         answer_text: 'Routing to sales',
