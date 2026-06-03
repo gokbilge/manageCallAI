@@ -246,6 +246,68 @@ func TestForwardEventContextCancellationReturnsError(t *testing.T) {
 	}
 }
 
+func TestForwardEvent_ParkRouted(t *testing.T) {
+	var gotPath string
+	var gotBody []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotBody, _ = io.ReadAll(r.Body)
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	parkEvent := events.NormalizedEvent{
+		TenantID:  "tenant-1",
+		CallID:    "call-park",
+		EventType: "channel_park",
+		Source:    "freeswitch-esl",
+		Payload:   map[string]interface{}{"variable_valet_extension": "801"},
+	}
+
+	err := newTestForwarder(srv.URL, "tok").ForwardEvent(context.Background(), parkEvent)
+	if err != nil {
+		t.Fatalf("expected no error: %v", err)
+	}
+	if gotPath != "/api/v1/runtime/parking/park" {
+		t.Errorf("path: got %q, want /api/v1/runtime/parking/park", gotPath)
+	}
+	var body map[string]interface{}
+	if err := json.Unmarshal(gotBody, &body); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if body["tenant_id"] != "tenant-1" {
+		t.Errorf("tenant_id: got %v, want tenant-1", body["tenant_id"])
+	}
+	if body["call_id"] != "call-park" {
+		t.Errorf("call_id: got %v, want call-park", body["call_id"])
+	}
+}
+
+func TestForwardEvent_UnparkRouted(t *testing.T) {
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	unparkEvent := events.NormalizedEvent{
+		TenantID:  "tenant-1",
+		CallID:    "call-unpark",
+		EventType: "channel_unpark",
+		Source:    "freeswitch-esl",
+		Payload:   map[string]interface{}{"variable_valet_extension": "801"},
+	}
+
+	err := newTestForwarder(srv.URL, "tok").ForwardEvent(context.Background(), unparkEvent)
+	if err != nil {
+		t.Fatalf("expected no error: %v", err)
+	}
+	if gotPath != "/api/v1/runtime/parking/retrieve" {
+		t.Errorf("path: got %q, want /api/v1/runtime/parking/retrieve", gotPath)
+	}
+}
+
 func TestForwardEventRuntimeTokenNotInErrorMessage(t *testing.T) {
 	secret := "super-secret-runtime-token"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

@@ -9,6 +9,9 @@ import (
 type Config struct {
 	AppEnv       string
 	TenantID     string
+	// NodeID is the UUID of this freeswitch_nodes registry entry.
+	// Required for the apply dispatcher to poll and claim apply requests.
+	NodeID       string
 	RuntimeToken string
 	ESLHost      string
 	ESLPort      int
@@ -22,6 +25,7 @@ func Load() Config {
 	cfg := Config{
 		AppEnv:       getEnv("APP_ENV", "development"),
 		TenantID:     getEnv("MANAGECALLAI_TENANT_ID", ""),
+		NodeID:       getEnv("MANAGECALLAI_NODE_ID", ""),
 		RuntimeToken: getEnv("RUNTIME_API_TOKEN", ""),
 		ESLHost:      getEnv("FREESWITCH_ESL_HOST", "127.0.0.1"),
 		ESLPort:      getEnvInt("FREESWITCH_ESL_PORT", 8021),

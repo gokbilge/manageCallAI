@@ -35,8 +35,66 @@ func NewAPIForwarder(cfg config.Config, logger *slog.Logger) *APIForwarder {
 	}
 }
 
+// endpointFor returns the API endpoint for the given event type.
+// Parking events route to the runtime parking callback; all others go to call-events.
+func (f *APIForwarder) endpointFor(eventType string) string {
+	switch eventType {
+	case "channel_park":
+		return fmt.Sprintf("%s/api/v1/runtime/parking/park", f.baseURL)
+	case "channel_unpark":
+		return fmt.Sprintf("%s/api/v1/runtime/parking/retrieve", f.baseURL)
+	default:
+		return fmt.Sprintf("%s/api/v1/call-events/internal/ingest", f.baseURL)
+	}
+}
+
+// parkPayload builds the parking endpoint request body from a CHANNEL_PARK event.
+func parkPayload(event events.NormalizedEvent) map[string]interface{} {
+	payload := event.Payload
+	slot := 0
+	if v, ok := payload["variable_valet_extension"].(string); ok {
+		_, _ = fmt.Sscan(v, &slot)
+	}
+	parkedBy := ""
+	if v, ok := payload["Caller-Caller-ID-Number"].(string); ok {
+		parkedBy = v
+	}
+	result := map[string]interface{}{
+		"tenant_id": event.TenantID,
+		"call_id":   event.CallID,
+		"slot":      slot,
+	}
+	if parkedBy != "" {
+		result["parked_by"] = parkedBy
+	}
+	return result
+}
+
+// retrievePayload builds the parking retrieve request body from a CHANNEL_UNPARK event.
+func retrievePayload(event events.NormalizedEvent) map[string]interface{} {
+	payload := event.Payload
+	slot := 0
+	if v, ok := payload["variable_valet_extension"].(string); ok {
+		_, _ = fmt.Sscan(v, &slot)
+	}
+	return map[string]interface{}{
+		"tenant_id": event.TenantID,
+		"slot":      slot,
+	}
+}
+
 func (f *APIForwarder) ForwardEvent(ctx context.Context, event events.NormalizedEvent) error {
-	body, err := json.Marshal(event)
+	var bodyBytes []byte
+	var err error
+
+	switch event.EventType {
+	case "channel_park":
+		bodyBytes, err = json.Marshal(parkPayload(event))
+	case "channel_unpark":
+		bodyBytes, err = json.Marshal(retrievePayload(event))
+	default:
+		bodyBytes, err = json.Marshal(event)
+	}
 	if err != nil {
 		return err
 	}
@@ -44,8 +102,8 @@ func (f *APIForwarder) ForwardEvent(ctx context.Context, event events.Normalized
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
-		fmt.Sprintf("%s/api/v1/call-events/internal/ingest", f.baseURL),
-		bytes.NewReader(body),
+		f.endpointFor(event.EventType),
+		bytes.NewReader(bodyBytes),
 	)
 	if err != nil {
 		return err

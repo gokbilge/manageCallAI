@@ -25,6 +25,15 @@ func NewCommandClient(cfg config.Config, logger *slog.Logger) *CommandClient {
 	return &CommandClient{cfg: cfg, logger: logger}
 }
 
+// SendAPICommand sends a single-shot ESL "api <cmd>" command and returns
+// the raw reply text. Only allowlisted callers (ApplyDispatcher) use this.
+func (c *CommandClient) SendAPICommand(ctx context.Context, cmd string) (string, error) {
+	if cmd == "" {
+		return "", fmt.Errorf("SendAPICommand: command must not be empty")
+	}
+	return c.sendCommand(ctx, "api "+cmd)
+}
+
 // Originate dispatches an outbound call via FreeSWITCH bgapi originate.
 // It bridges the external destination (via the named SIP trunk gateway) to the
 // internal extension identified by extensionID.

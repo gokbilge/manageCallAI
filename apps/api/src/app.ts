@@ -25,6 +25,10 @@ import { promptAssetController } from './modules/prompts/prompt-asset.controller
 import { ivrRuntimeController } from './modules/runtime/ivr-runtime.controller.js';
 import { outboundCallController } from './modules/runtime/outbound-call.controller.js';
 import { sipTrunkController } from './modules/sip-trunks/sip-trunk.controller.js';
+import { runtimeApplyController } from './modules/sip-trunks/runtime-apply.controller.js';
+import { featureCodeController } from './modules/feature-codes/feature-code.controller.js';
+import { parkingLotController, parkingRuntimeController } from './modules/parking/parking-lot.controller.js';
+import { conferenceRoomController, conferenceRuntimeController } from './modules/conference-rooms/conference-room.controller.js';
 import { scheduleController } from './modules/schedules/schedule.controller.js';
 import { outboundRouteController } from './modules/outbound-routes/outbound-route.controller.js';
 import { voicemailBoxController } from './modules/voicemail-boxes/voicemail-box.controller.js';
@@ -55,6 +59,9 @@ import { registerRateLimitHook } from './security/rate-limit.js';
 function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(extensionController, { prefix: '/api/v1/extensions' });
   app.register(sipTrunkController, { prefix: '/api/v1/sip-trunks' });
+  app.register(featureCodeController, { prefix: '/api/v1/feature-codes' });
+  app.register(parkingLotController, { prefix: '/api/v1/parking-lots' });
+  app.register(conferenceRoomController, { prefix: '/api/v1/conference-rooms' });
   app.register(phoneNumberController, { prefix: '/api/v1/phone-numbers' });
   app.register(promptAssetController, { prefix: '/api/v1/prompts' });
   app.register(ivrFlowController, { prefix: '/api/v1/ivr-flows' });
@@ -83,6 +90,11 @@ function registerRuntimeModules(app: FastifyInstance): void {
   app.register(promptGenerationController, { prefix: '/api/v1/prompt-generation' });
   app.register(ivrAiController, { prefix: '/api/v1' });
   app.register(freeswitchController, { prefix: '/api/v1/freeswitch' });
+  // Gateway reload / runtime apply: tenant endpoints + Go agent runtime callbacks.
+  app.register(runtimeApplyController, { prefix: '/api/v1' });
+  // Parking and conference runtime callbacks (Go agent HMAC).
+  app.register(parkingRuntimeController, { prefix: '/api/v1/runtime' });
+  app.register(conferenceRuntimeController, { prefix: '/api/v1/runtime' });
 }
 
 /**

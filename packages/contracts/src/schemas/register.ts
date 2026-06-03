@@ -29,6 +29,8 @@ import * as meetingSessions from './meeting-sessions.js';
 import * as providerWork from './provider-work.js';
 import * as platform from './platform.js';
 import * as responses from './responses.js';
+import * as featureCodes from './feature-codes.js';
+import * as runtimeApply from './runtime-apply.js';
 
 // common
 registry.register('ErrorResponse', common.ErrorResponseSchema);
@@ -280,3 +282,11 @@ registry.register('LiveSnapshot', observability.LiveSnapshotSchema);
 registry.register('LiveSnapshotResponse', observability.LiveSnapshotResponseSchema);
 registry.register('StreamEvent', observability.StreamEventSchema);
 registry.register('PlatformHealthSnapshot', observability.PlatformHealthSnapshotSchema);
+
+// feature-codes
+registry.register('FeatureCode', featureCodes.FeatureCodeSchema);
+registry.register('CreateFeatureCodeBody', featureCodes.CreateFeatureCodeBodySchema);
+registry.register('UpdateFeatureCodeBody', featureCodes.UpdateFeatureCodeBodySchema);
+
+// runtime-apply
+registry.register('RuntimeApplyRequest', runtimeApply.RuntimeApplyRequestSchema);

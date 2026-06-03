@@ -4,11 +4,15 @@ import { CreateSipTrunkBodySchema, UpdateSipTrunkBodySchema, UuidParamsSchema } 
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { authenticate } from '../auth/authenticate.js';
+import { fireAuditEvent } from '../audit/fire-audit.js';
 import { SipTrunkRepository } from './sip-trunk.repository.js';
 import { SipTrunkNotFoundError, SipTrunkService } from './sip-trunk.service.js';
+import { RuntimeApplyRepository } from './runtime-apply.repository.js';
+import { RuntimeApplyService } from './runtime-apply.service.js';
 import { sendNotFound } from '../../errors/index.js';
 
-const service = new SipTrunkService(new SipTrunkRepository(db));
+const applyService = new RuntimeApplyService(new RuntimeApplyRepository(db));
+const service = new SipTrunkService(new SipTrunkRepository(db), applyService);
 
 function replyNotFound(err: unknown, reply: FastifyReply): void {
   if (err instanceof SipTrunkNotFoundError) {
@@ -27,24 +31,29 @@ export const sipTrunkController: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     '/',
-    {
-      schema: { body: CreateSipTrunkBodySchema },
-    },
+    { schema: { body: CreateSipTrunkBodySchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
-      const trunk = await service.create({
+      const { trunk, applyRequests } = await service.create({
         ...req.body,
         tenant_id: user.tenant_id,
+        actorId: user.sub,
       });
-      return reply.code(201).send({ data: trunk });
+      fireAuditEvent({
+        tenant_id: user.tenant_id,
+        actor_id: user.sub,
+        actor_role: user.role,
+        action: 'sip_trunk.created',
+        resource_type: 'sip_trunk',
+        resource_id: trunk.id,
+      });
+      return reply.code(201).send({ data: trunk, runtime_apply: applyRequests });
     },
   );
 
   app.get(
     '/:id',
-    {
-      schema: { params: UuidParamsSchema },
-    },
+    { schema: { params: UuidParamsSchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -57,16 +66,23 @@ export const sipTrunkController: FastifyPluginAsyncZod = async (app) => {
 
   app.patch(
     '/:id',
-    {
-      schema: {
-        params: UuidParamsSchema,
-        body: UpdateSipTrunkBodySchema,
-      },
-    },
+    { schema: { params: UuidParamsSchema, body: UpdateSipTrunkBodySchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
-        return { data: await service.update(req.params.id, user.tenant_id, req.body) };
+        const { trunk, applyRequests } = await service.update(req.params.id, user.tenant_id, {
+          ...req.body,
+          actorId: user.sub,
+        });
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          action: 'sip_trunk.updated',
+          resource_type: 'sip_trunk',
+          resource_id: trunk.id,
+        });
+        return { data: trunk, runtime_apply: applyRequests };
       } catch (err) {
         return replyNotFound(err, reply);
       }
@@ -75,13 +91,20 @@ export const sipTrunkController: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     '/:id/deactivate',
-    {
-      schema: { params: UuidParamsSchema },
-    },
+    { schema: { params: UuidParamsSchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
-        return { data: await service.deactivate(req.params.id, user.tenant_id) };
+        const { trunk, applyRequests } = await service.deactivate(req.params.id, user.tenant_id, user.sub);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          action: 'sip_trunk.deactivated',
+          resource_type: 'sip_trunk',
+          resource_id: trunk.id,
+        });
+        return { data: trunk, runtime_apply: applyRequests };
       } catch (err) {
         return replyNotFound(err, reply);
       }

@@ -209,7 +209,7 @@ func (c *Client) setLastEventAt(t time.Time) {
 
 func subscriptionCommands() []string {
 	return []string{
-		"event plain CHANNEL_CREATE CHANNEL_ANSWER CHANNEL_HANGUP CUSTOM RECORD_START RECORD_STOP",
+		"event plain CHANNEL_CREATE CHANNEL_ANSWER CHANNEL_HANGUP CHANNEL_PARK CHANNEL_UNPARK CUSTOM RECORD_START RECORD_STOP",
 	}
 }
 

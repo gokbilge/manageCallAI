@@ -5,6 +5,9 @@ import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { ExtensionRepository } from '../extensions/extension.repository.js';
 import { RouteLookupRepository } from './route-lookup.repository.js';
 import { GatewayRepository } from './gateway.repository.js';
+import { FeatureCodeRepository } from '../feature-codes/feature-code.repository.js';
+import { ConferenceRoomRepository } from '../conference-rooms/conference-room.repository.js';
+import { ConferenceService } from '../conference-rooms/conference-room.service.js';
 import { sendInvalidArgument } from '../../errors/index.js';
 
 type DirectoryLookup = {
@@ -34,6 +37,8 @@ type DialplanLookup = {
 const extensionRepo = new ExtensionRepository(db);
 const routeLookupRepo = new RouteLookupRepository(db);
 const gatewayRepo = new GatewayRepository(db);
+const featureCodeRepo = new FeatureCodeRepository(db);
+const conferenceService = new ConferenceService(new ConferenceRoomRepository(db));
 
 export const freeswitchController: FastifyPluginAsyncZod = async (app) => {
   const handler = async (
@@ -156,6 +161,26 @@ export const freeswitchController: FastifyPluginAsyncZod = async (app) => {
 
     const route = await routeLookupRepo.findRouteForDialplan(tenantId, destinationNumber);
     if (!route || !route.target_id) {
+      // Check for active conference room before feature codes (fixed number takes precedence).
+      const conferenceRooms = await conferenceService.getActiveRoomsForDialplan(tenantId);
+      const matchingRoom = conferenceRooms.find(r => r.room_number === destinationNumber);
+      if (matchingRoom) {
+        return {
+          statusCode: 200,
+          body: buildConferenceDialplanResponse({
+            tenantId,
+            roomId: matchingRoom.id,
+            roomNumber: matchingRoom.room_number,
+            pin: matchingRoom.pin_plaintext,
+          }),
+        };
+      }
+
+      // Fall through to feature code check before returning not-found.
+      const fc = await featureCodeRepo.findByCode(destinationNumber, tenantId);
+      if (fc && fc.status === 'active') {
+        return { statusCode: 200, body: buildFeatureCodeDialplanResponse(tenantId, destinationNumber) };
+      }
       return { statusCode: 200, body: buildNotFoundDialplan() };
     }
 
@@ -278,18 +303,20 @@ export const freeswitchController: FastifyPluginAsyncZod = async (app) => {
     keyName?: string,
     keyValue?: string,
   ): Promise<{ body: string; statusCode: number }> => {
-    // FreeSWITCH requests sofia.conf when loading gateways.
-    // All other configuration requests return an empty section so FS falls
-    // back to its on-disk defaults (we do not manage all config via xml_curl).
-    if (keyName !== 'name' || keyValue !== 'sofia.conf') {
+    if (keyName !== 'name') {
       return { statusCode: 200, body: buildEmptyConfiguration() };
     }
 
-    const trunks = await gatewayRepo.findAllActiveTrunks();
-    return {
-      statusCode: 200,
-      body: buildGatewayConfiguration(trunks),
-    };
+    if (keyValue === 'sofia.conf') {
+      const trunks = await gatewayRepo.findAllActiveTrunks();
+      return { statusCode: 200, body: buildGatewayConfiguration(trunks) };
+    }
+
+    if (keyValue === 'conference.conf') {
+      return { statusCode: 200, body: buildConferenceConfiguration() };
+    }
+
+    return { statusCode: 200, body: buildEmptyConfiguration() };
   };
 
   app.get(
@@ -590,6 +617,73 @@ export function buildVoicemailDialplanResponse(input: {
           <action application="set" data="managecall_route_id=${xmlEscape(input.routeId)}" />
           <action application="set" data="managecall_tenant_id=${xmlEscape(input.tenantId)}" />${greetingAction}
           <action application="voicemail" data="default ${xmlEscape(input.domain)} ${xmlEscape(input.mailboxNumber)}" />
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>`;
+}
+
+export function buildConferenceDialplanResponse(input: {
+  tenantId: string;
+  roomId: string;
+  roomNumber: string;
+  pin: string | null;
+}): string {
+  const conferenceName = `room-${xmlEscape(input.roomId)}`;
+  const conferenceData = input.pin
+    ? `${conferenceName}@managecallai+pin:${xmlEscape(input.pin)}`
+    : `${conferenceName}@managecallai`;
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="dialplan">
+    <context name="default">
+      <extension name="managecall_conference_${xmlEscape(input.roomNumber)}" continue="false">
+        <condition field="destination_number" expression="^${regexEscape(input.roomNumber)}$">
+          <action application="set" data="managecall_tenant_id=${xmlEscape(input.tenantId)}" />
+          <action application="set" data="managecall_conference_room_id=${xmlEscape(input.roomId)}" />
+          <action application="answer" data="" />
+          <action application="conference" data="${conferenceData}" />
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>`;
+}
+
+export function buildConferenceConfiguration(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="configuration">
+    <configuration name="conference.conf" description="manageCallAI conference rooms">
+      <profiles>
+        <profile name="managecallai">
+          <param name="rate" value="16000"/>
+          <param name="interval" value="10"/>
+          <param name="energy-level" value="100"/>
+          <param name="moh-sound" value="silence"/>
+          <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
+          <param name="exit-sound" value="tone_stream://%(200,0,300,200,100)"/>
+          <param name="max-members" value="200"/>
+          <param name="comfort-noise" value="true"/>
+        </profile>
+      </profiles>
+    </configuration>
+  </section>
+</document>`;
+}
+
+export function buildFeatureCodeDialplanResponse(tenantId: string, code: string): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document type="freeswitch/xml">
+  <section name="dialplan">
+    <context name="default">
+      <extension name="managecall_feature_${xmlEscape(code)}" continue="false">
+        <condition field="destination_number" expression="^${regexEscape(code)}$">
+          <action application="set" data="managecall_tenant_id=${xmlEscape(tenantId)}" />
+          <action application="set" data="managecall_feature_code=${xmlEscape(code)}" />
+          <action application="luarun" data="feature_code_handler.lua" />
         </condition>
       </extension>
     </context>
