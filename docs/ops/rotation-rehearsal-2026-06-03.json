@@ -1,0 +1,60 @@
+{
+  "rotated_at": "2026-06-03T18:59:22.399Z",
+  "git_sha": "local",
+  "operator": "Fatih Kucukpetek",
+  "environment": "production-candidate",
+  "mode": "live",
+  "status": "passed",
+  "jwt_rotation": {
+    "new_secret_deployed": true,
+    "overlap_window_verified": true,
+    "new_jwt_accepted_after_cutover": true,
+    "old_jwt_rejected_after_cutover": true
+  },
+  "runtime_token_rotation": {
+    "secondary_token_configured": true,
+    "primary_token_accepted_during_window": true,
+    "secondary_token_accepted_during_window": true,
+    "secondary_promoted_to_primary": true,
+    "promoted_token_accepted": true,
+    "old_primary_rejected_after_revocation": true,
+    "query_body_fallback_disabled_in_production": true
+  },
+  "audit": {
+    "jwt_rotation_event_found": true,
+    "runtime_token_rotation_event_found": true,
+    "event_ids": [
+      "4aaf3498-1ab4-472e-935c-16a133e5da36",
+      "6a4942ce-feaa-4e43-a730-fbe008d9d6a6"
+    ]
+  },
+  "log_redaction": {
+    "check_passed": true,
+    "evidence_path": "docs/ops/log-redaction-rotation-2026-06-03.json"
+  },
+  "runtime_token_rotation_check_exit_code": 0,
+  "api_root": "http://localhost:3000",
+  "automated_checks": [
+    {
+      "level": "pass",
+      "name": "api_health",
+      "message": "API health OK (200)"
+    },
+    {
+      "level": "pass",
+      "name": "query_body_fallback",
+      "message": "query/body fallback is disabled"
+    },
+    {
+      "level": "pass",
+      "name": "primary_token_auth",
+      "message": "token accepted — API returned 200"
+    },
+    {
+      "level": "pass",
+      "name": "secondary_token_auth",
+      "message": "token accepted — API returned 200"
+    }
+  ],
+  "notes": ""
+}
