@@ -116,39 +116,30 @@ contract covering 99 OpenAPI operations.
 - **Schema contracts**: Zod schemas as single source of truth; OpenAPI spec generated from code
 - **Error standard**: gRPC-inspired RPC codes, global error handler, CI coverage gate
 
-### Scripted Or Implemented But Not Production Evidence
+### PBX Completeness Layer (v0.3.0)
 
-- Release and RC FreeSWITCH smoke workflow exists, but the latest verified
-  passing smoke run is not tied to the current release-candidate commit.
-- Production soak, SLO, carrier interop, restore, rotation, log-redaction, and
-  release-bundle validators exist; each production promotion still needs
-  current artifacts for the target release candidate.
-- Retention policy and legal-hold APIs exist; production still needs
-  object-storage cleanup/export-before-delete evidence and operator signoff.
-- SDK publish workflow exists; beta readiness needs a successful dry-run or
-  publish evidence tied to the intended release.
+The PBX Completeness Layer is **fully implemented** in v0.3.0 (PRs #179, #180).
 
-### PBX Completeness Layer (designed, not implemented)
+| Feature | Status |
+|---|---|
+| Feature codes — DTMF, DND, call forward, parking, conference join | ✅ Implemented |
+| Call parking — `mod_valet_parking`, slot management, timeout routing | ✅ Implemented |
+| Native conferencing — `mod_conference`, PIN enforcement, bridge path | ✅ Implemented |
+| Gateway reload on trunk change — safe ESL rescan, REGED confirmation | ✅ Implemented |
+| End-user self-service portal — DND, call forward, `/me/*` endpoints | ✅ Implemented |
+| FreeSWITCH runtime management — read-only status, module checklist | ✅ Phase 1 implemented |
 
-The PBX Completeness Layer extends the platform toward a more complete PBX
-control plane. These features are **designed and planned** but not yet implemented.
-None are production-ready.
+See [docs/pbx/PBX_COMPLETENESS_LAYER.md](docs/pbx/PBX_COMPLETENESS_LAYER.md) for design.
 
-| Feature | Status | Priority |
-|---|---|---|
-| Feature codes (voicemail, DND, call forward, parking, conference join) | Designed, not implemented | P1 |
-| Call parking (valet_park, slot management, timeout routing) | Designed, not implemented | P1 |
-| Native conferencing (`mod_conference` rooms, PIN, moderator) | Designed, not implemented | P1 |
-| Gateway reload on trunk change (safe ESL apply, REGED confirmation) | Designed, not implemented | P0 |
-| End-user self-service portal (DND, forward, voicemail, call history) | Designed, not implemented | P2 |
-| Safe FreeSWITCH runtime management (module status, allowlisted actions) | Designed, not implemented | P1/P2 |
+### What's next — v0.3.5
 
-See [docs/pbx/PBX_COMPLETENESS_LAYER.md](docs/pbx/PBX_COMPLETENESS_LAYER.md) for the design.
-
-### Planned / In Progress
-
-- SLICE-34: Fastify Zod type provider (controller validation migrated to contracts schemas)
-- SDK npm publish/versioning workflow
+First-time setup and deployment packaging (SLICE-60):
+- Setup wizard at `/setup` (web-based, locked after first run)
+- ENV-VAR headless bootstrap for Docker / Kubernetes
+- `docker-compose.prod.yml` with GHCR images
+- `install.sh` one-command VPS installer
+- Helm chart for Kubernetes
+- Docker Hub publishing
 
 **Run the full demo loop in one sitting:**
 

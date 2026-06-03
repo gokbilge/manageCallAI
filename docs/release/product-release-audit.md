@@ -1,5 +1,15 @@
 # Product Release Audit
 
+> **SUPERSEDED.** This audit was conducted on 2026-06-02 at commit `30c0523`
+> and found the project to be a "Public beta candidate." It is preserved as
+> historical record only.
+>
+> **Current release posture:** Production — v0.3.0 (2026-06-03, commit `1220e39`).
+> Evidence: `docs/release/release-evidence-v0.3.0.json`.
+> All production gates closed. `pnpm release:evidence-check` exits 0.
+
+---
+
 Audit date: 2026-06-02
 
 Audited repository: `gokbilge/manageCallAI`

@@ -1,9 +1,9 @@
 {
   "release_version": "v0.3.0",
-  "commit_sha": "a157b847639440865cb40573d8944fd34d3a62ff",
+  "commit_sha": "1220e399d4fed212bf1dc5b01fc589ce4d56c930",
   "generated_at": "2026-06-03T19:15:00Z",
   "stage": "production",
-  "notes": "Production release evidence for v0.3.0. All gates passed. Rotation rehearsal and rate-limit topology proof completed on enlogy@10.0.0.32 (2026-06-03). FreeSWITCH smoke run 26903877370 passed. Full PBX Completeness Layer, retention storage cleanup, and RC evidence gates implemented.",
+  "notes": "Production release evidence for v0.3.0 at tag commit 1220e39 (2026-06-03). Tag commit adds only evidence/doc artifacts over RC commit a157b84 (zero code delta). FreeSWITCH smoke run 26903877370 passed on a157b84 (the code commit); the two documentation-only commits between RC and release tag (6001ed0, 1220e39) do not change any application code, migrations, or configuration. Rotation rehearsal and rate-limit topology proof completed on enlogy@10.0.0.32 (2026-06-03). Full PBX Completeness Layer, retention storage cleanup, and RC evidence gates implemented.",
 
   "github_release": {
     "tag": "v0.3.0",
