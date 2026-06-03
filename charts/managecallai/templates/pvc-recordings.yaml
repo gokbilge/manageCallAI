@@ -1,0 +1,17 @@
+{{- if .Values.storage.recordings.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "managecallai.fullname" . }}-recordings
+  labels:
+    {{- include "managecallai.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.storage.recordings.size }}
+  {{- if .Values.storage.recordings.storageClass }}
+  storageClassName: {{ .Values.storage.recordings.storageClass | quote }}
+  {{- end }}
+{{- end }}

@@ -47,10 +47,17 @@ import { retentionController } from './modules/retention/retention.controller.js
 import { nodeRegistryController } from './modules/runtime/node-registry.controller.js';
 import { nodeStatusController, tenantGatewayStatusController } from './modules/runtime/node-status.controller.js';
 import { selfServiceMeController, selfServicePolicyController } from './modules/self-service/self-service.controller.js';
+import { setupController } from './modules/setup/setup.controller.js';
+import { db } from './db/client.js';
 import { registerErrorHandler } from './errors/index.js';
 import { redactSensitiveUrl, registerLoggingHooks } from './logging/logger.js';
 import { idempotencyPlugin } from './modules/idempotency/idempotency.plugin.js';
 import { registerRateLimitHook } from './security/rate-limit.js';
+import {
+  getHeadlessBootstrapVarsFromEnv,
+  isSetupComplete,
+  runHeadlessBootstrap,
+} from './modules/setup/setup.service.js';
 
 // ── Module group registration ─────────────────────────────────────────────────
 
@@ -202,4 +209,29 @@ export function buildApp() {
   registerPlatformModules(app);
 
   return app;
+}
+
+export async function runBootstrapIfNeeded(app: FastifyInstance): Promise<void> {
+  if (await isSetupComplete(db)) {
+    return;
+  }
+
+  const headlessVars = getHeadlessBootstrapVarsFromEnv();
+  if (headlessVars) {
+    if (!config.platformOperatorEmails.includes(headlessVars.adminEmail.toLowerCase())) {
+      throw new Error(
+        'SETUP_ADMIN_EMAIL must be included in PLATFORM_OPERATOR_EMAILS before headless bootstrap runs',
+      );
+    }
+    const result = await runHeadlessBootstrap(db, headlessVars);
+    if (result) {
+      app.log.info(
+        { adminEmail: result.adminEmail, tenantSlug: result.tenantSlug },
+        'manageCallAI setup complete',
+      );
+    }
+    return;
+  }
+
+  await app.register(setupController, { prefix: '/setup' });
 }

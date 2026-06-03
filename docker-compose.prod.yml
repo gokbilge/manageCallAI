@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-managecallai}
+      POSTGRES_USER: ${POSTGRES_USER:-managecallai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-managecallai} -d ${POSTGRES_DB:-managecallai}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    image: ghcr.io/gokbilge/managecallai-api:${MANAGECALLAI_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  worker:
+    image: ghcr.io/gokbilge/managecallai-worker:${MANAGECALLAI_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${WORKER_PORT:-3400}/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  freeswitch-agent:
+    image: ghcr.io/gokbilge/managecallai-freeswitch-agent:${MANAGECALLAI_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${HEALTH_PORT:-3500}/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  freeswitch:
+    image: ghcr.io/gokbilge/managecallai-freeswitch:${MANAGECALLAI_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env.production
+    environment:
+      FREESWITCH_EXT_SIP_IP: ${FREESWITCH_EXTERNAL_SIP_IP}
+      FREESWITCH_EXT_RTP_IP: ${FREESWITCH_EXTERNAL_RTP_IP}
+      MANAGECALLAI_DIALPLAN_URL: ${MANAGECALLAI_DIALPLAN_URL:-http://127.0.0.1:3000/api/v1/freeswitch/dialplan}
+      MANAGECALLAI_CONFIGURATION_URL: ${MANAGECALLAI_CONFIGURATION_URL:-http://127.0.0.1:3000/api/v1/freeswitch/configuration}
+      MANAGECALLAI_DIRECTORY_URL: ${MANAGECALLAI_DIRECTORY_URL:-http://127.0.0.1:3000/api/v1/freeswitch/directory}
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - recordings:/recordings
+
+volumes:
+  postgres_data:
+  recordings:

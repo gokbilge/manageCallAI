@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "managecallai.fullname" . }}-config
+  labels:
+    {{- include "managecallai.labels" . | nindent 4 }}
+data:
+  APP_ENV: {{ .Values.config.appEnv | quote }}
+  API_PORT: {{ .Values.config.apiPort | quote }}
+  WORKER_PORT: {{ .Values.config.workerPort | quote }}
+  HEALTH_PORT: {{ .Values.config.healthPort | quote }}
+  API_BASE_URL: {{ default (printf "http://%s-api:3000" (include "managecallai.fullname" .)) .Values.config.apiBaseUrl | quote }}
+  RECORDING_STORAGE_ROOT: {{ .Values.config.recordingStorageRoot | quote }}
+  PLATFORM_OPERATOR_EMAILS: {{ .Values.bootstrap.platformOperatorEmails | quote }}
+  SETUP_TENANT_NAME: {{ .Values.bootstrap.tenantName | quote }}
+  SETUP_TENANT_SLUG: {{ .Values.bootstrap.tenantSlug | quote }}
+  SETUP_ADMIN_EMAIL: {{ .Values.bootstrap.adminEmail | quote }}
+  ALLOW_REMOTE_SETUP: {{ ternary "true" "false" .Values.bootstrap.allowRemoteSetup | quote }}
+  FREESWITCH_ESL_HOST: {{ .Values.freeswitch.eslHost | quote }}
+  FREESWITCH_ESL_PORT: {{ .Values.freeswitch.eslPort | quote }}
+  FREESWITCH_EXTERNAL_SIP_IP: {{ .Values.freeswitch.externalSipIp | quote }}
+  FREESWITCH_EXTERNAL_RTP_IP: {{ .Values.freeswitch.externalRtpIp | quote }}
+  MANAGECALLAI_TENANT_ID: {{ .Values.agent.tenantId | quote }}
+  MANAGECALLAI_NODE_ID: {{ .Values.agent.nodeId | quote }}
+  RATE_LIMIT_WINDOW_MS: {{ .Values.config.rateLimitWindowMs | quote }}
+  RATE_LIMIT_AUTH_MAX: {{ .Values.config.rateLimitAuthMax | quote }}
+  RATE_LIMIT_RUNTIME_MAX: {{ .Values.config.rateLimitRuntimeMax | quote }}
+  RATE_LIMIT_WEBHOOK_MAX: {{ .Values.config.rateLimitWebhookMax | quote }}
+  RATE_LIMIT_OUTBOUND_MAX: {{ .Values.config.rateLimitOutboundMax | quote }}
+  RATE_LIMIT_API_MAX: {{ .Values.config.rateLimitApiMax | quote }}
+  RATE_LIMIT_SCRAPE_MAX: {{ .Values.config.rateLimitScrapeMax | quote }}
