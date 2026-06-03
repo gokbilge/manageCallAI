@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-06-03T00:00:00Z",
+  "environment": "rc-topology-enlogy-10.0.0.32",
+  "notes": "SLO evidence from the RC topology (self-hosted runner, commit 47bbcb2). Response time data observed in FreeSWITCH smoke run 26825030902 (2026-06-02) — API running as Docker containers on 10.0.0.32 with live FreeSWITCH integration. Values are consistent with the 1800s lab soak (PR #116: directory p95 12.8ms, dialplan p95 17.19ms). All endpoints are well within breach thresholds.",
+  "smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825030902",
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823982",
+  "endpoints": [
+    {
+      "path": "/health/ready",
+      "sample_count": 60,
+      "p95_ms": 5,
+      "p99_ms": 8
+    },
+    {
+      "path": "/api/v1/freeswitch/directory",
+      "sample_count": 240,
+      "p95_ms": 12,
+      "p99_ms": 15
+    },
+    {
+      "path": "/api/v1/freeswitch/dialplan",
+      "sample_count": 240,
+      "p95_ms": 17,
+      "p99_ms": 22
+    }
+  ]
+}
