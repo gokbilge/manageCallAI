@@ -14,6 +14,73 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ---
 
+## [0.4.0] - 2026-06-05
+
+Release classification: prerelease (RC in progress) — v0.4 competitive baseline.
+
+Production evidence: `docs/release/release-evidence-v0.4.0.json` *(pending)*
+
+### Added
+
+- **SIP trunks and gateway operations UI** (issue #202): tenant admin can inspect
+  apply requests, per-node gateway state (REGED/DOWN/TRYING/FAILED), and apply
+  history directly from the web UI; no API-only workflow required
+- **Feature-code admin surface** (issue #203): full list/create/validate/publish/
+  disable/delete web UI with emergency-number collision detection and draft→active
+  lifecycle
+- **Parking-lot admin surface** (issue #204): parking-lot CRUD, parked-call
+  sub-panel per lot (slot, caller, status, timeout, auto-refresh every 10 s),
+  runtime empty/error states
+- **Conference-room admin surface** (issue #205): conference room CRUD with PIN
+  posture, max-participant limit, recording toggle, and live participant panel
+  backed by Go agent callbacks
+- **Carrier and trunk test workflow** (issue #206): operator-facing connectivity
+  test page at `/tenant/integrations/trunk-test-workflow` with per-outcome failure
+  guidance (DOWN, FAILED, TRYING, no-data), live gateway state table, session
+  history, and carrier interop checklist; gated by `TENANT_SIP_TRUNKS_TEST`
+  capability
+- **CDR reporting and cockpit triage** (issue #207): stronger call history
+  reporting, cockpit visibility improvements, failed-call and runtime-error triage
+- **Emergency routing safeguards and E911 guidance** (issue #208):
+  - Centralised `GLOBAL_EMERGENCY_NUMBERS` shared module — single non-bypassable
+    source of truth imported by fraud service, outbound-call service, and
+    feature-code service
+  - `docs/ops/emergency-routing.md` — full guide covering product enforcement
+    boundaries, operator/carrier E911 responsibilities, US FCC compliance
+    (Kari's Law / RAY BAUM's Act), configuration guidance, and pre-go-live
+    smoke test procedures
+
+### Changed
+
+- `TENANT_SIP_TRUNKS_TEST` capability added to operator and admin role arrays
+- `conferenceRooms`, `parkingLots`, `trunkTestWorkflow` path constants added to
+  `paths.ts` for consistent client-side navigation
+- All v0.4.x release buckets marked shipped in planning docs (#201)
+- Competitive gap analysis updated: feature codes, parking, conference rooms,
+  gateway registration, apply history, carrier test wizard all updated from
+  `partial`/`missing` to `implemented`
+
+### Upgrade notes
+
+No database migrations required for v0.4.0 (all schema changes shipped in v0.3.x).
+
+```sh
+pnpm build   # rebuild after version bump
+```
+
+### Known limitations
+
+- No production evidence yet — RC smoke test in progress on `enlogy@10.0.0.32`
+
+### Release references
+
+- `docs/release/release-evidence-v0.4.0-rc.1.json` *(pending)*
+- `docs/release/release-evidence-v0.4.0.json` *(pending)*
+- `docs/ops/release-process.md`
+- `docs/planning/release-buckets-v0.4-v0.6.md`
+
+---
+
 ## [0.3.5] - 2026-06-04
 
 Release classification: production release — setup, bootstrap, and deployment packaging.
