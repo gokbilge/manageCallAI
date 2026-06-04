@@ -1,6 +1,6 @@
 {
   "release_version": "v0.3.5",
-  "commit_sha": "92add97a1bdf5e5e2e4d4f73f0d8a55f7a7c2e3b",
+  "commit_sha": "62ecb5b9776396782228062305207b0e5e89fb34",
   "generated_at": "2026-06-04T06:10:00Z",
   "stage": "production",
   "notes": "Production evidence for v0.3.5 — SLICE-60: Setup, Bootstrap, and Deployment Packaging. All RC gates carried forward from v0.3.5-rc.1 (541cac5). Two deployment blockers fixed (setup.html build copy, Docker Hub conditional login). Rotation rehearsal config check passed. GHCR package visibility is required to be set to public before docker-compose.prod.yml smoke can use pre-built images (manual step). Production promotion is conditional on completion of the GHCR visibility step and live rotation rehearsal.",
