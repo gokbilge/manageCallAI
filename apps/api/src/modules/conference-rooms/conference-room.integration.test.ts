@@ -44,6 +44,21 @@ describe('Conference Rooms API integration', () => {
     return res.json<{ token: string }>().token;
   }
 
+  function decodeJwt(token: string): { tenant_id: string } {
+    const [, payload] = token.split('.');
+    return JSON.parse(Buffer.from(payload!, 'base64url').toString('utf8')) as { tenant_id: string };
+  }
+
+  function scopedToken(baseToken: string, role: 'tenant_operator' | 'tenant_viewer'): string {
+    const { tenant_id } = decodeJwt(baseToken);
+    return app.jwt.sign({
+      sub: randomUUID(),
+      tenant_id,
+      email: `${role}-${randomUUID().slice(0, 8)}@example.com`,
+      role,
+    });
+  }
+
   it('GET /conference-rooms -> 401 without auth', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/conference-rooms' });
     expect(res.statusCode).toBe(401);
@@ -211,5 +226,54 @@ describe('Conference Rooms API integration', () => {
       payload: { tenant_id: tenantId, conference_room_id: roomId, call_id: callId },
     });
     expect(leave.statusCode).toBe(200);
+  });
+
+  it('tenant_viewer can list but cannot create conference rooms', async () => {
+    const adminToken = await register(randomUUID().slice(0, 8));
+    const viewerToken = scopedToken(adminToken, 'tenant_viewer');
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/v1/conference-rooms',
+      headers: { authorization: `Bearer ${viewerToken}` },
+    });
+    expect(list.statusCode).toBe(200);
+
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/v1/conference-rooms',
+      headers: { authorization: `Bearer ${viewerToken}` },
+      payload: { name: 'Viewer Room', room_number: '8400' },
+    });
+    expect(create.statusCode).toBe(403);
+  });
+
+  it('tenant_operator can create and update but cannot disable conference rooms', async () => {
+    const adminToken = await register(randomUUID().slice(0, 8));
+    const operatorToken = scopedToken(adminToken, 'tenant_operator');
+
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/v1/conference-rooms',
+      headers: { authorization: `Bearer ${operatorToken}` },
+      payload: { name: 'Ops Room', room_number: '8500', max_participants: 8 },
+    });
+    expect(create.statusCode).toBe(201);
+    const roomId = create.json<{ data: { id: string } }>().data.id;
+
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/conference-rooms/${roomId}`,
+      headers: { authorization: `Bearer ${operatorToken}` },
+      payload: { name: 'Ops Room Updated' },
+    });
+    expect(patch.statusCode).toBe(200);
+
+    const disable = await app.inject({
+      method: 'POST',
+      url: `/api/v1/conference-rooms/${roomId}/disable`,
+      headers: { authorization: `Bearer ${operatorToken}` },
+    });
+    expect(disable.statusCode).toBe(403);
   });
 });

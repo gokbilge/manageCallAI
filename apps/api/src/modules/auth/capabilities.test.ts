@@ -47,6 +47,10 @@ describe('hasCapability', () => {
     });
 
     it('grants feature code capabilities', () => {
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_CONFERENCE_ROOMS_VIEW)).toBe(true);
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_CONFERENCE_ROOMS_CREATE)).toBe(true);
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_CONFERENCE_ROOMS_UPDATE)).toBe(true);
+      expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_CONFERENCE_ROOMS_DEACTIVATE)).toBe(true);
       expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_FEATURE_CODES_VIEW)).toBe(true);
       expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_FEATURE_CODES_CREATE)).toBe(true);
       expect(hasCapability('tenant_admin', CAPABILITIES.TENANT_FEATURE_CODES_UPDATE)).toBe(true);
@@ -94,6 +98,9 @@ describe('hasCapability', () => {
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_EXTENSIONS_UPDATE)).toBe(true);
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_VALIDATE)).toBe(true);
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_CONFERENCE_ROOMS_VIEW)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_CONFERENCE_ROOMS_CREATE)).toBe(true);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_CONFERENCE_ROOMS_UPDATE)).toBe(true);
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_FEATURE_CODES_VIEW)).toBe(true);
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_FEATURE_CODES_CREATE)).toBe(true);
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_FEATURE_CODES_UPDATE)).toBe(true);
@@ -105,6 +112,7 @@ describe('hasCapability', () => {
     it('denies publish, rollback, approve-decide, and manage capabilities', () => {
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH)).toBe(false);
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_ROLLBACK)).toBe(false);
+      expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_CONFERENCE_ROOMS_DEACTIVATE)).toBe(false);
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_FEATURE_CODES_PUBLISH)).toBe(false);
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_FEATURE_CODES_DEACTIVATE)).toBe(false);
       expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_APPROVALS_DECIDE)).toBe(false);
@@ -124,6 +132,7 @@ describe('hasCapability', () => {
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_DASHBOARD_VIEW)).toBe(true);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(true);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_IVR_FLOWS_VIEW)).toBe(true);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_CONFERENCE_ROOMS_VIEW)).toBe(true);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_FEATURE_CODES_VIEW)).toBe(true);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_APPROVALS_VIEW)).toBe(true);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_CALLS_VIEW)).toBe(true);
@@ -135,6 +144,7 @@ describe('hasCapability', () => {
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_EXTENSIONS_DEACTIVATE)).toBe(false);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_IVR_FLOWS_CREATE)).toBe(false);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_IVR_FLOWS_PUBLISH)).toBe(false);
+      expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_CONFERENCE_ROOMS_CREATE)).toBe(false);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_FEATURE_CODES_CREATE)).toBe(false);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_FEATURE_CODES_VALIDATE)).toBe(false);
       expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_APPROVALS_DECIDE)).toBe(false);
