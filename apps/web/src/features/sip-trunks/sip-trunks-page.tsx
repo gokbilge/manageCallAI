@@ -246,9 +246,13 @@ function CreateTrunkForm({ onDone }: { onDone: () => void }) {
   });
 
   const onSubmit = form.handleSubmit(async (data) => {
-    await create.mutateAsync(data);
-    form.reset();
-    onDone();
+    try {
+      await create.mutateAsync(data);
+      form.reset();
+      onDone();
+    } catch {
+      // error is surfaced via create.isError / create.error
+    }
   });
 
   return (
