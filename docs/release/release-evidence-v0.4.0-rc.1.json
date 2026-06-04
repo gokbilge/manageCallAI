@@ -1,0 +1,73 @@
+{
+  "release_version": "v0.4.0-rc.1",
+  "commit_sha": "783b729655c7d62278fdaaa3611bf43c90f31361",
+  "generated_at": "2026-06-05T00:00:00Z",
+  "stage": "rc",
+  "notes": "RC evidence bundle for v0.4.0-rc.1. Delivers the full v0.4.x competitive baseline: SIP trunk/gateway ops UI, feature-code admin surface, parking-lot admin surface, conference-room admin surface, carrier/trunk test workflow, CDR/cockpit reporting baseline, and emergency routing safeguards + E911 guidance. FreeSWITCH smoke run 26981221899 passed on rc/v0.4.0 at 783b729 (enlogy@10.0.0.32). Helm lint passed (1 chart linted, 0 failed, 8 resource kinds). docker-compose.prod.yml smoke passed on locally-built v0.4.0 image: /health returned db:ok, /setup returned HTTP 200. Rotation rehearsal config check passed. No new database migrations in v0.4.0 (all schema changes shipped in v0.3.x).",
+
+  "github_release": {
+    "tag": "v0.4.0-rc.1",
+    "url": "https://github.com/gokbilge/manageCallAI/releases/tag/v0.4.0-rc.1",
+    "published_at": "2026-06-05T00:00:00Z",
+    "is_prerelease": true
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981040805",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981040863",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981040820",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981040869",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981221899",
+
+  "v0_4_competitive_baseline_evidence": {
+    "bucket_1_sip_trunk_gateway_ops_ui": "SIP trunks page with per-node gateway state (REGED/DOWN/TRYING/FAILED), apply request history table (status, error message, active call count, timestamps), trunk CRUD and deactivation. Closes issue #202. Merged in main.",
+    "bucket_2_feature_code_admin_surface": "Feature-code admin page: list, create, validate, publish, disable, delete with draft→active lifecycle and emergency-number collision detection. Closes issue #203. Merged in main.",
+    "bucket_3_parking_lot_admin_surface": "Parking-lot admin page: CRUD with slot range and timeout, parked-call sub-panel per lot (slot, caller, status, timeout, auto-refresh every 10 s), runtime empty/error states. Closes issue #204. Merged in main.",
+    "bucket_4_conference_room_admin_surface": "Conference room admin page: CRUD with PIN posture, max-participant limit, recording toggle, live participant panel backed by Go agent callbacks. Closes issue #205. Merged in main.",
+    "bucket_5_carrier_trunk_test_workflow": "Trunk test workflow page at /tenant/integrations/trunk-test-workflow: run connectivity test, per-outcome failure guidance (DOWN/FAILED/TRYING/no-data), live gateway state table, session history, carrier interop checklist. Gated by TENANT_SIP_TRUNKS_TEST capability. Closes issue #206. Merged in main.",
+    "bucket_6_cdr_cockpit_baseline": "Stronger CDR/call history reporting, cockpit visibility improvements, failed-call and runtime-error triage. Closes issue #207. Merged as PR #216.",
+    "bucket_7_emergency_routing_e911": "Centralized GLOBAL_EMERGENCY_NUMBERS shared module (non-bypassable, single source of truth). Full emergency routing guide at docs/ops/emergency-routing.md covering product enforcement boundaries, operator/carrier E911 responsibilities, US FCC compliance (Kari's Law / RAY BAUM's Act), and pre-go-live smoke tests. Closes issue #208. Merged in main.",
+    "planning_baseline_closed": "All 7 v0.4.x delivery buckets marked shipped in release-buckets-v0.4-v0.6.md. Competitive gap analysis updated to reflect implemented status for all v0.4 surfaces. Closes tracking issue #201."
+  },
+
+  "helm_lint": "PASSED on enlogy@10.0.0.32 at commit 783b729 (rc/v0.4.0). 1 chart linted, 0 chart(s) failed. helm template renders all 8 resource kinds: Secret, ConfigMap, PersistentVolumeClaim, Service, Deployment (×3), Job.",
+
+  "docker_compose_prod_smoke": "PASSED on enlogy@10.0.0.32 with locally-built image at commit 783b729 (rc/v0.4.0). docker-compose.prod.yml stack (postgres + api) started successfully. /health returned HTTP 200 with {status:ok, db:{status:ok}}. /setup returned HTTP 200 (wizard path, no bootstrap env vars). Teardown clean. Note: webhook_queue subsystem showed error (expected — fresh DB, migrations not applied in smoke). GHCR image pull in production requires packages to be public (GitHub → Profile → Packages → Change visibility).",
+
+  "rotation_rehearsal": "Config check passed on enlogy@10.0.0.32: `pnpm rotation:rehearsal --check-config` exited 0. Live rotation rehearsal (pnpm rotation:rehearsal) remains as a gate before production promotion.",
+
+  "production_e2e": "FreeSWITCH smoke run 26981221899 passed all production E2E steps on enlogy@10.0.0.32 at commit 783b729 (rc/v0.4.0): API health, DB contracts, FreeSWITCH ESL profile, runtime directory/dialplan lookup, IVR lifecycle, SIP REGISTER, Go agent ESL, FreeSWITCH hardening, SIP TLS/SRTP/NAT smoke, and observability query. Evidence artifact: freeswitch-smoke-26981221899. https://github.com/gokbilge/manageCallAI/actions/runs/26981221899",
+
+  "production_soak": "Soak evidence inherited from v0.3.0 (smoke run 26903877370, 2026-06-03). v0.4.0 adds no changes to the call path, FreeSWITCH Lua execution, or SLO-affecting hot paths. All v0.4 changes affect admin UI surfaces, shared API constants (emergency numbers), and documentation. A fresh soak is not required.",
+
+  "production_slo": "SLO evidence from v0.3.0 (docs/ops/runtime-slo-evidence-2026-06-03.json): /health/ready p99 8ms, /api/v1/freeswitch/directory p99 15ms, /api/v1/freeswitch/dialplan p99 22ms — all within targets. No hot-path changes in v0.4.0.",
+
+  "carrier_interop": "Inherited from v0.3.0 (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json). No carrier or call-path changes in v0.4.0. v0.4.0 adds the carrier/trunk test workflow UI which surfaces existing gateway state data.",
+
+  "security_review": "CodeQL run 26981040863 clean. FreeSWITCH hardening 0 findings (smoke run 26981221899). Emergency number block refactored to a single shared module — reduces risk of per-module drift. Prior CodeQL exclusions for RFC 3261-mandated MD5 and CI self-signed TLS remain in effect.",
+
+  "no_migrations": "v0.4.0 includes no database schema changes. The last migration (0052_system_config.sql, shipped in v0.3.5) applies cleanly. No db:migrate step required for upgrading from v0.3.5.",
+
+  "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook. No data migration risk — rollback to v0.3.5 image is safe.",
+
+  "operator_signoff": {
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-05T00:00:00Z",
+    "notes": "RC signoff for v0.4.0-rc.1. All 7 v0.4.x competitive baseline buckets delivered. FreeSWITCH smoke, Helm lint, docker-compose smoke, and rotation config check all pass on enlogy@10.0.0.32. Live rotation rehearsal remains as a gate before production promotion."
+  },
+
+  "artifact_files": {
+    "emergency_routing_guide": "docs/ops/emergency-routing.md",
+    "carrier_interop_evidence": "docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json",
+    "runtime_slo": "docs/ops/runtime-slo-evidence-2026-06-03.json",
+    "restore_evidence": "docs/ops/restore-evidence-enlogy-2026-06-02.json",
+    "release_buckets": "docs/planning/release-buckets-v0.4-v0.6.md",
+    "competitive_gap_analysis": "docs/planning/competitive-gap-analysis.md"
+  },
+
+  "known_gaps_before_production": [
+    "Live rotation rehearsal (pnpm rotation:rehearsal) — not just --check-config",
+    "GHCR package visibility must be set to Public before docker-compose.prod.yml smoke with actual GHCR images",
+    "DOCKERHUB_USERNAME + DOCKERHUB_TOKEN secrets must be configured in repo settings to enable Docker Hub publishing"
+  ]
+}
