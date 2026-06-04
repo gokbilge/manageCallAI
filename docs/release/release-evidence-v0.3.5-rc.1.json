@@ -21,7 +21,7 @@
   "slice_60_evidence": {
     "setup_module": "Integration tests (setup.integration.test.ts) pass in CI run 26932617059: sentinel present/absent, /setup locked after bootstrap, headless bootstrap idempotency, admin email allowlist enforcement. Controller unit tests (setup.controller.test.ts) and service unit tests (setup.service.test.ts) also pass.",
     "helm_lint": "helm lint charts/managecallai/ passes (1 chart linted, 0 failed) on enlogy@10.0.0.32 at commit 541cac5. helm template renders all 8 resource kinds (Secret, ConfigMap, PVC, Service, Deployment×3, Job) with exit 0.",
-    "docker_compose_prod_smoke": "DEFERRED — docker-compose.prod.yml uses ghcr.io/gokbilge/* images which are published on tag push. Smoke will be run on enlogy@10.0.0.32 after v0.3.5-rc.1 GHCR images are available. Required before production promotion.",
+    "docker_compose_prod_smoke": "PASSED on enlogy@10.0.0.32 with locally-built image at commit 541cac5. docker-compose.prod.yml stack (postgres + api) started successfully. /health returned 200 with db:ok. Wizard path: /setup returned HTTP 200 with 7407-byte HTML when SETUP_* vars absent. Headless path: headless bootstrap auto-ran and set sentinel when SETUP_ADMIN_EMAIL + SETUP_ADMIN_PASSWORD present, locking /setup to 404. GHCR image pull requires GHCR package visibility to be set to public (packages default to private; not possible with current token scope — manual step before production promotion).",
     "install_sh": "install.sh present and reviewed. Generates secrets via openssl rand -hex 32, writes .env.production, prints next-steps. Does not auto-start containers.",
     "env_template": ".env.production.example present with all required variables and generation commands. SETUP_ADMIN_EMAIL / SETUP_ADMIN_PASSWORD clearly marked 'remove after first boot'.",
     "docker_hub": "docker-images.yml updated to gate Docker Hub login on credential availability (DOCKERHUB_USERNAME + DOCKERHUB_TOKEN secrets). GHCR publishing is unconditional. Docker Hub publishes once secrets are configured in repo settings."
@@ -66,7 +66,7 @@
   },
 
   "known_gaps_before_production": [
-    "docker-compose.prod.yml smoke with GHCR v0.3.5-rc.1 images on enlogy@10.0.0.32",
+    "GHCR image pull from docker-compose.prod.yml requires packages to be made public (GitHub → Profile → Packages → Change visibility to Public for each managecallai-* package)",
     "Live rotation rehearsal (pnpm rotation:rehearsal)",
     "DOCKERHUB_USERNAME + DOCKERHUB_TOKEN secrets must be configured in repo to enable Docker Hub publishing"
   ]
