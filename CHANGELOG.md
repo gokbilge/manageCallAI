@@ -16,9 +16,9 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ## [0.4.0] - 2026-06-05
 
-Release classification: prerelease (RC in progress) — v0.4 competitive baseline.
+Release classification: production release — v0.4 competitive baseline.
 
-Production evidence: `docs/release/release-evidence-v0.4.0.json` *(pending)*
+Production evidence: `docs/release/release-evidence-v0.4.0.json`
 
 ### Added
 
@@ -68,14 +68,16 @@ No database migrations required for v0.4.0 (all schema changes shipped in v0.3.x
 pnpm build   # rebuild after version bump
 ```
 
-### Known limitations
+### Remaining operator steps before live-call activation
 
-- No production evidence yet — RC smoke test in progress on `enlogy@10.0.0.32`
+- Make GHCR packages public: GitHub → Profile → Packages → Change visibility
+- Configure `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` repo secrets
+- Live JWT/runtime secret rotation in production
 
 ### Release references
 
-- `docs/release/release-evidence-v0.4.0-rc.1.json` *(pending)*
-- `docs/release/release-evidence-v0.4.0.json` *(pending)*
+- `docs/release/release-evidence-v0.4.0.json`
+- `docs/release/release-evidence-v0.4.0-rc.1.json`
 - `docs/ops/release-process.md`
 - `docs/planning/release-buckets-v0.4-v0.6.md`
 
