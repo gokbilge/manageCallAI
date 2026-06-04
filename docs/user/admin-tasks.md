@@ -79,6 +79,8 @@ Use these pages to:
 - confirm the tenant is active
 - review the live cockpit
 - check whether there are active sessions, runtime noise, or recent failures
+- review the triage queue for degraded gateways, failed webhooks, and failed calls
+- inspect gateway registration state without switching into the trunk management page
 
 If the cockpit looks empty, that may simply mean there is no recent runtime
 activity yet.
@@ -265,7 +267,9 @@ Go to:
 Use these pages to:
 
 - review recent call activity
-- inspect normalized call events
+- inspect CDR-style call summaries grouped by call
+- filter by direction, outcome, number, or failure reason
+- inspect normalized call events for the selected call
 - review recording inventory where enabled
 
 ## 4.14 Manage schedules
