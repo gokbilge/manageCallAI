@@ -69,17 +69,17 @@ This mapping is intentionally product-first:
 | Queues / agents | implemented | P0/P1 | Contact-center entry point | Basic queue model exists; not a full contact-center surface |
 | Voicemail boxes | implemented | P0 | Expected PBX feature | Retention, storage, and end-user workflow still need stronger productization |
 | Voicemail-to-email | partial | P1 | Common admin expectation | Voicemail exists; email workflow is not a clear first-class product feature |
-| Feature codes | implemented | P1 | Phone-user workflow | API/runtime are present; no first-class web admin surface yet |
+| Feature codes | implemented | P1 | Phone-user workflow | Full admin surface shipped: list/create/validate/publish/disable/delete with emergency-number collision detection |
 | Call forwarding / DND | partial | P1 | End-user self-service | API exists; end-user product surface is still thin |
 | Call pickup | partial | P1 | Office workflow | Feature-code action exists in contracts/design, but operator/end-user surface is weak |
-| Call parking | implemented | P1 | Common PBX feature | API/runtime exist; no strong admin UI or operator workflow |
-| Conferencing / `mod_conference` | implemented | P1 | Expected business feature | API/runtime exist; no visible tenant admin page in web app |
+| Call parking | implemented | P1 | Common PBX feature | Admin UI shipped: parking-lot CRUD, parked-call sub-panel (slot/status/timeout), runtime empty/error states |
+| Conferencing / `mod_conference` | implemented | P1 | Expected business feature | Admin UI shipped: conference room CRUD with PIN, participant limit, recording toggle, and live participant panel |
 | Call recording | partial | P1 | Compliance and support | Recordings surface exists; storage/export/retention proof is still a gap |
 | CDR / call history / reporting | partial | P1 | Admin visibility | Calls/events exist, but reporting depth is below mature PBX competitors |
 | Music on hold | partial | P1 | Basic PBX polish | Queue-level `music_on_hold` exists, but there is no complete admin experience |
 | Time conditions / holidays | partial | P1 | Production routing | Schedules exist; holiday/business-hours polish needs product review |
-| Emergency number handling | partial | P0 | Safety and legal | Outbound emergency blocking exists, but operator safeguards are not complete |
-| E911 / emergency routing docs | documented only | P0 | Legal and safety requirement | Needs explicit deployer/operator guidance and tested operational flow |
+| Emergency number handling | implemented | P0 | Safety and legal | Non-bypassable block at fraud service + outbound-call service + shared constants; feature-code collision detection; posture documented in docs/ops/emergency-routing.md |
+| E911 / emergency routing docs | implemented | P0 | Legal and safety requirement | Full deployment guide, US market E911 boundaries, FCC Kari's Law/RAY BAUM's Act posture, and testing procedures in docs/ops/emergency-routing.md |
 | Backup / restore | partial | P0 | Operations requirement | Strong evidence model exists; buyer confidence depends on current-tag rehearsal evidence |
 
 ## Control-plane lifecycle audit
@@ -90,9 +90,9 @@ This mapping is intentionally product-first:
 | Inbound routes | implemented | Live call behavior changes should be controlled | Good backend posture; UI/runtime evidence can improve |
 | Outbound routes | implemented | Routing and fraud changes affect live traffic | Same as inbound routes |
 | SIP trunks | partial | Trunk changes are high-risk live operations | Apply requests exist, but full diff/approval/runtime UX is not complete |
-| Feature codes | partial | Live phone behavior needs the same safety model | Validate/publish exists, but product surface is weak |
-| Parking lots | partial | Operational PBX object | CRUD/runtime exist; no strong publish/governance UX |
-| Conference rooms | partial | Live call bridge object | CRUD/runtime exist; operator/admin surface is weak |
+| Feature codes | implemented | Live phone behavior needs the same safety model | Validate/publish/disable cycle with web admin surface and emergency-number collision detection |
+| Parking lots | implemented | Operational PBX object | CRUD/runtime with web admin surface; parked-call visibility and slot presentation |
+| Conference rooms | implemented | Live call bridge object | CRUD/runtime with web admin surface; participant visibility and room lifecycle controls |
 | Fraud policies | partial | High operational and financial risk | Strong backend posture; limited product UX and evidence presentation |
 
 ## Runtime operations audit
@@ -121,13 +121,13 @@ This mapping is intentionally product-first:
 | Live operations cockpit | partial | P0 | Operators judge trust here | Good foundation, not yet best-in-class |
 | Runtime sessions / call visibility | implemented | P1 | Troubleshooting | Good, but still narrower than a mature NOC/operator view |
 | FreeSWITCH node health | partial | P1 | Runtime trust | Platform endpoints exist; tenant/admin UI depth is limited |
-| Gateway registration status | partial | P0 | Carrier troubleshooting | API exists; web productization is weak |
-| Feature-code management UI | missing | P1 | Admin usability | API-only today |
-| Parking-lot management UI | missing | P1 | Admin usability | API-only today |
-| Conference-room management UI | missing | P1 | Admin usability | API-only today |
-| Apply history / gateway reload UI | missing | P0 | Runtime operations differentiator | Backend exists; UI does not yet match the design thesis |
+| Gateway registration status | implemented | P0 | Carrier troubleshooting | Gateway state table in SIP trunks page + trunk test workflow; REGED/DOWN/TRYING/FAILED per node |
+| Feature-code management UI | implemented | P1 | Admin usability | Full admin surface: list, create, validate, publish, disable, delete with emergency-number safeguard |
+| Parking-lot management UI | implemented | P1 | Admin usability | Full admin surface: CRUD, parked-call sub-panel with slot/status/timeout, auto-refresh |
+| Conference-room management UI | implemented | P1 | Admin usability | Full admin surface: CRUD with PIN/participants/recording controls and live participant panel |
+| Apply history / gateway reload UI | implemented | P0 | Runtime operations differentiator | Apply request history visible in SIP trunks page expanded row (status, error, active calls, timestamps) |
 | Evidence bundle status in operator UI | partial | P1 | Differentiator and release trust | Evidence model exists mostly in docs/scripts |
-| Carrier test wizard UI | missing | P0/P1 | Telecom installer trust | Not productized |
+| Carrier test wizard UI | implemented | P0/P1 | Telecom installer trust | Trunk test workflow page: run connectivity test, per-outcome failure guidance, live gateway table, session history |
 
 ## Integrations audit
 

@@ -1,6 +1,6 @@
 # Release Buckets `v0.4` - `v0.6`
 
-Last updated: 2026-06-04.
+Last updated: 2026-06-04 (v0.4.x bucket status updated).
 
 This document turns the competitive gap audit into concrete issue buckets for
 the next three planned product releases:
@@ -16,105 +16,105 @@ These are product-planning buckets, not release evidence claims.
 Goal: make the product feel like a credible hard PBX competitor for admins and
 operators, not just a strong backend/control-plane architecture.
 
-### Bucket 1: Gateway and trunk operations UI
+**v0.4.x status as of 2026-06-04: all 7 buckets shipped.**
+
+### Bucket 1: Gateway and trunk operations UI ✅ shipped
 
 Why:
 - trunk/runtime apply is one of the strongest differentiators
 - the backend lifecycle exists, but the operator workflow is still weak
 
-Suggested issues:
-- `v0.4: trunk apply history and status UI`
-- `v0.4: gateway reload/rescan operator workflow`
-- `v0.4: post-apply verification and failure visibility`
-- `v0.4: active-call safety checks and risky-action warnings`
+Closed by:
+- SIP trunks page with gateway state, apply request history, and per-node
+  registration visibility (issue #202, shipped in v0.3.5)
+- SIP trunk gateway operations UI (issue #202, merged)
 
 Expected outcome:
 - tenant/platform admins can inspect apply requests, apply results, and gateway
-  state without dropping to API-only workflows
+  state without dropping to API-only workflows ✅
 
-### Bucket 2: Feature-code admin surface
+### Bucket 2: Feature-code admin surface ✅ shipped
 
 Why:
 - feature codes are implemented in API/runtime
 - buyers still perceive them as missing without a first-class admin surface
 
-Suggested issues:
-- `v0.4: feature-code list/create/edit UI`
-- `v0.4: feature-code validate/publish/disable flow`
-- `v0.4: feature-code conflict and emergency-number warnings`
+Closed by:
+- Feature-code list/create/validate/publish/disable/delete web UI (issue #203,
+  merged in v0.3.5 / v0.4 baseline)
 
 Expected outcome:
-- tenant admins can manage feature codes entirely from the web app
+- tenant admins can manage feature codes entirely from the web app ✅
 
-### Bucket 3: Parking admin surface
+### Bucket 3: Parking admin surface ✅ shipped
 
 Why:
 - parking exists in API/runtime
 - product surface does not yet expose it as a real PBX feature
 
-Suggested issues:
-- `v0.4: parking-lot CRUD UI`
-- `v0.4: parked-call visibility UI`
-- `v0.4: parking slot/operator state presentation`
+Closed by:
+- Parking-lot CRUD with parked-call sub-panel (auto-refresh 10 s), slot range,
+  timeout, and runtime empty/error states (issue #204, merged)
 
 Expected outcome:
-- call parking becomes visibly usable as a PBX feature, not just an API
+- call parking becomes visibly usable as a PBX feature, not just an API ✅
 
-### Bucket 4: Conference admin surface
+### Bucket 4: Conference admin surface ✅ shipped
 
 Why:
 - conference-room desired state exists
 - no first-class admin page means the feature still reads as incomplete
 
-Suggested issues:
-- `v0.4: conference-room CRUD UI`
-- `v0.4: conference participant visibility UI`
-- `v0.4: conference validation and operator status surface`
+Closed by:
+- Conference room CRUD with PIN, max-participants, record-calls controls and
+  live participant panel (issue #205, merged)
 
 Expected outcome:
-- conference rooms become manageable from the operator UI
+- conference rooms become manageable from the operator UI ✅
 
-### Bucket 5: Carrier and trunk test workflow
+### Bucket 5: Carrier and trunk test workflow ✅ shipped
 
 Why:
 - telecom installers and operators expect direct validation workflows
 - current evidence tooling is stronger than the current product UI
 
-Suggested issues:
-- `v0.4: trunk register test UI`
-- `v0.4: directory/dialplan/runtime smoke workflow UI`
-- `v0.4: carrier test result history and failure explanation`
+Closed by:
+- Trunk test workflow page at /tenant/integrations/trunk-test-workflow with
+  per-outcome failure guidance, live gateway state table, session history, and
+  carrier interop checklist (issue #206, merged)
 
 Expected outcome:
-- first operator-facing carrier/trunk test workflow exists in product
+- first operator-facing carrier/trunk test workflow exists in product ✅
 
-### Bucket 6: Reporting and cockpit baseline
+### Bucket 6: Reporting and cockpit baseline ✅ shipped
 
 Why:
 - operators trust what they can inspect quickly
 - current calls/events/cockpit surfaces are useful but still thinner than
   mature PBX competitors
 
-Suggested issues:
-- `v0.4: stronger CDR/call history reporting baseline`
-- `v0.4: cockpit improvements for gateway/call/runtime visibility`
-- `v0.4: failed-call and runtime-error triage improvements`
+Closed by:
+- Stronger CDR/call history reporting, cockpit triage improvements, and
+  failed-call/runtime-error visibility (issue #207, merged as #216)
 
 Expected outcome:
-- the product feels more operationally credible day to day
+- the product feels more operationally credible day to day ✅
 
-### Bucket 7: Emergency routing and safety guidance
+### Bucket 7: Emergency routing and safety guidance ✅ shipped
 
 Why:
 - safety/legal posture matters, especially for US-facing deployments
 - current posture is not strong enough to market as a complete PBX product
 
-Suggested issues:
-- `v0.4: emergency routing safeguards in product and docs`
-- `v0.4: E911/emergency deployment guidance by market`
+Closed by:
+- Centralized emergency number constants (non-bypassable, auditable single
+  source of truth); full emergency routing guide at docs/ops/emergency-routing.md
+  covering product posture, operator/carrier responsibilities, E911 boundaries,
+  US FCC compliance (Kari's Law, RAY BAUM's Act), pre-go-live smoke tests, and
+  explicit posture statement (issue #208, merged)
 
 Expected outcome:
-- emergency handling is no longer a vague edge topic in the product story
+- emergency handling is no longer a vague edge topic in the product story ✅
 
 ## `v0.5.x` - P1 operational maturity
 
