@@ -34,9 +34,9 @@ Source inspection shows implemented support for:
 
 ## Release posture
 
-**Current release: v0.4.0** (2026-06-05) — v0.4 competitive baseline (RC in progress).
+**Current release: v0.4.0** (2026-06-05) — v0.4 competitive baseline.
 
-Evidence: [docs/release/release-evidence-v0.4.0.json](docs/release/release-evidence-v0.4.0.json) *(pending RC gate)*
+Evidence: [docs/release/release-evidence-v0.4.0.json](docs/release/release-evidence-v0.4.0.json)
 
 Release posture must be derived from release evidence, not from source inspection alone.
 
