@@ -14,6 +14,62 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ---
 
+## [0.3.5] - 2026-06-04
+
+Release classification: prerelease packaging and setup/bootstrap release.
+
+Production readiness statement: this tag must not be treated as a fresh
+production promotion. The setup/bootstrap slice changes startup and deployment
+paths, so production evidence must be re-collected for this exact tag before
+any production-ready claim is made.
+
+### Added
+
+- First-run setup/bootstrap slice from PR #189:
+  - `0052_system_config` migration
+  - `/setup` module and headless `SETUP_*` bootstrap path
+  - `docker-compose.prod.yml`, `.env.production.example`, `install.sh`
+  - Helm chart scaffold under `charts/managecallai/`
+  - Docker image workflow coverage for the FreeSWITCH image
+
+### Changed
+
+- Core architecture and design documentation aligned to the implemented code in
+  PR #190:
+  - setup/bootstrap documented as implemented
+  - PBX completeness modules documented as implemented in schema and API
+  - release posture wording corrected so evidence claims defer to release
+    artifacts instead of source inspection
+- Workspace package versions aligned to `0.3.5`
+
+### Upgrade notes
+
+- Run `pnpm db:migrate` to apply `0052_system_config.sql`.
+- Review `.env.production.example` before using the setup/bootstrap path.
+- Containerized installations may use headless bootstrap with `SETUP_*`
+  variables; browser-based setup remains available through `/setup` until the
+  `setup_complete` sentinel is written.
+
+### SDK status
+
+- SDK not published. The generated client is present in the repository only.
+
+### Known limitations
+
+- No new production evidence bundle was collected for `v0.3.5` in this release
+  session.
+- Historical `v0.3.0` evidence artifacts remain in the repository as historical
+  records and must not be treated as proof for `v0.3.5`.
+- Runtime-capable validation for this exact tag still requires a fresh
+  FreeSWITCH smoke run and any target-environment production gates that matter
+  to the intended deployment.
+
+### Release references
+
+- `docs/release/release-checklist.md`
+- `docs/release/release-notes-policy.md`
+- `docs/planning/open-release-blockers.md`
+
 ## [0.3.0] — 2026-06-03
 
 First production release. All production gates passed. Live rotation rehearsal

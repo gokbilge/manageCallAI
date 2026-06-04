@@ -12,46 +12,46 @@ to the release-candidate commit.
 ## Current Release Stage
 
 ```
-Decision:         Production release
-Tag:              v0.3.0 (cut 2026-06-03 from main at 1220e39)
-RC tag:           v0.3.0-rc.1 (commit a157b84, smoke run 26903877370)
-Evidence status:  Production manifest docs/release/release-evidence-v0.3.0.json
-                  passes pnpm release:evidence-check (stage=production, 0 failures)
-                  All 18 required evidence fields reference real artifacts
-                  Live rotation rehearsal and rate-limit proof completed 2026-06-03
-Next step:        No open blockers. Next release cycle begins with [Unreleased].
+Latest evidenced production tag: v0.3.0 (cut 2026-06-03 from main at 1220e39)
+Historical RC tag:              v0.3.0-rc.1 (commit a157b84, smoke run 26903877370)
+Historical evidence status:     docs/release/release-evidence-v0.3.0.json
+Current tag target:             v0.3.5 prerelease packaging/setup release
+Current evidence status:        production evidence has not been refreshed for v0.3.5
+Next step:                      cut v0.3.5 with explicit non-production wording,
+                                then re-run runtime gates before any production
+                                claim on a later tag.
 ```
 
 ## What closed for v0.3.0 (2026-06-03)
 
 | Issue | Gate | Resolution |
 |---|---|---|
-| [#161](https://github.com/gokbilge/manageCallAI/issues/161) | Retention storage cleanup + DSR | StorageBackend file deletion, DSR doc, export-before-delete decision — PR #181 |
-| [#162](https://github.com/gokbilge/manageCallAI/issues/162) | Soak/SLO/carrier interop | RC-topology SLO evidence, FusionPBX/NetGSM 6/8 passed, PBX evidence in manifest — PR #182 |
-| [#163](https://github.com/gokbilge/manageCallAI/issues/163) | Token rotation, log redaction, hardening | rotation-rehearsal.mjs, network config JSON output, log redaction CI gate — PR #183 |
-| [#164](https://github.com/gokbilge/manageCallAI/issues/164) | Final release bundle + operator signoff | Live rotation rehearsal, rate-limit proof, production manifest v0.3.0 — PRs #185, #186 |
-| [#171](https://github.com/gokbilge/manageCallAI/issues/171) | PBX Completeness Layer (parent) | All 6 features implemented — PRs #179, #180 |
-| [#172](https://github.com/gokbilge/manageCallAI/issues/172) | Feature codes | Implemented — PR #179 |
-| [#173](https://github.com/gokbilge/manageCallAI/issues/173) | Call parking | Implemented — PR #179 |
-| [#174](https://github.com/gokbilge/manageCallAI/issues/174) | Conferencing | Implemented — PR #179 |
-| [#175](https://github.com/gokbilge/manageCallAI/issues/175) | Gateway reload | Implemented — PR #179 |
-| [#176](https://github.com/gokbilge/manageCallAI/issues/176) | End-user self-service portal | Implemented — PR #180 |
-| [#177](https://github.com/gokbilge/manageCallAI/issues/177) | FreeSWITCH runtime management (Phase 1) | Implemented — PR #180 |
-| [#178](https://github.com/gokbilge/manageCallAI/issues/178) | PBX evidence gates | Implemented — PR #180 |
+| [#161](https://github.com/gokbilge/manageCallAI/issues/161) | Retention storage cleanup + DSR | StorageBackend file deletion, DSR doc, export-before-delete decision ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #181 |
+| [#162](https://github.com/gokbilge/manageCallAI/issues/162) | Soak/SLO/carrier interop | RC-topology SLO evidence, FusionPBX/NetGSM 6/8 passed, PBX evidence in manifest ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #182 |
+| [#163](https://github.com/gokbilge/manageCallAI/issues/163) | Token rotation, log redaction, hardening | rotation-rehearsal.mjs, network config JSON output, log redaction CI gate ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #183 |
+| [#164](https://github.com/gokbilge/manageCallAI/issues/164) | Final release bundle + operator signoff | Live rotation rehearsal, rate-limit proof, production manifest v0.3.0 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PRs #185, #186 |
+| [#171](https://github.com/gokbilge/manageCallAI/issues/171) | PBX Completeness Layer (parent) | All 6 features implemented ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PRs #179, #180 |
+| [#172](https://github.com/gokbilge/manageCallAI/issues/172) | Feature codes | Implemented ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #179 |
+| [#173](https://github.com/gokbilge/manageCallAI/issues/173) | Call parking | Implemented ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #179 |
+| [#174](https://github.com/gokbilge/manageCallAI/issues/174) | Conferencing | Implemented ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #179 |
+| [#175](https://github.com/gokbilge/manageCallAI/issues/175) | Gateway reload | Implemented ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #179 |
+| [#176](https://github.com/gokbilge/manageCallAI/issues/176) | End-user self-service portal | Implemented ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #180 |
+| [#177](https://github.com/gokbilge/manageCallAI/issues/177) | FreeSWITCH runtime management (Phase 1) | Implemented ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #180 |
+| [#178](https://github.com/gokbilge/manageCallAI/issues/178) | PBX evidence gates | Implemented ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PR #180 |
 
-## What closed previously (alpha → beta)
+## What closed previously (alpha ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ beta)
 
 | Issue | Gate | Resolution |
 |---|---|---|
 | [#130](https://github.com/gokbilge/manageCallAI/issues/130) | Clean-clone alpha verification | Evidenced for v0.2.0-alpha |
-| [#131–#141](https://github.com/gokbilge/manageCallAI/issues/131) | Beta-readiness gates | All closed for v0.2.0-beta.1 |
+| [#131ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“#141](https://github.com/gokbilge/manageCallAI/issues/131) | Beta-readiness gates | All closed for v0.2.0-beta.1 |
 | [#150](https://github.com/gokbilge/manageCallAI/issues/150) | Beta evidence bundle | v0.2.0-beta.1 manifest passes validator |
-| [#157](https://github.com/gokbilge/manageCallAI/issues/157) | n8n workflows E2E | CLOSED — beta-smoke-26845537361 |
-| [#158](https://github.com/gokbilge/manageCallAI/issues/158) | MCP capability proof | CLOSED — beta-smoke-26845537361 |
-| [#159](https://github.com/gokbilge/manageCallAI/issues/159) | SDK dry-run | CLOSED — run 26845539137 |
-| [#160](https://github.com/gokbilge/manageCallAI/issues/160) | Restore rehearsal | CLOSED — restore-evidence-enlogy-2026-06-02.json |
+| [#157](https://github.com/gokbilge/manageCallAI/issues/157) | n8n workflows E2E | CLOSED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â beta-smoke-26845537361 |
+| [#158](https://github.com/gokbilge/manageCallAI/issues/158) | MCP capability proof | CLOSED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â beta-smoke-26845537361 |
+| [#159](https://github.com/gokbilge/manageCallAI/issues/159) | SDK dry-run | CLOSED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â run 26845539137 |
+| [#160](https://github.com/gokbilge/manageCallAI/issues/160) | Restore rehearsal | CLOSED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â restore-evidence-enlogy-2026-06-02.json |
 
-## Production Release — All Gates Closed
+## Production Release ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â All Gates Closed
 
 All production gates closed for v0.3.0.
 
@@ -59,25 +59,25 @@ All production gates closed for v0.3.0.
 |---|---|---|
 | FreeSWITCH smoke on `rc/**` | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | Run [26903877370](https://github.com/gokbilge/manageCallAI/actions/runs/26903877370) on `rc/v0.3.0` |
 | Production E2E | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | All 11 steps verified, smoke run 26903877370 |
-| SLO | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | `docs/ops/runtime-slo-evidence-2026-06-03.json` — directory p99 15 ms, dialplan p99 22 ms |
-| Carrier interop | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | `docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json` — 6/8 passed |
-| Rotation rehearsal | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | `docs/ops/rotation-rehearsal-2026-06-03.json` — live, passed |
-| Log redaction | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | `docs/ops/log-redaction-rotation-2026-06-03.json` — 0 findings |
-| Network config | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | `docs/ops/network-config-rc-v0.3.0.json` — 0 findings in smoke context |
-| Rate-limit topology | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | Single-instance proof on enlogy@10.0.0.32 — 0 findings |
-| Retention storage cleanup | [#161](https://github.com/gokbilge/manageCallAI/issues/161) | PR #181 — StorageBackend + DSR doc |
-| PBX completeness | [#171–#178](https://github.com/gokbilge/manageCallAI/issues/171) | PRs #179, #180 — all 6 features |
-| Release evidence bundle | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | `docs/release/release-evidence-v0.3.0.json` — `release:evidence-check` exits 0 |
+| SLO | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | `docs/ops/runtime-slo-evidence-2026-06-03.json` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â directory p99 15 ms, dialplan p99 22 ms |
+| Carrier interop | [#162](https://github.com/gokbilge/manageCallAI/issues/162) | `docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 6/8 passed |
+| Rotation rehearsal | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | `docs/ops/rotation-rehearsal-2026-06-03.json` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â live, passed |
+| Log redaction | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | `docs/ops/log-redaction-rotation-2026-06-03.json` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 0 findings |
+| Network config | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | `docs/ops/network-config-rc-v0.3.0.json` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 0 findings in smoke context |
+| Rate-limit topology | [#163](https://github.com/gokbilge/manageCallAI/issues/163) | Single-instance proof on enlogy@10.0.0.32 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 0 findings |
+| Retention storage cleanup | [#161](https://github.com/gokbilge/manageCallAI/issues/161) | PR #181 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â StorageBackend + DSR doc |
+| PBX completeness | [#171ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“#178](https://github.com/gokbilge/manageCallAI/issues/171) | PRs #179, #180 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â all 6 features |
+| Release evidence bundle | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | `docs/release/release-evidence-v0.3.0.json` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `release:evidence-check` exits 0 |
 | Operator signoff | [#164](https://github.com/gokbilge/manageCallAI/issues/164) | Fatih Kucukpetek, maintainer, 2026-06-03 |
 
 ## Open Issues for Next Release
 
 No open release blockers. New issues will be tracked in GitHub.
 
-## PBX Completeness Layer — Implemented in v0.3.0
+## PBX Completeness Layer ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Implemented in v0.3.0
 
 All six PBX completeness features were implemented in PRs #179 and #180 (issues
-#172–#178, parent #171) and are closed as of v0.3.0. Design docs live in
+#172ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“#178, parent #171) and are closed as of v0.3.0. Design docs live in
 `docs/pbx/`. Phase 2 controlled runtime actions (reloadxml/rescan via UI with
 approval gate) remain deferred for a future release.
 
@@ -177,11 +177,11 @@ See docs/pbx/feature-codes.md and docs/pbx/pbx-data-model-and-api-proposal.md.
 
 - Unit: duplicate code prevention, emergency number block
 - Integration: tenant isolation matrix, lifecycle, audit events
-- Runtime smoke: DTMF code → Lua → API callback → action applied
+- Runtime smoke: DTMF code ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Lua ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ API callback ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ action applied
 
 ## Runtime evidence required
 
-Live FreeSWITCH smoke: DTMF code dialed → Lua executor → API callback → audit event.
+Live FreeSWITCH smoke: DTMF code dialed ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Lua executor ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ API callback ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ audit event.
 
 ## Acceptance criteria
 
@@ -234,7 +234,7 @@ Manual park via API (runtime-only via FreeSWITCH).
 ## Testing
 
 - Tenant isolation, slot collision, timeout behavior, audit events
-- Runtime smoke: call parked on FreeSWITCH → Go agent → API record updated
+- Runtime smoke: call parked on FreeSWITCH ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Go agent ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ API record updated
 
 ## Runtime evidence required
 
@@ -278,7 +278,7 @@ Designed in docs/pbx/conferencing.md. Not implemented.
 - Conference service: PIN hashing, room uniqueness, profile generation
 - Conference controller: CRUD
 - mod_xml_curl: conference.conf.xml projection
-- Dialplan: room number → conference application
+- Dialplan: room number ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ conference application
 - Go agent: conference join/leave event listener (optional)
 - UI: room list, create/edit with masked PIN, participant view
 
@@ -335,7 +335,7 @@ Trunk CRUD exists. mod_xml_curl gateway serving exists. No apply mechanism.
 - runtime_apply_requests + runtime_apply_results tables (migration 0053)
 - RuntimeApplyService: allowlist enforcement, active call count gate
 - RuntimeApplyController: apply request CRUD + apply-now trigger
-- Go agent: RuntimeApplyClient — safe ESL command sequence
+- Go agent: RuntimeApplyClient ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â safe ESL command sequence
 - Trunk PATCH response: runtime_apply field
 - UI: trunk change summary, generated gateway preview, apply status
 - Approval gate integration
@@ -355,12 +355,12 @@ sofia_status_gateway, sofia_status_profile
 
 - Allowlist enforcement, active call count gate, approval gate
 - Tenant isolation, apply lifecycle, Go agent callback
-- Runtime smoke: trunk change → gateway reloads on FreeSWITCH → REGED confirmed
+- Runtime smoke: trunk change ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ gateway reloads on FreeSWITCH ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ REGED confirmed
 
 ## Runtime evidence required
 
-Self-hosted FreeSWITCH smoke run: trunk updated → apply request → ESL commands
-sent → REGED state confirmed → audit events written.
+Self-hosted FreeSWITCH smoke run: trunk updated ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ apply request ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ESL commands
+sent ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ REGED state confirmed ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ audit events written.
 
 ## Acceptance criteria
 
@@ -408,7 +408,7 @@ Designed in docs/pbx/end-user-self-service.md. Not implemented.
 
 ## Security
 
-- /me/* endpoints use JWT sub as implicit scope — no user ID override
+- /me/* endpoints use JWT sub as implicit scope ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no user ID override
 - All queries join through users.tenant_id
 - PIN change requires current PIN
 - SIP credential reset returns new credential once only
@@ -469,13 +469,13 @@ Phase 2 (controlled actions):
 
 - Read-only status: platform_admin only
 - Controlled actions: platform_admin + approval required
-- Action types are an explicit enum — no user string reaches ESL
+- Action types are an explicit enum ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no user string reaches ESL
 - Module reload allowlist: mod_conference, mod_valet_parking, mod_xml_curl, mod_sofia only
 
 ## Testing
 
 - Allowlist enforcement, approval gate, tenant isolation
-- Runtime smoke: reloadxml triggered via UI → Go agent → result recorded
+- Runtime smoke: reloadxml triggered via UI ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Go agent ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ result recorded
 
 ## Acceptance criteria
 
@@ -519,7 +519,7 @@ Required evidence per feature:
 - Feature codes: DTMF smoke on self-hosted runner
 - Call parking: valet_park smoke with Go agent event ingestion
 - Conferencing: mod_conference two-caller smoke
-- Gateway reload: trunk change → REGED confirmation smoke
+- Gateway reload: trunk change ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ REGED confirmation smoke
 - Self-service: integration test matrix (no FreeSWITCH runtime needed)
 - Runtime management: reloadxml/rescan action smoke
 
