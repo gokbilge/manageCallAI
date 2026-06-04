@@ -1,6 +1,6 @@
 {
   "name": "@managecallai/mcp",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "MCP server exposing ManageCallAI IVR lifecycle tools to AI agents",

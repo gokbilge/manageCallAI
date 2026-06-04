@@ -20,5 +20,6 @@ export const paths = {
     parkingLots: '/tenant/parking-lots',
     conferenceRooms: '/tenant/conference-rooms',
     smokeTest: '/tenant/integrations/directory-smoke-test',
+    trunkTestWorkflow: '/tenant/integrations/trunk-test-workflow',
   },
 } as const;
