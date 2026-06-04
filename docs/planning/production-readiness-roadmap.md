@@ -3,26 +3,33 @@
 This roadmap converts the current release-readiness assessment into execution
 lanes. It is intentionally stricter than the public-alpha gate.
 
-## Current Recommendation
+## Current recommendation
 
-Last updated: 2026-06-02.
+Last updated: 2026-06-04.
 
 - **Internal alpha:** Ready.
-- **Public alpha:** Ready - `v0.2.0-alpha` tagged. All alpha gates closed:
-  clean-clone demo loop executed (2026-06-02), runtime proof from CI smoke
-  run 26803056139, and normal CI quality gates passing.
-- **Public beta candidate:** Current stage. Beta implementation work has landed,
-  including the observability cockpit, webhook/idempotency checks, MCP/n8n docs,
-  SDK workflow, retention/legal-hold APIs, live carrier evidence, and
-  rate-limit/upgrade documentation.
-- **Public beta ready:** Not ready until the beta evidence packet is tied to the
-  intended beta candidate: release/tag-bound smoke evidence, SDK dry-run/publish
-  evidence, MCP/n8n/webhook verification evidence, and coverage evidence.
-- **Production:** Not ready. Production requires a complete release-candidate
-  evidence manifest with current artifacts for runtime smoke, production E2E,
-  restore/upgrade, SLO/soak/load, carrier interop, multi-instance rate limiting,
-  retention/storage/export behavior, security gates, and operator signoff.
-## Stage A: Public Alpha — ✅ Complete (`v0.2.0-alpha`)
+- **Public alpha:** Historically evidenced.
+- **Public beta candidate:** The code line is beyond early beta foundations, but
+  release posture must still follow evidence and candidate-bound validation.
+- **Production:** Do not infer production readiness from implementation alone.
+  Production requires current release-candidate evidence for runtime smoke,
+  production E2E, restore/upgrade, SLO/soak/load, carrier interop,
+  multi-instance rate limiting, retention/storage/export behavior, security
+  gates, and operator signoff.
+
+## Product release train
+
+The next feature releases should follow this product roadmap:
+
+- `v0.4.x` - P0 competitive baseline
+- `v0.5.x` - P1 operational maturity
+- `v0.6.x` - P2 AI-native differentiation
+
+This product roadmap is separate from release evidence posture. A feature may be
+targeted for one of these release lines without that release line being
+production-ready.
+
+## Stage A: Public alpha
 
 Goal: make the repository honest, runnable, and safe for public evaluation.
 
@@ -38,7 +45,7 @@ Exit criteria:
 - local alpha deployment guide verified from a clean clone
 - demo/runtime proof result captured in release notes
 
-## Stage B: Public Beta Foundation — ⛔ Not Ready
+## Stage B: Public beta foundation
 
 Goal: prove the runtime path continuously and make the operator surfaces usable.
 
@@ -56,9 +63,10 @@ Exit criteria:
 - MCP/n8n docs and examples are verified end to end
 - API/Web/MCP/Go coverage meets beta thresholds
 
-## Stage C: Production Hardening — ⛔ Not Ready (partial lab evidence)
+## Stage C: Production hardening
 
-Goal: prepare real operators to deploy, operate, recover, and secure the system.
+Goal: prepare real operators to deploy, operate, recover, and secure the
+system.
 
 Required slices:
 
@@ -81,13 +89,15 @@ Exit criteria:
 - logs and support bundles are redaction-verified
 - load/soak tests cover runtime event ingestion and call-event query paths
 - multi-instance deployments prove shared or edge-enforced rate limiting
-- carrier interop evidence proves registration, call flow, DTMF, CDR, NAT/media, and failover expectations
+- carrier interop evidence proves registration, call flow, DTMF, CDR,
+  NAT/media, and failover expectations
 - runtime lookup SLO evidence passes documented breach thresholds
-- release evidence bundle contains CI, security, runtime, restore, SLO, carrier, rollback, and operator signoff evidence
+- release evidence bundle contains CI, security, runtime, restore, SLO,
+  carrier, rollback, and operator signoff evidence
 
-## Slice Ownership
+## Slice ownership
 
-| Slice | Release Gate | Main Risk Reduced |
+| Slice | Release gate | Main risk reduced |
 |---|---|---|
 | `SLICE-49` | Public alpha | misleading release posture, unresolved security findings |
 | `SLICE-50` | Public beta | untested real FreeSWITCH runtime integration |
@@ -101,32 +111,66 @@ Exit criteria:
 | `SLICE-58` | Production | runtime lookup latency regressions in live call path |
 | `SLICE-59` | Production | scattered release evidence and unaudited promotion decisions |
 
-## PBX Completeness Layer
+## PBX completeness and competitive productization
 
-The PBX Completeness Layer extends manageCallAI into a more complete PBX control
-plane. These slices are **planned, not implemented** as of 2026-06-03.
+The PBX completeness APIs landed in the `v0.3.x` code line, but several
+operator-facing product surfaces remain incomplete. The next planning frame is
+therefore not "implement the backend from scratch" but "turn the implemented
+backend into a competitive product surface."
 
-| Slice | Feature | Release Gate |
+### `v0.4.x` - P0 competitive baseline
+
+Goal: become a credible hard-PBX competitor baseline for operators and admins.
+
+Required outcomes:
+
+- gateway/trunk apply workflow in the web UI
+- feature-code admin surface
+- parking-lot admin surface
+- conference-room admin surface
+- stronger operator cockpit and reporting baseline
+- first operator-facing trunk/carrier test workflow
+- emergency routing and safety guidance
+
+### `v0.5.x` - P1 operational maturity
+
+Goal: deepen operator trust, end-user completeness, and enterprise operations.
+
+Required outcomes:
+
+- end-user portal completion
+- evidence bundle status surfaced in the product UI
+- stronger retention/storage/export flows
+- carrier health and template workflows
+- broader lifecycle consistency across more object types
+
+### `v0.6.x` - P2 AI-native differentiation
+
+Goal: deliver buyer-visible AI features that save operator time and reduce
+risk.
+
+Required outcomes:
+
+- AI call failure explanation
+- AI route risk analysis
+- AI voicemail/call summaries
+- natural-language reporting
+
+| Slice | Feature | Release gate |
 |---|---|---|
-| SLICE-60 | Feature codes | Public beta |
-| SLICE-61 | Call parking | Production |
-| SLICE-62 | Native conferencing | Production |
-| SLICE-63 | Gateway reload on trunk change | Public beta / production |
-| SLICE-64 | End-user self-service portal | Production |
-| SLICE-65 | SIP profile management API + UI | Public beta |
-| SLICE-66 | Safe FreeSWITCH runtime management | Production |
+| `SLICE-60` | Feature codes | Implemented in API/runtime; `v0.4.x` web productization |
+| `SLICE-61` | Call parking | Implemented in API/runtime; `v0.4.x` web productization |
+| `SLICE-62` | Native conferencing | Implemented in API/runtime; `v0.4.x` web productization |
+| `SLICE-63` | Gateway reload on trunk change | Implemented in API/runtime; `v0.4.x` operator workflow |
+| `SLICE-64` | End-user self-service portal | Implemented in API/policy layer; `v0.5.x` product completion |
+| `SLICE-65` | SIP profile management API + UI | Still open; target `v0.4.x` or `v0.5.x` depending on scope |
+| `SLICE-66` | Safe FreeSWITCH runtime management | Partial; broader action workflow remains open |
 
-Status of each feature:
+Do not confuse implementation presence with release evidence. These features may
+exist in code while still requiring UI completion, operator workflow maturity,
+and current release-bound runtime evidence.
 
-- Designed — architecture, domain model, API, and DB design complete.
-- Not implemented — no code, no migrations, no tests.
-- Not evidenced — no runtime smoke for any of these features.
-
-Do not count these features as part of the current release stage.
-Do not claim production readiness for these features until implementation,
-tenant isolation tests, and runtime evidence are present.
-
-## Do Not Reclassify As Production Until
+## Do not reclassify as production until
 
 - runtime E2E is automated or required as a release gate
 - production deployment docs are tested

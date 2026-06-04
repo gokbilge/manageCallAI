@@ -24,6 +24,18 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [../release/product-release-audit.md](../release/product-release-audit.md)
   Product release audit and release-stage decision.
 
+- [competitive-gap-analysis.md](competitive-gap-analysis.md)
+  Competitive audit of PBX completeness, operator UX, runtime operations, integrations, enterprise posture, and AI gaps versus mature PBX products.
+
+Planning baseline for the next feature releases:
+
+- `v0.4.x` = P0 competitive baseline
+- `v0.5.x` = P1 operational maturity
+- `v0.6.x` = P2 AI-native differentiation
+
+- [release-buckets-v0.4-v0.6.md](release-buckets-v0.4-v0.6.md)
+  Concrete issue buckets for the `v0.4`, `v0.5`, and `v0.6` release train.
+
 - [post-release-roadmap.md](post-release-roadmap.md)
   Seven post-release expansion workstreams that now map to explicit follow-on slices.
 

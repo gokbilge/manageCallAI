@@ -1,10 +1,11 @@
 # PBX Completeness Layer
 
-Status: **Designed — not implemented.** None of the features described in this
-directory are production-ready. All require implementation, tests, and
-runtime evidence before any promotion beyond alpha.
+Status: **Partially implemented.** The API and schema now implement most of this
+layer, but the product surface is uneven. Several areas remain API-first,
+operator-UI-light, or still depend on runtime evidence rather than broad product
+workflow maturity.
 
-Last updated: 2026-06-03.
+Last updated: 2026-06-04.
 
 ---
 
@@ -13,92 +14,101 @@ Last updated: 2026-06-03.
 manageCallAI is an AI-native telecom control plane. Its initial scope covers
 IVR flows, routing, call groups, queues, voicemail boxes, SIP trunk management,
 outbound calls, fraud policy, observability, and a complete safety lifecycle
-(draft → validate → simulate → publish → rollback).
+(`draft -> validate -> simulate -> publish -> rollback`).
 
-The **PBX Completeness Layer** extends this foundation into a more complete
-PBX control plane. The goal is not to replicate FusionPBX — it is to add the
+The **PBX Completeness Layer** extends this foundation into a more complete PBX
+control plane. The goal is not to replicate FusionPBX. The goal is to add the
 critical missing primitives that make manageCallAI usable as the primary
 management interface for a FreeSWITCH-based telephone system, without
 compromising the safety model.
 
 ---
 
-## Design boundaries (unchanged from core architecture)
+## Design boundaries
 
-All new features in this layer follow the same non-negotiable rules as the rest
-of the system:
+All features in this layer follow the same rules as the rest of the system:
 
 | Principle | Application to PBX layer |
 |---|---|
 | API owns desired state | Feature codes, parking lots, conference rooms, and runtime operations are stored in PostgreSQL, not in FreeSWITCH XML files |
 | FreeSWITCH is runtime-only | FreeSWITCH executes behavior derived from published desired state; it does not hold authoritative config |
-| Lua is a thin executor | New Lua entry points for feature code handling and parking retrieval call back to the API runtime endpoint; no business logic lives in Lua |
+| Lua is a thin executor | Lua entry points for feature code handling and parking retrieval call back to the API runtime endpoint; no business logic lives in Lua |
 | Go agent handles ESL | Gateway reloads, conference status, and runtime queries flow through the Go agent, not arbitrary ESL from the API |
 | MCP/n8n stay narrower than REST | Read-only views and safe lifecycle operations only; no raw ESL/XML/module commands |
-| Every live-impacting action is audited | Feature code publish, gateway reload, conference create, self-service forwarding change — all write audit events |
+| Every live-impacting action is audited | Feature code publish, gateway reload, conference create, self-service forwarding change, and runtime apply results write audit events |
 | Tenant isolation is absolute | Every object is tenant-scoped; cross-tenant access is impossible at the code level |
-| Approval policy applies | Actions that disrupt live calls support policy-gated approval workflows |
+| Approval policy applies | Actions that disrupt live calls support policy-gated approval workflows where applicable |
 
 ---
 
 ## Feature areas
 
-| Feature | Design doc | Status | Priority |
+| Feature | Design doc | Current status | Priority |
 |---|---|---|---|
-| Feature codes | [feature-codes.md](feature-codes.md) | Designed, not implemented | P1 |
-| Call parking | [call-parking.md](call-parking.md) | Designed, not implemented | P1 |
-| Native conferencing | [conferencing.md](conferencing.md) | Designed, not implemented | P1 |
-| Gateway reload on trunk change | [gateway-reload-on-trunk-change.md](gateway-reload-on-trunk-change.md) | Designed, not implemented | P0 |
-| End-user self-service portal | [end-user-self-service.md](end-user-self-service.md) | Designed, not implemented | P2 |
-| FreeSWITCH runtime management | [freeswitch-runtime-management.md](freeswitch-runtime-management.md) | Designed, not implemented | P1/P2 |
+| Feature codes | [feature-codes.md](feature-codes.md) | Implemented in API/runtime, not fully productized in web UI | P1 |
+| Call parking | [call-parking.md](call-parking.md) | Implemented in API/runtime, not fully productized in web UI | P1 |
+| Native conferencing | [conferencing.md](conferencing.md) | Implemented in API/runtime, not fully productized in web UI | P1 |
+| Gateway reload on trunk change | [gateway-reload-on-trunk-change.md](gateway-reload-on-trunk-change.md) | Implemented for apply-request lifecycle; operator workflow remains partial | P0 |
+| End-user self-service portal | [end-user-self-service.md](end-user-self-service.md) | Implemented in API/policy layer; full end-user product surface remains partial | P2 |
+| FreeSWITCH runtime management | [freeswitch-runtime-management.md](freeswitch-runtime-management.md) | Read-only/runtime-status portions implemented; broader controlled-action UX remains partial | P1/P2 |
 
-Data model and API proposal for all six areas: [pbx-data-model-and-api-proposal.md](pbx-data-model-and-api-proposal.md)
+Data model and API proposal for all six areas:
+[pbx-data-model-and-api-proposal.md](pbx-data-model-and-api-proposal.md)
 
 ---
 
-## What is already implemented (not part of this layer)
+## What is already implemented
 
-These features exist in code, are tested, and are part of the current alpha:
+These features exist in code and tests today:
 
 - SIP trunk CRUD with AES-256-GCM encrypted credentials
-- Gateway XML served via `mod_xml_curl` `/freeswitch/configuration` endpoint
-- Outbound call dispatch via ESL originate (Go agent `CommandClient`)
-- Tenant-scoped IVR flows, inbound/outbound routes, call groups, queues, voicemail
+- gateway XML served via `mod_xml_curl` `/freeswitch/configuration`
+- outbound call dispatch via ESL originate
+- tenant-scoped IVR flows, inbound/outbound routes, call groups, queues, and voicemail
 - FreeSWITCH directory and dialplan via `mod_xml_curl`
-- Extension SIP registration (mod_xml_curl directory)
-- Per-node SIP profile fields in DB (migration 0044)
+- extension SIP registration via directory lookup
+- per-node SIP profile fields in DB
+- feature code CRUD, validate, publish, disable, and runtime execute callback
+- parking lot CRUD plus runtime park/retrieve/timeout callbacks
+- conference room CRUD plus participant runtime snapshot callbacks
+- self-service `/me/*` APIs for DND and call forwarding
+- node status snapshots and tenant/platform gateway status endpoints
+- runtime apply request lifecycle for trunk-driven gateway reload/rescan work
 
-What is **not** yet wired up:
-- SIP profile management API/UI (fields exist in DB, no API layer)
-- Gateway reload trigger after trunk CRUD (documented here, not implemented)
-- Feature codes, parking, conferencing, self-service, runtime management
+What is **not** yet fully productized:
+
+- SIP profile management API/UI
+- feature-code management in the web UI
+- parking-lot management in the web UI
+- conference-room management in the web UI
+- full end-user portal experience
+- full controlled runtime-action workflow in the web UI
+- carrier/operator test workflows in the web UI
 
 ---
 
 ## Roadmap slices
 
-| Slice | Feature | Gate |
+| Slice | Feature | Current state |
 |---|---|---|
-| SLICE-60 | Feature codes | Public beta |
-| SLICE-61 | Call parking | Public beta |
-| SLICE-62 | Native conferencing | Public beta |
-| SLICE-63 | Gateway reload on trunk change | Public beta / production |
-| SLICE-64 | End-user self-service portal | Production |
-| SLICE-65 | SIP profile management API + UI | Public beta |
-| SLICE-66 | Safe FreeSWITCH runtime management | Production |
+| SLICE-60 | Feature codes | Implemented; web productization remains |
+| SLICE-61 | Call parking | Implemented; web productization remains |
+| SLICE-62 | Native conferencing | Implemented; web productization remains |
+| SLICE-63 | Gateway reload on trunk change | Implemented for API/runtime; richer operator workflow remains |
+| SLICE-64 | End-user self-service portal | Implemented in API/policy layer; fuller end-user UX remains |
+| SLICE-65 | SIP profile management API + UI | Still open |
+| SLICE-66 | Safe FreeSWITCH runtime management | Partial; read-only/status portions implemented |
 
 ---
 
-## Cross-cutting implementation requirements
+## Cross-cutting requirements before calling this layer complete
 
-Before any feature in this layer is promoted to beta or production:
-
-1. **Unit tests** — service-layer business logic covered
-2. **Integration tests** — tenant isolation matrix covered (tenant A cannot access tenant B resources)
-3. **FreeSWITCH runtime evidence** — where the feature touches a live call path, a passing smoke run with evidence artifact is required
-4. **Audit trail verification** — every live-impacting action produces a `tenant_audit_log` entry, tested
-5. **Capability gating** — new capabilities added to the capability matrix and drift-checked in CI
-6. **OpenAPI contract** — new routes in `packages/contracts`, generated into `docs/api/openapi.yaml`
+1. Strong admin UI for the implemented API/runtime features
+2. Runtime evidence for live-call-affecting operations on current candidate tags
+3. Capability gating and tenant-isolation tests kept current
+4. Audit trail coverage for every live-impacting action
+5. OpenAPI and SDK coverage kept aligned with implementation
+6. Operator-facing apply/evidence workflows that expose risk clearly
 
 ---
 
@@ -108,9 +118,9 @@ Before any feature in this layer is promoted to beta or production:
 |---|---|
 | Raw ESL command pass-through | Breaks the safety model |
 | Direct XML dialplan editing | API owns desired state |
-| FreeSWITCH `lua_run` arbitrary scripts | Lua is a thin executor only |
+| Arbitrary `lua_run` scripts | Lua is a thin executor only |
 | Arbitrary module load/unload | Allowlisted safe actions only |
-| Softphone / WebRTC client | Separate product |
-| Billing / invoice generation | External billing system integration |
-| Device firmware management | Beyond PBX control scope |
-| White-label theming | Out of scope for v1 |
+| Softphone / WebRTC client | Separate product surface |
+| Billing / invoicing | External system concern |
+| Device firmware management | Outside PBX control-plane scope |
+| White-label theming | Not part of the core PBX completeness goal |

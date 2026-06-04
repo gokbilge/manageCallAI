@@ -77,6 +77,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [planning/README.md](planning/README.md)
   Release planning index with slice-by-slice dependency and sequencing guidance from the current baseline to product release.
 
+- [planning/competitive-gap-analysis.md](planning/competitive-gap-analysis.md)
+  Competitive gap audit covering PBX completeness, operator workflows, enterprise posture, integrations, and AI-value gaps against mature PBX products.
+
 - [release/freeswitch-smoke-gate.md](release/freeswitch-smoke-gate.md)
   Required self-hosted FreeSWITCH smoke gate for release and RC branches.
 
