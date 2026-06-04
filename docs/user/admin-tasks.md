@@ -34,6 +34,7 @@ Typical routes include:
 - `/tenant/routes/inbound`
 - `/tenant/routes/outbound`
 - `/tenant/ivr-flows`
+- `/tenant/conference-rooms`
 - `/tenant/feature-codes`
 - `/tenant/approvals`
 - `/tenant/prompts`
@@ -197,7 +198,23 @@ Use this page to:
 
 This is usually used for publish-sensitive actions such as IVR lifecycle changes.
 
-## 4.9 Manage feature codes
+## 4.9 Manage conference rooms
+
+Go to:
+
+- `/tenant/conference-rooms`
+
+Use this page to:
+
+- create conference rooms backed by `mod_conference`
+- review room number, PIN posture, and participant limits
+- inspect live participant visibility when runtime callbacks are present
+- enable, disable, or delete rooms according to your role
+
+The room number is a live routing target. Treat changes to conference rooms with
+the same care as any inbound routing destination.
+
+## 4.10 Manage feature codes
 
 Go to:
 
@@ -213,7 +230,7 @@ Use this page to:
 Active and disabled feature codes are immutable in the current lifecycle. To
 change live behavior, create a replacement draft and publish it intentionally.
 
-## 4.10 Manage prompts
+## 4.11 Manage prompts
 
 Go to:
 
@@ -224,7 +241,7 @@ Use this page to:
 - manage prompt assets
 - review prompt inventory used by IVR or voicemail workflows
 
-## 4.11 Review runtime sessions
+## 4.12 Review runtime sessions
 
 Go to:
 
@@ -238,7 +255,7 @@ Use this page to:
 
 This is useful when a published IVR behaves differently than expected.
 
-## 4.12 Review call events and recordings
+## 4.13 Review call events and recordings
 
 Go to:
 
@@ -251,7 +268,7 @@ Use these pages to:
 - inspect normalized call events
 - review recording inventory where enabled
 
-## 4.13 Manage schedules
+## 4.14 Manage schedules
 
 Go to:
 
@@ -262,7 +279,7 @@ Use this page to:
 - create business-time schedules
 - support time-based routing behavior
 
-## 4.14 Manage webhooks and automation
+## 4.15 Manage webhooks and automation
 
 Go to:
 
@@ -273,7 +290,7 @@ Use this page to:
 - configure outbound event delivery
 - support workflow automation and external integrations
 
-## 4.15 Review security and compliance pages
+## 4.16 Review security and compliance pages
 
 Go to:
 
@@ -285,7 +302,7 @@ Use these pages to:
 - review security alerts
 - inspect retention or compliance-related controls available to your role
 
-## 4.16 Run the directory smoke test
+## 4.17 Run the directory smoke test
 
 Go to:
 

@@ -29,6 +29,7 @@ describe('AppSidebar', () => {
     expect(screen.getByText('Extensions')).toBeInTheDocument();
     expect(screen.getByText('IVR Flows')).toBeInTheDocument();
     expect(screen.getByText('Approvals')).toBeInTheDocument();
+    expect(screen.getByText('Conference Rooms')).toBeInTheDocument();
     expect(screen.getByText('Feature Codes')).toBeInTheDocument();
   });
 
