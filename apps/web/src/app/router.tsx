@@ -28,7 +28,6 @@ const ObservabilityCockpitPage = lazy(() => import('@/features/observability/obs
 const RuntimeSessionsPage = lazy(() => import('@/features/runtime/runtime-sessions-page').then(m => ({ default: m.RuntimeSessionsPage })));
 const RuntimeSessionDetailPage = lazy(() => import('@/features/runtime/runtime-session-detail-page').then(m => ({ default: m.RuntimeSessionDetailPage })));
 const SchedulesPage = lazy(() => import('@/features/schedules/schedules-page').then(m => ({ default: m.SchedulesPage })));
-const FeatureCodesPage = lazy(() => import('@/features/feature-codes/feature-codes-page').then(m => ({ default: m.FeatureCodesPage })));
 const OutboundRoutesPage = lazy(() => import('@/features/outbound-routes/outbound-routes-page').then(m => ({ default: m.OutboundRoutesPage })));
 const OutboundCallsPage = lazy(() => import('@/features/outbound-calls/outbound-calls-page').then(m => ({ default: m.OutboundCallsPage })));
 const RecordingsPage = lazy(() => import('@/features/recordings/recordings-page').then(m => ({ default: m.RecordingsPage })));
@@ -121,12 +120,6 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_SCHEDULES_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/schedules', element: <Suspense fallback={<PageLoader />}><SchedulesPage /></Suspense> },
-            ],
-          },
-          {
-            element: <RequireCapability capability={CAPABILITIES.TENANT_FEATURE_CODES_VIEW} redirectTo="/tenant/extensions" />,
-            children: [
-              { path: 'tenant/feature-codes', element: <Suspense fallback={<PageLoader />}><FeatureCodesPage /></Suspense> },
             ],
           },
           {
