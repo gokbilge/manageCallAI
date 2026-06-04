@@ -1,7 +1,7 @@
 # Feature Codes — Design
 
-Status: **Designed, not implemented.**
-Priority: P1 — public beta / early production PBX completeness.
+Status: **Implemented in API/runtime and productized in the tenant admin web UI.**
+Priority: P0/P1 — `v0.4.x` competitive baseline and early production PBX completeness.
 
 ---
 
@@ -22,7 +22,7 @@ or Lua scripts.
   receptionists can retrieve calls by code.
 - As a tenant admin, I want to change `*98` to `*97` for voicemail access without
   touching FreeSWITCH XML.
-- As an operator, I want to see the generated dialplan preview before publishing.
+- As an operator, I want to validate, publish, disable, and review lifecycle state for a feature code from the web UI.
 - As an auditor, I want to see who created or changed a feature code and when.
 - As an AI agent (via MCP), I want to list configured feature codes for a tenant.
 
@@ -70,12 +70,9 @@ or Lua scripts.
 | `call_park` | Park the current call |
 | `call_park_retrieve` | Retrieve a parked call by slot |
 | `conference_join` | Join a conference room |
-| `custom_safe_action` | Approved custom safe action (future) |
-
-### FeatureCodePublishRecord
-
-Follows the same publish-record pattern as IVR flows: immutable record linking
-a feature-code mutation to an actor and outcome.
+The current code line does not implement a dedicated `FeatureCodePublishRecord`
+table. Publish and runtime activity are captured through status fields plus audit
+events.
 
 ---
 
@@ -94,9 +91,10 @@ DELETE /api/v1/feature-codes/:id
 
 POST   /api/v1/feature-codes/:id/validate
 POST   /api/v1/feature-codes/:id/publish
+POST   /api/v1/feature-codes/:id/disable
 
 # Runtime callback (FreeSWITCH → API, runtime-auth only)
-POST   /api/v1/runtime/feature-code/execute
+POST   /api/v1/feature-codes/runtime/execute
 ```
 
 ### Request Examples
@@ -115,7 +113,7 @@ POST /api/v1/feature-codes
 
 **Runtime callback (from Lua via runtime-auth):**
 ```json
-POST /api/v1/runtime/feature-code/execute
+POST /api/v1/feature-codes/runtime/execute
 {
   "node_id": "fs-node-1",
   "call_id": "abc123",
@@ -137,12 +135,24 @@ Response:
 
 | Action | Required role |
 |---|---|
-| List/read | `tenant_viewer` or higher |
-| Create/update | `tenant_operator` or higher |
-| Delete | `tenant_admin` |
-| Validate | `tenant_operator` or higher |
-| Publish | `tenant_admin` or approval-gated |
+| List/read | `tenant.feature_codes.view` (`tenant_viewer` or higher) |
+| Create | `tenant.feature_codes.create` (`tenant_operator` or higher) |
+| Update draft | `tenant.feature_codes.update` (`tenant_operator` or higher) |
+| Validate draft | `tenant.feature_codes.validate` (`tenant_operator` or higher) |
+| Publish draft | `tenant.feature_codes.publish` (`tenant_admin`) |
+| Disable/delete | `tenant.feature_codes.deactivate` (`tenant_admin`) |
 | Runtime execute | Runtime HMAC node auth only |
+
+### Tenant admin web surface
+
+The tenant workspace now includes a dedicated **Feature Codes** page that
+provides:
+
+- inventory and status visibility for all tenant-scoped feature codes
+- draft create/edit flow
+- validation feedback with surfaced API errors
+- publish, disable, and delete actions based on role capability
+- emergency-number safety messaging and immutable-state guidance
 
 ---
 
@@ -201,7 +211,7 @@ helper). It:
 
 1. Reads `${destination_number}` (the dialed code).
 2. Reads `${caller_extension_id}` from channel variables.
-3. POSTs to `/api/v1/runtime/feature-code/execute` with runtime-auth.
+3. POSTs to `/api/v1/feature-codes/runtime/execute` with runtime-auth.
 4. Executes the returned bounded action (play_prompt, collect_digits, transfer,
    hangup, set_variable).
 5. Reports result back.
@@ -210,7 +220,7 @@ No business logic lives in Lua.
 
 ### Runtime resolution
 
-The API `/api/v1/runtime/feature-code/execute` endpoint:
+The API `/api/v1/feature-codes/runtime/execute` endpoint:
 
 1. Authenticates the caller via node HMAC.
 2. Resolves `dtmf_code` against `feature_codes` for the tenant.

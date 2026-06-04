@@ -131,9 +131,9 @@ Primary resources:
 - `fraud/outbound-policy`
 - `platform/nodes`
 
-**PBX Completeness Layer resources (designed, not yet implemented):**
+**PBX Completeness Layer resources:**
 
-- `feature-codes` — tenant-scoped DTMF feature code definitions
+- `feature-codes` — tenant-scoped DTMF feature code definitions (implemented)
 - `parking-lots` — call parking lot configuration
 - `parked-calls` — live parked call observation (runtime)
 - `conference-rooms` — mod_conference room management

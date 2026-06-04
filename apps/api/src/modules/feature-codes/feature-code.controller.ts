@@ -2,7 +2,8 @@ import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { db } from '../../db/client.js';
-import { authenticate } from '../auth/authenticate.js';
+import { requireCapability } from '../auth/require-capability.js';
+import { CAPABILITIES } from '../auth/capabilities.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { fireAuditEvent } from '../audit/fire-audit.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
@@ -63,14 +64,14 @@ function handleError(err: unknown, reply: FastifyReply): void {
 
 export const featureCodeController: FastifyPluginAsyncZod = async (app) => {
   // ── Authenticated tenant routes ─────────────────────────────────────────────
-  app.get('/', { preHandler: authenticate }, async (req) => {
+  app.get('/', { preHandler: requireCapability(CAPABILITIES.TENANT_FEATURE_CODES_VIEW) }, async (req) => {
     const user = req.user as AuthClaims;
     return { data: await service.list(user.tenant_id) };
   });
 
   app.post(
     '/',
-    { preHandler: authenticate, schema: { body: CreateBodySchema } },
+    { preHandler: requireCapability(CAPABILITIES.TENANT_FEATURE_CODES_CREATE), schema: { body: CreateBodySchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -97,7 +98,7 @@ export const featureCodeController: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/:id',
-    { preHandler: authenticate, schema: { params: UuidParam } },
+    { preHandler: requireCapability(CAPABILITIES.TENANT_FEATURE_CODES_VIEW), schema: { params: UuidParam } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -110,7 +111,7 @@ export const featureCodeController: FastifyPluginAsyncZod = async (app) => {
 
   app.patch(
     '/:id',
-    { preHandler: authenticate, schema: { params: UuidParam, body: UpdateBodySchema } },
+    { preHandler: requireCapability(CAPABILITIES.TENANT_FEATURE_CODES_UPDATE), schema: { params: UuidParam, body: UpdateBodySchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -132,7 +133,7 @@ export const featureCodeController: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     '/:id/publish',
-    { preHandler: authenticate, schema: { params: UuidParam } },
+    { preHandler: requireCapability(CAPABILITIES.TENANT_FEATURE_CODES_PUBLISH), schema: { params: UuidParam } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -155,7 +156,7 @@ export const featureCodeController: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     '/:id/disable',
-    { preHandler: authenticate, schema: { params: UuidParam } },
+    { preHandler: requireCapability(CAPABILITIES.TENANT_FEATURE_CODES_DEACTIVATE), schema: { params: UuidParam } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -177,7 +178,7 @@ export const featureCodeController: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     '/:id/validate',
-    { preHandler: authenticate, schema: { params: UuidParam } },
+    { preHandler: requireCapability(CAPABILITIES.TENANT_FEATURE_CODES_VALIDATE), schema: { params: UuidParam } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {
@@ -191,7 +192,7 @@ export const featureCodeController: FastifyPluginAsyncZod = async (app) => {
 
   app.delete(
     '/:id',
-    { preHandler: authenticate, schema: { params: UuidParam } },
+    { preHandler: requireCapability(CAPABILITIES.TENANT_FEATURE_CODES_DEACTIVATE), schema: { params: UuidParam } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
       try {

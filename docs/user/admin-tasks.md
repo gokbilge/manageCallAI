@@ -34,6 +34,7 @@ Typical routes include:
 - `/tenant/routes/inbound`
 - `/tenant/routes/outbound`
 - `/tenant/ivr-flows`
+- `/tenant/feature-codes`
 - `/tenant/approvals`
 - `/tenant/prompts`
 - `/tenant/runtime/sessions`
@@ -196,7 +197,23 @@ Use this page to:
 
 This is usually used for publish-sensitive actions such as IVR lifecycle changes.
 
-## 4.9 Manage prompts
+## 4.9 Manage feature codes
+
+Go to:
+
+- `/tenant/feature-codes`
+
+Use this page to:
+
+- create draft DTMF feature codes
+- validate before publish
+- publish, disable, or delete according to your role
+- surface emergency-number conflicts before they reach runtime
+
+Active and disabled feature codes are immutable in the current lifecycle. To
+change live behavior, create a replacement draft and publish it intentionally.
+
+## 4.10 Manage prompts
 
 Go to:
 
@@ -207,7 +224,7 @@ Use this page to:
 - manage prompt assets
 - review prompt inventory used by IVR or voicemail workflows
 
-## 4.10 Review runtime sessions
+## 4.11 Review runtime sessions
 
 Go to:
 
@@ -221,7 +238,7 @@ Use this page to:
 
 This is useful when a published IVR behaves differently than expected.
 
-## 4.11 Review call events and recordings
+## 4.12 Review call events and recordings
 
 Go to:
 
@@ -234,7 +251,7 @@ Use these pages to:
 - inspect normalized call events
 - review recording inventory where enabled
 
-## 4.12 Manage schedules
+## 4.13 Manage schedules
 
 Go to:
 
@@ -245,7 +262,7 @@ Use this page to:
 - create business-time schedules
 - support time-based routing behavior
 
-## 4.13 Manage webhooks and automation
+## 4.14 Manage webhooks and automation
 
 Go to:
 
@@ -256,7 +273,7 @@ Use this page to:
 - configure outbound event delivery
 - support workflow automation and external integrations
 
-## 4.14 Review security and compliance pages
+## 4.15 Review security and compliance pages
 
 Go to:
 
@@ -268,7 +285,7 @@ Use these pages to:
 - review security alerts
 - inspect retention or compliance-related controls available to your role
 
-## 4.15 Run the directory smoke test
+## 4.16 Run the directory smoke test
 
 Go to:
 
