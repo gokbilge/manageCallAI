@@ -126,6 +126,13 @@ export const API_KEY_CAPABILITIES = [
   'tenant.schedules.view',
   'tenant.schedules.create',
   'tenant.schedules.update',
+  // tenant — feature codes
+  'tenant.feature_codes.view',
+  'tenant.feature_codes.create',
+  'tenant.feature_codes.update',
+  'tenant.feature_codes.validate',
+  'tenant.feature_codes.publish',
+  'tenant.feature_codes.deactivate',
   // tenant — outbound routes
   'tenant.outbound_routes.view',
   'tenant.outbound_routes.create',
