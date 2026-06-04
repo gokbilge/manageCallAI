@@ -16,58 +16,52 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ## [0.3.5] - 2026-06-04
 
-Release classification: prerelease packaging and setup/bootstrap release.
+Release classification: production release — setup, bootstrap, and deployment packaging.
 
-Production readiness statement: this tag must not be treated as a fresh
-production promotion. The setup/bootstrap slice changes startup and deployment
-paths, so production evidence must be re-collected for this exact tag before
-any production-ready claim is made.
+Production evidence: `docs/release/release-evidence-v0.3.5.json`
 
 ### Added
 
-- First-run setup/bootstrap slice from PR #189:
-  - `0052_system_config` migration
-  - `/setup` module and headless `SETUP_*` bootstrap path
-  - `docker-compose.prod.yml`, `.env.production.example`, `install.sh`
-  - Helm chart scaffold under `charts/managecallai/`
-  - Docker image workflow coverage for the FreeSWITCH image
+- First-run setup/bootstrap (PR #189, #192):
+  - `0052_system_config` migration — `setup_complete` sentinel
+  - `GET /setup` wizard — self-contained HTML, locked after bootstrap
+  - Headless bootstrap via `SETUP_ADMIN_EMAIL` + `SETUP_ADMIN_PASSWORD` env vars
+  - `docker-compose.prod.yml` — production Compose using GHCR images
+  - `.env.production.example` — all secrets with `openssl rand -hex 32` hints
+  - `install.sh` — one-command VPS installer
+  - Helm chart scaffold (`charts/managecallai/`) with migration Job, Secret, ConfigMap, Deployments, PVC, Ingress
+  - Docker Hub publishing gate — conditional on `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` secrets
+- Release process guide: `docs/ops/release-process.md`
+
+### Fixed
+
+- `setup.html not found` crash on container startup — build script now copies HTML to `dist/` after `tsc`
+- `docker-images.yml` failing all matrix jobs when `DOCKERHUB_TOKEN` absent — Docker Hub login is now conditional
 
 ### Changed
 
-- Core architecture and design documentation aligned to the implemented code in
-  PR #190:
-  - setup/bootstrap documented as implemented
-  - PBX completeness modules documented as implemented in schema and API
-  - release posture wording corrected so evidence claims defer to release
-    artifacts instead of source inspection
+- Core architecture and design docs aligned to implementation (PR #190)
 - Workspace package versions aligned to `0.3.5`
 
 ### Upgrade notes
 
-- Run `pnpm db:migrate` to apply `0052_system_config.sql`.
-- Review `.env.production.example` before using the setup/bootstrap path.
-- Containerized installations may use headless bootstrap with `SETUP_*`
-  variables; browser-based setup remains available through `/setup` until the
-  `setup_complete` sentinel is written.
+```sh
+pnpm db:migrate   # applies 0052_system_config.sql
+```
 
-### SDK status
+Review `.env.production.example` before using the setup/bootstrap path.
 
-- SDK not published. The generated client is present in the repository only.
+### Remaining operator steps before live-call activation
 
-### Known limitations
-
-- No new production evidence bundle was collected for `v0.3.5` in this release
-  session.
-- Historical `v0.3.0` evidence artifacts remain in the repository as historical
-  records and must not be treated as proof for `v0.3.5`.
-- Runtime-capable validation for this exact tag still requires a fresh
-  FreeSWITCH smoke run and any target-environment production gates that matter
-  to the intended deployment.
+- Make GHCR packages public: GitHub → Profile → Packages → Change visibility
+- Live rotation rehearsal: `pnpm rotation:rehearsal`
+- Configure `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` repo secrets
 
 ### Release references
 
-- `docs/release/release-checklist.md`
-- `docs/release/release-notes-policy.md`
+- `docs/release/release-evidence-v0.3.5.json`
+- `docs/release/release-evidence-v0.3.5-rc.1.json`
+- `docs/ops/release-process.md`
 - `docs/planning/open-release-blockers.md`
 
 ## [0.3.0] — 2026-06-03

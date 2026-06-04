@@ -11,12 +11,13 @@ ruleset.
 
 ## Overview
 
-Every production release follows four stages:
+Every production release follows five stages:
 
 1. **Prepare main** — code merged, version bumped, CHANGELOG complete
 2. **RC branch + smoke gate** — create `rc/vX.Y.Z`, trigger and pass smoke
 3. **RC evidence + RC tag** — collect run IDs, write manifest, tag `vX.Y.Z-rc.N`
 4. **Production evidence + production tag** — confirm remaining gates, tag `vX.Y.Z`, publish release
+5. **Update public-facing pages** — README, CHANGELOG, GitHub release notes, About
 
 ---
 
@@ -299,6 +300,70 @@ gh release create vX.Y.Z \
 ```
 
 Do NOT use `--prerelease`.
+
+---
+
+## Stage 5 — Update public-facing pages
+
+After the production tag and GitHub release are published, update:
+
+### 5.1  CHANGELOG.md
+
+Move the `## [Unreleased]` content to `## [X.Y.Z] - YYYY-MM-DD`:
+
+- Change `Release classification` from "prerelease" to "production release"
+- Remove the "No new production evidence" known limitation
+- Add `Production evidence: docs/release/release-evidence-vX.Y.Z.json`
+- Add any `### Fixed` entries for bugs found and fixed during this release session
+- Add `### Remaining operator steps` if any post-release manual gates remain
+- Leave `## [Unreleased]` as an empty placeholder above the released section
+
+### 5.2  README.md
+
+Update the **Release posture** section:
+
+```md
+**Current release: vX.Y.Z** (YYYY-MM-DD) — <short description>.
+
+Evidence: [docs/release/release-evidence-vX.Y.Z.json](docs/release/release-evidence-vX.Y.Z.json)
+```
+
+Ensure `docs/ops/release-process.md` is linked.
+
+### 5.3  GitHub repository About
+
+Update the repository description and website if relevant:
+
+```sh
+gh api repos/gokbilge/manageCallAI \
+  --method PATCH \
+  -f description="<updated description if needed>"
+```
+
+### 5.4  GitHub release notes
+
+The release notes are set when running `gh release create`. If you need to
+edit them after the fact:
+
+```sh
+gh release edit vX.Y.Z --notes "..."
+```
+
+### 5.5  Commit the docs updates
+
+README and CHANGELOG are committed files. Put them in a PR and merge:
+
+```sh
+git checkout -b chore/vX.Y.Z-post-release-docs
+git add README.md CHANGELOG.md
+git commit -m "docs: update README and CHANGELOG for vX.Y.Z release"
+git push -u origin chore/vX.Y.Z-post-release-docs
+gh pr create ...
+# trigger CI manually if needed (docs-only PRs skip CI via paths-ignore):
+gh workflow run ci.yml --ref chore/vX.Y.Z-post-release-docs
+# merge (disable enforce_admins if needed):
+gh pr merge <PR> --squash --admin ...
+```
 
 ---
 

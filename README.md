@@ -34,6 +34,10 @@ Source inspection shows implemented support for:
 
 ## Release posture
 
+**Current release: v0.3.5** (2026-06-04) — Setup, Bootstrap, and Deployment Packaging.
+
+Evidence: [docs/release/release-evidence-v0.3.5.json](docs/release/release-evidence-v0.3.5.json)
+
 Release posture must be derived from release evidence, not from source inspection alone.
 
 - Implementation in the tree is not evidence.
@@ -44,7 +48,7 @@ Use these documents for current stage and blockers:
 
 - [docs/release/release-checklist.md](docs/release/release-checklist.md)
 - [docs/release/product-release-audit.md](docs/release/product-release-audit.md)
-- [docs/release/public-alpha-readiness.md](docs/release/public-alpha-readiness.md)
+- [docs/ops/release-process.md](docs/ops/release-process.md)
 - [docs/planning/open-release-blockers.md](docs/planning/open-release-blockers.md)
 
 ## Architecture summary
