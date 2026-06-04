@@ -94,7 +94,7 @@ describe('FeatureCodesPage', () => {
     fireEvent.change(screen.getByLabelText('DTMF Code'), { target: { value: '*73' } });
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Park Call' } });
     fireEvent.change(screen.getByLabelText('Action Type'), { target: { value: 'call_park' } });
-    fireEvent.change(screen.getByLabelText('Action Config JSON'), { target: { value: '{\"slot\":\"701\"}' } });
+    fireEvent.change(screen.getByLabelText('Action Config JSON'), { target: { value: '{"slot":"701"}' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Draft' }));
 
     await waitFor(() => {
