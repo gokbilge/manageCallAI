@@ -33,6 +33,29 @@ const emptySnapshot: LiveSnapshot = {
   generated_at: new Date().toISOString(),
 };
 
+function mockApi(overrides: {
+  snapshot?: LiveSnapshot;
+  gatewayStatus?: Array<{ trunk_id: string; trunk_name: string; node_id: string; state: string; queried_at: string }>;
+  callEvents?: unknown[];
+  error?: Error;
+} = {}) {
+  vi.mocked(apiRequest).mockImplementation(async (path: string) => {
+    if (overrides.error) {
+      throw overrides.error;
+    }
+    if (path === '/observability/snapshot') {
+      return { data: overrides.snapshot ?? emptySnapshot };
+    }
+    if (path === '/runtime/gateway-status') {
+      return { data: overrides.gatewayStatus ?? [] };
+    }
+    if (path === '/call-events') {
+      return { data: overrides.callEvents ?? [] };
+    }
+    throw new Error(`Unexpected path ${path}`);
+  });
+}
+
 describe('ObservabilityCockpitPage', () => {
   beforeEach(() => {
     vi.mocked(apiRequest).mockReset();
@@ -41,36 +64,36 @@ describe('ObservabilityCockpitPage', () => {
   it('shows loading state initially', () => {
     vi.mocked(apiRequest).mockReturnValue(new Promise(() => {}));
     renderWithProviders(<ObservabilityCockpitPage />);
-    expect(screen.getByText('Loading sessions…')).toBeInTheDocument();
+    expect(screen.getByText('Loading triage signals...')).toBeInTheDocument();
   });
 
   it('renders zero-state correctly for empty tenant', async () => {
-    vi.mocked(apiRequest).mockResolvedValue({ data: emptySnapshot });
+    mockApi();
     renderWithProviders(<ObservabilityCockpitPage />);
 
     await waitFor(() => {
       expect(screen.getByText('No active sessions')).toBeInTheDocument();
     });
     expect(screen.getByText('No active queues configured')).toBeInTheDocument();
+    expect(screen.getByText('No urgent runtime issues detected.')).toBeInTheDocument();
+    expect(screen.getByText('No tenant gateway status snapshots available yet.')).toBeInTheDocument();
   });
 
   it('shows active session count in stat cards', async () => {
-    vi.mocked(apiRequest).mockResolvedValue({
-      data: {
+    mockApi({
+      snapshot: {
         ...emptySnapshot,
         active_session_count: 3,
         recent_call_events_5m: 7,
         pending_approvals: 1,
-      } satisfies LiveSnapshot,
+      },
     });
 
     renderWithProviders(<ObservabilityCockpitPage />);
 
-    // Wait until the loading placeholder '…' is gone from the stat cards
     await waitFor(() => {
-      expect(screen.queryByText('…')).not.toBeInTheDocument();
+      expect(screen.queryByText('...')).not.toBeInTheDocument();
     });
-    // Values may appear more than once (stat card + bottom section); use getAllByText
     expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('7').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(1);
@@ -86,8 +109,8 @@ describe('ObservabilityCockpitPage', () => {
       started_at: new Date(Date.now() - 30_000).toISOString(),
     };
 
-    vi.mocked(apiRequest).mockResolvedValue({
-      data: { ...emptySnapshot, active_session_count: 1, running_sessions: [session] } satisfies LiveSnapshot,
+    mockApi({
+      snapshot: { ...emptySnapshot, active_session_count: 1, running_sessions: [session] },
     });
 
     renderWithProviders(<ObservabilityCockpitPage />);
@@ -99,14 +122,14 @@ describe('ObservabilityCockpitPage', () => {
   });
 
   it('renders queue depth cards', async () => {
-    vi.mocked(apiRequest).mockResolvedValue({
-      data: {
+    mockApi({
+      snapshot: {
         ...emptySnapshot,
         queue_depths: [
           { queue_id: 'q-1', queue_name: 'Sales', member_count: 4 },
           { queue_id: 'q-2', queue_name: 'Support', member_count: 2 },
         ],
-      } satisfies LiveSnapshot,
+      },
     });
 
     renderWithProviders(<ObservabilityCockpitPage />);
@@ -120,11 +143,11 @@ describe('ObservabilityCockpitPage', () => {
   });
 
   it('shows webhook backlog counts', async () => {
-    vi.mocked(apiRequest).mockResolvedValue({
-      data: {
+    mockApi({
+      snapshot: {
         ...emptySnapshot,
         webhook_backlog: { pending: 5, processing: 1, failed: 2, abandoned: 0 },
-      } satisfies LiveSnapshot,
+      },
     });
 
     renderWithProviders(<ObservabilityCockpitPage />);
@@ -136,22 +159,56 @@ describe('ObservabilityCockpitPage', () => {
     expect(screen.getByText('Failed')).toBeInTheDocument();
   });
 
-  it('shows session failure count in danger colour when > 0', async () => {
-    vi.mocked(apiRequest).mockResolvedValue({
-      data: { ...emptySnapshot, recent_session_failures_1h: 3 } satisfies LiveSnapshot,
+  it('shows gateway registration and failed-call triage', async () => {
+    mockApi({
+      snapshot: {
+        ...emptySnapshot,
+        recent_session_failures_1h: 2,
+      },
+      gatewayStatus: [
+        {
+          trunk_id: 'trunk-1',
+          trunk_name: 'Carrier A',
+          node_id: 'node-1234567890abcdef',
+          state: 'REGED',
+          queried_at: new Date(Date.now() - 30_000).toISOString(),
+        },
+        {
+          trunk_id: 'trunk-2',
+          trunk_name: 'Carrier B',
+          node_id: 'node-bbbbbbbbbbbbbbbb',
+          state: 'FAILED',
+          queried_at: new Date(Date.now() - 45_000).toISOString(),
+        },
+      ],
+      callEvents: [
+        {
+          id: 'evt-1',
+          tenant_id: 'tenant-1',
+          call_id: 'call-1',
+          event_type: 'outbound_call_failed',
+          event_time: new Date(Date.now() - 60_000).toISOString(),
+          source: 'freeswitch-agent',
+          payload: { direction: 'outbound', to_number: '+14155550100', failure_reason: 'busy' },
+          ingested_at: new Date(Date.now() - 59_000).toISOString(),
+        },
+      ],
     });
 
     renderWithProviders(<ObservabilityCockpitPage />);
 
     await waitFor(() => {
-      // "3" should appear; the exact element has the danger class — just verify presence
-      const failureCount = screen.getByText('3');
-      expect(failureCount).toBeInTheDocument();
+      expect(screen.getByText('Carrier B')).toBeInTheDocument();
     });
+    expect(screen.getByText('FAILED')).toBeInTheDocument();
+    expect(screen.getByText('Recent Failed Calls')).toBeInTheDocument();
+    expect(screen.getByText('+14155550100')).toBeInTheDocument();
+    expect(screen.getByText('Triage Queue')).toBeInTheDocument();
+    expect(screen.getByText('Gateways not REGED')).toBeInTheDocument();
   });
 
   it('shows error state when API returns 403', async () => {
-    vi.mocked(apiRequest).mockRejectedValue(new ApiError('Forbidden', 403));
+    mockApi({ error: new ApiError('Forbidden', 403) });
 
     renderWithProviders(<ObservabilityCockpitPage />);
 
@@ -161,21 +218,19 @@ describe('ObservabilityCockpitPage', () => {
     expect(screen.getByText('Operator access required')).toBeInTheDocument();
   });
 
-  it('shows error state on network-level failure', async () => {
-    // noRetryOnAuthError skips retry for 401/403 — use 401 to get immediate isError state
-    vi.mocked(apiRequest).mockRejectedValue(new ApiError('Unauthorized', 401));
+  it('shows error state on auth failure', async () => {
+    mockApi({ error: new ApiError('Unauthorized', 401) });
 
     renderWithProviders(<ObservabilityCockpitPage />);
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
-    // 401 is auth failure — shows generic "could not load" message (not "Operator access required")
     expect(screen.getByText('Could not load live snapshot')).toBeInTheDocument();
   });
 
-  it('does not render any sensitive credential fields', async () => {
-    vi.mocked(apiRequest).mockResolvedValue({ data: emptySnapshot });
+  it('does not render sensitive credential fields', async () => {
+    mockApi();
     renderWithProviders(<ObservabilityCockpitPage />);
 
     await waitFor(() => {
