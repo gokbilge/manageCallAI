@@ -83,6 +83,12 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [release/product-release-audit.md](release/product-release-audit.md)
   Current product release audit, release-stage decision, and remaining evidence gates.
 
+- [ops/setup-guide.md](ops/setup-guide.md)
+  User-facing first-install guide for VPS, Docker Compose, and Helm paths.
+
+- [user/admin-tasks.md](user/admin-tasks.md)
+  User-facing guide for tenant and platform admin tasks in the web UI.
+
 ## UI Documents
 
 - [ui/UI_ARCHITECTURE.md](ui/UI_ARCHITECTURE.md)

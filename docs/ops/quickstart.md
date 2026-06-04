@@ -2,6 +2,9 @@
 
 This is the shortest path to a running `manageCallAI` `v0.3.5` deployment.
 
+If you want the full user-facing installation guide, start with
+[setup-guide.md](setup-guide.md).
+
 ## Requirements
 
 - Linux host or VM with Docker support
