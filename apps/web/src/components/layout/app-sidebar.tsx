@@ -72,6 +72,7 @@ const tenantNav: NavItem[] = [
   { to: '/tenant/security-alerts', label: 'Security Alerts', icon: AlertTriangle, capability: CAPABILITIES.TENANT_SECURITY_ALERTS_VIEW },
   { to: '/tenant/compliance', label: 'Compliance', icon: ShieldCheck, capability: CAPABILITIES.TENANT_COMPLIANCE_ADMIN },
   { to: '/tenant/integrations/directory-smoke-test', label: 'Smoke Test', icon: TestTube2 },
+  { to: '/tenant/integrations/trunk-test-workflow', label: 'Trunk Test', icon: Activity, capability: CAPABILITIES.TENANT_SIP_TRUNKS_TEST },
 ];
 
 export function AppSidebar({ workspace }: AppSidebarProps) {

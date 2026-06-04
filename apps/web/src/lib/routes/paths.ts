@@ -19,5 +19,6 @@ export const paths = {
     sipTrunks: '/tenant/trunks',
     parkingLots: '/tenant/parking-lots',
     smokeTest: '/tenant/integrations/directory-smoke-test',
+    trunkTestWorkflow: '/tenant/integrations/trunk-test-workflow',
   },
 } as const;

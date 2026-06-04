@@ -22,6 +22,7 @@ const NumbersPage = lazy(() => import('@/features/numbers/numbers-page').then(m 
 const InboundRoutesPage = lazy(() => import('@/features/inbound-routes/inbound-routes-page').then(m => ({ default: m.InboundRoutesPage })));
 const ApprovalsPage = lazy(() => import('@/features/approvals/approvals-page').then(m => ({ default: m.ApprovalsPage })));
 const DirectorySmokeTestPage = lazy(() => import('@/features/integrations/directory-smoke-test-page').then(m => ({ default: m.DirectorySmokeTestPage })));
+const TrunkTestWorkflowPage = lazy(() => import('@/features/integrations/trunk-test-workflow-page').then(m => ({ default: m.TrunkTestWorkflowPage })));
 const WebhooksPage = lazy(() => import('@/features/integrations/webhooks-page').then(m => ({ default: m.WebhooksPage })));
 const PromptsPage = lazy(() => import('@/features/prompts/prompts-page').then(m => ({ default: m.PromptsPage })));
 const ObservabilityCockpitPage = lazy(() => import('@/features/observability/observability-cockpit-page').then(m => ({ default: m.ObservabilityCockpitPage })));
@@ -113,6 +114,12 @@ const router = createBrowserRouter([
             ],
           },
           { path: 'tenant/integrations/directory-smoke-test', element: <Suspense fallback={<PageLoader />}><DirectorySmokeTestPage /></Suspense> },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_SIP_TRUNKS_TEST} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/integrations/trunk-test-workflow', element: <Suspense fallback={<PageLoader />}><TrunkTestWorkflowPage /></Suspense> },
+            ],
+          },
           {
             element: <RequireCapability capability={CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
