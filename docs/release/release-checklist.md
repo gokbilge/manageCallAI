@@ -8,13 +8,14 @@ Use this checklist before promoting manageCallAI beyond development or staging.
 |---|---|---|
 | Internal alpha | Allowed | Main CI green, demo loop works locally, runtime proof verified manually |
 | Public alpha | Complete for `v0.2.0-alpha` | `docs/release/public-alpha-readiness.md` checklist complete |
-| Public beta candidate | Complete — `v0.2.0-beta.1` | Beta implementation present and evidenced |
-| Public beta ready | Complete — `v0.2.0-beta.1` | FreeSWITCH smoke run 26825030902, SDK dry-run, MCP/n8n/webhook evidenced |
-| Production release candidate | Complete — `v0.3.0-rc.1` | Smoke run 26903877370 on `rc/v0.3.0`, evidence manifest passes `pnpm release:evidence-check` |
-| **Production** | **✅ Complete — `v0.3.0`** | All gates passed. Evidence: `docs/release/release-evidence-v0.3.0.json` |
+| Public beta candidate | Complete ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `v0.2.0-beta.1` | Beta implementation present and evidenced |
+| Public beta ready | Complete ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `v0.2.0-beta.1` | FreeSWITCH smoke run 26825030902, SDK dry-run, MCP/n8n/webhook evidenced |
+| Production release candidate | Complete ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `v0.3.0-rc.1` | Smoke run 26903877370 on `rc/v0.3.0`, evidence manifest passes `pnpm release:evidence-check` |
+| **Production** | **Historical evidence exists for `v0.3.0`** | Production claims must be re-evidenced for any later tag that changes runtime behavior |
 
-Current release: **v0.3.0** (2026-06-03). Production release. All gates closed.
-Next release: **v0.3.5** — setup and bootstrap packaging (SLICE-60).
+Latest evidenced production tag: **v0.3.0** (2026-06-03).
+Current tag target: **v0.3.5** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â prerelease packaging and setup/bootstrap release.
+Do not treat `v0.3.0` evidence as automatic proof for `v0.3.5`.
 
 ## Stage Gate Separation
 
@@ -187,8 +188,8 @@ Production promotion requires evidence that:
 - a PostgreSQL backup was taken before migration
 - migrations were applied with `pnpm db:migrate`
 - `pnpm db:contracts` and `pnpm db:constraints` passed
-- a restore rehearsal ran and passed `pnpm restore:smoke` (DB-level: dump →
-  restore → migrations → contracts → constraints)
+- a restore rehearsal ran and passed `pnpm restore:smoke` (DB-level: dump ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
+  restore ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ migrations ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ contracts ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ constraints)
 - `pnpm production:preflight` passed on the target environment (separate
   evidence from the restore rehearsal; preflight validates production
   env vars and security config, not DB restore integrity)
@@ -246,12 +247,12 @@ apply before any PBX feature is promoted to production:
 
 | Feature | Status | Required evidence gate |
 |---|---|---|
-| Gateway reload (#175) | Implemented | Trunk PATCH → Go agent ESL commands → gateway REGED state confirmed on self-hosted runner |
-| Feature codes (#172) | Implemented | DTMF code dialed → Lua executor → API callback → audit event written — smoke on self-hosted runner |
-| Call parking (#173) | Implemented | `valet_park` smoke: call parked, Go agent CHANNEL_PARK event ingested, slot retrieved — smoke on self-hosted runner |
-| Conferencing (#174) | Implemented | `mod_conference` two-caller smoke: PIN enforced, callers bridged — smoke on self-hosted runner |
+| Gateway reload (#175) | Implemented | Trunk PATCH ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Go agent ESL commands ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ gateway REGED state confirmed on self-hosted runner |
+| Feature codes (#172) | Implemented | DTMF code dialed ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Lua executor ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ API callback ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ audit event written ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â smoke on self-hosted runner |
+| Call parking (#173) | Implemented | `valet_park` smoke: call parked, Go agent CHANNEL_PARK event ingested, slot retrieved ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â smoke on self-hosted runner |
+| Conferencing (#174) | Implemented | `mod_conference` two-caller smoke: PIN enforced, callers bridged ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â smoke on self-hosted runner |
 | Self-service portal (#176) | Implemented | Integration test matrix: `end_user` isolation, policy gating, DND/call-forward audited |
-| Runtime management (#177) | Implemented | Go agent status push to API → node status endpoint returns snapshot; reloadxml smoke with result recorded |
+| Runtime management (#177) | Implemented | Go agent status push to API ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ node status endpoint returns snapshot; reloadxml smoke with result recorded |
 
 To run PBX evidence gates:
 

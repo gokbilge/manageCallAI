@@ -4,9 +4,9 @@
 > and found the project to be a "Public beta candidate." It is preserved as
 > historical record only.
 >
-> **Current release posture:** Production — v0.3.0 (2026-06-03, commit `1220e39`).
+> **Historical evidenced production tag:** `v0.3.0` (2026-06-03, commit `1220e39`).
 > Evidence: `docs/release/release-evidence-v0.3.0.json`.
-> All production gates closed. `pnpm release:evidence-check` exits 0.
+> This file is preserved as historical record and is not a `v0.3.5` release audit.
 
 ---
 
@@ -78,24 +78,24 @@ risk is not primarily missing code. It is:
 
 | Command | Result | Notes |
 |---|---|---|
-| `pnpm install --frozen-lockfile` | ✅ passed | Already up to date |
-| `pnpm build` | ✅ passed | All packages including web, api, mcp, worker |
-| `pnpm lint` | ✅ passed | contracts, sdk, web, api, mcp, worker |
-| `pnpm test` | ❌ ECONNREFUSED :5432 | No PostgreSQL available in audit env; not a code defect |
-| `pnpm generate:openapi` | ✅ passed | 75 path entries, 199 schema components |
-| `pnpm check:mcp-schemas` | ✅ passed | 16 tools verified against contracts |
-| `pnpm check:mcp-contracts` | ✅ passed | MCP contract drift check passed |
-| `pnpm check:webhook-payloads` | ✅ passed | 17 events covered |
-| `pnpm check:api-key-capabilities` | ✅ passed | Capability alignment verified |
-| `pnpm check:coverage-ignores` | ✅ passed | Coverage ignore governance passed |
-| `pnpm check:production-readiness` | ✅ passed | Check-config mode only — not release evidence |
-| `pnpm check:log-redaction` | ✅ passed | 20/20 redaction test cases |
-| `pnpm check:runtime-token-rotation` | ✅ passed | No active rotation in this env |
-| `pnpm check:network-config` | ✅ passed (4 warnings) | NAT/RTP/SRTP env vars not set — expected in dev |
-| `pnpm check:freeswitch-hardening` | ✅ passed | 0 findings |
-| `pnpm production:preflight` | ❌ fails (10 blocking) | Missing production env vars — expected in dev, not a code defect |
-| `pnpm production:rate-limit-check` | ✅ passed (4 warnings) | Explicit production rate limits not configured — expected in dev |
-| `pnpm release:evidence-check -- --check-config` | ✅ passed | Config wiring only — not release evidence |
+| `pnpm install --frozen-lockfile` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | Already up to date |
+| `pnpm build` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | All packages including web, api, mcp, worker |
+| `pnpm lint` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | contracts, sdk, web, api, mcp, worker |
+| `pnpm test` | ÃƒÂ¢Ã‚ÂÃ…â€™ ECONNREFUSED :5432 | No PostgreSQL available in audit env; not a code defect |
+| `pnpm generate:openapi` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | 75 path entries, 199 schema components |
+| `pnpm check:mcp-schemas` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | 16 tools verified against contracts |
+| `pnpm check:mcp-contracts` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | MCP contract drift check passed |
+| `pnpm check:webhook-payloads` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | 17 events covered |
+| `pnpm check:api-key-capabilities` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | Capability alignment verified |
+| `pnpm check:coverage-ignores` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | Coverage ignore governance passed |
+| `pnpm check:production-readiness` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | Check-config mode only ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â not release evidence |
+| `pnpm check:log-redaction` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | 20/20 redaction test cases |
+| `pnpm check:runtime-token-rotation` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | No active rotation in this env |
+| `pnpm check:network-config` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed (4 warnings) | NAT/RTP/SRTP env vars not set ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â expected in dev |
+| `pnpm check:freeswitch-hardening` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | 0 findings |
+| `pnpm production:preflight` | ÃƒÂ¢Ã‚ÂÃ…â€™ fails (10 blocking) | Missing production env vars ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â expected in dev, not a code defect |
+| `pnpm production:rate-limit-check` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed (4 warnings) | Explicit production rate limits not configured ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â expected in dev |
+| `pnpm release:evidence-check -- --check-config` | ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ passed | Config wiring only ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â not release evidence |
 
 Commands not run (require environment):
 
@@ -127,13 +127,13 @@ Commands not run (require environment):
 | SIP trunks | implemented | no |
 | Phone numbers (DID inventory) | implemented | no |
 | Schedules (time-based routing) | implemented | no |
-| Inbound routes (draft → publish lifecycle) | implemented | no |
+| Inbound routes (draft ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ publish lifecycle) | implemented | no |
 | Outbound routes + policy | implemented | no |
 | Call groups (simultaneous/sequential ring) | implemented | no |
 | Queues (CRUD + member management) | implemented | no |
 | Voicemail boxes/messages | implemented | production: storage/retention evidence |
 | Prompt assets (metadata + TTS contract) | implemented | production: media-retention evidence |
-| IVR flows (draft→validate→simulate→publish→rollback) | implemented | RC runtime evidence |
+| IVR flows (draftÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢validateÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢simulateÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢publishÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢rollback) | implemented | RC runtime evidence |
 | IVR publish/rollback/approval lifecycle | implemented | beta: UX/candidate evidence |
 | Runtime IVR sessions (Lua executor loop) | implemented | RC runtime evidence |
 | FreeSWITCH directory/dialplan callbacks | implemented | RC smoke evidence |
@@ -169,7 +169,7 @@ Commands not run (require environment):
 | `mod_xml_curl` integration | accurate | Directory + dialplan endpoints implemented in `modules/freeswitch` |
 | Runtime auth | accurate | Bearer/Basic + node HMAC model; secondary token for rotation |
 | MCP/n8n boundary | accurate | Safe API abstractions only; no raw ESL/XML/shell surface |
-| Contracts/OpenAPI generation | accurate | Zod → OpenAPI; drift-checked in CI; 75 paths, 199 components |
+| Contracts/OpenAPI generation | accurate | Zod ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ OpenAPI; drift-checked in CI; 75 paths, 199 components |
 | SDK generation | accurate | Generated from OpenAPI; publish workflow exists |
 | Webhook delivery worker | accurate | Currently colocated in API process; noted as known tradeoff |
 | Retention model | accurate (production gaps) | Policy + DB + worker exist; storage cleanup/export-before-delete not evidenced |
@@ -283,7 +283,7 @@ Notable finding: `production:preflight` fails on 10 items in this environment (m
 - Historical restore evidence from PR #116 is referenced.
 - `restore:rehearsal` script exists and is wired to write evidence JSON; RC
   evidence must be validated with `pnpm restore:evidence-check -- --require-rc`.
-- Production promotion requires a current release-candidate restore rehearsal — not yet executed.
+- Production promotion requires a current release-candidate restore rehearsal ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â not yet executed.
 - Upgrade/migration playbook exists as a template; real rehearsal not yet evidenced.
 - Retention/legal hold: DB schema, API endpoints, and purge worker all exist.
 - Production gap: object-storage cleanup, export-before-delete behavior, and DSR/right-to-erasure interaction are not yet evidenced. `docs/ops/recording-voicemail-cdr-retention.md` accurately states this gap.
@@ -302,13 +302,13 @@ Notable finding: `production:preflight` fails on 10 items in this environment (m
 
 ## Release blockers
 
-### Public Alpha — Closed
+### Public Alpha ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Closed
 
 | Gate | Issue | Status |
 |---|---|---|
 | Clean-clone verification and release notes evidence | [#130](https://github.com/gokbilge/manageCallAI/issues/130) | evidenced for `v0.2.0-alpha` |
 
-### Public Beta — Blocking
+### Public Beta ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Blocking
 
 | Gate | Issue | Status | Next action |
 |---|---|---|---|
@@ -318,10 +318,10 @@ Notable finding: `production:preflight` fails on 10 items in this environment (m
 | n8n example workflows end-to-end | [#133](https://github.com/gokbilge/manageCallAI/issues/133) | documented; no run proof | Import and run against candidate API |
 | MCP setup and capability matrix proof | [#134](https://github.com/gokbilge/manageCallAI/issues/134) | documented/tested; no candidate setup proof | Attach tool-list/call proof |
 | SDK publish/dry-run evidence | [#135](https://github.com/gokbilge/manageCallAI/issues/135) | scripted; latest workflow run failed | Rerun SDK dry-run/publish workflow |
-| Coverage thresholds (API ≥70%, Web/MCP/Go ≥70%) | [#141](https://github.com/gokbilge/manageCallAI/issues/141) | documented exception; no candidate report | Attach coverage report for candidate |
+| Coverage thresholds (API ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥70%, Web/MCP/Go ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥70%) | [#141](https://github.com/gokbilge/manageCallAI/issues/141) | documented exception; no candidate report | Attach coverage report for candidate |
 | Candidate evidence bundle | [#150](https://github.com/gokbilge/manageCallAI/issues/150) | open | Assemble and validate manifest |
 
-### Production Release — Blocking
+### Production Release ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Blocking
 
 | Gate | Issue | Status | Required evidence | Next action |
 |---|---|---|---|---|
@@ -330,7 +330,7 @@ Notable finding: `production:preflight` fails on 10 items in this environment (m
 | Upgrade/migration rehearsal | [#140](https://github.com/gokbilge/manageCallAI/issues/140) | documented template; not yet executed | Upgrade + rollback rehearsal record | Execute rehearsal |
 | SIP TLS/SRTP/NAT evidence (RC) | [#92](https://github.com/gokbilge/manageCallAI/issues/92) | historical artifact exists; RC required | Validated SIP TLS/SRTP/NAT JSON for RC topology | Rerun for RC |
 | Runtime token/secret rotation evidence | [#94](https://github.com/gokbilge/manageCallAI/issues/94) | scripted/historical; RC evidence required | Rotation rehearsal JSON + log redaction linkage | Rerun for RC |
-| Log redaction evidence artifact | — | CI passes (20/20); no candidate artifact | Redaction evidence JSON from candidate logs | Generate artifact |
+| Log redaction evidence artifact | ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â | CI passes (20/20); no candidate artifact | Redaction evidence JSON from candidate logs | Generate artifact |
 | Production soak/load evidence (RC topology) | [#100](https://github.com/gokbilge/manageCallAI/issues/100) | lab evidence exists; RC evidence required | Soak evidence from target topology | Run `pnpm production:soak` |
 | Runtime SLO evidence (RC topology) | [#100](https://github.com/gokbilge/manageCallAI/issues/100) | lab evidence exists; RC evidence required | Runtime lookup latency evidence | Run `pnpm production:slo-check` |
 | Carrier interop certification | [#138](https://github.com/gokbilge/manageCallAI/issues/138) | Live FusionPBX/NetGSM lab evidence; manifest placeholder | Carrier evidence referenced from RC manifest; live carrier re-test | Validate and link in manifest |
@@ -338,7 +338,7 @@ Notable finding: `production:preflight` fails on 10 items in this environment (m
 | Retention/legal hold (storage + DSR) | [#136](https://github.com/gokbilge/manageCallAI/issues/136) | API + worker exist; storage cleanup missing | API tests + object-storage cleanup + DSR handling | Close gap or accept documented risk |
 | Firewall/network hardening (target env) | [#93](https://github.com/gokbilge/manageCallAI/issues/93) | documented + scripted; target-env evidence required | Network config + hardening evidence for target | Validate target deployment |
 | Outbound toll-fraud controls (carrier-level) | fraud slice | Implemented; no carrier-level evidence | Fraud allow/block proof with audit/alert evidence | Run live policy proof |
-| Multi-instance rate limiting evidence | — | Scripted (4 warnings); topology not validated | Target deployment rate-limit validation | Validate multi-instance or confirm edge enforcement |
+| Multi-instance rate limiting evidence | ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â | Scripted (4 warnings); topology not validated | Target deployment rate-limit validation | Validate multi-instance or confirm edge enforcement |
 | Release evidence bundle + operator signoff | [#103](https://github.com/gokbilge/manageCallAI/issues/103) | v0.1 manifest validated; v0.2 manifest has placeholders | Passing `release:evidence-check` manifest + operator signoff | Complete manifest and obtain signoff |
 | Current candidate evidence tracking | [#150](https://github.com/gokbilge/manageCallAI/issues/150) | open | v0.2 manifest tied to candidate commit | Run gates and update manifest |
 
@@ -353,7 +353,7 @@ Audit date: 2026-06-03.
 | Feature codes | Designed, not implemented | P1 production | docs/pbx/feature-codes.md | feature_codes table, service, controller, Lua executor, runtime callback, UI | DTMF smoke on self-hosted runner |
 | Call parking | Designed, not implemented | P1 production | docs/pbx/call-parking.md | parking_lots + parked_calls tables, service, controller, Go agent event listener, UI | valet_park smoke with Go agent event ingestion |
 | Native conferencing | Designed, not implemented | P1 production | docs/pbx/conferencing.md | conference_rooms table, service, controller, mod_xml_curl projection, UI | mod_conference two-caller smoke |
-| Gateway reload on trunk change | Designed, not implemented | P0 production | docs/pbx/gateway-reload-on-trunk-change.md | runtime_apply_requests/results tables, service with allowlist, Go agent RuntimeApplyClient, UI | trunk change → REGED confirmation on self-hosted runner |
+| Gateway reload on trunk change | Designed, not implemented | P0 production | docs/pbx/gateway-reload-on-trunk-change.md | runtime_apply_requests/results tables, service with allowlist, Go agent RuntimeApplyClient, UI | trunk change ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ REGED confirmation on self-hosted runner |
 | End-user self-service portal | Designed, not implemented | P2 production | docs/pbx/end-user-self-service.md | end_user role, self_service_policies table, /me/* endpoints, portal UI | integration test matrix |
 | FreeSWITCH runtime management (read-only) | Designed, not implemented | P1 production | docs/pbx/freeswitch-runtime-management.md | Go agent /status endpoint, platform/nodes/:id/* endpoints, UI | Node status visible in platform dashboard |
 | FreeSWITCH runtime management (actions) | Designed, not implemented | P1/P2 production | docs/pbx/freeswitch-runtime-management.md | runtime_operations table, allowlist enforcement, approval gate, Go agent execute-operation | reloadxml/rescan action smoke |
@@ -375,8 +375,8 @@ as the latest tag with the correct comparison URL.
 
 ## GitHub issues
 
-All blocker issues referenced above already exist in the tracker (#92–#103,
-#130–#141, #150). No new issues were created in this audit. Issue bodies should
+All blocker issues referenced above already exist in the tracker (#92ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“#103,
+#130ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“#141, #150). No new issues were created in this audit. Issue bodies should
 use the template in `docs/planning/open-release-blockers.md`.
 
 Recommended labels: `release-blocker`, `beta`, `production`, `security`,
