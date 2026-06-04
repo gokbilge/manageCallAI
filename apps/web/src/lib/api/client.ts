@@ -40,8 +40,10 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     let message = `API request failed: ${response.status}`;
 
     try {
-      const payload = (await response.json()) as { error?: string };
-      if (payload.error) {
+      const payload = (await response.json()) as { error?: string; message?: string };
+      if (payload.message) {
+        message = payload.message;
+      } else if (payload.error) {
         message = payload.error;
       }
     } catch {

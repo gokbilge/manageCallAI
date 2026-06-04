@@ -44,6 +44,21 @@ describe('Feature Codes API integration', () => {
     return res.json<{ token: string }>().token;
   }
 
+  function decodeJwt(token: string): { tenant_id: string } {
+    const [, payload] = token.split('.');
+    return JSON.parse(Buffer.from(payload!, 'base64url').toString('utf8')) as { tenant_id: string };
+  }
+
+  function scopedToken(baseToken: string, role: 'tenant_operator' | 'tenant_viewer'): string {
+    const { tenant_id } = decodeJwt(baseToken);
+    return app.jwt.sign({
+      sub: randomUUID(),
+      tenant_id,
+      email: `${role}-${randomUUID().slice(0, 8)}@example.com`,
+      role,
+    });
+  }
+
   it('GET /feature-codes -> 401 without auth', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/feature-codes' });
     expect(res.statusCode).toBe(401);
@@ -197,5 +212,53 @@ describe('Feature Codes API integration', () => {
     });
     expect(list.statusCode).toBe(200);
     expect(list.json<{ data: unknown[] }>().data.length).toBeGreaterThan(0);
+  });
+
+  it('tenant_viewer can list but cannot create feature codes', async () => {
+    const adminToken = await register(randomUUID().slice(0, 8));
+    const viewerToken = scopedToken(adminToken, 'tenant_viewer');
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/v1/feature-codes',
+      headers: { authorization: `Bearer ${viewerToken}` },
+    });
+    expect(list.statusCode).toBe(200);
+
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/v1/feature-codes',
+      headers: { authorization: `Bearer ${viewerToken}` },
+      payload: { code: '*71', name: 'Retrieve', action_type: 'call_park_retrieve' },
+    });
+    expect(create.statusCode).toBe(403);
+  });
+
+  it('tenant_operator can create and validate but cannot publish feature codes', async () => {
+    const adminToken = await register(randomUUID().slice(0, 8));
+    const operatorToken = scopedToken(adminToken, 'tenant_operator');
+
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/v1/feature-codes',
+      headers: { authorization: `Bearer ${operatorToken}` },
+      payload: { code: '*74', name: 'Join Conference', action_type: 'conference_join' },
+    });
+    expect(create.statusCode).toBe(201);
+    const featureCodeId = create.json<{ data: { id: string } }>().data.id;
+
+    const validate = await app.inject({
+      method: 'POST',
+      url: `/api/v1/feature-codes/${featureCodeId}/validate`,
+      headers: { authorization: `Bearer ${operatorToken}` },
+    });
+    expect(validate.statusCode).toBe(200);
+
+    const publish = await app.inject({
+      method: 'POST',
+      url: `/api/v1/feature-codes/${featureCodeId}/publish`,
+      headers: { authorization: `Bearer ${operatorToken}` },
+    });
+    expect(publish.statusCode).toBe(403);
   });
 });
