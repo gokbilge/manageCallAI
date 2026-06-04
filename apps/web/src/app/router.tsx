@@ -33,6 +33,7 @@ const OutboundCallsPage = lazy(() => import('@/features/outbound-calls/outbound-
 const RecordingsPage = lazy(() => import('@/features/recordings/recordings-page').then(m => ({ default: m.RecordingsPage })));
 const SecurityAlertsPage = lazy(() => import('@/features/security-alerts/security-alerts-page').then(m => ({ default: m.SecurityAlertsPage })));
 const CompliancePage = lazy(() => import('@/features/compliance/compliance-page').then(m => ({ default: m.CompliancePage })));
+const SipTrunksPage = lazy(() => import('@/features/sip-trunks/sip-trunks-page').then(m => ({ default: m.SipTrunksPage })));
 
 function PageLoader() {
   return <div className="flex items-center justify-center p-8 text-[var(--color-muted)]" aria-label="Loading" />;
@@ -143,6 +144,12 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_COMPLIANCE_ADMIN} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/compliance', element: <Suspense fallback={<PageLoader />}><CompliancePage /></Suspense> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_SIP_TRUNKS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/trunks', element: <Suspense fallback={<PageLoader />}><SipTrunksPage /></Suspense> },
             ],
           },
         ],
