@@ -1,0 +1,76 @@
+{
+  "release_version": "v0.3.5",
+  "commit_sha": "92add97a1bdf5e5e2e4d4f73f0d8a55f7a7c2e3b",
+  "generated_at": "2026-06-04T06:10:00Z",
+  "stage": "production",
+  "notes": "Production evidence for v0.3.5 — SLICE-60: Setup, Bootstrap, and Deployment Packaging. All RC gates carried forward from v0.3.5-rc.1 (541cac5). Two deployment blockers fixed (setup.html build copy, Docker Hub conditional login). Rotation rehearsal config check passed. GHCR package visibility is required to be set to public before docker-compose.prod.yml smoke can use pre-built images (manual step). Production promotion is conditional on completion of the GHCR visibility step and live rotation rehearsal.",
+
+  "github_release": {
+    "tag": "v0.3.5",
+    "url": "https://github.com/gokbilge/manageCallAI/releases/tag/v0.3.5",
+    "published_at": "2026-06-04T06:10:00Z",
+    "is_prerelease": false
+  },
+
+  "rc_evidence_reference": "docs/release/release-evidence-v0.3.5-rc.1.json",
+  "rc_commit_sha": "541cac5afcbe51ea46e9fc378e9c8781c0d14569",
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932617059",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932617073",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932415561",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932617117",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932864772",
+
+  "slice_60_evidence": {
+    "setup_module": "Integration tests pass. Sentinel present/absent, /setup locked after bootstrap, headless bootstrap idempotency, admin email allowlist enforcement — all verified in CI run 26932617059.",
+    "helm_lint": "helm lint passes (1 chart linted, 0 failed). helm template renders 8 resource kinds. Both verified on enlogy@10.0.0.32 at commit 541cac5.",
+    "docker_compose_prod_smoke": "docker-compose.prod.yml started successfully on enlogy@10.0.0.32 with locally-built image at 541cac5. /health 200, wizard path /setup 200 with full HTML, headless path auto-bootstrapped and locked /setup to 404. GHCR pull requires package visibility to be set to public (manual operator step).",
+    "install_sh": "install.sh reviewed. Generates secrets via openssl rand -hex 32, writes .env.production, prints next-steps. Does not auto-start containers.",
+    "env_template": ".env.production.example present with all required variables. SETUP_ADMIN_EMAIL / SETUP_ADMIN_PASSWORD marked 'remove after first boot'.",
+    "docker_hub": "docker-images.yml updated to gate Docker Hub login on credential availability. GHCR publishing unconditional. Docker Hub activates once DOCKERHUB_USERNAME + DOCKERHUB_TOKEN secrets are configured."
+  },
+
+  "production_preflight": "pnpm production:preflight --check-config passes in dev. Run on target environment before production cutover.",
+
+  "production_e2e": "FreeSWITCH smoke run 26932864772 passed all production E2E steps on enlogy@10.0.0.32 at commit 541cac5 (rc/v0.3.5): API health, DB contracts, FreeSWITCH ESL profile, runtime directory/dialplan lookup, IVR lifecycle, SIP REGISTER, Go agent ESL, FreeSWITCH hardening (0 findings), SIP TLS/SRTP/NAT smoke, and observability query. Artifact: freeswitch-smoke-26932864772.",
+
+  "production_soak": "RC-topology soak evidence inherited from v0.3.0 (smoke run 26903877370, 2026-06-03). v0.3.5 adds no changes to the call path, rate limiting, or SLO-affecting hot paths. SLICE-60 changes are setup-time only.",
+
+  "production_slo": "SLO evidence from v0.3.0 (docs/ops/runtime-slo-evidence-2026-06-03.json): /health/ready p99 8ms, /api/v1/freeswitch/directory p99 15ms, /api/v1/freeswitch/dialplan p99 22ms. No hot-path changes in v0.3.5.",
+
+  "restore_smoke": "Restore evidence inherited from v0.3.0 (docs/ops/restore-evidence-enlogy-2026-06-02.json). Migration 0052_system_config.sql adds one table; restore path unaffected.",
+
+  "rate_limit_topology": "Rate limiting unchanged from v0.3.0. Setup wizard has separate in-process limiter (5 req/min/IP).",
+
+  "carrier_interop": "Inherited from v0.3.0 (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json). No carrier or call-path changes in v0.3.5.",
+
+  "log_redaction": "Log redaction evidence from smoke run 26932864772 on enlogy@10.0.0.32 at 541cac5. Artifact: freeswitch-smoke-26932864772.",
+
+  "rotation_rehearsal": "Configuration check passed: pnpm rotation:rehearsal --check-config exits 0 on enlogy@10.0.0.32 at commit 92add97. Live rotation rehearsal (deploy secondary token, verify overlap window, promote secondary to primary, verify old primary rejected) is a required gate before serving live calls on a new deployment.",
+
+  "network_config": "Production network config evidence from smoke run 26932864772. Artifact: freeswitch-smoke-26932864772.",
+
+  "security_review": "CodeQL run 26932617073 clean. FreeSWITCH hardening 0 findings (smoke run 26932864772). Log redaction: 0 scan findings. Prior CodeQL exclusions for RFC 3261 MD5 and CI self-signed TLS remain in effect.",
+
+  "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
+
+  "operator_signoff": {
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-04T06:10:00Z",
+    "notes": "Production signoff for v0.3.5. SLICE-60 delivered. All CI/smoke gates pass. docker-compose.prod.yml smoke passed with locally-built image. GHCR packages must be made public and live rotation rehearsal must be performed before activating this release on a production deployment that serves live calls."
+  },
+
+  "artifact_files": {
+    "carrier_interop_evidence": "docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json",
+    "runtime_slo": "docs/ops/runtime-slo-evidence-2026-06-03.json",
+    "restore_evidence": "docs/ops/restore-evidence-enlogy-2026-06-02.json",
+    "backup_retention_policy": "docs/ops/backup-retention-policy.json"
+  },
+
+  "remaining_operator_steps": [
+    "Make GHCR packages public: GitHub → Profile → Packages → Change visibility to Public for each managecallai-* package",
+    "Run live rotation rehearsal: pnpm rotation:rehearsal (deploy secondary token, verify overlap, promote, verify rejection)",
+    "Configure DOCKERHUB_USERNAME + DOCKERHUB_TOKEN repo secrets to enable Docker Hub publishing"
+  ]
+}
