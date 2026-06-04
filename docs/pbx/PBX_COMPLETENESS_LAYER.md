@@ -45,7 +45,7 @@ All features in this layer follow the same rules as the rest of the system:
 
 | Feature | Design doc | Current status | Priority |
 |---|---|---|---|
-| Feature codes | [feature-codes.md](feature-codes.md) | Implemented in API/runtime, not fully productized in web UI | P1 |
+| Feature codes | [feature-codes.md](feature-codes.md) | Implemented in API/runtime and tenant admin web UI | P1 |
 | Call parking | [call-parking.md](call-parking.md) | Implemented in API/runtime, not fully productized in web UI | P1 |
 | Native conferencing | [conferencing.md](conferencing.md) | Implemented in API/runtime, not fully productized in web UI | P1 |
 | Gateway reload on trunk change | [gateway-reload-on-trunk-change.md](gateway-reload-on-trunk-change.md) | Implemented for apply-request lifecycle; operator workflow remains partial | P0 |
@@ -78,7 +78,6 @@ These features exist in code and tests today:
 What is **not** yet fully productized:
 
 - SIP profile management API/UI
-- feature-code management in the web UI
 - parking-lot management in the web UI
 - conference-room management in the web UI
 - full end-user portal experience
