@@ -1,0 +1,64 @@
+{
+  "release_version": "v0.4.0",
+  "commit_sha": "783b729655c7d62278fdaaa3611bf43c90f31361",
+  "generated_at": "2026-06-05T00:10:00Z",
+  "stage": "production",
+  "rc_evidence_reference": "docs/release/release-evidence-v0.4.0-rc.1.json",
+  "notes": "Production evidence for v0.4.0. Promotes v0.4.0-rc.1. All RC gates passed. Rotation rehearsal automated checks passed on enlogy@10.0.0.32 (api_health, query_body_fallback, primary_token_auth). No database migrations in v0.4.0 — schema unchanged from v0.3.5. Full v0.4.x competitive baseline shipped.",
+
+  "github_release": {
+    "tag": "v0.4.0",
+    "url": "https://github.com/gokbilge/manageCallAI/releases/tag/v0.4.0",
+    "published_at": "2026-06-05T00:10:00Z",
+    "is_prerelease": false
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981040805",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981040863",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981040820",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981040869",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26981221899",
+
+  "helm_lint": "PASSED — 1 chart linted, 0 chart(s) failed. All 8 resource kinds render (Secret, ConfigMap, PVC, Service, Deployment×3, Job). enlogy@10.0.0.32, commit 783b729.",
+
+  "docker_compose_prod_smoke": "PASSED — /health returned db:ok, /setup returned HTTP 200. enlogy@10.0.0.32, image managecallai-api:local tagged v0.4.0.",
+
+  "rotation_rehearsal": {
+    "status": "automated_checks_passed",
+    "artifact": "artifacts/rotation/rotation-rehearsal-2026-06-04T22-08-16Z.json",
+    "automated_checks": ["api_health:pass", "query_body_fallback:pass", "primary_token_auth:pass"],
+    "note": "Full live secret rotation requires a production deployment with actual rotating secrets. The automated precondition checks (API reachable, token auth, no fallback path) all pass. JWT and runtime-token manual rotation steps are operator-performed during live deployments."
+  },
+
+  "no_migrations": "v0.4.0 includes no database schema changes. Upgrade from v0.3.5 requires no db:migrate step.",
+
+  "production_soak": "Inherited from v0.3.0. No call-path or hot-path changes in v0.4.0.",
+
+  "production_slo": "Inherited from v0.3.0 (docs/ops/runtime-slo-evidence-2026-06-03.json).",
+
+  "carrier_interop": "Inherited from v0.3.0 (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json). No call-path changes in v0.4.0.",
+
+  "security_review": "CodeQL run 26981040863 clean. Emergency number block refactored to shared module — single non-bypassable source of truth. No new attack surface introduced.",
+
+  "rollback_plan": "Roll back to v0.3.5 image. No data migration risk — no schema changes.",
+
+  "operator_signoff": {
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-05T00:10:00Z",
+    "notes": "Production signoff for v0.4.0. All 7 v0.4.x competitive baseline buckets delivered and verified. All RC gates pass. Rotation rehearsal automated checks pass on enlogy@10.0.0.32."
+  },
+
+  "artifact_files": {
+    "rc_evidence": "docs/release/release-evidence-v0.4.0-rc.1.json",
+    "rotation_rehearsal": "artifacts/rotation/rotation-rehearsal-2026-06-04T22-08-16Z.json (on enlogy@10.0.0.32)",
+    "emergency_routing_guide": "docs/ops/emergency-routing.md",
+    "release_buckets": "docs/planning/release-buckets-v0.4-v0.6.md"
+  },
+
+  "remaining_operator_steps": [
+    "Make GHCR packages public: GitHub → Profile → Packages → Change visibility to Public for each managecallai-* package",
+    "Configure DOCKERHUB_USERNAME + DOCKERHUB_TOKEN repo secrets for Docker Hub publishing",
+    "Live JWT secret rotation in production (pnpm rotation:rehearsal with ROTATION_* env vars)"
+  ]
+}
