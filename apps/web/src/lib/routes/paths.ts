@@ -16,6 +16,7 @@ export const paths = {
     recordings: '/tenant/recordings',
     runtimeSessions: '/tenant/runtime/sessions',
     runtimeSession: (sessionId: string) => `/tenant/runtime/sessions/${sessionId}`,
+    sipTrunks: '/tenant/trunks',
     smokeTest: '/tenant/integrations/directory-smoke-test',
   },
 } as const;
