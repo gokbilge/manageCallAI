@@ -122,6 +122,22 @@ The first release should prove:
 3. published state is executed by stock FreeSWITCH through constrained adapters
 4. humans, n8n, and MCP all operate on the same safe lifecycle
 
+## 3.1 Next product releases
+
+The next feature roadmap should be read in three product releases:
+
+- `v0.4.x` - P0 competitive baseline
+- `v0.5.x` - P1 operational maturity
+- `v0.6.x` - P2 AI-native differentiation
+
+Release intent:
+
+- `v0.4.x`: close the most visible operator/admin product gaps around gateway
+  apply, feature codes, parking, conferencing, carrier testing, and reporting
+- `v0.5.x`: deepen end-user completeness, evidence visibility, retention/export
+  operations, and carrier/operator maturity
+- `v0.6.x`: deliver the most important AI-native operator differentiators
+
 ## 4. Slice Map
 
 ```text
