@@ -78,8 +78,8 @@ This mapping is intentionally product-first:
 | CDR / call history / reporting | partial | P1 | Admin visibility | Calls/events exist, but reporting depth is below mature PBX competitors |
 | Music on hold | partial | P1 | Basic PBX polish | Queue-level `music_on_hold` exists, but there is no complete admin experience |
 | Time conditions / holidays | partial | P1 | Production routing | Schedules exist; holiday/business-hours polish needs product review |
-| Emergency number handling | partial | P0 | Safety and legal | Outbound emergency blocking exists, but operator safeguards are not complete |
-| E911 / emergency routing docs | documented only | P0 | Legal and safety requirement | Needs explicit deployer/operator guidance and tested operational flow |
+| Emergency number handling | implemented | P0 | Safety and legal | Non-bypassable block at fraud service + outbound-call service + shared constants; feature-code collision detection; posture documented in docs/ops/emergency-routing.md |
+| E911 / emergency routing docs | implemented | P0 | Legal and safety requirement | Full deployment guide, US market E911 boundaries, FCC Kari's Law/RAY BAUM's Act posture, and testing procedures in docs/ops/emergency-routing.md |
 | Backup / restore | partial | P0 | Operations requirement | Strong evidence model exists; buyer confidence depends on current-tag rehearsal evidence |
 
 ## Control-plane lifecycle audit

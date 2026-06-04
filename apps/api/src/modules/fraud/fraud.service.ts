@@ -5,9 +5,7 @@ import type {
   TenantOutboundPolicy,
   UpdateTenantOutboundPolicyInput,
 } from './fraud.types.js';
-
-// Global non-bypassable emergency prefixes (mirrors outbound-call.service constants)
-const GLOBAL_EMERGENCY = new Set(['000', '110', '112', '118', '119', '911', '999']);
+import { GLOBAL_EMERGENCY_NUMBERS } from '../shared/emergency-constants.js';
 // Global non-bypassable premium-rate prefixes
 const GLOBAL_PREMIUM_RATE = ['+1900', '1900', '+1976', '1976'];
 
@@ -27,7 +25,7 @@ export class FraudService {
   async checkOutboundCall(tenantId: string, dialNumber: string): Promise<FraudCheckResult> {
     // 1. Global emergency block (non-bypassable)
     const normalized = dialNumber.replace(/^\+/, '');
-    if (GLOBAL_EMERGENCY.has(normalized)) {
+    if (GLOBAL_EMERGENCY_NUMBERS.has(normalized)) {
       return blocked('global_emergency_block');
     }
 
