@@ -71,7 +71,7 @@ describe('ConferenceRoomsPage', () => {
 
     expect(screen.getByText('Conference Rooms')).toBeInTheDocument();
     await screen.findByText('Board Room');
-    expect(screen.getByDisplayValue('8100')).toBeInTheDocument();
+    await screen.findByDisplayValue('8100');
     await screen.findByText('1 active participant');
     expect(screen.getByText('call-123')).toBeInTheDocument();
   });
