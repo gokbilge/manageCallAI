@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"const{copyFileSync}=require('fs');copyFileSync('src/modules/setup/setup.html','dist/modules/setup/setup.html')\"",
     "start": "node dist/server.js",
     "lint": "eslint src",
     "test": "vitest run",

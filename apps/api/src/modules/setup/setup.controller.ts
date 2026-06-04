@@ -19,7 +19,7 @@ function readSetupHtml(): string {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const candidates = [
     join(currentDir, 'setup.html'),
-    join(currentDir, '../../src/modules/setup/setup.html'),
+    join(currentDir, '../../../src/modules/setup/setup.html'),
   ];
   const match = candidates.find((candidate) => existsSync(candidate));
   if (!match) {
