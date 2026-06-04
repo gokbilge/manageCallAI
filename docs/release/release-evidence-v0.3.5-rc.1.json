@@ -1,0 +1,73 @@
+{
+  "release_version": "v0.3.5-rc.1",
+  "commit_sha": "541cac5afcbe51ea46e9fc378e9c8781c0d14569",
+  "generated_at": "2026-06-04T05:35:00Z",
+  "stage": "rc",
+  "notes": "RC evidence bundle for v0.3.5-rc.1. Delivers SLICE-60: setup/bootstrap module, docker-compose.prod.yml, install.sh, Helm chart, Docker Hub publishing gate. Two deployment blockers found and fixed in this session: (1) setup.html not copied to dist/ by tsc — fixed by extending the build script and correcting the fallback path (../../ → ../../../); (2) docker-images.yml failing all matrix jobs when DOCKERHUB_TOKEN is absent — fixed with conditional Docker Hub gate. FreeSWITCH smoke 26932864772 passed on rc/v0.3.5 at 541cac5 (enlogy@10.0.0.32). Helm lint and template passed on enlogy@10.0.0.32. docker-compose.prod.yml smoke with GHCR images deferred to post-tag validation before production promotion.",
+
+  "github_release": {
+    "tag": "v0.3.5-rc.1",
+    "url": "https://github.com/gokbilge/manageCallAI/releases/tag/v0.3.5-rc.1",
+    "published_at": "2026-06-04T05:35:00Z",
+    "is_prerelease": true
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932617059",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932617073",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932415561",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932617117",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26932864772",
+
+  "slice_60_evidence": {
+    "setup_module": "Integration tests (setup.integration.test.ts) pass in CI run 26932617059: sentinel present/absent, /setup locked after bootstrap, headless bootstrap idempotency, admin email allowlist enforcement. Controller unit tests (setup.controller.test.ts) and service unit tests (setup.service.test.ts) also pass.",
+    "helm_lint": "helm lint charts/managecallai/ passes (1 chart linted, 0 failed) on enlogy@10.0.0.32 at commit 541cac5. helm template renders all 8 resource kinds (Secret, ConfigMap, PVC, Service, Deployment×3, Job) with exit 0.",
+    "docker_compose_prod_smoke": "DEFERRED — docker-compose.prod.yml uses ghcr.io/gokbilge/* images which are published on tag push. Smoke will be run on enlogy@10.0.0.32 after v0.3.5-rc.1 GHCR images are available. Required before production promotion.",
+    "install_sh": "install.sh present and reviewed. Generates secrets via openssl rand -hex 32, writes .env.production, prints next-steps. Does not auto-start containers.",
+    "env_template": ".env.production.example present with all required variables and generation commands. SETUP_ADMIN_EMAIL / SETUP_ADMIN_PASSWORD clearly marked 'remove after first boot'.",
+    "docker_hub": "docker-images.yml updated to gate Docker Hub login on credential availability (DOCKERHUB_USERNAME + DOCKERHUB_TOKEN secrets). GHCR publishing is unconditional. Docker Hub publishes once secrets are configured in repo settings."
+  },
+
+  "production_preflight": "pnpm production:preflight --check-config passes in dev. Target-environment run required before production promotion.",
+
+  "production_e2e": "FreeSWITCH smoke run 26932864772 passed all production E2E steps on enlogy@10.0.0.32 at commit 541cac5 (rc/v0.3.5): API health, DB contracts, FreeSWITCH ESL profile, runtime directory/dialplan lookup, IVR lifecycle, SIP REGISTER, Go agent ESL, FreeSWITCH hardening (0 findings), SIP TLS/SRTP/NAT smoke, and observability query. Evidence artifact: freeswitch-smoke-26932864772 (90-day retention). https://github.com/gokbilge/manageCallAI/actions/runs/26932864772",
+
+  "production_soak": "RC-topology soak evidence inherited from v0.3.0 (smoke run 26903877370, 2026-06-03). v0.3.5 adds no changes to the call path, rate limiting, or SLO-affecting hot paths. All SLICE-60 changes affect setup-time paths only (bootstrap, /setup wizard, Helm chart, Docker Compose). A fresh soak is not required for the setup/packaging slice.",
+
+  "production_slo": "SLO evidence from v0.3.0 (docs/ops/runtime-slo-evidence-2026-06-03.json): /health/ready p99 8ms, /api/v1/freeswitch/directory p99 15ms, /api/v1/freeswitch/dialplan p99 22ms — all within targets. No hot-path changes in v0.3.5.",
+
+  "restore_smoke": "Restore evidence inherited from v0.3.0 (docs/ops/restore-evidence-enlogy-2026-06-02.json). v0.3.5 adds migration 0052_system_config.sql; restore path (pg_restore) is unaffected. setup_complete sentinel is re-written by bootstrap on a fresh database.",
+
+  "rate_limit_topology": "Rate limiting unchanged from v0.3.0. Setup wizard has a separate in-process rate limiter (5 req/min/IP) isolated from the main Redis-backed rate limiter.",
+
+  "carrier_interop": "Inherited from v0.3.0 (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json). No carrier or call-path changes in v0.3.5.",
+
+  "log_redaction": "Log redaction evidence from smoke run 26932864772 on enlogy@10.0.0.32 at commit 541cac5 (rc/v0.3.5). Artifact: freeswitch-smoke-26932864772.",
+
+  "rotation_rehearsal": "Runtime token rotation configuration validated in smoke run 26932864772 (rotation rehearsal config check step). Live rotation rehearsal must be performed before production promotion. Template: docs/ops/templates/rotation-rehearsal-evidence-template.json.",
+
+  "network_config": "Production network config evidence from smoke run 26932864772 on enlogy@10.0.0.32 at commit 541cac5 (rc/v0.3.5). Artifact: freeswitch-smoke-26932864772.",
+
+  "security_review": "CodeQL run 26932617073 clean. FreeSWITCH hardening 0 findings (smoke run 26932864772). Log redaction: 0 scan findings from deployment logs. Prior CodeQL exclusions for RFC 3261-mandated MD5 and CI self-signed TLS remain in effect.",
+
+  "rollback_plan": "docs/ops/production-deployment.md#upgrade-and-migration-playbook",
+
+  "operator_signoff": {
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-04T05:35:00Z",
+    "notes": "RC signoff for v0.3.5-rc.1. SLICE-60 setup/bootstrap slice delivered. Two deployment blockers identified and fixed this session. All CI gates pass. Helm lint/template pass. docker-compose.prod.yml smoke with GHCR images and live rotation rehearsal remain as gates before production promotion."
+  },
+
+  "artifact_files": {
+    "carrier_interop_evidence": "docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json",
+    "runtime_slo": "docs/ops/runtime-slo-evidence-2026-06-03.json",
+    "restore_evidence": "docs/ops/restore-evidence-enlogy-2026-06-02.json",
+    "backup_retention_policy": "docs/ops/backup-retention-policy.json"
+  },
+
+  "known_gaps_before_production": [
+    "docker-compose.prod.yml smoke with GHCR v0.3.5-rc.1 images on enlogy@10.0.0.32",
+    "Live rotation rehearsal (pnpm rotation:rehearsal)",
+    "DOCKERHUB_USERNAME + DOCKERHUB_TOKEN secrets must be configured in repo to enable Docker Hub publishing"
+  ]
+}
