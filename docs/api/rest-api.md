@@ -144,6 +144,10 @@ Primary resources:
 - `platform/runtime-operations` — safe FreeSWITCH runtime operations (platform admin)
 - `platform/nodes/:id/status` — FreeSWITCH node health and module status
 
+Current productized PBX UI surfaces include `feature-codes`,
+`conference-rooms`, SIP trunk operations, and the IVR lifecycle pages. Parking
+lot UI remains a separate open slice.
+
 See `docs/pbx/pbx-data-model-and-api-proposal.md` for the full endpoint list,
 request/response examples, and authorization model. These endpoints do not exist
 in the current OpenAPI spec; they will be added as implementation proceeds.

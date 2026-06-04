@@ -70,7 +70,7 @@ These features exist in code and tests today:
 - per-node SIP profile fields in DB
 - feature code CRUD, validate, publish, disable, and runtime execute callback
 - parking lot CRUD plus runtime park/retrieve/timeout callbacks
-- conference room CRUD plus participant runtime snapshot callbacks
+- conference room CRUD, participant runtime snapshot callbacks, and tenant admin UI
 - self-service `/me/*` APIs for DND and call forwarding
 - node status snapshots and tenant/platform gateway status endpoints
 - runtime apply request lifecycle for trunk-driven gateway reload/rescan work
@@ -79,7 +79,6 @@ What is **not** yet fully productized:
 
 - SIP profile management API/UI
 - parking-lot management in the web UI
-- conference-room management in the web UI
 - full end-user portal experience
 - full controlled runtime-action workflow in the web UI
 - carrier/operator test workflows in the web UI

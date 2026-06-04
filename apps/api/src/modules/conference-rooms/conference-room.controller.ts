@@ -2,7 +2,8 @@ import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { db } from '../../db/client.js';
-import { authenticate } from '../auth/authenticate.js';
+import { CAPABILITIES } from '../auth/capabilities.js';
+import { requireCapability } from '../auth/require-capability.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { fireAuditEvent } from '../audit/fire-audit.js';
 import { sendNotFound } from '../../errors/index.js';
@@ -45,116 +46,145 @@ function handleError(err: unknown, reply: FastifyReply): void {
 }
 
 export const conferenceRoomController: FastifyPluginAsyncZod = async (app) => {
-  app.addHook('preHandler', authenticate);
-
-  app.get('/', async (req) => {
+  app.get('/', { preHandler: requireCapability(CAPABILITIES.TENANT_CONFERENCE_ROOMS_VIEW) }, async (req) => {
     const user = req.user as AuthClaims;
     return { data: await service.list(user.tenant_id) };
   });
 
-  app.post('/', { schema: { body: CreateBodySchema } }, async (req, reply) => {
-    const user = req.user as AuthClaims;
-    const room = await service.create({ ...req.body, tenant_id: user.tenant_id, created_by: user.sub });
-    fireAuditEvent({
-      tenant_id: user.tenant_id,
-      actor_id: user.sub,
-      actor_role: user.role,
-      action: 'conference_room.created',
-      resource_type: 'conference_room',
-      resource_id: room.id,
-    });
-    return reply.code(201).send({ data: room });
-  });
-
-  app.get('/:id', { schema: { params: UuidParam } }, async (req, reply) => {
-    const user = req.user as AuthClaims;
-    try {
-      return { data: await service.getById(req.params.id, user.tenant_id) };
-    } catch (err) {
-      return handleError(err, reply);
-    }
-  });
-
-  app.patch('/:id', { schema: { params: UuidParam, body: UpdateBodySchema } }, async (req, reply) => {
-    const user = req.user as AuthClaims;
-    try {
-      const room = await service.update(req.params.id, user.tenant_id, req.body);
+  app.post(
+    '/',
+    { preHandler: requireCapability(CAPABILITIES.TENANT_CONFERENCE_ROOMS_CREATE), schema: { body: CreateBodySchema } },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      const room = await service.create({ ...req.body, tenant_id: user.tenant_id, created_by: user.sub });
       fireAuditEvent({
         tenant_id: user.tenant_id,
         actor_id: user.sub,
         actor_role: user.role,
-        action: 'conference_room.updated',
+        action: 'conference_room.created',
         resource_type: 'conference_room',
         resource_id: room.id,
       });
-      return { data: room };
-    } catch (err) {
-      return handleError(err, reply);
-    }
-  });
+      return reply.code(201).send({ data: room });
+    },
+  );
 
-  app.post('/:id/disable', { schema: { params: UuidParam } }, async (req, reply) => {
-    const user = req.user as AuthClaims;
-    try {
-      const room = await service.disable(req.params.id, user.tenant_id);
-      fireAuditEvent({
-        tenant_id: user.tenant_id,
-        actor_id: user.sub,
-        actor_role: user.role,
-        action: 'conference_room.disabled',
-        resource_type: 'conference_room',
-        resource_id: room.id,
-      });
-      return { data: room };
-    } catch (err) {
-      return handleError(err, reply);
-    }
-  });
+  app.get(
+    '/:id',
+    { preHandler: requireCapability(CAPABILITIES.TENANT_CONFERENCE_ROOMS_VIEW), schema: { params: UuidParam } },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.getById(req.params.id, user.tenant_id) };
+      } catch (err) {
+        return handleError(err, reply);
+      }
+    },
+  );
 
-  app.post('/:id/enable', { schema: { params: UuidParam } }, async (req, reply) => {
-    const user = req.user as AuthClaims;
-    try {
-      const room = await service.enable(req.params.id, user.tenant_id);
-      fireAuditEvent({
-        tenant_id: user.tenant_id,
-        actor_id: user.sub,
-        actor_role: user.role,
-        action: 'conference_room.enabled',
-        resource_type: 'conference_room',
-        resource_id: room.id,
-      });
-      return { data: room };
-    } catch (err) {
-      return handleError(err, reply);
-    }
-  });
+  app.patch(
+    '/:id',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_CONFERENCE_ROOMS_UPDATE),
+      schema: { params: UuidParam, body: UpdateBodySchema },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const room = await service.update(req.params.id, user.tenant_id, req.body);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          action: 'conference_room.updated',
+          resource_type: 'conference_room',
+          resource_id: room.id,
+        });
+        return { data: room };
+      } catch (err) {
+        return handleError(err, reply);
+      }
+    },
+  );
 
-  app.delete('/:id', { schema: { params: UuidParam } }, async (req, reply) => {
-    const user = req.user as AuthClaims;
-    try {
-      await service.delete(req.params.id, user.tenant_id);
-      fireAuditEvent({
-        tenant_id: user.tenant_id,
-        actor_id: user.sub,
-        actor_role: user.role,
-        action: 'conference_room.deleted',
-        resource_type: 'conference_room',
-        resource_id: req.params.id,
-      });
-      return reply.code(204).send();
-    } catch (err) {
-      return handleError(err, reply);
-    }
-  });
+  app.post(
+    '/:id/disable',
+    { preHandler: requireCapability(CAPABILITIES.TENANT_CONFERENCE_ROOMS_DEACTIVATE), schema: { params: UuidParam } },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const room = await service.disable(req.params.id, user.tenant_id);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          action: 'conference_room.disabled',
+          resource_type: 'conference_room',
+          resource_id: room.id,
+        });
+        return { data: room };
+      } catch (err) {
+        return handleError(err, reply);
+      }
+    },
+  );
 
-  app.get('/:id/participants', { schema: { params: UuidParam } }, async (req, reply) => {
-    const user = req.user as AuthClaims;
-    try {
-      return { data: await service.listParticipants(req.params.id, user.tenant_id) };
-    } catch (err) {
-      return handleError(err, reply);
-    }
-  });
+  app.post(
+    '/:id/enable',
+    { preHandler: requireCapability(CAPABILITIES.TENANT_CONFERENCE_ROOMS_UPDATE), schema: { params: UuidParam } },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const room = await service.enable(req.params.id, user.tenant_id);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          action: 'conference_room.enabled',
+          resource_type: 'conference_room',
+          resource_id: room.id,
+        });
+        return { data: room };
+      } catch (err) {
+        return handleError(err, reply);
+      }
+    },
+  );
+
+  app.delete(
+    '/:id',
+    { preHandler: requireCapability(CAPABILITIES.TENANT_CONFERENCE_ROOMS_DEACTIVATE), schema: { params: UuidParam } },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        await service.delete(req.params.id, user.tenant_id);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          action: 'conference_room.deleted',
+          resource_type: 'conference_room',
+          resource_id: req.params.id,
+        });
+        return reply.code(204).send();
+      } catch (err) {
+        return handleError(err, reply);
+      }
+    },
+  );
+
+  app.get(
+    '/:id/participants',
+    { preHandler: requireCapability(CAPABILITIES.TENANT_CONFERENCE_ROOMS_VIEW), schema: { params: UuidParam } },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.listParticipants(req.params.id, user.tenant_id) };
+      } catch (err) {
+        return handleError(err, reply);
+      }
+    },
+  );
 };
 
 // Runtime callbacks from Go agent (conference join/leave events)

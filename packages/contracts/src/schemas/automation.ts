@@ -126,6 +126,10 @@ export const API_KEY_CAPABILITIES = [
   'tenant.schedules.view',
   'tenant.schedules.create',
   'tenant.schedules.update',
+  'tenant.conference_rooms.view',
+  'tenant.conference_rooms.create',
+  'tenant.conference_rooms.update',
+  'tenant.conference_rooms.deactivate',
   // tenant — feature codes
   'tenant.feature_codes.view',
   'tenant.feature_codes.create',
