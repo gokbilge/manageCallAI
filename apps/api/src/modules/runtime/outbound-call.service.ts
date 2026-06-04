@@ -2,6 +2,7 @@ import { fireAuditEvent } from '../audit/fire-audit.js';
 import type { FraudService } from '../fraud/fraud.service.js';
 import type { OutboundCallRepository } from './outbound-call.repository.js';
 import type { CreateOutboundCallInput, OutboundCallRequest, OutboundCallStatus } from './outbound-call.types.js';
+import { GLOBAL_EMERGENCY_NUMBERS } from '../shared/emergency-constants.js';
 
 export class OutboundCallValidationError extends Error {
   constructor(msg: string) { super(msg); this.name = 'OutboundCallValidationError'; }
@@ -12,7 +13,6 @@ export class OutboundCallNotFoundError extends Error {
 }
 
 const DIAL_NUMBER_PATTERN = /^\+?[0-9]{3,20}$/;
-const EMERGENCY_NUMBERS = new Set(['000', '110', '112', '118', '119', '911', '999']);
 const PREMIUM_RATE_PREFIXES = ['+1900', '1900', '+1976', '1976'];
 
 type RouteSafetyPolicy = {
@@ -170,7 +170,7 @@ export class OutboundCallService {
 
 function assertGloballyAllowedDestination(dialNumber: string): void {
   const normalized = dialNumber.replace(/^\+/, '');
-  if (EMERGENCY_NUMBERS.has(normalized)) {
+  if (GLOBAL_EMERGENCY_NUMBERS.has(normalized)) {
     throw new OutboundCallValidationError('Emergency destinations are blocked by outbound safety policy');
   }
   if (matchesAnyPrefix(dialNumber, PREMIUM_RATE_PREFIXES)) {

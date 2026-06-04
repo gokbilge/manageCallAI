@@ -6,10 +6,7 @@ import type {
   UpdateFeatureCodeInput,
 } from './feature-code.types.js';
 import { FEATURE_CODE_ACTION_TYPES } from './feature-code.types.js';
-
-// Emergency number prefixes blocked globally — a feature code must never
-// shadow an emergency number within the tenant's dialplan.
-const EMERGENCY_CODES = new Set(['000', '110', '112', '118', '119', '911', '999']);
+import { GLOBAL_EMERGENCY_NUMBERS } from '../shared/emergency-constants.js';
 
 export class FeatureCodeNotFoundError extends Error {
   constructor(id: string) { super(`Feature code not found: ${id}`); this.name = 'FeatureCodeNotFoundError'; }
@@ -128,7 +125,7 @@ export class FeatureCodeService {
     }
     // Reject codes that are pure emergency numbers
     const stripped = code.replace(/^\*+/, '').replace(/^#+/, '');
-    if (EMERGENCY_CODES.has(stripped) || EMERGENCY_CODES.has(code)) {
+    if (GLOBAL_EMERGENCY_NUMBERS.has(stripped) || GLOBAL_EMERGENCY_NUMBERS.has(code)) {
       throw new FeatureCodeConflictError(
         `Feature code ${code} shadows an emergency number and cannot be used`,
       );
