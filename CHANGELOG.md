@@ -14,6 +14,56 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ---
 
+## [0.6.0] - 2026-06-05
+
+Release classification: production release — v0.6 AI-native differentiation.
+
+Production evidence: `docs/release/release-evidence-v0.6.0.json`
+
+### Added
+
+- **AI call failure explanation** (issue #233): `POST /api/v1/calls/explain-failure`
+  bounded deterministic explanation of failed calls from stored event data.
+  Returns observed facts, likely cause, and recommended next action for 14 known
+  failure codes. Fails closed for unknown calls. Web UI adds Explain button in
+  call detail panel for failed calls. Capability-gated on
+  `tenant.calls.explain_failure`.
+
+- **AI route and change risk analysis** (issue #234): `POST /api/v1/risk-analysis/route`
+  advisory risk analysis for outbound routes, inbound routes, and SIP trunks.
+  Returns risk level, affected objects, and unresolved concerns before publish.
+  15 concern codes covering trunk status, prefix conflicts, shared trunks,
+  missing targets, and pending applies. Web UI adds Risk button per outbound
+  route row with risk panel, severity icons, and advisory disclaimer. Capability-
+  gated on `tenant.risk_analysis.run`.
+
+- **AI summary review for calls and recordings** (issue #235): AI-assisted
+  operator review of call recordings and voicemail. `GET
+  /api/v1/recordings/:id/summary-review` and `GET /api/v1/call-events/:callId/summary-review`
+  surface analysis-request status, summary text, and transcript (if compliance
+  scope allows). Transcript access gated by `tenant.compliance.admin`. Fails
+  closed when recording-analysis record is absent or retention has elapsed.
+
+- **Natural-language telecom reporting** (issue #236): `POST
+  /api/v1/reporting/nl-query` compiles bounded operator questions into
+  parameterized call-event filters. Supported dimensions: direction
+  (inbound/outbound), status (failed/completed/active), time range (last
+  hour/today/yesterday/last 7 days), and aggregation (count vs list). Unsupported
+  questions fail closed. No raw SQL generation. Web reporting page at
+  `/tenant/reporting` shows filter chips, result table, and advisory disclaimer.
+  Capability-gated on `tenant.reporting.nl_query`.
+
+### Known limitations
+
+- No new database migrations in v0.6.0. All four AI features read from existing
+  tables (`call_events`, `recording_analysis_requests`, etc.) — no schema
+  changes required.
+- All AI features are deterministic and grounded in API-owned records. No
+  external LLM calls are made in this release; provider-AI integration in
+  `apps/worker` is unchanged.
+
+---
+
 ## [0.5.0] - 2026-06-05
 
 Release classification: production release — v0.5 operational maturity.
