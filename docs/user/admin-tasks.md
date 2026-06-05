@@ -382,3 +382,4 @@ For a new tenant, a practical order is:
 - [quickstart.md](../ops/quickstart.md)
 - [UI_ARCHITECTURE.md](../ui/UI_ARCHITECTURE.md)
 - [end-user-self-service.md](../pbx/end-user-self-service.md)
+- [end-user-self-service.md](end-user-self-service.md)

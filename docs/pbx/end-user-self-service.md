@@ -1,34 +1,40 @@
 # End-User Self-Service Portal — Design
 
-Status: **Partially implemented.**
+Status: **Implemented in the current admin app for the v0.5 self-service slice.**
 
-Implemented in the issue-176 slice:
+Implemented:
 
 - `end_user` tenant role in the database/API role model.
 - Tenant-level self-service policy for DND, call forwarding, voicemail-view,
-  voicemail-PIN-change, and call-history-view capability flags.
+  voicemail-PIN-change, call-history-view, device-view, and SIP-reset
+  capability flags.
 - Extension owner linkage via `extensions.owner_user_id`.
 - `/api/v1/me/extension`, `/api/v1/me/dnd`, and `/api/v1/me/call-forward`.
+- `/api/v1/me/voicemail-messages`, playback, mark-read, and delete.
+- `/api/v1/me/call-history`.
+- `/api/v1/me/devices`.
+- `/api/v1/me/sip-credential/reset`.
 - `/api/v1/tenant/self-service-policy` for tenant admins.
+- End-user route in the existing React app at `/tenant/me`.
 
 Still deferred:
 
-- End-user portal UI at `/portal`.
-- `/me/voicemail-messages`, `/me/voicemail-pin`, `/me/call-history`,
-  `/me/recordings`, `/me/devices`, and `/me/sip-credential/reset`.
+- `/me/voicemail-pin`.
+- `/me/recordings`.
 - Runtime evidence that DND/forward changes are consumed by live FreeSWITCH.
-Priority: P2 — should not block public beta unless the product scope promises it.
+Priority: P1/P2 follow-up hardening. The core end-user surface is now present in
+the shipped product line, but runtime evidence and voicemail-PIN flows remain
+incomplete.
 
 ---
 
 ## Goal
 
-Provide a separate portal surface where end users (employees, extension owners)
-can self-manage their own extension settings without access to tenant admin or
-operator capabilities.
+Provide an end-user surface where extension owners can self-manage their own
+settings without access to tenant admin or operator capabilities.
 
-This is separate from the existing React admin panel. End users operate on their
-own resources only.
+Current implementation uses a protected route in the existing React app
+(`'/tenant/me'`) instead of a separate standalone portal.
 
 ---
 

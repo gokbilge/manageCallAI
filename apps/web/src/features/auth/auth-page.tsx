@@ -5,6 +5,7 @@ import { Shield, UserRoundPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiRequest } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/use-auth';
+import { decodeJwtClaims } from '@/lib/auth/session';
 
 type LoginForm = {
   tenant_slug: string;
@@ -60,7 +61,8 @@ export function AuthPage() {
         tenantSlug: values.tenant_slug,
         displayName: values.email,
       });
-      navigate('/tenant/extensions', { replace: true });
+      const claims = decodeJwtClaims(result.token);
+      navigate(claims.role === 'end_user' ? '/tenant/me' : '/tenant/extensions', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     }
