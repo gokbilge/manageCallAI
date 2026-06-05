@@ -112,6 +112,9 @@ export const CAPABILITIES = {
   TENANT_RISK_ANALYSIS: 'tenant.risk_analysis.run',
   TENANT_NL_REPORTING: 'tenant.reporting.nl_query',
   TENANT_CALL_FAILURE_EXPLAIN: 'tenant.calls.explain_failure',
+  TENANT_AI_POLICY_VIEW: 'tenant.ai.policy.view',
+  TENANT_AI_POLICY_MANAGE: 'tenant.ai.policy.manage',
+  TENANT_AI_PROVIDER_BACKED_USE: 'tenant.ai.provider_backed.use',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];

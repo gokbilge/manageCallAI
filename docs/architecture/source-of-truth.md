@@ -222,3 +222,13 @@ Planned `v0.6.x` operator outcomes:
 
 These are product-planning targets, not claims that the current code line
 already ships those features.
+
+`v0.6.1` adds the provider-backed AI policy foundation underneath those
+workflows:
+
+- platform policy is stored in API-owned configuration, not hidden provider state
+- tenant opt-in is explicit and narrower than platform policy
+- deterministic fallback remains mandatory when provider-backed execution is
+  disabled or rejected by policy
+- provider-backed prompt generation and runtime IVR AI requests remain bounded,
+  capability-gated, and auditable

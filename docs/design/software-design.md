@@ -84,7 +84,7 @@ Responsibilities:
 
 ### 3.9 AI assistance layer
 
-Planned `v0.6.x` operator-facing AI workflows remain API-owned domain features.
+`v0.6.x` operator-facing AI workflows remain API-owned domain features.
 
 Responsibilities:
 
@@ -92,6 +92,8 @@ Responsibilities:
 - summarize route and publish risk from existing desired-state and publish records
 - generate voicemail and call summaries from bounded recording-analysis outputs
 - translate natural-language operator questions into bounded reporting queries
+- enforce provider-backed AI policy boundaries before tenant or runtime requests
+  enter provider-neutral work queues
 - preserve tenant scoping, capability checks, audit attribution, and idempotent request handling
 
 Non-responsibilities:
@@ -100,6 +102,15 @@ Non-responsibilities:
 - direct SQL generation or execution
 - autonomous publish or rollback
 - provider-specific coupling inside the core domain model
+
+Current implementation status:
+
+- deterministic `v0.6.0` advisory features are implemented as bounded API
+  services
+- `v0.6.1` introduces platform policy plus tenant opt-in for provider-backed
+  prompt generation and IVR AI execution
+- provider-backed execution still resolves through provider-neutral work-request
+  contracts and can fall back to deterministic `auto` mode when policy forbids it
 
 ### 3.10 Release evidence layer
 
@@ -166,6 +177,7 @@ The current code line is organized around route modules plus service/repository 
 - `SelfServiceService`
 - `RuntimeNodeStatusService`
 - `SetupService`
+- `AiPolicyService`
 - planned `CallFailureExplanationService`
 - planned `RouteRiskAnalysisService`
 - `RecordingSummaryService` behavior currently lives inside the recordings and

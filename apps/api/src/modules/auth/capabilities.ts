@@ -116,6 +116,11 @@ export const CAPABILITIES = {
 
   // v0.6: AI-assisted call failure explanation (read-only, advisory only)
   TENANT_CALL_FAILURE_EXPLAIN: 'tenant.calls.explain_failure',
+
+  // v0.6.1: provider-backed AI policy and gated provider use
+  TENANT_AI_POLICY_VIEW: 'tenant.ai.policy.view',
+  TENANT_AI_POLICY_MANAGE: 'tenant.ai.policy.manage',
+  TENANT_AI_PROVIDER_BACKED_USE: 'tenant.ai.provider_backed.use',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -145,6 +150,7 @@ const TENANT_VIEW_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_CHANNEL_ACCOUNTS_VIEW,
   CAPABILITIES.TENANT_CHANNEL_MESSAGES_VIEW,
   CAPABILITIES.TENANT_MEETING_SESSIONS_VIEW,
+  CAPABILITIES.TENANT_AI_POLICY_VIEW,
 ];
 
 const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
@@ -191,6 +197,7 @@ const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_RISK_ANALYSIS,
   CAPABILITIES.TENANT_NL_REPORTING,
   CAPABILITIES.TENANT_CALL_FAILURE_EXPLAIN,
+  CAPABILITIES.TENANT_AI_PROVIDER_BACKED_USE,
 ];
 
 const TENANT_CAPABILITIES: readonly Capability[] = [
@@ -214,6 +221,7 @@ const TENANT_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_COMPLIANCE_ADMIN,
   CAPABILITIES.TENANT_SECURITY_ALERTS_MANAGE,
   CAPABILITIES.TENANT_FRAUD_POLICY_MANAGE,
+  CAPABILITIES.TENANT_AI_POLICY_MANAGE,
 ];
 
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {

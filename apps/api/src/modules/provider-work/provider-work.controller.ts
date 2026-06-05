@@ -13,15 +13,22 @@ import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
+import { fireAuditEvent } from '../audit/fire-audit.js';
+import { AiPolicyRepository } from '../ai-policy/ai-policy.repository.js';
+import { AiPolicyService, AiProviderRequestDeniedError } from '../ai-policy/ai-policy.service.js';
 import { ProviderWorkRepository } from './provider-work.repository.js';
 import { ProviderWorkRequestNotFoundError, ProviderWorkService } from './provider-work.service.js';
-import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
+import { sendNotFound, sendInvalidArgument, sendFailedPrecondition, sendPermissionDenied } from '../../errors/index.js';
 
-const service = new ProviderWorkService(new ProviderWorkRepository(db));
+const aiPolicyService = new AiPolicyService(new AiPolicyRepository(db));
+const service = new ProviderWorkService(new ProviderWorkRepository(db), aiPolicyService);
 
 function replyNotFound(err: unknown, reply: FastifyReply): void {
   if (err instanceof ProviderWorkRequestNotFoundError) {
     return sendNotFound(reply, err.message);
+  }
+  if (err instanceof AiProviderRequestDeniedError) {
+    return sendFailedPrecondition(reply, err.message);
   }
   throw err;
 }
@@ -46,8 +53,34 @@ export const promptGenerationController: FastifyPluginAsyncZod = async (app) => 
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
-      const request = await service.createPromptGeneration(user.tenant_id, req.body);
-      return reply.code(201).send({ data: request });
+      if ((req.body.provider_hint ?? 'auto') !== 'auto') {
+        const capabilities = user.capabilities;
+        const canUseProviderBacked = capabilities !== undefined
+          ? (capabilities.includes('*') || capabilities.includes(CAPABILITIES.TENANT_AI_PROVIDER_BACKED_USE))
+          : requireProviderBackedCapability(user.role);
+        if (!canUseProviderBacked) {
+          return sendPermissionDenied(reply, 'Provider-backed AI use requires tenant.ai.provider_backed.use');
+        }
+      }
+      try {
+        const request = await service.createPromptGeneration(user.tenant_id, req.body);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role ?? null,
+          action: 'ai.prompt_generation.requested',
+          resource_type: 'prompt_generation_request',
+          resource_id: request.id,
+          metadata: {
+            provider_hint: request.provider_hint,
+            requested_outputs: request.requested_outputs,
+            policy: request.metadata['ai_policy'] ?? null,
+          },
+        });
+        return reply.code(201).send({ data: request });
+      } catch (err) {
+        return replyNotFound(err, reply);
+      }
     },
   );
 
@@ -119,6 +152,19 @@ export const ivrAiController: FastifyPluginAsyncZod = async (app) => {
       const tenantId = req.body.tenant_id ?? '';
       if (!tenantId) return sendInvalidArgument(reply, 'tenant_id is required for runtime IVR AI turns');
       const request = await service.createIvrAiTurn(tenantId, req.body);
+      fireAuditEvent({
+        tenant_id: tenantId,
+        actor_id: null,
+        actor_role: 'system',
+        action: 'ai.ivr_turn.requested',
+        resource_type: 'ivr_ai_turn_request',
+        resource_id: request.id,
+        metadata: {
+          provider_hint: request.provider_hint,
+          requested_outputs: request.requested_outputs,
+          policy: request.metadata['ai_policy'] ?? null,
+        },
+      });
       return reply.code(201).send({ data: request });
     },
   );
@@ -177,3 +223,7 @@ export const ivrAiController: FastifyPluginAsyncZod = async (app) => {
     },
   );
 };
+
+function requireProviderBackedCapability(role: AuthClaims['role']): boolean {
+  return role === 'tenant_admin' || role === 'tenant_operator' || role === 'platform_admin';
+}
