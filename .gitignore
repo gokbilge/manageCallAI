@@ -33,3 +33,5 @@ runtime-token*
 CLAUDE.md
 AGENTS.md
 .local-prompts/
+.claude/
+.local-audits/
