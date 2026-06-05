@@ -1,0 +1,62 @@
+{
+  "release_version": "v0.6.0",
+  "commit_sha": "751895d3cf8db5e39e86f5e66ca9af30e6a4fcbb",
+  "generated_at": "2026-06-05T17:45:00Z",
+  "stage": "production",
+  "rc_evidence_reference": "docs/release/release-evidence-v0.6.0-rc.1.json",
+  "notes": "Production release v0.6.0. Promotes v0.6.0-rc.1. All RC gates passed. v0.6 AI-native differentiation: four bounded, deterministic AI operator workflows delivered — call failure explanation, route and change risk analysis, recording/voicemail summary review, and natural-language telecom reporting. No DB schema changes from v0.5.0. All CI/smoke gates green.",
+
+  "github_release": {
+    "tag": "v0.6.0",
+    "url": "https://github.com/gokbilge/manageCallAI/releases/tag/v0.6.0",
+    "published_at": "2026-06-05T17:45:00Z",
+    "is_prerelease": false
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028893165",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028893173",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028893142",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028893166",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028911635",
+
+  "helm_lint": "Inherited from v0.5.0-rc.1. No Helm chart changes in v0.6. PASSED — 1 chart linted, 0 chart(s) failed. All 8 resource kinds render.",
+
+  "docker_compose_prod_smoke": "Inherited from v0.5.0. No deployment changes in v0.6. All v0.6 features are additive read-only advisory endpoints on the existing API surface.",
+
+  "rotation_rehearsal": {
+    "status": "inherited",
+    "note": "Inherited from v0.5.0. No auth middleware or token-handling changes in v0.6."
+  },
+
+  "migrations": "No new migrations in v0.6.0. Upgrade from v0.5.0 is a drop-in image replacement. Run `pnpm db:migrate` is a no-op for v0.5.0 → v0.6.0 upgrades.",
+
+  "production_soak": "Inherited from v0.3.0 (docs/ops/runtime-slo-evidence-2026-06-03.json). No call-path or hot-path changes in v0.6.",
+
+  "production_slo": "Inherited from v0.3.0. No hot-path changes in v0.6.",
+
+  "carrier_interop": "Inherited from v0.3.0 (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json). No carrier or call-path changes in v0.6.",
+
+  "security_review": "CodeQL run 27028893173 clean. FreeSWITCH smoke 27028911635 passed. Coverage 27028893142 passed. All v0.6 endpoints: read-only, capability-gated, no raw SQL, no external LLM calls, deterministic pattern matching only. No new privileged surfaces.",
+
+  "rollback_plan": "Roll back to v0.5.0 image. No DB rollback needed — no migrations in v0.6. Low risk — all v0.6 changes are additive read-only advisory endpoints.",
+
+  "operator_signoff": {
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-05T17:45:00Z",
+    "notes": "Production signoff for v0.6.0. All four v0.6 AI-native differentiation features delivered and verified. All CI/smoke gates pass. No DB migrations, no call-path changes. Zero-downtime upgrade from v0.5.0."
+  },
+
+  "artifact_files": {
+    "rc_evidence": "docs/release/release-evidence-v0.6.0-rc.1.json",
+    "release_buckets": "docs/planning/release-buckets-v0.4-v0.6.md",
+    "changelog": "CHANGELOG.md"
+  },
+
+  "remaining_operator_steps": [
+    "Make GHCR v0.6.0 packages public: GitHub → Profile → Packages → Change visibility to Public",
+    "Run docker pull ghcr.io/gokbilge/managecallai-api:v0.6.0 to verify image is available",
+    "Deploy: update MANAGECALLAI_IMAGE_TAG=v0.6.0 in .env.production and restart containers",
+    "No DB migration required for v0.5.0 → v0.6.0 upgrade"
+  ]
+}
