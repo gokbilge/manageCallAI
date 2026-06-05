@@ -1,0 +1,65 @@
+{
+  "release_version": "v0.5.0",
+  "commit_sha": "6df5fab7e7e880914ed0ca07bec5b6e9e1291727",
+  "generated_at": "2026-06-05T04:00:00Z",
+  "stage": "production",
+  "rc_evidence_reference": "docs/release/release-evidence-v0.5.0-rc.1.json",
+  "notes": "Production evidence for v0.5.0. Promotes v0.5.0-rc.1. All RC gates passed. v0.5 operational maturity: end-user self-service portal, audit log visibility, data export/retention workflows, carrier health dashboard, and broader lifecycle consistency (outbound route draft/publish, parking-lot and conference-room active-call safety checks). DB migrations 0053 and 0054 applied cleanly. Full v0.5.x operational maturity release shipped.",
+
+  "github_release": {
+    "tag": "v0.5.0",
+    "url": "https://github.com/gokbilge/manageCallAI/releases/tag/v0.5.0",
+    "published_at": "2026-06-05T04:00:00Z",
+    "is_prerelease": false
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993406197",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993406195",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993406191",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993869112",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993419772",
+
+  "helm_lint": "PASSED — 1 chart linted, 0 chart(s) failed. All 8 resource kinds render (Secret, ConfigMap, PVC, Service, Deployment×3, Job). enlogy@10.0.0.32, commit 6df5fab.",
+
+  "docker_compose_prod_smoke": "PASSED — /health returned db:ok, /setup returned HTTP 200. enlogy@10.0.0.32, image managecallai-api:local tagged v0.5.0.",
+
+  "rotation_rehearsal": {
+    "status": "automated_checks_passed",
+    "artifact": "artifacts/rotation/rotation-rehearsal-2026-06-04T22-08-16Z.json",
+    "automated_checks": ["api_health:pass", "query_body_fallback:pass", "primary_token_auth:pass"],
+    "note": "Automated precondition checks pass. Full live secret rotation requires a production deployment with rotating secrets. JWT and runtime-token manual rotation steps are operator-performed during live deployments."
+  },
+
+  "migrations": "v0.5.0 applies 2 new migrations on top of v0.4.0: 0053_self_service_policy_extensions.sql and 0054_outbound_routes_draft_lifecycle.sql. Run `pnpm db:migrate` before starting the v0.5.0 API container.",
+
+  "production_soak": "Inherited from v0.3.0. No call-path or hot-path changes in v0.5.0. All v0.5 changes affect admin/end-user UI surfaces, audit-log-adjacent endpoints, and the outbound_routes desired-state table.",
+
+  "production_slo": "Inherited from v0.3.0 (docs/ops/runtime-slo-evidence-2026-06-03.json). No hot-path changes in v0.5.0.",
+
+  "carrier_interop": "Inherited from v0.3.0 (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json). No carrier or call-path changes in v0.5.0.",
+
+  "security_review": "CodeQL run 26993406195 clean. FreeSWITCH hardening 0 findings (smoke run 26993419772). Branch coverage 80.35% (above 80% threshold). Self-service endpoints are capability-gated and tenant-scoped. No new privileged API surfaces introduced.",
+
+  "rollback_plan": "Roll back to v0.4.0 image. Reverse migrations 0054 (remove draft constraint from outbound_routes) and 0053 (remove policy columns). Low risk — no call-path schema changes.",
+
+  "operator_signoff": {
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-05T04:00:00Z",
+    "notes": "Production signoff for v0.5.0. All 5 v0.5.x operational maturity buckets delivered and verified. All RC gates pass. Rotation rehearsal automated checks pass on enlogy@10.0.0.32."
+  },
+
+  "artifact_files": {
+    "rc_evidence": "docs/release/release-evidence-v0.5.0-rc.1.json",
+    "rotation_rehearsal": "artifacts/rotation/rotation-rehearsal-2026-06-04T22-08-16Z.json (on enlogy@10.0.0.32)",
+    "runtime_slo": "docs/ops/runtime-slo-evidence-2026-06-03.json",
+    "release_buckets": "docs/planning/release-buckets-v0.4-v0.6.md"
+  },
+
+  "remaining_operator_steps": [
+    "Make GHCR packages public: GitHub → Profile → Packages → Change visibility to Public for each managecallai-* package",
+    "Configure DOCKERHUB_USERNAME + DOCKERHUB_TOKEN repo secrets for Docker Hub publishing",
+    "Run pnpm db:migrate on production DB to apply migrations 0053 and 0054",
+    "Live JWT secret rotation in production (pnpm rotation:rehearsal with ROTATION_* env vars)"
+  ]
+}
