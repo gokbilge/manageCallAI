@@ -31,6 +31,7 @@ export class OutboundRouteRepository {
   }
 
   async create(input: CreateOutboundRouteInput): Promise<OutboundRoute> {
+    const initialStatus = input.start_as_draft ? 'draft' : 'active';
     const r = await this.db.query<OutboundRoute>(
       `INSERT INTO outbound_routes
        (
@@ -38,11 +39,12 @@ export class OutboundRouteRepository {
            fallback_sip_trunk_id, max_calls_per_minute, allowed_caller_id_numbers_json,
            allowed_destination_prefixes_json, blocked_destination_prefixes_json
          )
-       VALUES ($1, $2, 'active', $3, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10::jsonb)
+       VALUES ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11::jsonb)
        RETURNING ${COLUMNS}`,
       [
         input.tenant_id,
         input.name,
+        initialStatus,
         input.match_prefix,
         input.priority ?? 100,
         input.sip_trunk_id,
@@ -54,6 +56,15 @@ export class OutboundRouteRepository {
       ],
     );
     return r.rows[0]!;
+  }
+
+  async publish(id: string, tenantId: string): Promise<OutboundRoute | null> {
+    const r = await this.db.query<OutboundRoute>(
+      `UPDATE outbound_routes SET status = 'active', updated_at = NOW()
+       WHERE id = $1 AND tenant_id = $2 AND status = 'draft' RETURNING ${COLUMNS}`,
+      [id, tenantId],
+    );
+    return r.rows[0] ?? null;
   }
 
   async update(id: string, tenantId: string, input: UpdateOutboundRouteInput): Promise<OutboundRoute | null> {

@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth/use-auth';
 type OutboundRoute = {
   id: string;
   name: string;
-  status: 'active' | 'inactive';
+  status: 'draft' | 'active' | 'inactive';
   match_prefix: string;
   priority: number;
   sip_trunk_id: string;
@@ -26,13 +26,14 @@ type CreateRouteForm = {
   match_prefix: string;
   sip_trunk_id: string;
   priority: number;
+  start_as_draft: boolean;
 };
 
 export function OutboundRoutesPage() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const form = useForm<CreateRouteForm>({
-    defaultValues: { name: '', match_prefix: '', sip_trunk_id: '', priority: 100 },
+    defaultValues: { name: '', match_prefix: '', sip_trunk_id: '', priority: 100, start_as_draft: false },
   });
 
   const routesQuery = useQuery({
@@ -56,10 +57,22 @@ export function OutboundRoutesPage() {
           match_prefix: values.match_prefix,
           sip_trunk_id: values.sip_trunk_id,
           priority: Number(values.priority),
+          start_as_draft: values.start_as_draft,
         }),
       }),
     onSuccess: async () => {
       form.reset();
+      await queryClient.invalidateQueries({ queryKey: ['outbound-routes', session?.claims.tenant_id] });
+    },
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<{ data: OutboundRoute }>(`/outbound-routes/${id}/publish`, {
+        method: 'POST',
+        accessToken: session!.token,
+      }),
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['outbound-routes', session?.claims.tenant_id] });
     },
   });
@@ -90,7 +103,7 @@ export function OutboundRoutesPage() {
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
-        <DataCard title="Route Inventory" description="Active and inactive outbound routes ordered by priority.">
+        <DataCard title="Route Inventory" description="Draft, active, and inactive outbound routes ordered by priority. Publish a draft to start routing live calls.">
           {routesQuery.isLoading ? (
             <p className="text-sm text-[var(--color-muted-fg)]">Loading routes...</p>
           ) : routesQuery.isError ? (
@@ -131,15 +144,28 @@ export function OutboundRoutesPage() {
                         <StatusBadge status={r.status} />
                       </td>
                       <td className="px-3 py-2">
-                        {r.status === 'active' && (
-                          <Button
-                            variant="secondary"
-                            onClick={() => deactivateMutation.mutate(r.id)}
-                            disabled={deactivateMutation.isPending}
-                          >
-                            Deactivate
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {r.status === 'draft' && (
+                            <Button
+                              variant="secondary"
+                              onClick={() => publishMutation.mutate(r.id)}
+                              disabled={publishMutation.isPending}
+                              aria-label={`Publish ${r.name}`}
+                            >
+                              Publish
+                            </Button>
+                          )}
+                          {r.status === 'active' && (
+                            <Button
+                              variant="secondary"
+                              onClick={() => deactivateMutation.mutate(r.id)}
+                              disabled={deactivateMutation.isPending}
+                              aria-label={`Deactivate ${r.name}`}
+                            >
+                              Deactivate
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -174,6 +200,14 @@ export function OutboundRoutesPage() {
                 {createMutation.error instanceof ApiError ? createMutation.error.message : 'Could not create route'}
               </div>
             ) : null}
+
+            <label className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm">
+              <input type="checkbox" {...form.register('start_as_draft')} />
+              <div>
+                <p className="font-medium">Create as draft</p>
+                <p className="text-xs text-[var(--color-muted-fg)]">Route won't route calls until published.</p>
+              </div>
+            </label>
 
             <Button className="w-full" disabled={createMutation.isPending} type="submit">
               <Plus className="size-4" aria-hidden="true" />

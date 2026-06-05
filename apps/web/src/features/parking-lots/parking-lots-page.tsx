@@ -85,6 +85,19 @@ function ParkedCallsPanel({ lotId }: { lotId: string }) {
   );
 }
 
+// ── Active call count badge ───────────────────────────────────────────────────
+
+function ActiveCallsBadge({ lotId }: { lotId: string }) {
+  const q = useParkedCalls(lotId);
+  const count = (q.data ?? []).filter(c => c.status === 'parked').length;
+  if (!q.data || count === 0) return null;
+  return (
+    <span className="ml-2 inline-flex items-center rounded-full bg-[var(--color-warning)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-warning)]">
+      {count} live
+    </span>
+  );
+}
+
 // ── Lot row ───────────────────────────────────────────────────────────────────
 
 function LotRow({
@@ -93,10 +106,12 @@ function LotRow({
   deleting,
 }: {
   lot: ParkingLot;
-  onDelete: (id: string) => void;
+  onDelete: (id: string, activeCalls: number) => void;
   deleting: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const parkedQ = useParkedCalls(lot.id);
+  const activeCalls = (parkedQ.data ?? []).filter(c => c.status === 'parked').length;
 
   return (
     <>
@@ -109,7 +124,12 @@ function LotRow({
             ? <ChevronDown className="size-4 text-[var(--color-muted-fg)]" aria-hidden="true" />
             : <ChevronRight className="size-4 text-[var(--color-muted-fg)]" aria-hidden="true" />}
         </td>
-        <td className="px-3 py-2 font-medium">{lot.name}</td>
+        <td className="px-3 py-2 font-medium">
+          <span className="flex items-center">
+            {lot.name}
+            <ActiveCallsBadge lotId={lot.id} />
+          </span>
+        </td>
         <td className="px-3 py-2 font-mono text-sm text-[var(--color-muted-fg)]">
           {lot.slot_range_start}–{lot.slot_range_end}
         </td>
@@ -123,8 +143,9 @@ function LotRow({
           <Button
             variant="destructive"
             disabled={deleting}
-            onClick={(e) => { e.stopPropagation(); onDelete(lot.id); }}
+            onClick={(e) => { e.stopPropagation(); onDelete(lot.id, activeCalls); }}
             aria-label={`Delete ${lot.name}`}
+            title={activeCalls > 0 ? `${activeCalls} call${activeCalls === 1 ? '' : 's'} currently parked — will be dropped on delete` : undefined}
           >
             <Trash2 className="size-4" aria-hidden="true" />
           </Button>
@@ -250,8 +271,11 @@ export function ParkingLotsPage() {
   const lotsQuery = useParkingLots();
   const deleteLot = useDeleteParkingLot();
 
-  const handleDelete = (lot: ParkingLot) => {
-    if (window.confirm(`Delete parking lot "${lot.name}"? This cannot be undone.`)) {
+  const handleDelete = (lot: ParkingLot, activeCalls = 0) => {
+    const warning = activeCalls > 0
+      ? `\n\n⚠ Warning: ${activeCalls} call${activeCalls === 1 ? '' : 's'} are currently parked in this lot. Deleting will drop them.`
+      : '';
+    if (window.confirm(`Delete parking lot "${lot.name}"? This cannot be undone.${warning}`)) {
       void deleteLot.mutate(lot.id);
     }
   };
@@ -321,7 +345,7 @@ export function ParkingLotsPage() {
                   <LotRow
                     key={lot.id}
                     lot={lot}
-                    onDelete={() => handleDelete(lot)}
+                    onDelete={(_id, activeCalls) => handleDelete(lot, activeCalls)}
                     deleting={deleteLot.isPending && deleteLot.variables === lot.id}
                   />
                 ))}

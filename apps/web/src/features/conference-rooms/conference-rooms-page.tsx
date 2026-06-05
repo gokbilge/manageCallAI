@@ -222,6 +222,12 @@ export function ConferenceRoomsPage() {
   }
 
   async function handleDisable() {
+    if (activeParticipants.length > 0) {
+      const n = activeParticipants.length;
+      if (!window.confirm(
+        `${n} participant${n === 1 ? ' is' : 's are'} currently in this room.\n\nDisabling will drop their calls. Continue?`,
+      )) return;
+    }
     setSurfaceError(null);
     try {
       await disableMutation.mutateAsync();
@@ -240,6 +246,12 @@ export function ConferenceRoomsPage() {
   }
 
   async function handleDelete() {
+    if (activeParticipants.length > 0) {
+      const n = activeParticipants.length;
+      if (!window.confirm(
+        `${n} participant${n === 1 ? ' is' : 's are'} currently in this room.\n\nDeleting will drop their calls and remove the room permanently. Continue?`,
+      )) return;
+    }
     setSurfaceError(null);
     try {
       await deleteMutation.mutateAsync();
@@ -322,7 +334,14 @@ export function ConferenceRoomsPage() {
                         {room.record_calls ? ' · Recording enabled' : ' · Recording disabled'}
                       </p>
                     </div>
-                    <StatusBadge status={room.status === 'disabled' ? 'inactive' : room.status} />
+                    <div className="flex flex-col items-end gap-1">
+                      <StatusBadge status={room.status === 'disabled' ? 'inactive' : room.status} />
+                      {room.id === selectedId && activeParticipants.length > 0 && (
+                        <span className="text-[10px] font-semibold text-[var(--color-warning)]">
+                          {activeParticipants.length} live
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))}

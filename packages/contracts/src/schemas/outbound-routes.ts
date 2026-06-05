@@ -1,7 +1,7 @@
 import { z } from '../registry.js';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
-export const OutboundRouteStatusSchema = z.enum(['active', 'inactive']);
+export const OutboundRouteStatusSchema = z.enum(['draft', 'active', 'inactive']);
 export type OutboundRouteStatus = z.infer<typeof OutboundRouteStatusSchema>;
 
 // ── Resource schemas ──────────────────────────────────────────────────────────
@@ -45,6 +45,7 @@ export const CreateOutboundRouteBodySchema = z.object({
   allowed_caller_id_numbers_json: z.array(z.string()).nullable().optional(),
   allowed_destination_prefixes_json: z.array(z.string()).nullable().optional(),
   blocked_destination_prefixes_json: z.array(z.string()).nullable().optional(),
+  start_as_draft: z.boolean().optional(),
 }).openapi('CreateOutboundRouteBody');
 export type CreateOutboundRouteBody = z.infer<typeof CreateOutboundRouteBodySchema>;
 

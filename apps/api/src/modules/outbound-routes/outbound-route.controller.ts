@@ -92,6 +92,22 @@ export const outboundRouteController: FastifyPluginAsyncZod = async (app) => {
   );
 
   app.post(
+    '/:id/publish',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_ROUTES_UPDATE),
+      schema: { params: UuidParamsSchema },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.publish(req.params.id, user.tenant_id) };
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post(
     '/:id/deactivate',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_OUTBOUND_ROUTES_UPDATE),
