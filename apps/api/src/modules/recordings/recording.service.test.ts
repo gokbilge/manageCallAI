@@ -198,6 +198,15 @@ describe('RecordingService', () => {
       expect(repo.findById).toHaveBeenCalledWith('rec-1', 'tenant-1');
       expect(repo.listAnalysisRequests).toHaveBeenCalledWith('rec-1', 'tenant-1');
     });
+
+    it('rejects unsupported analysis output requests', async () => {
+      const repo = makeMockRepo();
+      const service = new RecordingService(repo);
+
+      await expect(service.createAnalysisRequest('rec-1', 'tenant-1', {
+        requested_outputs: [],
+      })).rejects.toThrow('requested_outputs must contain transcript, summary, or both');
+    });
   });
 
   describe('summary review', () => {
@@ -284,6 +293,221 @@ describe('RecordingService', () => {
         summary_text: 'Voicemail summary',
         transcript_text: null,
         transcript_access: 'restricted',
+      });
+    });
+
+    it('returns missing_analysis when no linked analysis request exists', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.findLatestAnalysisRequestForRecording).mockResolvedValueOnce(null);
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForRecording('rec-1', 'tenant-1', {
+        canViewTranscript: true,
+      });
+
+      expect(review).toMatchObject({
+        resource_type: 'recording',
+        resource_id: 'rec-1',
+        status: 'missing_analysis',
+        reason: 'no_analysis_request',
+        transcript_access: 'unavailable',
+      });
+    });
+
+    it('returns summary_retention_elapsed when the summary is outside retention', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.getRetentionPolicy).mockResolvedValueOnce({
+        ...basePolicy,
+        ai_summary_retention_days: 1,
+      });
+      vi.mocked(repo.findLatestAnalysisRequestForRecording).mockResolvedValueOnce({
+        id: 'analysis-3',
+        tenant_id: 'tenant-1',
+        recording_id: 'rec-1',
+        requested_outputs: ['summary'],
+        language_hint: null,
+        status: 'completed',
+        processor_id: 'processor-3',
+        claimed_at: '2026-01-01T00:00:00Z',
+        language: 'en',
+        transcript_text: null,
+        summary_text: 'Expired summary',
+        error_message: null,
+        provider_metadata: {},
+        metadata: {},
+        created_at: '2026-01-01T00:00:00Z',
+        completed_at: '2026-01-01T00:01:00Z',
+      });
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForRecording('rec-1', 'tenant-1', {
+        canViewTranscript: true,
+      });
+
+      expect(review).toMatchObject({
+        status: 'completed',
+        reason: 'summary_retention_elapsed',
+        summary_text: null,
+      });
+    });
+
+    it('returns transcript_retention_elapsed when transcript visibility expires', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.getRetentionPolicy).mockResolvedValueOnce({
+        ...basePolicy,
+        ai_summary_retention_days: null,
+        transcript_retention_days: 1,
+      });
+      vi.mocked(repo.findLatestAnalysisRequestForRecording).mockResolvedValueOnce({
+        id: 'analysis-4',
+        tenant_id: 'tenant-1',
+        recording_id: 'rec-1',
+        requested_outputs: ['summary', 'transcript'],
+        language_hint: null,
+        status: 'completed',
+        processor_id: 'processor-4',
+        claimed_at: '2026-01-01T00:00:00Z',
+        language: 'en',
+        transcript_text: 'Expired transcript',
+        summary_text: 'Current summary',
+        error_message: null,
+        provider_metadata: {},
+        metadata: {},
+        created_at: '2026-01-01T00:00:00Z',
+        completed_at: '2026-01-01T00:01:00Z',
+      });
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForRecording('rec-1', 'tenant-1', {
+        canViewTranscript: true,
+      });
+
+      expect(review).toMatchObject({
+        status: 'completed',
+        reason: 'transcript_retention_elapsed',
+        summary_text: 'Current summary',
+        transcript_text: null,
+        transcript_access: 'unavailable',
+      });
+    });
+
+    it('keeps content available when retention is indefinite', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.getRetentionPolicy).mockResolvedValueOnce(null);
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForRecording('rec-1', 'tenant-1', {
+        canViewTranscript: true,
+      });
+
+      expect(review).toMatchObject({
+        status: 'completed',
+        reason: null,
+        summary_text: 'Summary',
+        transcript_text: 'Transcript',
+        transcript_access: 'granted',
+      });
+    });
+
+    it('returns summary_missing when a completed analysis has no summary or timestamp', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.findLatestAnalysisRequestForRecording).mockResolvedValueOnce({
+        id: 'analysis-5',
+        tenant_id: 'tenant-1',
+        recording_id: 'rec-1',
+        requested_outputs: ['summary'],
+        language_hint: null,
+        status: 'completed',
+        processor_id: 'processor-5',
+        claimed_at: null,
+        language: null,
+        transcript_text: null,
+        summary_text: null,
+        error_message: null,
+        provider_metadata: {},
+        metadata: {},
+        created_at: null as unknown as string,
+        completed_at: null,
+      });
+      vi.mocked(repo.getRetentionPolicy).mockResolvedValueOnce({
+        ...basePolicy,
+        ai_summary_retention_days: 10,
+        transcript_retention_days: 10,
+      });
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForRecording('rec-1', 'tenant-1', {
+        canViewTranscript: true,
+      });
+
+      expect(review).toMatchObject({
+        status: 'completed',
+        reason: 'summary_missing',
+        summary_text: null,
+      });
+    });
+
+    it('returns analysis_failed when the provider run fails', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.findLatestAnalysisRequestForRecording).mockResolvedValueOnce({
+        id: 'analysis-6',
+        tenant_id: 'tenant-1',
+        recording_id: 'rec-1',
+        requested_outputs: ['summary'],
+        language_hint: null,
+        status: 'failed',
+        processor_id: 'processor-6',
+        claimed_at: '2026-06-05T09:00:00Z',
+        language: 'en',
+        transcript_text: null,
+        summary_text: null,
+        error_message: 'provider timeout',
+        provider_metadata: {},
+        metadata: {},
+        created_at: '2026-06-05T09:00:00Z',
+        completed_at: '2026-06-05T09:01:00Z',
+      });
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForRecording('rec-1', 'tenant-1', {
+        canViewTranscript: true,
+      });
+
+      expect(review).toMatchObject({
+        status: 'failed',
+        reason: 'analysis_failed',
+      });
+    });
+
+    it('returns analysis_cancelled when the provider run is cancelled', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.findLatestAnalysisRequestForRecording).mockResolvedValueOnce({
+        id: 'analysis-7',
+        tenant_id: 'tenant-1',
+        recording_id: 'rec-1',
+        requested_outputs: ['summary'],
+        language_hint: null,
+        status: 'cancelled',
+        processor_id: 'processor-7',
+        claimed_at: '2026-06-05T09:00:00Z',
+        language: 'en',
+        transcript_text: null,
+        summary_text: null,
+        error_message: null,
+        provider_metadata: {},
+        metadata: {},
+        created_at: '2026-06-05T09:00:00Z',
+        completed_at: '2026-06-05T09:01:00Z',
+      });
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForRecording('rec-1', 'tenant-1', {
+        canViewTranscript: true,
+      });
+
+      expect(review).toMatchObject({
+        status: 'cancelled',
+        reason: 'analysis_cancelled',
       });
     });
   });
