@@ -48,6 +48,7 @@ import { nodeRegistryController } from './modules/runtime/node-registry.controll
 import { nodeStatusController, tenantGatewayStatusController } from './modules/runtime/node-status.controller.js';
 import { selfServiceMeController, selfServicePolicyController } from './modules/self-service/self-service.controller.js';
 import { riskAnalysisController } from './modules/risk-analysis/risk-analysis.controller.js';
+import { reportingController } from './modules/reporting/reporting.controller.js';
 import { setupController } from './modules/setup/setup.controller.js';
 import { db } from './db/client.js';
 import { registerErrorHandler } from './errors/index.js';
@@ -84,6 +85,7 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(inboundRouteController, { prefix: '/api/v1/inbound-routes' });
   app.register(outboundRouteController, { prefix: '/api/v1/outbound-routes' });
   app.register(riskAnalysisController, { prefix: '/api/v1/risk-analysis' });
+  app.register(reportingController, { prefix: '/api/v1/reporting' });
   app.register(approvalController, { prefix: '/api/v1/approvals' });
   app.register(policiesController, { prefix: '/api/v1/policies' });
   app.register(scheduleController, { prefix: '/api/v1/schedules' });

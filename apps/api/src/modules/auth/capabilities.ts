@@ -110,6 +110,9 @@ export const CAPABILITIES = {
 
   // v0.6: AI-assisted advisory risk analysis (read-only, advisory only)
   TENANT_RISK_ANALYSIS: 'tenant.risk_analysis.run',
+
+  // v0.6: natural-language telecom reporting (read-only, bounded queries only)
+  TENANT_NL_REPORTING: 'tenant.reporting.nl_query',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -183,6 +186,7 @@ const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_CHANNEL_MESSAGES_SEND,
   CAPABILITIES.TENANT_MEETING_SESSIONS_MANAGE,
   CAPABILITIES.TENANT_RISK_ANALYSIS,
+  CAPABILITIES.TENANT_NL_REPORTING,
 ];
 
 const TENANT_CAPABILITIES: readonly Capability[] = [

@@ -42,6 +42,7 @@ const AuditLogPage = lazy(() => import('@/features/audit/audit-log-page').then(m
 const SelfServicePage = lazy(() => import('@/features/user/self-service-page').then(m => ({ default: m.SelfServicePage })));
 const ExportPage = lazy(() => import('@/features/export/export-page').then(m => ({ default: m.ExportPage })));
 const CarrierHealthPage = lazy(() => import('@/features/integrations/carrier-health-page').then(m => ({ default: m.CarrierHealthPage })));
+const ReportingPage = lazy(() => import('@/features/reporting/reporting-page').then(m => ({ default: m.ReportingPage })));
 
 function PageLoader() {
   return <div className="flex items-center justify-center p-8 text-[var(--color-muted)]" aria-label="Loading" />;
@@ -201,6 +202,12 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_SIP_TRUNKS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/integrations/carrier-health', element: <Suspense fallback={<PageLoader />}><CarrierHealthPage /></Suspense> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_NL_REPORTING} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/reporting', element: <Suspense fallback={<PageLoader />}><ReportingPage /></Suspense> },
             ],
           },
         ],
