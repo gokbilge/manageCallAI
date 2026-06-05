@@ -125,7 +125,7 @@ export class FeatureCodeService {
     }
     // Reject codes that are pure emergency numbers
     const stripped = code.replace(/^\*+/, '').replace(/^#+/, '');
-    if (GLOBAL_EMERGENCY_NUMBERS.has(stripped) || GLOBAL_EMERGENCY_NUMBERS.has(code)) {
+    if (GLOBAL_EMERGENCY_NUMBERS.has(stripped)) {
       throw new FeatureCodeConflictError(
         `Feature code ${code} shadows an emergency number and cannot be used`,
       );
