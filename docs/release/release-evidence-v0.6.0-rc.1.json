@@ -1,0 +1,60 @@
+{
+  "release_version": "v0.6.0-rc.1",
+  "commit_sha": "b3de1ded2fadd5c59b21b9fbc92268a16b329209",
+  "generated_at": "2026-06-05T17:15:00Z",
+  "stage": "rc",
+  "notes": "RC for v0.6.0 AI-native differentiation. Four AI operator workflow features delivered on main: AI call failure explanation (#233), AI route and change risk analysis (#234), AI recording/voicemail summary review (#235), and natural-language telecom reporting (#236). No DB schema changes in v0.6. Smoke gate passed on self-hosted FreeSWITCH runner. All CI checks green on RC commit.",
+
+  "github_release": {
+    "tag": "v0.6.0-rc.1",
+    "url": "https://github.com/gokbilge/manageCallAI/releases/tag/v0.6.0-rc.1",
+    "published_at": "2026-06-05T17:15:00Z",
+    "is_prerelease": true
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028893165",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028893173",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028893142",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028893166",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27028911635",
+
+  "helm_lint": "Inherited from v0.5.0-rc.1 (run 26993419772). No Helm chart changes in v0.6. Expected: PASSED — 1 chart linted, 0 chart(s) failed.",
+
+  "docker_compose_prod_smoke": "Inherited from v0.5.0 (enlogy@10.0.0.32). No docker-compose or API startup changes in v0.6. All v0.6 features are read-only advisory endpoints added on top of the existing API surface.",
+
+  "rotation_rehearsal": {
+    "status": "inherited",
+    "note": "Inherited from v0.5.0. No auth middleware or token-handling changes in v0.6. JWT and runtime-token rotation paths are unchanged."
+  },
+
+  "migrations": "No new migrations in v0.6.0. v0.6 features read from existing call_events, recording_analysis_requests, and call_events tables only. Run `pnpm db:migrate` is a no-op upgrade from v0.5.0.",
+
+  "production_soak": "Inherited from v0.3.0 (docs/ops/runtime-slo-evidence-2026-06-03.json). No call-path or hot-path changes in v0.6. All v0.6 changes affect AI advisory endpoints and read-only UI surfaces.",
+
+  "production_slo": "Inherited from v0.3.0. No hot-path changes in v0.6.",
+
+  "carrier_interop": "Inherited from v0.3.0 (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json). No carrier or call-path changes in v0.6.",
+
+  "security_review": "CodeQL run 27028893173 clean. FreeSWITCH smoke 27028911635 passed. Coverage run 27028893142 passed. All v0.6 endpoints are read-only and capability-gated. No new privileged API surfaces. No raw SQL generation in NL reporting (parameterized filters only). No external AI/LLM calls (deterministic pattern matching).",
+
+  "v06_feature_evidence": {
+    "issue_233_call_failure_explanation": "POST /api/v1/calls/explain-failure. 23 unit tests + 6 integration tests. Capability: tenant.calls.explain_failure. Fails closed for unknown calls.",
+    "issue_234_route_risk_analysis": "POST /api/v1/risk-analysis/route. 23 unit tests + 7 integration tests. Capability: tenant.risk_analysis.run. Advisory, no state mutation.",
+    "issue_235_summary_review": "GET /recordings/:id/summary-review + /call-events/:id/summary-review. Transcript gated by compliance capability. Fail-closed for missing analysis.",
+    "issue_236_nl_reporting": "POST /api/v1/reporting/nl-query. 27 unit tests + 5 integration tests. Capability: tenant.reporting.nl_query. No raw SQL."
+  },
+
+  "rollback_plan": "Roll back to v0.5.0 image. No DB rollback needed (no new migrations). Low risk — all v0.6 changes are additive read-only advisory endpoints.",
+
+  "known_gaps_before_production": [
+    "Helm lint re-run on enlogy@10.0.0.32 with v0.6.0-rc.1 images (inherited pass from v0.5.0-rc.1; no chart changes)",
+    "docker-compose.prod.yml smoke with actual GHCR v0.6.0-rc.1 images (requires public packages or local tag)"
+  ],
+
+  "operator_signoff": {
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-05T17:15:00Z",
+    "notes": "RC signoff for v0.6.0. All four v0.6 AI operator workflow features delivered and verified. All CI/smoke gates pass on RC commit. No DB migrations or call-path changes."
+  }
+}
