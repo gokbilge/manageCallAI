@@ -111,6 +111,7 @@ export const CAPABILITIES = {
   // v0.6 AI features
   TENANT_RISK_ANALYSIS: 'tenant.risk_analysis.run',
   TENANT_NL_REPORTING: 'tenant.reporting.nl_query',
+  TENANT_CALL_FAILURE_EXPLAIN: 'tenant.calls.explain_failure',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -183,6 +184,7 @@ const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_MEETING_SESSIONS_MANAGE,
   CAPABILITIES.TENANT_RISK_ANALYSIS,
   CAPABILITIES.TENANT_NL_REPORTING,
+  CAPABILITIES.TENANT_CALL_FAILURE_EXPLAIN,
 ];
 
 const TENANT_CAPABILITIES: readonly Capability[] = [

@@ -169,6 +169,8 @@ export const API_KEY_CAPABILITIES = [
   'tenant.risk_analysis.run',
   // tenant — natural-language reporting (v0.6)
   'tenant.reporting.nl_query',
+  // tenant — call failure explanation (v0.6)
+  'tenant.calls.explain_failure',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;

@@ -34,3 +34,4 @@ export * from './schemas/feature-codes.js';
 export * from './schemas/runtime-apply.js';
 export * from './schemas/risk-analysis.js';
 export * from './schemas/reporting.js';
+export * from './schemas/call-failure-explanation.js';

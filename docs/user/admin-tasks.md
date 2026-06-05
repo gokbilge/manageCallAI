@@ -276,7 +276,17 @@ Use these pages to:
 - understand when transcript text is unavailable because of compliance scope,
   missing analysis, or retention expiry
 
-## 4.14 Natural-language reporting
+## 4.14 AI call failure explanation
+
+Go to `/tenant/calls`, select a failed call, and click **Explain** in the detail panel.
+
+Returns a bounded analysis: likely cause, recommended next action, and observed facts from stored events. Advisory only — does not modify any configuration.
+
+**Supported failure codes:** `NO_ROUTE_FOR_PREFIX`, `TRUNK_NOT_REGISTERED`, `USER_BUSY`, `NO_ANSWER`, `CALL_REJECTED`, `NO_ROUTE_DESTINATION`, and others. Unknown codes are reported as-is. If no failure event is found, the panel reports the call does not appear to have failed.
+
+Requires `tenant.calls.explain_failure` capability (tenant_operator and above).
+
+## 4.15 Natural-language reporting
 
 Go to:
 
@@ -307,7 +317,7 @@ If no time range is specified, results default to the last 24 hours.
 Unsupported questions fail closed with a clear error and suggested examples.
 Results are advisory and read-only.
 
-## 4.15 Manage schedules
+## 4.16 Manage schedules
 
 Go to:
 
@@ -318,7 +328,7 @@ Use this page to:
 - create business-time schedules
 - support time-based routing behavior
 
-## 4.16 Manage webhooks and automation
+## 4.17 Manage webhooks and automation
 
 Go to:
 
@@ -329,7 +339,7 @@ Use this page to:
 - configure outbound event delivery
 - support workflow automation and external integrations
 
-## 4.17 Review security and compliance pages
+## 4.18 Review security and compliance pages
 
 Go to:
 
@@ -341,7 +351,7 @@ Use these pages to:
 - review security alerts
 - inspect retention or compliance-related controls available to your role
 
-## 4.18 Run the directory smoke test
+## 4.19 Run the directory smoke test
 
 Go to:
 
