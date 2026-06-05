@@ -45,6 +45,7 @@ Typical routes include:
 - `/tenant/webhooks`
 - `/tenant/security-alerts`
 - `/tenant/compliance`
+- `/tenant/reporting`
 
 ### Platform workspace
 
@@ -275,7 +276,38 @@ Use these pages to:
 - understand when transcript text is unavailable because of compliance scope,
   missing analysis, or retention expiry
 
-## 4.14 Manage schedules
+## 4.14 Natural-language reporting
+
+Go to:
+
+- `/tenant/reporting`
+
+Use this page to ask plain-language questions about call activity. Questions are
+compiled to bounded filters — no raw data access or SQL generation happens.
+
+**Supported question classes:**
+
+| Topic | Examples |
+|-------|---------|
+| Call direction | `show inbound calls`, `show outbound calls` |
+| Call status | `show failed calls`, `show completed calls`, `show active calls` |
+| Time range | `today`, `yesterday`, `last hour`, `last 7 days` / `last week` |
+| Count | `how many failed calls today`, `count outbound calls last week` |
+| Combined | `show failed outbound calls today`, `how many inbound calls last hour` |
+
+If no time range is specified, results default to the last 24 hours.
+
+**Non-goals — questions that will not be answered:**
+
+- questions about users, tenants, billing, or configuration
+- ad-hoc SQL, raw event dumps, or cross-tenant data
+- time ranges longer than 7 days
+- questions outside the call-events domain
+
+Unsupported questions fail closed with a clear error and suggested examples.
+Results are advisory and read-only.
+
+## 4.15 Manage schedules
 
 Go to:
 
@@ -286,7 +318,7 @@ Use this page to:
 - create business-time schedules
 - support time-based routing behavior
 
-## 4.15 Manage webhooks and automation
+## 4.16 Manage webhooks and automation
 
 Go to:
 
@@ -297,7 +329,7 @@ Use this page to:
 - configure outbound event delivery
 - support workflow automation and external integrations
 
-## 4.16 Review security and compliance pages
+## 4.17 Review security and compliance pages
 
 Go to:
 
@@ -309,7 +341,7 @@ Use these pages to:
 - review security alerts
 - inspect retention or compliance-related controls available to your role
 
-## 4.17 Run the directory smoke test
+## 4.18 Run the directory smoke test
 
 Go to:
 

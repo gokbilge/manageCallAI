@@ -167,6 +167,8 @@ export const API_KEY_CAPABILITIES = [
   'tenant.fraud_policy.manage',
   // tenant — risk analysis (v0.6)
   'tenant.risk_analysis.run',
+  // tenant — natural-language reporting (v0.6)
+  'tenant.reporting.nl_query',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;

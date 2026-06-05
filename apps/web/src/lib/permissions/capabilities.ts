@@ -107,6 +107,10 @@ export const CAPABILITIES = {
   TENANT_CONFERENCE_ROOMS_CREATE: 'tenant.conference_rooms.create',
   TENANT_CONFERENCE_ROOMS_UPDATE: 'tenant.conference_rooms.update',
   TENANT_CONFERENCE_ROOMS_DEACTIVATE: 'tenant.conference_rooms.deactivate',
+
+  // v0.6 AI features
+  TENANT_RISK_ANALYSIS: 'tenant.risk_analysis.run',
+  TENANT_NL_REPORTING: 'tenant.reporting.nl_query',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -177,6 +181,8 @@ const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_CHANNEL_ACCOUNTS_MANAGE,
   CAPABILITIES.TENANT_CHANNEL_MESSAGES_SEND,
   CAPABILITIES.TENANT_MEETING_SESSIONS_MANAGE,
+  CAPABILITIES.TENANT_RISK_ANALYSIS,
+  CAPABILITIES.TENANT_NL_REPORTING,
 ];
 
 const TENANT_CAPABILITIES: readonly Capability[] = [
