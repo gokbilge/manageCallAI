@@ -3910,6 +3910,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/risk-analysis/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Analyze route or trunk risk
+         * @description Advisory-only risk analysis for an outbound route, inbound route, or SIP trunk. Returns affected objects, unresolved concerns, and a risk summary. Never publishes or modifies any object.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RouteRiskAnalysisRequest"];
+                };
+            };
+            responses: {
+                /** @description Risk analysis result */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["RouteRiskAnalysis"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4629,7 +4675,7 @@ export interface components {
             tenant_id: string;
             name: string;
             key_prefix: string;
-            capabilities: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "*")[];
+            capabilities: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "*")[];
             /** Format: uuid */
             created_by: string | null;
             /** Format: date-time */
@@ -4862,7 +4908,7 @@ export interface components {
         };
         CreateApiKeyBody: {
             name: string;
-            capabilities?: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "*")[];
+            capabilities?: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "*")[];
         };
         CreateAutomationWebhookBody: {
             name: string;
@@ -5899,6 +5945,42 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        RiskConcern: {
+            code: string;
+            /** @enum {string} */
+            severity: "info" | "warning" | "error";
+            message: string;
+        };
+        AffectedObject: {
+            type: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            role: string;
+        };
+        RouteRiskAnalysis: {
+            /** @enum {string} */
+            target_type: "outbound_route" | "inbound_route" | "sip_trunk";
+            /** Format: uuid */
+            target_id: string;
+            target_name: string;
+            target_status: string;
+            /** @enum {string} */
+            risk_level: "low" | "medium" | "high";
+            affected_objects: components["schemas"]["AffectedObject"][];
+            unresolved_concerns: components["schemas"]["RiskConcern"][];
+            summary: string;
+            /** @enum {boolean} */
+            is_advisory: true;
+            /** Format: date-time */
+            analyzed_at: string;
+        };
+        RouteRiskAnalysisRequest: {
+            /** @enum {string} */
+            target_type: "outbound_route" | "inbound_route" | "sip_trunk";
+            /** Format: uuid */
+            target_id: string;
         };
     };
     responses: {

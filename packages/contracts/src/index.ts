@@ -32,3 +32,4 @@ export * from './schemas/platform.js';
 export * from './schemas/responses.js';
 export * from './schemas/feature-codes.js';
 export * from './schemas/runtime-apply.js';
+export * from './schemas/risk-analysis.js';
