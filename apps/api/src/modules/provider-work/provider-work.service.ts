@@ -8,6 +8,8 @@ import type {
   IvrAiTurnRequest,
   PromptGenerationRequest,
 } from './provider-work.types.js';
+import type { AiPolicyService } from '../ai-policy/ai-policy.service.js';
+import type { IntegrationProvider } from './provider-work.types.js';
 
 export class ProviderWorkRequestNotFoundError extends Error {
   constructor(id: string) {
@@ -17,11 +19,28 @@ export class ProviderWorkRequestNotFoundError extends Error {
 }
 
 export class ProviderWorkService {
-  constructor(private readonly repo: ProviderWorkRepository) {}
+  constructor(
+    private readonly repo: ProviderWorkRepository,
+    private readonly aiPolicyService?: AiPolicyService,
+  ) {}
 
-  createPromptGeneration(tenantId: string, input: CreatePromptGenerationInput): Promise<PromptGenerationRequest> {
+  async createPromptGeneration(tenantId: string, input: CreatePromptGenerationInput): Promise<PromptGenerationRequest> {
     this.validateOutputs(input.requested_outputs);
-    return this.repo.createPromptGeneration(tenantId, input);
+    const resolved = await this.resolveProvider('prompt_generation', tenantId, input.provider_hint, input.input_text, false);
+    return this.repo.createPromptGeneration(tenantId, {
+      ...input,
+      provider_hint: resolved.effective_provider_hint,
+      metadata: {
+        ...(input.metadata ?? {}),
+        ai_policy: {
+          requested_provider_hint: resolved.requested_provider_hint,
+          effective_provider_hint: resolved.effective_provider_hint,
+          provider_backed_requested: resolved.provider_backed_requested,
+          provider_backed_allowed: resolved.provider_backed_allowed,
+          fallback_reason: resolved.fallback_reason,
+        },
+      },
+    });
   }
 
   listPromptGenerations(tenantId: string): Promise<PromptGenerationRequest[]> {
@@ -46,9 +65,23 @@ export class ProviderWorkService {
     return request;
   }
 
-  createIvrAiTurn(tenantId: string, input: CreateIvrAiTurnInput): Promise<IvrAiTurnRequest> {
+  async createIvrAiTurn(tenantId: string, input: CreateIvrAiTurnInput): Promise<IvrAiTurnRequest> {
     this.validateOutputs(input.requested_outputs);
-    return this.repo.createIvrAiTurn(tenantId, input);
+    const resolved = await this.resolveProvider('ivr_ai_turn', tenantId, input.provider_hint, input.input_text, true);
+    return this.repo.createIvrAiTurn(tenantId, {
+      ...input,
+      provider_hint: resolved.effective_provider_hint,
+      metadata: {
+        ...(input.metadata ?? {}),
+        ai_policy: {
+          requested_provider_hint: resolved.requested_provider_hint,
+          effective_provider_hint: resolved.effective_provider_hint,
+          provider_backed_requested: resolved.provider_backed_requested,
+          provider_backed_allowed: resolved.provider_backed_allowed,
+          fallback_reason: resolved.fallback_reason,
+        },
+      },
+    });
   }
 
   async getIvrAiTurn(id: string, tenantId: string): Promise<IvrAiTurnRequest> {
@@ -73,5 +106,37 @@ export class ProviderWorkService {
     if (!Array.isArray(outputs) || outputs.length === 0 || outputs.some((output) => output.length < 1)) {
       throw new Error('requested_outputs must contain at least one output');
     }
+  }
+
+  private async resolveProvider(
+    feature: 'prompt_generation' | 'ivr_ai_turn',
+    tenantId: string,
+    providerHint: IntegrationProvider | undefined,
+    inputText: string | null | undefined,
+    runtimeFallback: boolean,
+  ) {
+    if (!this.aiPolicyService) {
+      return {
+        requested_provider_hint: providerHint ?? 'auto',
+        effective_provider_hint: providerHint ?? 'auto',
+        provider_backed_requested: (providerHint ?? 'auto') !== 'auto',
+        provider_backed_allowed: (providerHint ?? 'auto') !== 'auto',
+        fallback_reason: providerHint ? null : 'requested_auto',
+      };
+    }
+    if (runtimeFallback) {
+      return this.aiPolicyService.resolveProvider({
+        tenant_id: tenantId,
+        feature,
+        requested_provider_hint: providerHint ?? 'auto',
+        input_text: inputText,
+      });
+    }
+    return this.aiPolicyService.requireProviderBackedAccess({
+      tenant_id: tenantId,
+      feature,
+      requested_provider_hint: providerHint ?? 'auto',
+      input_text: inputText,
+    });
   }
 }

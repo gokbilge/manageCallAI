@@ -50,6 +50,7 @@ import { selfServiceMeController, selfServicePolicyController } from './modules/
 import { riskAnalysisController } from './modules/risk-analysis/risk-analysis.controller.js';
 import { reportingController } from './modules/reporting/reporting.controller.js';
 import { callFailureExplanationController } from './modules/call-failure-explanation/call-failure-explanation.controller.js';
+import { platformAiPolicyController, tenantAiPolicyController } from './modules/ai-policy/ai-policy.controller.js';
 import { setupController } from './modules/setup/setup.controller.js';
 import { db } from './db/client.js';
 import { registerErrorHandler } from './errors/index.js';
@@ -146,6 +147,7 @@ function registerObservabilityModules(app: FastifyInstance): void {
 function registerPlatformModules(app: FastifyInstance): void {
   app.register(authController, { prefix: '/api/v1/auth' });
   app.register(platformController, { prefix: '/api/v1/platform' });
+  app.register(platformAiPolicyController, { prefix: '/api/v1/platform' });
   app.register(nodeRegistryController, { prefix: '/api/v1/platform' });
   // Node status: platform admin reads + Go agent push (prefix /api/v1/platform for reads)
   app.register(nodeStatusController, { prefix: '/api/v1/platform' });
@@ -154,6 +156,7 @@ function registerPlatformModules(app: FastifyInstance): void {
   app.register(fraudController, { prefix: '/api/v1/fraud' });
   app.register(retentionController, { prefix: '/api/v1/tenant' });
   app.register(selfServicePolicyController, { prefix: '/api/v1/tenant' });
+  app.register(tenantAiPolicyController, { prefix: '/api/v1/tenant' });
 }
 
 // ── App factory ───────────────────────────────────────────────────────────────

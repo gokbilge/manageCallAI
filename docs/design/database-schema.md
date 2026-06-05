@@ -80,6 +80,7 @@ It maps the conceptual domain model into relational structures while preserving 
 - `tenant_retention_policies`
 - `legal_hold_requests`
 - `system_config`
+- `tenant_ai_policy_overrides`
 
 ## 4. Table intent
 
@@ -226,7 +227,19 @@ Current implementation:
 
 - introduced by `0052_system_config.sql`
 - currently used for `setup_complete`
+- now also stores serialized `ai_platform_policy`
 - gates whether `/setup` is registered at API startup
+
+### 4.25 `tenant_ai_policy_overrides`
+
+Stores tenant-scoped opt-in and preferred-provider overrides for provider-backed
+AI features.
+
+Current implementation:
+
+- introduced by `0055_ai_provider_policy.sql`
+- platform policy remains authoritative; tenant rows only narrow or opt in
+- current feature columns cover `prompt_generation` and `ivr_ai_turn`
 
 ## 5. Versioning strategy
 

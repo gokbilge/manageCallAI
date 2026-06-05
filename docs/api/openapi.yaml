@@ -4305,6 +4305,9 @@ components:
               - tenant.risk_analysis.run
               - tenant.reporting.nl_query
               - tenant.calls.explain_failure
+              - tenant.ai.policy.view
+              - tenant.ai.policy.manage
+              - tenant.ai.provider_backed.use
               - "*"
         created_by:
           type:

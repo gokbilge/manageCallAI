@@ -171,6 +171,10 @@ export const API_KEY_CAPABILITIES = [
   'tenant.reporting.nl_query',
   // tenant — call failure explanation (v0.6)
   'tenant.calls.explain_failure',
+  // tenant — provider-backed AI policy and use (v0.6.1)
+  'tenant.ai.policy.view',
+  'tenant.ai.policy.manage',
+  'tenant.ai.provider_backed.use',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;

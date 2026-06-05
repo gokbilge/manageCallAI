@@ -79,6 +79,39 @@ describe('ProviderWorkService', () => {
     }));
   });
 
+  it('records deterministic fallback metadata when a runtime IVR turn requests provider-backed execution without policy support', async () => {
+    const repo = makeRepo();
+    const policyService = {
+      resolveProvider: vi.fn().mockResolvedValue({
+        requested_provider_hint: 'openai',
+        effective_provider_hint: 'auto',
+        provider_backed_requested: true,
+        provider_backed_allowed: false,
+        fallback_reason: 'tenant_provider_backed_disabled',
+        policy: {} as Record<string, unknown>,
+      }),
+      requireProviderBackedAccess: vi.fn(),
+    };
+    const service = new ProviderWorkService(repo, policyService as never);
+
+    await service.createIvrAiTurn('tenant-1', {
+      call_id: 'call-1',
+      node_id: 'ai-node',
+      input_mode: 'text',
+      requested_outputs: ['answer_text'],
+      provider_hint: 'openai',
+    });
+
+    expect(repo.createIvrAiTurn).toHaveBeenCalledWith('tenant-1', expect.objectContaining({
+      provider_hint: 'auto',
+      metadata: expect.objectContaining({
+        ai_policy: expect.objectContaining({
+          fallback_reason: 'tenant_provider_backed_disabled',
+        }),
+      }),
+    }));
+  });
+
   it('claims and completes IVR AI turn work', async () => {
     const repo = makeRepo();
     const service = new ProviderWorkService(repo);

@@ -170,6 +170,26 @@ AI-assisted requests must:
 - completion of the remaining `v0.5.x` lifecycle-consistency work so AI risk
   outputs can rely on the same publish model across more PBX objects
 
+## 8.1 Implemented `v0.6.1` provider-backed policy foundation
+
+Current implementation adds the first policy layer for optional provider-backed
+AI execution:
+
+- platform-level provider-backed AI policy stored in API-owned configuration
+- tenant-scoped opt-in and preferred-provider overrides
+- deterministic fallback required when provider-backed execution is disabled or
+  not allowed for a specific feature
+- capability gate `tenant.ai.provider_backed.use` for human-initiated
+  provider-backed prompt-generation requests
+- audit events for tenant policy changes and AI work-request creation
+
+This foundation currently governs:
+
+- prompt generation requests
+- runtime IVR AI turn requests
+
+It does not relax any publish, approval, or runtime-mutation boundary.
+
 ## 9. Acceptance bar for a `v0.6.x` feature
 
 Each AI-assisted feature should be considered complete only when:
