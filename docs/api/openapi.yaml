@@ -5073,6 +5073,7 @@ components:
         status:
           type: string
           enum: &a22
+            - draft
             - active
             - inactive
         match_prefix:
@@ -5209,6 +5210,8 @@ components:
             - "null"
           items:
             type: string
+        start_as_draft:
+          type: boolean
       required:
         - name
         - match_prefix

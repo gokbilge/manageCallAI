@@ -14,6 +14,70 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ---
 
+## [0.5.0] - 2026-06-05
+
+Release classification: production release — v0.5 operational maturity.
+
+Production evidence: `docs/release/release-evidence-v0.5.0.json`
+
+### Added
+
+- **End-user self-service portal** (issue #224): complete end-user surface at
+  `/user/self-service` — voicemail inbox (play/download/delete), call history,
+  registered devices/SIP credentials, DND toggle, and call-forward management;
+  gated by `SELF_SERVICE_*` tenant capabilities; full integration test coverage
+- **Audit log and evidence visibility** (issue #225): operator-facing audit log
+  page at `/tenant/audit` with level/category/target filters, time-range selector,
+  and paginated results; surfaces lifecycle events (publish, rollback, approve,
+  reject) and configuration changes; backed by existing `audit_log` table
+- **Data export and retention workflows** (issue #226): export page at
+  `/tenant/export` with CDR, recording, and voicemail exports (CSV/ZIP/JSON);
+  export-before-delete guidance for operators; media storage lifecycle visibility
+- **Carrier health dashboard** (issue #227): carrier health page at
+  `/tenant/integrations/carrier-health` with per-trunk REGED/DOWN/TRYING/FAILED
+  status, SIP response code breakdown, registration latency summary, and
+  carrier-template link for repeatable trunk onboarding
+- **Outbound route draft/publish lifecycle** (issue #228):
+  - DB migration `0054`: adds `draft` status to `outbound_routes` status constraint
+  - `POST /outbound-routes/:id/publish` endpoint transitions `draft → active`
+  - Create route accepts `start_as_draft: boolean` (backward-compatible, default
+    `false`); deactivate validates `active` precondition; publish validates `draft`
+    precondition
+  - 7 new service-layer tests covering publish, draft creation, and deactivation
+    guards
+- **Active-call safety checks on parking lots and conference rooms** (issue #228):
+  - Parking lots: live parked-call count badge on each lot row; delete confirm
+    dialog warns if active calls exist
+  - Conference rooms: disable/delete handlers check `activeParticipants` before
+    proceeding; "live" badge on room card when participants are present
+- **`@managecallai/sdk` v0.5.0**: regenerated types include `draft` outbound
+  route status and `start_as_draft` create field
+
+### Changed
+
+- `SELF_SERVICE_*` capability group added to tenant policy for DND, call-forward,
+  voicemail, devices, and call history end-user access
+- Outbound route `status` enum extended with `draft`; API is fully backward-compatible
+  (new routes default to `active` unless `start_as_draft: true`)
+- `paths.ts` extended with `auditLog`, `export`, `carrierHealth`, `selfService` routes
+- All v0.5.x release buckets marked shipped in planning docs (#229)
+
+### Upgrade notes
+
+```sh
+pnpm db:migrate   # applies 0053_self_service_policy_extensions.sql and 0054_outbound_routes_draft_lifecycle.sql
+pnpm build
+```
+
+### Release references
+
+- `docs/release/release-evidence-v0.5.0.json`
+- `docs/release/release-evidence-v0.5.0-rc.1.json`
+- `docs/ops/release-process.md`
+- `docs/planning/release-buckets-v0.4-v0.6.md`
+
+---
+
 ## [0.4.0] - 2026-06-05
 
 Release classification: production release — v0.4 competitive baseline.
