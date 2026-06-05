@@ -82,7 +82,26 @@ Responsibilities:
 - create the bootstrap tenant and initial admin through API-owned validation and persistence rules
 - remove the setup surface after completion
 
-### 3.9 Release evidence layer
+### 3.9 AI assistance layer
+
+Planned `v0.6.x` operator-facing AI workflows remain API-owned domain features.
+
+Responsibilities:
+
+- explain call failures from normalized call events, route state, and runtime facts
+- summarize route and publish risk from existing desired-state and publish records
+- generate voicemail and call summaries from bounded recording-analysis outputs
+- translate natural-language operator questions into bounded reporting queries
+- preserve tenant scoping, capability checks, audit attribution, and idempotent request handling
+
+Non-responsibilities:
+
+- direct runtime control
+- direct SQL generation or execution
+- autonomous publish or rollback
+- provider-specific coupling inside the core domain model
+
+### 3.10 Release evidence layer
 
 - validators and smoke scripts under `scripts/`
 - release and operations documentation under `docs/release/` and `docs/ops/`
@@ -147,6 +166,10 @@ The current code line is organized around route modules plus service/repository 
 - `SelfServiceService`
 - `RuntimeNodeStatusService`
 - `SetupService`
+- planned `CallFailureExplanationService`
+- planned `RouteRiskAnalysisService`
+- planned `RecordingSummaryService`
+- planned `NaturalLanguageReportingService`
 
 ## 6. Design constraints
 
@@ -155,3 +178,5 @@ The current code line is organized around route modules plus service/repository 
 - runtime-generated artifacts are derived from active desired state
 - MCP and n8n must not expose raw ESL, raw XML, shell, SQL, or direct runtime control
 - release stage claims require evidence outside the code itself
+- AI assistance must remain advisory unless the normal lifecycle explicitly turns
+  a result into a validated, simulated, approved, and published change

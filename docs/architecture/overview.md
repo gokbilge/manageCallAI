@@ -80,7 +80,19 @@ Core business logic owns intent, lifecycle, validation, and publication. Externa
 - event emission for downstream automation
 - approved automation entry points through bounded API actions
 
-### 5.6 FreeSWITCH adapter layer
+### 5.6 AI assistance layer
+
+- API-owned operator assistance workflows
+- explanation, risk analysis, summarization, and natural-language reporting
+- grounded in normalized API data rather than direct runtime internals
+- bounded by the same tenant, capability, audit, and lifecycle rules as the rest
+  of the control plane
+
+Planned `v0.6.x` AI assistance is explicitly assistive. It may generate
+explanations, summaries, and draft-safe recommendations, but it must not bypass
+validation, simulation, approval, publish, rollback, or runtime auth controls.
+
+### 5.7 FreeSWITCH adapter layer
 
 - Go adapter service coordinating FreeSWITCH integration
 - renders active state into FreeSWITCH-consumable formats
@@ -88,13 +100,13 @@ Core business logic owns intent, lifecycle, validation, and publication. Externa
 - posts normalized runtime status snapshots back to the API
 - keeps project-specific logic outside stock FreeSWITCH
 
-### 5.7 Lua runtime helper
+### 5.8 Lua runtime helper
 
 - lives inside FreeSWITCH
 - executes constrained per-call actions only
 - must not contain business lifecycle logic
 
-### 5.8 FreeSWITCH runtime
+### 5.9 FreeSWITCH runtime
 
 - executes SIP and media handling
 - executes dialplan and Lua helper scripts
@@ -118,7 +130,15 @@ Core business logic owns intent, lifecycle, validation, and publication. Externa
 3. The API stores operational records and status snapshots.
 4. UI, API, and workflows consume summarized business-level views.
 
-### 6.3 Setup/bootstrap flow
+### 6.3 AI assistance flow
+
+1. Operator requests a bounded explanation, summary, risk view, or natural-language query.
+2. The API resolves the request against normalized tenant-scoped records.
+3. Optional AI assistance generates an explanation or summary from that bounded context.
+4. The API stores audit attribution and returns a business-level result.
+5. Any recommended mutation remains a draft or advisory result until the normal lifecycle approves it.
+
+### 6.4 Setup/bootstrap flow
 
 1. API startup checks `system_config` for `setup_complete`.
 2. If absent and required `SETUP_*` env vars are present, headless bootstrap runs.
