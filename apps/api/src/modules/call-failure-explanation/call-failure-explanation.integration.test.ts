@@ -41,8 +41,10 @@ describe('Call Failure Explanation API integration', () => {
         password: 'Secret123!',
       },
     });
-    const body = res.json<{ token: string; tenant_id: string }>();
-    return { token: body.token, tenantId: body.tenant_id };
+    const { token } = res.json<{ token: string }>();
+    // Decode JWT payload to get tenant_id (no signature verification needed in tests)
+    const payload = JSON.parse(Buffer.from(token.split('.')[1]!, 'base64url').toString()) as { tenant_id: string };
+    return { token, tenantId: payload.tenant_id };
   }
 
   it('POST /calls/explain-failure → 401 without auth', async () => {
