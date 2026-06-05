@@ -271,6 +271,9 @@ Use these pages to:
 - filter by direction, outcome, number, or failure reason
 - inspect normalized call events for the selected call
 - review recording inventory where enabled
+- inspect AI summary state for selected calls and recordings
+- understand when transcript text is unavailable because of compliance scope,
+  missing analysis, or retention expiry
 
 ## 4.14 Manage schedules
 

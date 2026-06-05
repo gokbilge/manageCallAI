@@ -3,11 +3,15 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { db } from '../../db/client.js';
 import { sendFailedPrecondition, sendNotFound, sendPermissionDenied } from '../../errors/index.js';
-import { CAPABILITIES } from '../auth/capabilities.js';
+import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { ResourceInactiveError, TenantScopeError } from '../domain-assertions.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
+import { config } from '../../config/env.js';
+import { RecordingService } from '../recordings/recording.service.js';
+import { RecordingRepository } from '../recordings/recording.repository.js';
+import { SummaryReviewSchema } from '@managecallai/contracts';
 import { VoicemailMessageRepository } from './voicemail-message.repository.js';
 import {
   VoicemailMailboxNotFoundError,
@@ -16,6 +20,7 @@ import {
 } from './voicemail-message.service.js';
 
 const service = new VoicemailMessageService(new VoicemailMessageRepository(db));
+const recordingService = new RecordingService(new RecordingRepository(db), config.recordingStorageRoot);
 
 const UuidParams = z.object({ id: z.string().uuid() });
 const BoxUuidParams = z.object({ boxId: z.string().uuid() });
@@ -31,6 +36,13 @@ function handleVoicemailMessageError(err: unknown, reply: FastifyReply): void {
     return sendFailedPrecondition(reply, err.message);
   }
   throw err;
+}
+
+function canViewTranscript(user: AuthClaims): boolean {
+  if (user.capabilities !== undefined) {
+    return user.capabilities.includes('*') || user.capabilities.includes(CAPABILITIES.TENANT_COMPLIANCE_ADMIN);
+  }
+  return hasCapability(user.role, CAPABILITIES.TENANT_COMPLIANCE_ADMIN);
 }
 
 export const voicemailMessageController: FastifyPluginAsyncZod = async (app) => {
@@ -82,6 +94,30 @@ export const voicemailMessageController: FastifyPluginAsyncZod = async (app) => 
           limit: req.query.limit,
         }),
       };
+    },
+  );
+
+  app.get(
+    '/messages/:id/summary-review',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_VOICEMAIL_BOXES_VIEW),
+      schema: {
+        params: UuidParams,
+        response: { 200: z.object({ data: SummaryReviewSchema }) },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const message = await service.getById(req.params.id, user.tenant_id);
+        return {
+          data: await recordingService.getSummaryReviewForVoicemail(message.id, message.call_id, user.tenant_id, {
+            canViewTranscript: canViewTranscript(user),
+          }),
+        };
+      } catch (err) {
+        return handleVoicemailMessageError(err, reply);
+      }
     },
   );
 

@@ -168,7 +168,9 @@ The current code line is organized around route modules plus service/repository 
 - `SetupService`
 - planned `CallFailureExplanationService`
 - planned `RouteRiskAnalysisService`
-- planned `RecordingSummaryService`
+- `RecordingSummaryService` behavior currently lives inside the recordings and
+  voicemail service boundary, exposing bounded summary review for recordings,
+  call-detail lookups, and voicemail-linked media review
 - planned `NaturalLanguageReportingService`
 
 ## 6. Design constraints

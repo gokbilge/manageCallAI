@@ -11,10 +11,15 @@ import {
 import { PageHeader } from '@/components/layout/page-header';
 import { DataCard } from '@/components/data/data-card';
 import { StatCard } from '@/components/data/stat-card';
+import { SummaryReviewPanel } from '@/components/ai/summary-review-panel';
 import { Button } from '@/components/ui/button';
 import { type CallSummary, useCallSummaries } from '@/lib/calls/call-events-api';
+import { useCallSummaryReview } from '@/lib/ai/summary-review-api';
+import { useAuth } from '@/lib/auth/use-auth';
+import { CAPABILITIES, hasCapability } from '@/lib/permissions/capabilities';
 
 export function CallsPage() {
+  const { session } = useAuth();
   const [search, setSearch] = useState('');
   const [direction, setDirection] = useState<'all' | 'inbound' | 'outbound' | 'unknown'>('all');
   const [status, setStatus] = useState<'all' | 'active' | 'completed' | 'failed'>('all');
@@ -55,6 +60,8 @@ export function CallsPage() {
   }, [selectedCallId, summaries]);
 
   const selectedCall = summaries.find(summary => summary.call_id === selectedCallId) ?? null;
+  const canReviewSummaries = hasCapability(session?.claims.role, CAPABILITIES.TENANT_RECORDINGS_VIEW);
+  const summaryReviewQuery = useCallSummaryReview(selectedCall?.call_id ?? null, canReviewSummaries);
 
   const totals = useMemo(() => {
     return {
@@ -158,7 +165,17 @@ export function CallsPage() {
               title={selectedCall ? `Call ${selectedCall.call_id}` : 'Call Detail'}
               description={selectedCall ? 'Per-event timeline for the selected call.' : 'Select a call to inspect its event sequence.'}
             >
-              {selectedCall ? <CallDetailPanel summary={selectedCall} /> : <p className="text-sm text-[var(--color-muted-fg)]">No call selected.</p>}
+              {selectedCall ? (
+                <CallDetailPanel
+                  summary={selectedCall}
+                  canReviewSummaries={canReviewSummaries}
+                  summaryReview={summaryReviewQuery.data}
+                  summaryReviewLoading={summaryReviewQuery.isLoading}
+                  summaryReviewError={summaryReviewQuery.isError
+                    ? (summaryReviewQuery.error instanceof Error ? summaryReviewQuery.error.message : 'Could not load AI review.')
+                    : null}
+                />
+              ) : <p className="text-sm text-[var(--color-muted-fg)]">No call selected.</p>}
             </DataCard>
           </div>
         ) : (
@@ -213,7 +230,19 @@ function CallSummaryRow({
   );
 }
 
-function CallDetailPanel({ summary }: { summary: CallSummary }) {
+function CallDetailPanel({
+  summary,
+  canReviewSummaries,
+  summaryReview,
+  summaryReviewLoading,
+  summaryReviewError,
+}: {
+  summary: CallSummary;
+  canReviewSummaries: boolean;
+  summaryReview: ReturnType<typeof useCallSummaryReview>['data'];
+  summaryReviewLoading: boolean;
+  summaryReviewError: string | null;
+}) {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -223,6 +252,27 @@ function CallDetailPanel({ summary }: { summary: CallSummary }) {
         <KeyValue label="To" value={summary.to_number ?? 'unknown'} />
         <KeyValue label="Started" value={formatDate(summary.started_at)} />
         <KeyValue label="Ended" value={summary.ended_at ? formatDate(summary.ended_at) : 'still active'} />
+      </div>
+
+      <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4">
+        <p className="text-sm font-medium">AI Review</p>
+        <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+          Summary output derived from linked recording analysis when that path exists.
+        </p>
+        <div className="mt-4">
+          {canReviewSummaries ? (
+            <SummaryReviewPanel
+              review={summaryReview}
+              isLoading={summaryReviewLoading}
+              error={summaryReviewError}
+              emptyMessage="No AI review is available for this call yet."
+            />
+          ) : (
+            <p className="text-sm text-[var(--color-muted-fg)]">
+              Recording visibility is required before the call detail view can load AI review data.
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="space-y-3">
