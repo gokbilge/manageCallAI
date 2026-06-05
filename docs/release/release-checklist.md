@@ -15,7 +15,7 @@ Use this checklist before promoting manageCallAI beyond development or staging.
 
 Latest evidenced production tag: **v0.6.0** (2026-06-05).
 Evidence: `docs/release/release-evidence-v0.6.0.json`
-Product audit: `docs/release/product-release-audit-v0.6.0.md`
+Product audit: `docs/release/product-release-audit.md` (living document, updated each release)
 Evidence inheritance policy: `docs/release/evidence-inheritance-policy.md`
 
 Release history:
