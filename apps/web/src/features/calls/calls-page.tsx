@@ -5,8 +5,10 @@ import {
   ArrowUpRight,
   CheckCircle2,
   Clock3,
+  Loader2,
   PhoneCall,
   RefreshCcw,
+  Lightbulb,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { DataCard } from '@/components/data/data-card';
@@ -15,6 +17,7 @@ import { SummaryReviewPanel } from '@/components/ai/summary-review-panel';
 import { Button } from '@/components/ui/button';
 import { type CallSummary, useCallSummaries } from '@/lib/calls/call-events-api';
 import { useCallSummaryReview } from '@/lib/ai/summary-review-api';
+import { type CallFailureExplanation, useCallFailureExplanation } from '@/lib/ai/failure-explain-api';
 import { useAuth } from '@/lib/auth/use-auth';
 import { CAPABILITIES, hasCapability } from '@/lib/permissions/capabilities';
 
@@ -61,7 +64,9 @@ export function CallsPage() {
 
   const selectedCall = summaries.find(summary => summary.call_id === selectedCallId) ?? null;
   const canReviewSummaries = hasCapability(session?.claims.role, CAPABILITIES.TENANT_RECORDINGS_VIEW);
+  const canExplainFailures = hasCapability(session?.claims.role, CAPABILITIES.TENANT_CALL_FAILURE_EXPLAIN);
   const summaryReviewQuery = useCallSummaryReview(selectedCall?.call_id ?? null, canReviewSummaries);
+  const failureExplainMutation = useCallFailureExplanation();
 
   const totals = useMemo(() => {
     return {
@@ -169,11 +174,18 @@ export function CallsPage() {
                 <CallDetailPanel
                   summary={selectedCall}
                   canReviewSummaries={canReviewSummaries}
+                  canExplainFailures={canExplainFailures}
                   summaryReview={summaryReviewQuery.data}
                   summaryReviewLoading={summaryReviewQuery.isLoading}
                   summaryReviewError={summaryReviewQuery.isError
                     ? (summaryReviewQuery.error instanceof Error ? summaryReviewQuery.error.message : 'Could not load AI review.')
                     : null}
+                  failureExplanation={failureExplainMutation.data?.data ?? null}
+                  failureExplainLoading={failureExplainMutation.isPending}
+                  failureExplainError={failureExplainMutation.isError
+                    ? (failureExplainMutation.error instanceof Error ? failureExplainMutation.error.message : 'Could not load explanation.')
+                    : null}
+                  onExplainFailure={() => failureExplainMutation.mutate(selectedCall.call_id)}
                 />
               ) : <p className="text-sm text-[var(--color-muted-fg)]">No call selected.</p>}
             </DataCard>
@@ -233,15 +245,25 @@ function CallSummaryRow({
 function CallDetailPanel({
   summary,
   canReviewSummaries,
+  canExplainFailures,
   summaryReview,
   summaryReviewLoading,
   summaryReviewError,
+  failureExplanation,
+  failureExplainLoading,
+  failureExplainError,
+  onExplainFailure,
 }: {
   summary: CallSummary;
   canReviewSummaries: boolean;
+  canExplainFailures: boolean;
   summaryReview: ReturnType<typeof useCallSummaryReview>['data'];
   summaryReviewLoading: boolean;
   summaryReviewError: string | null;
+  failureExplanation: CallFailureExplanation | null;
+  failureExplainLoading: boolean;
+  failureExplainError: string | null;
+  onExplainFailure: () => void;
 }) {
   return (
     <div className="space-y-4">
@@ -253,6 +275,41 @@ function CallDetailPanel({
         <KeyValue label="Started" value={formatDate(summary.started_at)} />
         <KeyValue label="Ended" value={summary.ended_at ? formatDate(summary.ended_at) : 'still active'} />
       </div>
+
+      {summary.status === 'failed' && (
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">Failure Explanation</p>
+              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                Bounded analysis of observed call events. Advisory only — does not modify any configuration.
+              </p>
+            </div>
+            {canExplainFailures && !failureExplanation && (
+              <Button
+                onClick={onExplainFailure}
+                disabled={failureExplainLoading}
+                aria-label="Explain call failure"
+              >
+                {failureExplainLoading
+                  ? <><Loader2 className="size-4 animate-spin" aria-hidden="true" /> Analyzing…</>
+                  : <><Lightbulb className="size-4" aria-hidden="true" /> Explain</>}
+              </Button>
+            )}
+          </div>
+          {failureExplainError && (
+            <p className="mt-3 text-sm text-[var(--color-danger)]">{failureExplainError}</p>
+          )}
+          {failureExplanation && (
+            <FailureExplanationPanel explanation={failureExplanation} />
+          )}
+          {!canExplainFailures && (
+            <p className="mt-3 text-sm text-[var(--color-muted-fg)]">
+              Call failure explanation requires the calls.explain_failure capability.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4">
         <p className="text-sm font-medium">AI Review</p>
@@ -294,6 +351,44 @@ function CallDetailPanel({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function FailureExplanationPanel({ explanation }: { explanation: CallFailureExplanation }) {
+  if (explanation.status === 'unavailable') {
+    return (
+      <div className="mt-3 text-sm text-[var(--color-muted-fg)]">
+        This call does not appear to have failed — no failure event was found in the stored timeline.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="rounded-[var(--radius-md)] border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/5 px-3 py-3">
+        <p className="text-xs font-medium text-[var(--color-danger)]">Likely cause</p>
+        <p className="mt-1 text-sm">{explanation.likely_cause}</p>
+      </div>
+      <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-3">
+        <p className="text-xs font-medium text-[var(--color-muted-fg)]">Recommended next action</p>
+        <p className="mt-1 text-sm">{explanation.next_action}</p>
+      </div>
+      {explanation.observed_facts.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-[var(--color-muted-fg)] mb-2">Observed facts</p>
+          <ul className="space-y-1">
+            {explanation.observed_facts.map((fact) => (
+              <li key={fact.code} className="text-xs text-[var(--color-muted-fg)]">
+                <span className="font-mono text-[var(--color-fg)]">{fact.code}</span>: {fact.observed}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="text-[10px] text-[var(--color-muted-fg)]">
+        Advisory only — results are read-only and bounded to stored event data.
+        Analyzed at {new Date(explanation.explained_at).toLocaleString()}.
+      </p>
     </div>
   );
 }

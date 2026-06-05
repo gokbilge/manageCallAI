@@ -304,3 +304,10 @@ registry.register('ReportFilter', reporting.ReportFilterSchema);
 registry.register('ReportCallRow', reporting.ReportCallRowSchema);
 registry.register('NlQueryResult', reporting.NlQueryResultSchema);
 registry.register('NlQueryRequest', reporting.NlQueryRequestSchema);
+
+// call-failure-explanation
+import * as callFailureExplanation from './call-failure-explanation.js';
+registry.register('FailureFact', callFailureExplanation.FailureFactSchema);
+registry.register('ExplainEventSummary', callFailureExplanation.ExplainEventSummarySchema);
+registry.register('CallFailureExplanation', callFailureExplanation.CallFailureExplanationSchema);
+registry.register('CallFailureExplainRequest', callFailureExplanation.CallFailureExplainRequestSchema);

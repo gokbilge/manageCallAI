@@ -4304,6 +4304,7 @@ components:
               - tenant.fraud_policy.manage
               - tenant.risk_analysis.run
               - tenant.reporting.nl_query
+              - tenant.calls.explain_failure
               - "*"
         created_by:
           type:
@@ -7827,3 +7828,81 @@ components:
           maxLength: 500
       required:
         - question
+    FailureFact:
+      type: object
+      properties:
+        code:
+          type: string
+        observed:
+          type: string
+      required:
+        - code
+        - observed
+    ExplainEventSummary:
+      type: object
+      properties:
+        event_type:
+          type: string
+        event_time:
+          type: string
+          format: date-time
+        source:
+          type:
+            - string
+            - "null"
+      required:
+        - event_type
+        - event_time
+        - source
+    CallFailureExplanation:
+      type: object
+      properties:
+        call_id:
+          type: string
+        status:
+          type: string
+          enum:
+            - explained
+            - unavailable
+        unavailable_reason:
+          type: string
+          enum:
+            - no_events
+            - not_failed
+        observed_facts:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailureFact"
+        likely_cause:
+          type: string
+        next_action:
+          type: string
+        event_timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExplainEventSummary"
+        is_advisory:
+          type: boolean
+          enum:
+            - true
+        explained_at:
+          type: string
+          format: date-time
+      required:
+        - call_id
+        - status
+        - observed_facts
+        - likely_cause
+        - next_action
+        - event_timeline
+        - is_advisory
+        - explained_at
+    CallFailureExplainRequest:
+      type: object
+      properties:
+        call_id:
+          type: string
+          minLength: 1
+          maxLength: 256
+      required:
+        - call_id

@@ -211,12 +211,12 @@ Design constraints:
 - any proposed change remains a draft until normal lifecycle checks approve it
 - natural-language queries compile to bounded report filters, not raw SQL or shell
 
-Planned queue:
-- umbrella issue: `#232` `v0.6 AI-native differentiation release queue`
-- bucket issue: `#233` `v0.6: AI call failure explanation`
-- bucket issue: `#234` `v0.6: AI route and change risk analysis`
-- bucket issue: `#235` `v0.6: AI voicemail/call summaries and operator review`
-- bucket issue: `#236` `v0.6: natural-language telecom reporting`
+Planned queue (all shipped as of 2026-06-05):
+- umbrella issue: `#232` `v0.6 AI-native differentiation release queue` — tracker
+- bucket issue: `#233` `v0.6: AI call failure explanation` ✅ merged
+- bucket issue: `#234` `v0.6: AI route and change risk analysis` ✅ merged (#242)
+- bucket issue: `#235` `v0.6: AI voicemail/call summaries and operator review` ✅ merged (#243)
+- bucket issue: `#236` `v0.6: natural-language telecom reporting` ✅ merged (#245)
 
 ### Bucket 1: AI incident and failure explanation
 
