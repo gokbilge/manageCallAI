@@ -241,4 +241,45 @@ describe('ParkingLotsPage', () => {
       expect(screen.getByText('No calls currently parked in this lot.')).toBeInTheDocument();
     });
   });
+
+  it('shows live call count badge when active calls are parked', async () => {
+    setupMocks({
+      lots: { data: [stubLot] },
+      'parked-calls': { data: [stubCall] },
+    });
+    renderWithProviders(<ParkingLotsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('1 live')).toBeInTheDocument();
+    });
+  });
+
+  it('includes active-call warning in delete confirm (plural)', async () => {
+    const secondCall = { ...stubCall, id: 'call-2', slot: 702 };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    setupMocks({
+      lots: { data: [stubLot] },
+      'parked-calls': { data: [stubCall, secondCall] },
+    });
+    renderWithProviders(<ParkingLotsPage />);
+    // wait for parked-calls data to load (badge shows "2 live")
+    await waitFor(() => expect(screen.getByText('2 live')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /delete main lot/i }));
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('2 calls are currently parked'));
+    confirmSpy.mockRestore();
+  });
+
+  it('includes active-call warning in delete confirm (singular)', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    setupMocks({
+      lots: { data: [stubLot] },
+      'parked-calls': { data: [stubCall] },
+    });
+    renderWithProviders(<ParkingLotsPage />);
+    // wait for parked-calls data to load (badge shows "1 live")
+    await waitFor(() => expect(screen.getByText('1 live')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /delete main lot/i }));
+    // code uses "call are" for singular (no verb flip)
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('1 call are currently parked'));
+    confirmSpy.mockRestore();
+  });
 });
