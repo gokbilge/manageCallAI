@@ -668,7 +668,7 @@ describe('Integration surface coverage', () => {
         requested_outputs: ['audio'],
         input_text: 'Say hello',
         language_hint: 'en',
-        provider_hint: 'external',
+        provider_hint: 'auto',
         metadata: { source: 'coverage' },
       },
     });
@@ -707,7 +707,7 @@ describe('Integration surface coverage', () => {
         input_mode: 'text',
         input_text: 'sales',
         requested_outputs: ['next_action'],
-        provider_hint: 'external',
+        provider_hint: 'auto',
       },
     });
     expect(ivrTurn.statusCode).toBe(201);

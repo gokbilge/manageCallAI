@@ -176,7 +176,7 @@ describe('AI policy integration', () => {
       method: 'POST',
       url: '/api/v1/runtime/ivr-ai/turns',
       headers: {
-        authorization: 'Bearer test-runtime-token',
+        'x-managecallai-runtime-token': 'test-runtime-token',
       },
       payload: {
         tenant_id: tenantId,

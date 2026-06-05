@@ -175,7 +175,7 @@ export class AiPolicyService {
           max_input_characters: ivrPolicy.max_input_characters,
         },
       },
-      updated_at: override?.updated_at ?? platform.updated_at,
+      updated_at: normalizeIsoTimestamp(override?.updated_at ?? platform.updated_at),
     };
   }
 
@@ -195,6 +195,10 @@ export class AiPolicyService {
         return 'Provider-backed AI request is not allowed by policy';
     }
   }
+}
+
+function normalizeIsoTimestamp(value: string | Date): string {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
 function resolvePreferredProvider(

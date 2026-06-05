@@ -62,21 +62,25 @@ export const promptGenerationController: FastifyPluginAsyncZod = async (app) => 
           return sendPermissionDenied(reply, 'Provider-backed AI use requires tenant.ai.provider_backed.use');
         }
       }
-      const request = await service.createPromptGeneration(user.tenant_id, req.body);
-      fireAuditEvent({
-        tenant_id: user.tenant_id,
-        actor_id: user.sub,
-        actor_role: user.role ?? null,
-        action: 'ai.prompt_generation.requested',
-        resource_type: 'prompt_generation_request',
-        resource_id: request.id,
-        metadata: {
-          provider_hint: request.provider_hint,
-          requested_outputs: request.requested_outputs,
-          policy: request.metadata['ai_policy'] ?? null,
-        },
-      });
-      return reply.code(201).send({ data: request });
+      try {
+        const request = await service.createPromptGeneration(user.tenant_id, req.body);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role ?? null,
+          action: 'ai.prompt_generation.requested',
+          resource_type: 'prompt_generation_request',
+          resource_id: request.id,
+          metadata: {
+            provider_hint: request.provider_hint,
+            requested_outputs: request.requested_outputs,
+            policy: request.metadata['ai_policy'] ?? null,
+          },
+        });
+        return reply.code(201).send({ data: request });
+      } catch (err) {
+        return replyNotFound(err, reply);
+      }
     },
   );
 
