@@ -297,3 +297,10 @@ registry.register('RiskConcern', riskAnalysis.RiskConcernSchema);
 registry.register('AffectedObject', riskAnalysis.AffectedObjectSchema);
 registry.register('RouteRiskAnalysis', riskAnalysis.RouteRiskAnalysisSchema);
 registry.register('RouteRiskAnalysisRequest', riskAnalysis.RouteRiskAnalysisRequestSchema);
+
+// reporting
+import * as reporting from './reporting.js';
+registry.register('ReportFilter', reporting.ReportFilterSchema);
+registry.register('ReportCallRow', reporting.ReportCallRowSchema);
+registry.register('NlQueryResult', reporting.NlQueryResultSchema);
+registry.register('NlQueryRequest', reporting.NlQueryRequestSchema);

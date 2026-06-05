@@ -25,5 +25,6 @@ export const paths = {
     carrierHealth: '/tenant/integrations/carrier-health',
     smokeTest: '/tenant/integrations/directory-smoke-test',
     trunkTestWorkflow: '/tenant/integrations/trunk-test-workflow',
+    reporting: '/tenant/reporting',
   },
 } as const;

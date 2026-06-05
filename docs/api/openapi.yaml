@@ -2147,6 +2147,37 @@ paths:
                   - data
         default:
           $ref: "#/components/responses/ErrorResponse"
+  /reporting/nl-query:
+    post:
+      tags:
+        - Reporting
+      summary: Natural-language telecom reporting
+      description: >
+        Compiles a bounded natural-language question into approved call reporting filters and returns matching call
+        events with an explanation of the applied filters. Unsupported questions fail closed. Advisory only — never
+        modifies data.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NlQueryRequest"
+      responses:
+        "200":
+          description: Query result with applied filters and matching call events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/NlQueryResult"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -4272,6 +4303,7 @@ components:
               - tenant.fraud_policy.view
               - tenant.fraud_policy.manage
               - tenant.risk_analysis.run
+              - tenant.reporting.nl_query
               - "*"
         created_by:
           type:
@@ -7725,3 +7757,73 @@ components:
       required:
         - target_type
         - target_id
+    ReportFilter:
+      type: object
+      properties:
+        dimension:
+          type: string
+        value:
+          type: string
+      required:
+        - dimension
+        - value
+    ReportCallRow:
+      type: object
+      properties:
+        call_id:
+          type: string
+        event_type:
+          type: string
+        event_time:
+          type: string
+          format: date-time
+        source:
+          type:
+            - string
+            - "null"
+      required:
+        - call_id
+        - event_type
+        - event_time
+        - source
+    NlQueryResult:
+      type: object
+      properties:
+        question:
+          type: string
+        applied_filters:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportFilter"
+        explanation:
+          type: string
+        result_count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportCallRow"
+        is_advisory:
+          type: boolean
+          enum:
+            - true
+        queried_at:
+          type: string
+          format: date-time
+      required:
+        - question
+        - applied_filters
+        - explanation
+        - result_count
+        - results
+        - is_advisory
+        - queried_at
+    NlQueryRequest:
+      type: object
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+        - question
