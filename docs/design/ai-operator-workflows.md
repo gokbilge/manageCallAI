@@ -89,6 +89,16 @@ Guardrails:
 - summaries inherit recording and voicemail access controls
 - missing transcript data must be reported explicitly instead of fabricated
 
+Current implementation status:
+
+- recording summary review is exposed through bounded read-only REST endpoints
+- call-detail review resolves through the linked call recording when one exists
+- voicemail review resolves through the linked call recording for the voicemail
+  `call_id`
+- transcript text is additionally gated by `tenant.compliance.admin`
+- missing recording-analysis or elapsed retention windows produce explicit
+  unavailable states instead of fabricated output
+
 ### 4.4 Natural-language reporting
 
 Inputs:

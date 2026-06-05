@@ -64,6 +64,42 @@ export interface CompleteRecordingAnalysisInput {
   provider_metadata?: Record<string, unknown>;
 }
 
+export type SummaryReviewResourceType = 'call' | 'recording' | 'voicemail';
+export type SummaryReviewStatus =
+  | 'missing_analysis'
+  | 'queued'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'unavailable';
+export type SummaryReviewReason =
+  | 'no_linked_recording'
+  | 'no_analysis_request'
+  | 'summary_missing'
+  | 'summary_retention_elapsed'
+  | 'transcript_retention_elapsed'
+  | 'analysis_failed'
+  | 'analysis_cancelled';
+
+export interface SummaryReview {
+  resource_type: SummaryReviewResourceType;
+  resource_id: string;
+  call_id: string;
+  linked_recording_id: string | null;
+  analysis_request_id: string | null;
+  status: SummaryReviewStatus;
+  reason: SummaryReviewReason | null;
+  summary_text: string | null;
+  transcript_text: string | null;
+  transcript_access: 'granted' | 'restricted' | 'unavailable';
+  can_view_transcript: boolean;
+  language: string | null;
+  requested_outputs: RecordingAnalysisOutput[];
+  completed_at: string | null;
+  provider_metadata: Record<string, unknown>;
+}
+
 // ── SLICE-47: Retention and privacy ──────────────────────────────────────────
 
 export interface TenantRetentionPolicy {

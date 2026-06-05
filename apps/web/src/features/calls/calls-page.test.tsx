@@ -10,6 +10,7 @@ vi.mock('@/lib/auth/use-auth', () => ({
       token: 'token',
       claims: {
         tenant_id: 'tenant-1',
+        role: 'tenant_admin',
       },
     },
   }),
@@ -40,30 +41,50 @@ describe('CallsPage', () => {
   });
 
   it('renders call summary rows and selected call detail', async () => {
-    vi.mocked(apiRequest).mockResolvedValue({
-      data: [
-        {
-          id: 'evt-1',
-          tenant_id: 'tenant-1',
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce({
+        data: [
+          {
+            id: 'evt-1',
+            tenant_id: 'tenant-1',
+            call_id: 'call-1',
+            event_type: 'outbound_call_dispatched',
+            event_time: '2026-05-27T00:00:00.000Z',
+            source: 'freeswitch-agent',
+            payload: { direction: 'outbound', to_number: '+14155550100', from_number: '1001' },
+            ingested_at: '2026-05-27T00:00:01.000Z',
+          },
+          {
+            id: 'evt-2',
+            tenant_id: 'tenant-1',
+            call_id: 'call-1',
+            event_type: 'outbound_call_failed',
+            event_time: '2026-05-27T00:00:03.000Z',
+            source: 'freeswitch-agent',
+            payload: { failure_reason: 'busy' },
+            ingested_at: '2026-05-27T00:00:04.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        data: {
+          resource_type: 'call',
+          resource_id: 'call-1',
           call_id: 'call-1',
-          event_type: 'outbound_call_dispatched',
-          event_time: '2026-05-27T00:00:00.000Z',
-          source: 'freeswitch-agent',
-          payload: { direction: 'outbound', to_number: '+14155550100', from_number: '1001' },
-          ingested_at: '2026-05-27T00:00:01.000Z',
+          linked_recording_id: 'rec-1',
+          analysis_request_id: 'analysis-1',
+          status: 'completed',
+          reason: null,
+          summary_text: 'The outbound call failed because the destination was busy.',
+          transcript_text: null,
+          transcript_access: 'restricted',
+          can_view_transcript: false,
+          language: 'en',
+          requested_outputs: ['summary'],
+          completed_at: '2026-05-27T00:00:05.000Z',
+          provider_metadata: {},
         },
-        {
-          id: 'evt-2',
-          tenant_id: 'tenant-1',
-          call_id: 'call-1',
-          event_type: 'outbound_call_failed',
-          event_time: '2026-05-27T00:00:03.000Z',
-          source: 'freeswitch-agent',
-          payload: { failure_reason: 'busy' },
-          ingested_at: '2026-05-27T00:00:04.000Z',
-        },
-      ],
-    });
+      });
 
     renderWithProviders(<CallsPage />);
 
@@ -73,6 +94,7 @@ describe('CallsPage', () => {
     expect(screen.getAllByText(/failed: busy/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Call call-1/i)).toBeInTheDocument();
     expect(screen.getAllByText(/outbound_call_failed/i).length).toBeGreaterThan(0);
+    expect(await screen.findByText(/destination was busy/i)).toBeInTheDocument();
   });
 
   it('filters call summaries by outcome', async () => {

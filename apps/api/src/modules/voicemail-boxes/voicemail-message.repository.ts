@@ -67,6 +67,18 @@ export class VoicemailMessageRepository {
     return result.rows;
   }
 
+  async findById(id: string, tenantId: string): Promise<VoicemailMessage | null> {
+    const result = await this.db.query<VoicemailMessage>(
+      `SELECT ${this.columns}
+       FROM voicemail_messages
+       WHERE id = $1
+         AND tenant_id = $2
+         AND deleted_at IS NULL`,
+      [id, tenantId],
+    );
+    return result.rows[0] ?? null;
+  }
+
   async markRead(id: string, tenantId: string): Promise<VoicemailMessage | null> {
     const result = await this.db.query<VoicemailMessage>(
       `UPDATE voicemail_messages

@@ -3,11 +3,11 @@ import { stat } from 'node:fs/promises';
 import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { UuidParamsSchema, CreateRecordingAnalysisBodySchema } from '@managecallai/contracts';
+import { UuidParamsSchema, CreateRecordingAnalysisBodySchema, SummaryReviewSchema } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import { config } from '../../config/env.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
-import { CAPABILITIES } from '../auth/capabilities.js';
+import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { fireWebhooks } from '../automation/webhook-delivery.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
@@ -16,6 +16,13 @@ import { RecordingNotFoundError, RecordingPlaybackPathError, RecordingService } 
 import { sendNotFound, sendFailedPrecondition } from '../../errors/index.js';
 
 const service = new RecordingService(new RecordingRepository(db), config.recordingStorageRoot);
+
+function canViewTranscript(user: AuthClaims): boolean {
+  if (user.capabilities !== undefined) {
+    return user.capabilities.includes('*') || user.capabilities.includes(CAPABILITIES.TENANT_COMPLIANCE_ADMIN);
+  }
+  return hasCapability(user.role, CAPABILITIES.TENANT_COMPLIANCE_ADMIN);
+}
 
 export const recordingController: FastifyPluginAsyncZod = async (app) => {
   app.get(
@@ -52,6 +59,51 @@ export const recordingController: FastifyPluginAsyncZod = async (app) => {
         }
         throw err;
       }
+    },
+  );
+
+  app.get(
+    '/:id/summary-review',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_RECORDINGS_VIEW),
+      schema: {
+        params: UuidParamsSchema,
+        response: { 200: z.object({ data: SummaryReviewSchema }) },
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return {
+          data: await service.getSummaryReviewForRecording(req.params.id, user.tenant_id, {
+            canViewTranscript: canViewTranscript(user),
+          }),
+        };
+      } catch (err) {
+        if (err instanceof RecordingNotFoundError) {
+          return sendNotFound(reply, err.message);
+        }
+        throw err;
+      }
+    },
+  );
+
+  app.get(
+    '/summary-review/by-call/:callId',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_RECORDINGS_VIEW),
+      schema: {
+        params: z.object({ callId: z.string().min(1).max(255) }),
+        response: { 200: z.object({ data: SummaryReviewSchema }) },
+      },
+    },
+    async (req) => {
+      const user = req.user as AuthClaims;
+      return {
+        data: await service.getSummaryReviewForCall(req.params.callId, user.tenant_id, {
+          canViewTranscript: canViewTranscript(user),
+        }),
+      };
     },
   );
 
