@@ -13,6 +13,7 @@ import type { AuthClaims } from '../auth/auth-claims.js';
 import { SelfServiceRepository } from './self-service.repository.js';
 import {
   SelfServiceCapabilityError,
+  SelfServiceDeviceNotFoundError,
   SelfServiceExtensionNotFoundError,
   SelfServiceVoicemailNotFoundError,
   SelfServiceVoicemailPlaybackPathError,
@@ -47,6 +48,10 @@ function handleSelfServiceError(err: unknown, reply: FastifyReply): void {
     return;
   }
   if (err instanceof SelfServiceVoicemailNotFoundError) {
+    sendNotFound(reply, err.message);
+    return;
+  }
+  if (err instanceof SelfServiceDeviceNotFoundError) {
     sendNotFound(reply, err.message);
     return;
   }
@@ -213,6 +218,28 @@ export const selfServiceMeController: FastifyPluginAsyncZod = async (app) => {
       return handleSelfServiceError(err, reply);
     }
   });
+
+  app.delete(
+    '/devices/:id',
+    { schema: { params: UuidParamsSchema } },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const result = await service.revokeDevice(user.sub, user.tenant_id, req.params.id);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          action: 'self_service.device_revoked',
+          resource_type: 'device_registration',
+          resource_id: req.params.id,
+        });
+        return { data: result };
+      } catch (err) {
+        return handleSelfServiceError(err, reply);
+      }
+    },
+  );
 
   app.post('/sip-credential/reset', async (req, reply) => {
     const user = req.user as AuthClaims;

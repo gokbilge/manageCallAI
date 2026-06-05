@@ -78,3 +78,8 @@ export interface ResetSipCredentialResult {
   sip_username: string;
   sip_password: string;
 }
+
+export interface RevokeDeviceResult {
+  id: string;
+  revoked: true;
+}

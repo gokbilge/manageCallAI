@@ -2,6 +2,7 @@ import type { Pool } from 'pg';
 import type {
   ExtensionSelfServiceState,
   ResetSipCredentialResult,
+  RevokeDeviceResult,
   SelfServiceCallEvent,
   SelfServiceDeviceRegistration,
   SelfServicePolicy,
@@ -209,6 +210,22 @@ export class SelfServiceRepository {
       [extensionId, tenantId, input.sip_password_ciphertext, input.sip_password_key_id],
     );
     return result.rows[0] ?? null;
+  }
+
+  async revokeDeviceRegistration(
+    id: string,
+    tenantId: string,
+    extensionNumber: string,
+  ): Promise<RevokeDeviceResult | null> {
+    const r = await this.db.query<{ id: string }>(
+      `UPDATE extension_registrations
+       SET status = 'unregistered', updated_at = NOW()
+       WHERE id = $1 AND tenant_id = $2 AND extension_number = $3
+       RETURNING id`,
+      [id, tenantId, extensionNumber],
+    );
+    if (!r.rows[0]) return null;
+    return { id: r.rows[0].id, revoked: true };
   }
 
   // Policy CRUD
