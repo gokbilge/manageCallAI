@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   SelfServiceService,
   SelfServiceCapabilityError,
+  SelfServiceDeviceNotFoundError,
   SelfServiceExtensionNotFoundError,
   SelfServiceVoicemailNotFoundError,
   SelfServiceVoicemailPlaybackPathError,
@@ -84,6 +85,7 @@ function makeRepo(overrides: Partial<SelfServiceRepository> = {}): SelfServiceRe
     softDeleteVoicemailForMailbox: vi.fn().mockResolvedValue(true),
     listCallHistoryByExtensionNumber: vi.fn().mockResolvedValue([]),
     listDeviceRegistrationsByExtensionNumber: vi.fn().mockResolvedValue([]),
+    revokeDeviceRegistration: vi.fn().mockResolvedValue({ id: 'dev-1', revoked: true }),
     updateSipCredential: vi.fn().mockResolvedValue(makeResetResult()),
     findPolicy: vi.fn().mockResolvedValue(makePolicy()),
     upsertPolicy: vi.fn().mockResolvedValue(makePolicy()),
@@ -316,6 +318,32 @@ describe('SelfServiceService', () => {
     it('returns DND state', async () => {
       const result = await service.getDnd('user-1', 'tenant-1');
       expect(result.dnd_enabled).toBe(false);
+    });
+  });
+
+  describe('revokeDevice', () => {
+    it('revokes a device registration owned by the user extension', async () => {
+      repo = makeRepo({
+        revokeDeviceRegistration: vi.fn().mockResolvedValue({ id: 'dev-1', revoked: true }),
+      });
+      service = new SelfServiceService(repo);
+      const result = await service.revokeDevice('user-1', 'tenant-1', 'dev-1');
+      expect(result.revoked).toBe(true);
+      expect(repo.revokeDeviceRegistration).toHaveBeenCalledWith('dev-1', 'tenant-1', '101');
+    });
+
+    it('throws SelfServiceDeviceNotFoundError when device does not belong to user extension', async () => {
+      repo = makeRepo({
+        revokeDeviceRegistration: vi.fn().mockResolvedValue(null),
+      });
+      service = new SelfServiceService(repo);
+      await expect(service.revokeDevice('user-1', 'tenant-1', 'dev-not-mine')).rejects.toThrow(SelfServiceDeviceNotFoundError);
+    });
+
+    it('throws SelfServiceCapabilityError when device_view is disabled', async () => {
+      repo = makeRepo({ findPolicy: vi.fn().mockResolvedValue(makePolicy({ device_view: false })) });
+      service = new SelfServiceService(repo);
+      await expect(service.revokeDevice('user-1', 'tenant-1', 'dev-1')).rejects.toThrow(SelfServiceCapabilityError);
     });
   });
 });

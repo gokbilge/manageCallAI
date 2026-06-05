@@ -2,14 +2,19 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   BellOff,
   Download,
+  ExternalLink,
   Headset,
   KeyRound,
   type LucideIcon,
   Phone,
   PhoneForwarded,
+  QrCode,
   RefreshCcw,
+  Smartphone,
+  Trash2,
   User,
   Voicemail,
 } from 'lucide-react';
@@ -20,6 +25,11 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { ApiError, apiRequest } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/use-auth';
 import { buildCallSummaries, type CallEvent } from '@/lib/calls/call-events-api';
+import {
+  generateProvisioningQr,
+  getSipServer,
+  SUPPORTED_SIP_CLIENTS,
+} from '@/lib/provisioning/sip-provisioning';
 
 type ExtensionState = {
   id: string;
@@ -86,6 +96,8 @@ export function SelfServicePage() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const [lastResetPassword, setLastResetPassword] = useState<string | null>(null);
+  const [provisioningQr, setProvisioningQr] = useState<string | null>(null);
+  const [revokeConfirmId, setRevokeConfirmId] = useState<string | null>(null);
 
   const extensionQuery = useMeQuery<ExtensionState>('extension', '/me/extension');
   const voicemailQuery = useMeQuery<VoicemailMessage[]>('voicemail', '/me/voicemail-messages');
@@ -168,9 +180,34 @@ export function SelfServicePage() {
       });
       return result.data;
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       setLastResetPassword(result.sip_password);
+      setProvisioningQr(null);
       void queryClient.invalidateQueries({ queryKey: ['self-service', 'extension'] });
+      const server = getSipServer();
+      if (server) {
+        try {
+          const qr = await generateProvisioningQr({
+            sip_username: result.sip_username,
+            sip_password: result.sip_password,
+            sip_server: server,
+          });
+          setProvisioningQr(qr);
+        } catch { /* QR generation is best-effort */ }
+      }
+    },
+  });
+
+  const revokeDeviceMutation = useMutation({
+    mutationFn: async (deviceId: string) => {
+      await apiRequest(`/me/devices/${deviceId}`, {
+        method: 'DELETE',
+        accessToken: session?.token,
+      });
+    },
+    onSuccess: () => {
+      setRevokeConfirmId(null);
+      void queryClient.invalidateQueries({ queryKey: ['self-service', 'devices'] });
     },
   });
 
@@ -240,8 +277,8 @@ export function SelfServicePage() {
               </DataCard>
 
               <DataCard
-                title="Devices"
-                description="Current SIP registration visibility for your owned extension."
+                title="Devices &amp; Provisioning"
+                description="SIP registrations for your extension. Revoke a device if it is lost or compromised."
               >
                 {devicesQuery.isLoading ? (
                   <InlineMuted>Loading device status...</InlineMuted>
@@ -253,6 +290,7 @@ export function SelfServicePage() {
                       <div
                         key={device.id}
                         className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3"
+                        aria-label={`Device: ${device.user_agent ?? 'SIP device'}`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
@@ -260,17 +298,50 @@ export function SelfServicePage() {
                             <div>
                               <p className="text-sm font-medium">{device.user_agent ?? 'SIP device'}</p>
                               <p className="text-xs text-[var(--color-muted-fg)]">
-                                {device.contact_domain ?? 'No contact domain'} - last seen {formatTimestamp(device.last_seen_at)}
+                                {device.contact_domain ?? 'No contact domain'} · last seen {formatTimestamp(device.last_seen_at)}
                               </p>
                             </div>
                           </div>
-                          <StatusBadge status={device.status === 'registered' ? 'active' : 'inactive'} />
+                          <div className="flex items-center gap-2">
+                            <StatusBadge status={device.status === 'registered' ? 'active' : 'inactive'} />
+                            {revokeConfirmId === device.id ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-[var(--color-danger)]">Revoke?</span>
+                                <Button
+                                  variant="destructive"
+                                  disabled={revokeDeviceMutation.isPending}
+                                  onClick={() => revokeDeviceMutation.mutate(device.id)}
+                                  aria-label="Confirm revoke device"
+                                >
+                                  {revokeDeviceMutation.isPending ? 'Revoking…' : 'Confirm'}
+                                </Button>
+                                <Button variant="secondary" onClick={() => setRevokeConfirmId(null)} aria-label="Cancel revoke">
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="secondary"
+                                onClick={() => setRevokeConfirmId(device.id)}
+                                aria-label={`Revoke ${device.user_agent ?? 'SIP device'}`}
+                              >
+                                <Trash2 className="size-4" aria-hidden="true" />
+                                Revoke
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
+                    <p className="text-xs text-[var(--color-muted-fg)]">
+                      Revoking removes the SIP registration. The device must re-register with valid credentials.
+                    </p>
                   </div>
                 ) : (
-                  <InlineMuted>No active or recent SIP registrations were found for your extension.</InlineMuted>
+                  <div className="space-y-4">
+                    <InlineMuted>No active or recent SIP registrations found. Set up a softphone below to get started.</InlineMuted>
+                    <SoftphoneSetupGuide sipUsername={extension.sip_username} />
+                  </div>
                 )}
               </DataCard>
             </div>
@@ -443,10 +514,24 @@ export function SelfServicePage() {
                   <MutationMessage error={resetSipMutation.error} fallback="Could not reset your SIP credential." />
                 ) : null}
                 {lastResetPassword ? (
-                  <div className="rounded-[var(--radius-lg)] border border-[var(--color-success)]/30 bg-[var(--color-success)]/10 px-4 py-3">
-                    <p className="text-sm font-medium text-[var(--color-success)]">New SIP password</p>
-                    <p className="mt-2 font-mono text-sm">{lastResetPassword}</p>
-                    <p className="mt-2 text-xs text-[var(--color-muted-fg)]">This value is shown once. Update your phone or softphone now.</p>
+                  <div className="space-y-3">
+                    <div className="rounded-[var(--radius-lg)] border border-[var(--color-success)]/30 bg-[var(--color-success)]/10 px-4 py-3">
+                      <p className="text-sm font-medium text-[var(--color-success)]">New SIP password</p>
+                      <p className="mt-2 font-mono text-sm">{lastResetPassword}</p>
+                      <p className="mt-2 text-xs text-[var(--color-muted-fg)]">Shown once — update your softphone now.</p>
+                    </div>
+                    {provisioningQr ? (
+                      <ProvisioningQrCard
+                        qrDataUrl={provisioningQr}
+                        sipUsername={extension.sip_username}
+                        sipServer={getSipServer()}
+                      />
+                    ) : getSipServer() ? null : (
+                      <div className="rounded-[var(--radius-md)] border border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10 px-3 py-2 text-xs text-[var(--color-warning)]">
+                        <AlertTriangle className="mb-0.5 mr-1 inline size-3" aria-hidden="true" />
+                        QR provisioning requires <code>VITE_SIP_DOMAIN</code> to be configured.
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-xs text-[var(--color-muted-fg)]">Password resets are one-time responses. The API never re-shows the stored SIP secret.</p>
@@ -456,6 +541,121 @@ export function SelfServicePage() {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function ProvisioningQrCard({
+  qrDataUrl,
+  sipUsername,
+  sipServer,
+}: {
+  qrDataUrl: string;
+  sipUsername: string;
+  sipServer: string;
+}) {
+  return (
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-4">
+      <div className="flex items-center gap-2 mb-3">
+        <QrCode className="size-4 text-[var(--color-muted-fg)]" aria-hidden="true" />
+        <p className="text-sm font-medium">Scan to provision your softphone</p>
+      </div>
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+        <img
+          src={qrDataUrl}
+          alt="SIP provisioning QR code"
+          className="size-[110px] rounded-[var(--radius-md)] border border-[var(--color-border)]"
+        />
+        <div className="space-y-1 text-xs text-[var(--color-muted-fg)]">
+          <p className="font-medium text-[var(--color-fg)]">Connection details</p>
+          <p>SIP server: <span className="font-mono text-[var(--color-fg)]">{sipServer}</span></p>
+          <p>Username: <span className="font-mono text-[var(--color-fg)]">{sipUsername}</span></p>
+          <p>Password: <span className="font-mono text-[var(--color-fg)]">shown above — do not share</span></p>
+          <p className="pt-1">
+            Zoiper and Linphone support direct QR scanning.
+            Other clients require manual entry.
+          </p>
+        </div>
+      </div>
+      <p className="mt-3 text-[10px] text-[var(--color-muted-fg)]">
+        This QR code encodes your new password. It will not appear again after you leave this page.
+      </p>
+    </div>
+  );
+}
+
+function SoftphoneSetupGuide({ sipUsername }: { sipUsername: string }) {
+  const sipServer = getSipServer();
+  return (
+    <div className="space-y-4">
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Smartphone className="size-4 text-[var(--color-muted-fg)]" aria-hidden="true" />
+          <p className="text-sm font-medium">Set up a softphone</p>
+        </div>
+        <ol className="space-y-3 text-sm text-[var(--color-muted-fg)]">
+          <li className="flex gap-3">
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[10px] font-bold text-[var(--color-fg)]">1</span>
+            <span>Download a supported SIP client from the list below.</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[10px] font-bold text-[var(--color-fg)]">2</span>
+            <span>
+              Go to <strong className="text-[var(--color-fg)]">SIP Credential</strong> on this page and click
+              <strong className="text-[var(--color-fg)]"> Reset SIP password</strong>.
+            </span>
+          </li>
+          <li className="flex gap-3">
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[10px] font-bold text-[var(--color-fg)]">3</span>
+            <span>
+              Scan the QR code that appears, or enter the connection details manually:
+              {sipServer ? (
+                <>
+                  {' '}SIP server <code className="font-mono text-[var(--color-fg)]">{sipServer}</code>,
+                  username <code className="font-mono text-[var(--color-fg)]">{sipUsername}</code>.
+                </>
+              ) : (
+                ' contact your administrator for the SIP server address.'
+              )}
+            </span>
+          </li>
+          <li className="flex gap-3">
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[10px] font-bold text-[var(--color-fg)]">4</span>
+            <span>Make a test call. Your device should appear in the Devices list above once registered.</span>
+          </li>
+        </ol>
+      </div>
+      <div>
+        <p className="mb-2 text-xs font-medium text-[var(--color-muted-fg)]">Supported SIP clients</p>
+        <div className="space-y-2">
+          {SUPPORTED_SIP_CLIENTS.map((client) => (
+            <div
+              key={client.name}
+              className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-3"
+            >
+              <Headset className="mt-0.5 size-4 shrink-0 text-[var(--color-muted-fg)]" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{client.name}</p>
+                <p className="text-xs text-[var(--color-muted-fg)]">{client.platforms}</p>
+                <p className="mt-1 text-xs text-[var(--color-muted-fg)]">{client.notes}</p>
+              </div>
+              <a
+                href={client.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-0.5 text-[var(--color-muted-fg)] hover:text-[var(--color-fg)]"
+                aria-label={`Download ${client.name}`}
+              >
+                <ExternalLink className="size-4" aria-hidden="true" />
+              </a>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
+          Any RFC 3261-compliant SIP client will work. The list above is tested and supported.
+          Unsupported clients require manual configuration.
+        </p>
+      </div>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import type { SelfServiceRepository } from './self-service.repository.js';
 import type {
   ExtensionSelfServiceState,
   ResetSipCredentialResult,
+  RevokeDeviceResult,
   SelfServiceCallEvent,
   SelfServiceDeviceRegistration,
   SelfServicePolicy,
@@ -33,6 +34,13 @@ export class SelfServiceVoicemailNotFoundError extends Error {
   constructor(id: string) {
     super(`Voicemail message not found: ${id}`);
     this.name = 'SelfServiceVoicemailNotFoundError';
+  }
+}
+
+export class SelfServiceDeviceNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Device registration not found or not owned by your extension: ${id}`);
+    this.name = 'SelfServiceDeviceNotFoundError';
   }
 }
 
@@ -197,6 +205,16 @@ export class SelfServiceService {
 
     const extension = await this.getMyExtension(userId, tenantId);
     return this.repo.listDeviceRegistrationsByExtensionNumber(tenantId, extension.extension_number);
+  }
+
+  async revokeDevice(userId: string, tenantId: string, deviceId: string): Promise<RevokeDeviceResult> {
+    const policy = await this.getPolicy(tenantId);
+    if (!policy.device_view) throw new SelfServiceCapabilityError('device_view');
+
+    const extension = await this.getMyExtension(userId, tenantId);
+    const result = await this.repo.revokeDeviceRegistration(deviceId, tenantId, extension.extension_number);
+    if (!result) throw new SelfServiceDeviceNotFoundError(deviceId);
+    return result;
   }
 
   async resetSipCredential(userId: string, tenantId: string): Promise<ResetSipCredentialResult> {
