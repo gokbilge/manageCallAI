@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/gokbilge/manageCallAI/actions/workflows/ci.yml/badge.svg)](https://github.com/gokbilge/manageCallAI/actions/workflows/ci.yml)
 
-AI-native telecom control plane over FreeSWITCH with REST, MCP, n8n, visual IVR, validation, simulation, rollback, and runtime safety controls.
+AI-native telecom control plane over FreeSWITCH with REST, MCP, n8n, visual IVR, validation, simulation, rollback, runtime safety controls, and bounded AI operator workflows.
 
-manageCallAI is an open-source platform for building programmable PBX, IVR, and telecom automation systems on top of stock FreeSWITCH. The control plane lives in TypeScript and PostgreSQL. FreeSWITCH remains runtime-only. Lua remains thin. The Go agent handles ESL/runtime integration.
+manageCallAI is an open-source platform for building programmable PBX, IVR, and telecom automation systems on top of stock FreeSWITCH. The control plane lives in TypeScript and PostgreSQL. FreeSWITCH remains runtime-only. Lua remains thin. The Go agent handles ESL/runtime integration. v0.6 introduces assistive AI workflows grounded in API-owned records — call failure explanation, route risk analysis, recording summary review, and natural-language reporting — without autonomous runtime control.
 
 ## Canonical docs
 
@@ -31,12 +31,13 @@ Source inspection shows implemented support for:
 - feature codes, parking, conference rooms, runtime apply requests, and end-user self-service
 - first-run setup/bootstrap through `/setup` or headless `SETUP_*` environment variables
 - deployment packaging with `docker-compose.prod.yml`, `install.sh`, and a Helm chart scaffold
+- **v0.6 AI operator workflows**: bounded call failure explanation, route and change risk analysis, recording/voicemail summary review, and natural-language telecom reporting
 
 ## Release posture
 
-**Current release: v0.5.0** (2026-06-05) — v0.5 operational maturity.
+**Current release: v0.6.0** (2026-06-05) — v0.6 AI-native differentiation.
 
-Evidence: [docs/release/release-evidence-v0.5.0.json](docs/release/release-evidence-v0.5.0.json)
+Evidence: [docs/release/release-evidence-v0.6.0.json](docs/release/release-evidence-v0.6.0.json)
 
 Release posture must be derived from release evidence, not from source inspection alone.
 
