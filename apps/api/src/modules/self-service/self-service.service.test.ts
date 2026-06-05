@@ -4,6 +4,7 @@ import {
   SelfServiceCapabilityError,
   SelfServiceExtensionNotFoundError,
   SelfServiceVoicemailNotFoundError,
+  SelfServiceVoicemailPlaybackPathError,
 } from './self-service.service.js';
 import type { SelfServiceRepository } from './self-service.repository.js';
 import type {
@@ -140,14 +141,45 @@ describe('SelfServiceService', () => {
       await expect(service.deleteVoicemailMessage('user-1', 'tenant-1', 'message-1')).resolves.toBeUndefined();
     });
 
+    it('returns a bounded playback path for voicemail media', async () => {
+      const playback = await service.getVoicemailPlaybackPath('user-1', 'tenant-1', 'message-1');
+      expect(playback.message.id).toBe('message-1');
+      expect(playback.file_path).toContain('recordings');
+      expect(playback.file_path).toContain('vm');
+    });
+
     it('throws when the voicemail message does not belong to the user mailbox', async () => {
       repo = makeRepo({
         markVoicemailReadForMailbox: vi.fn().mockResolvedValue(null),
         softDeleteVoicemailForMailbox: vi.fn().mockResolvedValue(false),
+        findVoicemailMessageForMailbox: vi.fn().mockResolvedValue(null),
       });
       service = new SelfServiceService(repo);
       await expect(service.markVoicemailRead('user-1', 'tenant-1', 'missing')).rejects.toThrow(SelfServiceVoicemailNotFoundError);
       await expect(service.deleteVoicemailMessage('user-1', 'tenant-1', 'missing')).rejects.toThrow(SelfServiceVoicemailNotFoundError);
+      await expect(service.getVoicemailPlaybackPath('user-1', 'tenant-1', 'missing')).rejects.toThrow(SelfServiceVoicemailNotFoundError);
+    });
+
+    it('rejects voicemail playback paths outside the configured storage root', async () => {
+      repo = makeRepo({
+        findVoicemailMessageForMailbox: vi.fn().mockResolvedValue({
+          id: 'message-1',
+          tenant_id: 'tenant-1',
+          voicemail_box_id: 'box-1',
+          call_id: 'call-1',
+          storage_path: '../escape.wav',
+          duration_secs: 10,
+          size_bytes: 1024,
+          read_at: null,
+          deleted_at: null,
+          recorded_at: new Date(),
+          created_at: new Date(),
+        }),
+      });
+      service = new SelfServiceService(repo);
+      await expect(service.getVoicemailPlaybackPath('user-1', 'tenant-1', 'message-1')).rejects.toThrow(
+        SelfServiceVoicemailPlaybackPathError,
+      );
     });
   });
 
@@ -160,6 +192,18 @@ describe('SelfServiceService', () => {
     it('lists device registrations for the owned extension number', async () => {
       await service.listDevices('user-1', 'tenant-1');
       expect(vi.mocked(repo.listDeviceRegistrationsByExtensionNumber)).toHaveBeenCalledWith('tenant-1', '101');
+    });
+
+    it('throws when call history viewing is disabled', async () => {
+      repo = makeRepo({ findPolicy: vi.fn().mockResolvedValue(makePolicy({ call_history_view: false })) });
+      service = new SelfServiceService(repo);
+      await expect(service.listCallHistory('user-1', 'tenant-1')).rejects.toThrow(SelfServiceCapabilityError);
+    });
+
+    it('throws when device viewing is disabled', async () => {
+      repo = makeRepo({ findPolicy: vi.fn().mockResolvedValue(makePolicy({ device_view: false })) });
+      service = new SelfServiceService(repo);
+      await expect(service.listDevices('user-1', 'tenant-1')).rejects.toThrow(SelfServiceCapabilityError);
     });
   });
 
@@ -176,6 +220,12 @@ describe('SelfServiceService', () => {
       repo = makeRepo({ findPolicy: vi.fn().mockResolvedValue(makePolicy({ sip_credential_reset: false })) });
       service = new SelfServiceService(repo);
       await expect(service.resetSipCredential('user-1', 'tenant-1')).rejects.toThrow(SelfServiceCapabilityError);
+    });
+
+    it('throws when the credential update does not persist', async () => {
+      repo = makeRepo({ updateSipCredential: vi.fn().mockResolvedValue(null) });
+      service = new SelfServiceService(repo);
+      await expect(service.resetSipCredential('user-1', 'tenant-1')).rejects.toThrow(SelfServiceExtensionNotFoundError);
     });
   });
 
@@ -210,6 +260,12 @@ describe('SelfServiceService', () => {
       service = new SelfServiceService(repo);
       await expect(service.setDnd('user-1', 'tenant-1', true)).rejects.toThrow(SelfServiceExtensionNotFoundError);
     });
+
+    it('throws when the DND update does not persist', async () => {
+      repo = makeRepo({ setDnd: vi.fn().mockResolvedValue(null) });
+      service = new SelfServiceService(repo);
+      await expect(service.setDnd('user-1', 'tenant-1', true)).rejects.toThrow(SelfServiceExtensionNotFoundError);
+    });
   });
 
   describe('setCallForward', () => {
@@ -234,6 +290,12 @@ describe('SelfServiceService', () => {
       repo = makeRepo({ findPolicy: vi.fn().mockResolvedValue(makePolicy({ call_forward_set_target: false })) });
       service = new SelfServiceService(repo);
       await expect(service.setCallForward('user-1', 'tenant-1', true)).resolves.toBeDefined();
+    });
+
+    it('throws when the call-forward update does not persist', async () => {
+      repo = makeRepo({ setCallForward: vi.fn().mockResolvedValue(null) });
+      service = new SelfServiceService(repo);
+      await expect(service.setCallForward('user-1', 'tenant-1', true)).rejects.toThrow(SelfServiceExtensionNotFoundError);
     });
   });
 
