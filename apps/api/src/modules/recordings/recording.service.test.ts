@@ -70,7 +70,26 @@ function makeMockRepo(): RecordingRepository {
       completed_at: null,
     }),
     listAnalysisRequests: vi.fn().mockResolvedValue([]),
+    findLatestByCallId: vi.fn().mockResolvedValue(baseRecording),
     findAnalysisRequest: vi.fn().mockResolvedValue(null),
+    findLatestAnalysisRequestForRecording: vi.fn().mockResolvedValue({
+      id: 'analysis-1',
+      tenant_id: 'tenant-1',
+      recording_id: 'rec-1',
+      requested_outputs: ['transcript', 'summary'],
+      language_hint: 'en-US',
+      status: 'completed',
+      processor_id: 'processor-1',
+      claimed_at: '2026-05-29T10:00:03Z',
+      language: 'en',
+      transcript_text: 'Transcript',
+      summary_text: 'Summary',
+      error_message: null,
+      provider_metadata: {},
+      metadata: {},
+      created_at: '2026-05-29T10:00:02Z',
+      completed_at: '2026-05-29T10:01:00Z',
+    }),
     claimAnalysisRequest: vi.fn().mockResolvedValue(null),
     completeAnalysisRequest: vi.fn().mockResolvedValue(null),
     // SLICE-47
@@ -178,6 +197,39 @@ describe('RecordingService', () => {
 
       expect(repo.findById).toHaveBeenCalledWith('rec-1', 'tenant-1');
       expect(repo.listAnalysisRequests).toHaveBeenCalledWith('rec-1', 'tenant-1');
+    });
+  });
+
+  describe('summary review', () => {
+    it('normalizes completed_at values to ISO strings for response serialization', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.findLatestAnalysisRequestForRecording).mockResolvedValueOnce({
+        id: 'analysis-1',
+        tenant_id: 'tenant-1',
+        recording_id: 'rec-1',
+        requested_outputs: ['transcript', 'summary'],
+        language_hint: 'en-US',
+        status: 'completed',
+        processor_id: 'processor-1',
+        claimed_at: '2026-06-05T08:00:00Z',
+        language: 'en',
+        transcript_text: 'Transcript',
+        summary_text: 'Summary',
+        error_message: null,
+        provider_metadata: {},
+        metadata: {},
+        created_at: '2026-06-05T08:00:00Z',
+        completed_at: new Date('2026-06-05T08:05:00.000Z') as unknown as string,
+      });
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForRecording('rec-1', 'tenant-1', {
+        canViewTranscript: true,
+      });
+
+      expect(review.status).toBe('completed');
+      expect(review.completed_at).toBe('2026-06-05T08:05:00.000Z');
+      expect(review.provider_metadata).toEqual({});
     });
   });
 
