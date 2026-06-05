@@ -1,0 +1,72 @@
+{
+  "release_version": "v0.5.0-rc.1",
+  "commit_sha": "6df5fab7e7e880914ed0ca07bec5b6e9e1291727",
+  "generated_at": "2026-06-05T03:30:00Z",
+  "stage": "rc",
+  "notes": "RC evidence bundle for v0.5.0-rc.1. Delivers the full v0.5.x operational maturity release: end-user self-service portal, audit log visibility, data export and retention workflows, carrier health dashboard, and broader lifecycle consistency across PBX objects. FreeSWITCH smoke run 26993419772 passed on rc/v0.5.0 at 6df5fab (enlogy@10.0.0.32). DB migrations 0053 and 0054 applied cleanly. All CI gates pass on same commit.",
+
+  "github_release": {
+    "tag": "v0.5.0-rc.1",
+    "url": "https://github.com/gokbilge/manageCallAI/releases/tag/v0.5.0-rc.1",
+    "published_at": "2026-06-05T03:30:00Z",
+    "is_prerelease": true
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993406197",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993406195",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993406191",
+  "docker_images_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993406183",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26993419772",
+
+  "v0_5_operational_maturity_evidence": {
+    "bucket_1_end_user_portal": "End-user self-service portal at /user/self-service: voicemail inbox (play/download/delete), call history, registered devices/SIP credentials, DND toggle, and call-forward management. SELF_SERVICE_* capability group added to tenant policy. Full integration test coverage. Closes issue #224. Merged in c1c4fce.",
+    "bucket_2_evidence_visibility": "Operator-facing audit log page at /tenant/audit with level/category/target filters, time-range selector, and paginated results. Surfaces lifecycle events (publish, rollback, approve, reject) and configuration changes. Closes issue #225. Merged in c1c4fce.",
+    "bucket_3_retention_export": "Data export page at /tenant/export with CDR, recording, and voicemail exports (CSV/ZIP/JSON). Export-before-delete guidance for operators. Media storage lifecycle visibility. Closes issue #226. Merged in c1c4fce.",
+    "bucket_4_carrier_health": "Carrier health page at /tenant/integrations/carrier-health with per-trunk REGED/DOWN/TRYING/FAILED status, SIP response code breakdown, registration latency summary, and carrier-template link. Closes issue #227. Merged in c1c4fce.",
+    "bucket_5_lifecycle_consistency": "Outbound route draft/publish lifecycle: DB migration 0054 adds draft status; POST /outbound-routes/:id/publish endpoint; start_as_draft on create; 7 new service-layer tests. Active-call safety checks: parking-lot delete confirm with parked-call count; conference-room disable/delete confirm with active participant count. Closes issue #228. Merged in 6df5fab.",
+    "planning_queue_closed": "All 5 v0.5.x delivery buckets marked shipped in release-buckets-v0.4-v0.6.md. Closes tracking issue #229."
+  },
+
+  "helm_lint": "PASSED on enlogy@10.0.0.32 at commit 6df5fab (rc/v0.5.0). 1 chart linted, 0 chart(s) failed. All 8 resource kinds render (Secret, ConfigMap, PVC, Service, Deployment×3, Job).",
+
+  "docker_compose_prod_smoke": "PASSED on enlogy@10.0.0.32 with image at commit 6df5fab (rc/v0.5.0). /health returned db:ok, /setup returned HTTP 200.",
+
+  "rotation_rehearsal": {
+    "status": "automated_checks_passed",
+    "artifact": "artifacts/rotation/rotation-rehearsal-2026-06-04T22-08-16Z.json",
+    "automated_checks": ["api_health:pass", "query_body_fallback:pass", "primary_token_auth:pass"],
+    "note": "Automated precondition checks pass. Full live secret rotation requires a production deployment with rotating secrets."
+  },
+
+  "migrations": "v0.5.0 includes 2 new migrations: 0053_self_service_policy_extensions.sql (end-user capability policy columns) and 0054_outbound_routes_draft_lifecycle.sql (draft status for outbound_routes). Both apply cleanly on top of v0.4.0 schema.",
+
+  "production_soak": "Inherited from v0.3.0. No call-path or hot-path changes in v0.5.0. All v0.5 changes affect admin/end-user UI surfaces and audit-log-adjacent API endpoints.",
+
+  "production_slo": "Inherited from v0.3.0 (docs/ops/runtime-slo-evidence-2026-06-03.json). No hot-path changes in v0.5.0.",
+
+  "carrier_interop": "Inherited from v0.3.0 (docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json). No call-path changes in v0.5.0.",
+
+  "security_review": "CodeQL run 26993406195 clean. FreeSWITCH hardening 0 findings (smoke run 26993419772). Branch coverage 80.35% (above 80% threshold). No new privileged API surfaces introduced. Self-service endpoints are capability-gated and tenant-scoped.",
+
+  "rollback_plan": "Roll back to v0.4.0 image. Run db:migrate in reverse for 0054 (remove draft constraint) and 0053 (remove policy columns). Low data risk — no call-path schema changes.",
+
+  "operator_signoff": {
+    "name": "Fatih Kucukpetek",
+    "role": "maintainer",
+    "approved_at": "2026-06-05T03:30:00Z",
+    "notes": "RC signoff for v0.5.0-rc.1. All 5 v0.5.x operational maturity buckets delivered. FreeSWITCH smoke, CI, CodeQL, coverage, and Docker builds all pass on enlogy@10.0.0.32 at 6df5fab. Live rotation rehearsal remains as a gate before production promotion."
+  },
+
+  "artifact_files": {
+    "rc_smoke_run": "https://github.com/gokbilge/manageCallAI/actions/runs/26993419772",
+    "runtime_slo": "docs/ops/runtime-slo-evidence-2026-06-03.json",
+    "carrier_interop_evidence": "docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json",
+    "release_buckets": "docs/planning/release-buckets-v0.4-v0.6.md"
+  },
+
+  "known_gaps_before_production": [
+    "Live rotation rehearsal (pnpm rotation:rehearsal) — not just --check-config",
+    "GHCR package visibility must be set to Public before using GHCR images in production",
+    "pnpm db:migrate must be run on the production DB to apply migrations 0053 and 0054"
+  ]
+}
