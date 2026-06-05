@@ -261,3 +261,32 @@ Policy documented; enforcement implementation/evidence required before productio
 - `docs/ops/backup-retention-policy.json` — machine-readable backup retention policy
 - `apps/worker/src/modules/retention/` — worker module scaffold
 - GitHub issue: see issue tracker for "Implement retention API and legal hold endpoints" (production release blocker)
+
+---
+
+## Summary Review Surfaces
+
+The `v0.6.x` summary-review surfaces are read-only views over existing
+`recording_analysis_requests` rows. They do not introduce a separate retention
+class.
+
+Current API surfaces:
+
+- `GET /api/v1/recordings/:id/summary-review`
+- `GET /api/v1/recordings/summary-review/by-call/:callId`
+- `GET /api/v1/voicemail-boxes/messages/:id/summary-review`
+
+Retention behavior:
+
+- `summary_text` is governed by `ai_summary_retention_days`
+- `transcript_text` is governed by `transcript_retention_days`
+- voicemail-linked review resolves through the linked call recording for the
+  same tenant and `call_id`
+- if no linked recording exists, the API returns an explicit unavailable state
+
+Permission behavior:
+
+- summary review remains tenant-scoped
+- recordings review requires `tenant.recordings.view`
+- voicemail review requires `tenant.voicemail_boxes.view`
+- transcript text additionally requires `tenant.compliance.admin`

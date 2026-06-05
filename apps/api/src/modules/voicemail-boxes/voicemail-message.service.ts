@@ -44,6 +44,14 @@ export class VoicemailMessageService {
     return this.repo.listByMailbox(tenantId, boxId, options);
   }
 
+  async getById(id: string, tenantId: string): Promise<VoicemailMessage> {
+    const message = await this.repo.findById(id, tenantId);
+    if (!message) {
+      throw new VoicemailMessageNotFoundError(id);
+    }
+    return message;
+  }
+
   async markRead(id: string, tenantId: string): Promise<VoicemailMessage> {
     const message = await this.repo.markRead(id, tenantId);
     if (!message) {

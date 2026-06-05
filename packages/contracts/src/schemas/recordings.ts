@@ -51,6 +51,47 @@ export const RecordingAnalysisRequestSchema = z.object({
 }).openapi('RecordingAnalysisRequest');
 export type RecordingAnalysisRequest = z.infer<typeof RecordingAnalysisRequestSchema>;
 
+export const SummaryReviewStatusSchema = z.enum([
+  'missing_analysis',
+  'queued',
+  'processing',
+  'completed',
+  'failed',
+  'cancelled',
+  'unavailable',
+]);
+export type SummaryReviewStatus = z.infer<typeof SummaryReviewStatusSchema>;
+
+export const SummaryReviewReasonSchema = z.enum([
+  'no_linked_recording',
+  'no_analysis_request',
+  'summary_missing',
+  'summary_retention_elapsed',
+  'transcript_retention_elapsed',
+  'analysis_failed',
+  'analysis_cancelled',
+]);
+export type SummaryReviewReason = z.infer<typeof SummaryReviewReasonSchema>;
+
+export const SummaryReviewSchema = z.object({
+  resource_type: z.enum(['call', 'recording', 'voicemail']),
+  resource_id: z.string(),
+  call_id: z.string(),
+  linked_recording_id: z.string().uuid().nullable(),
+  analysis_request_id: z.string().uuid().nullable(),
+  status: SummaryReviewStatusSchema,
+  reason: SummaryReviewReasonSchema.nullable(),
+  summary_text: z.string().nullable(),
+  transcript_text: z.string().nullable(),
+  transcript_access: z.enum(['granted', 'restricted', 'unavailable']),
+  can_view_transcript: z.boolean(),
+  language: z.string().nullable(),
+  requested_outputs: z.array(RecordingAnalysisOutputSchema),
+  completed_at: z.string().datetime().nullable(),
+  provider_metadata: z.record(z.unknown()),
+}).openapi('SummaryReview');
+export type SummaryReview = z.infer<typeof SummaryReviewSchema>;
+
 // ── Request schemas ───────────────────────────────────────────────────────────
 export const IngestRecordingBodySchema = z.object({
   call_id: z.string().min(1),

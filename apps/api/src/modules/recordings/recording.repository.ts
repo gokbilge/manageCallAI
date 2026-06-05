@@ -63,6 +63,20 @@ export class RecordingRepository {
     return result.rows[0] ?? null;
   }
 
+  async findLatestByCallId(callId: string, tenantId: string): Promise<Recording | null> {
+    const result = await this.db.query<Recording>(
+      `SELECT id, tenant_id, call_id, call_event_id, storage_path, duration_secs, size_bytes, status, recorded_at, created_at
+       FROM call_recordings
+       WHERE tenant_id = $1
+         AND call_id = $2
+         AND status != 'deleted'
+       ORDER BY recorded_at DESC, created_at DESC
+       LIMIT 1`,
+      [tenantId, callId],
+    );
+    return result.rows[0] ?? null;
+  }
+
   async createAnalysisRequest(
     recordingId: string,
     tenantId: string,
@@ -109,6 +123,20 @@ export class RecordingRepository {
        FROM recording_analysis_requests
        WHERE id = $1 AND tenant_id = $2`,
       [id, tenantId],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async findLatestAnalysisRequestForRecording(recordingId: string, tenantId: string): Promise<RecordingAnalysisRequest | null> {
+    const result = await this.db.query<RecordingAnalysisRequest>(
+      `SELECT id, tenant_id, recording_id, requested_outputs, language_hint, status, processor_id,
+              claimed_at, language, transcript_text, summary_text, error_message, provider_metadata,
+              metadata, created_at, completed_at
+       FROM recording_analysis_requests
+       WHERE tenant_id = $1 AND recording_id = $2
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [tenantId, recordingId],
     );
     return result.rows[0] ?? null;
   }
