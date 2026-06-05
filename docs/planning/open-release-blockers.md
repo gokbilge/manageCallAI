@@ -1,4 +1,4 @@
-# Open Release Blockers
+﻿# Open Release Blockers
 
 Last updated: 2026-06-05.
 
@@ -12,12 +12,38 @@ to the release-candidate commit.
 ## Current Release Stage
 
 ```
-Latest evidenced production tag: v0.5.0 (cut 2026-06-05 from main at 6df5fab)
-RC tag:                          v0.5.0-rc.1 (commit 6df5fab, smoke run 26993419772)
-Production evidence:             docs/release/release-evidence-v0.5.0.json
-RC evidence:                     docs/release/release-evidence-v0.5.0-rc.1.json
-Next:                            v0.6.x AI-native differentiation (issues #232–#236)
+Latest evidenced production tag: v0.6.0 (cut 2026-06-05 from main at a840863)
+RC tag:                          v0.6.0-rc.1 (commit b3de1de, smoke run 27028911635)
+Production evidence:             docs/release/release-evidence-v0.6.0.json
+RC evidence:                     docs/release/release-evidence-v0.6.0-rc.1.json
+Product audit:                   docs/release/product-release-audit-v0.6.0.md
+Evidence inheritance policy:     docs/release/evidence-inheritance-policy.md
+Next:                            v0.7.x (not yet planned)
 ```
+
+### v0.6.0 — shipped (2026-06-05)
+
+All four v0.6 AI-native differentiation bucket issues closed:
+
+| Issue | Feature | PR |
+|-------|---------|-----|
+| #233 | AI call failure explanation | #246 |
+| #234 | AI route and change risk analysis | #242 |
+| #235 | AI recording/voicemail summary review | #243 |
+| #236 | Natural-language telecom reporting | #245 |
+| #232 | v0.6 queue tracker (umbrella) | closed by #246 |
+
+### Scheduled re-runs before v0.7.0
+
+These gates were inherited in v0.6.0 and have reached their age limits under
+`docs/release/evidence-inheritance-policy.md`. They must run at v0.7.0
+regardless of code changes.
+
+| Gate | Last run | Age at v0.6.0 | Action required |
+|------|----------|---------------|----------------|
+| Full carrier interop | v0.3.0 | 3 versions | Re-run at v0.7.0 |
+| Full soak / SLO | v0.3.0 | 3 versions | Re-run at v0.7.0 |
+| Live rotation rehearsal | v0.5.0 | 1 version | Re-run at v0.7.0 (minor boundary) |
 
 ## What closed for v0.3.0 (2026-06-03)
 
