@@ -83,7 +83,7 @@ const tenantNav: NavItem[] = [
   { to: '/tenant/me', label: 'My Settings', icon: UserCog },
 ];
 
-const endUserNav: NavItem[] = [
+const endUserTenantNav: NavItem[] = [
   { to: '/tenant/me', label: 'My Settings', icon: UserCog },
 ];
 
@@ -91,15 +91,14 @@ export function AppSidebar({ workspace }: AppSidebarProps) {
   const { session } = useAuth();
   const role = session?.claims.role;
   const canAccessPlatform = hasCapability(role, CAPABILITIES.PLATFORM_TENANTS_VIEW);
+  const isEndUser = role === 'end_user';
 
   const items = workspace === 'platform'
     ? (canAccessPlatform ? platformNav : [])
-    : role === 'end_user'
-      ? endUserNav
-      : tenantNav.filter((item) => !item.capability || hasCapability(role, item.capability));
+    : (isEndUser ? endUserTenantNav : tenantNav.filter((item) => !item.capability || hasCapability(role, item.capability)));
   const workspaceTitle = workspace === 'platform'
     ? 'Platform Workspace'
-    : role === 'end_user'
+    : isEndUser
       ? 'Self-Service Workspace'
       : 'Tenant Workspace';
 
@@ -108,9 +107,7 @@ export function AppSidebar({ workspace }: AppSidebarProps) {
       <div className="border-b border-[var(--color-border)] pb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-muted-fg)]">{workspaceTitle}</p>
         <p className="mt-2 text-sm text-[var(--color-muted-fg)]">
-          {role === 'end_user'
-            ? 'Your access is limited to your own extension, voicemail, call history, and SIP settings.'
-            : 'Navigation is permission-driven and workspace-explicit from the first MVP screens.'}
+          Navigation is permission-driven and workspace-explicit from the first MVP screens.
         </p>
       </div>
       <nav className="mt-4 space-y-1">
