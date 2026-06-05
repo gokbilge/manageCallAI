@@ -1,6 +1,6 @@
 # Open Release Blockers
 
-Last updated: 2026-06-03.
+Last updated: 2026-06-05.
 
 Authoritative issue state lives in GitHub. This file records release gates and
 evidence requirements so closed issues are not mistaken for production evidence.
@@ -12,14 +12,11 @@ to the release-candidate commit.
 ## Current Release Stage
 
 ```
-Latest evidenced production tag: v0.3.0 (cut 2026-06-03 from main at 1220e39)
-Historical RC tag:              v0.3.0-rc.1 (commit a157b84, smoke run 26903877370)
-Historical evidence status:     docs/release/release-evidence-v0.3.0.json
-Current tag target:             v0.3.5 prerelease packaging/setup release
-Current evidence status:        production evidence has not been refreshed for v0.3.5
-Next step:                      cut v0.3.5 with explicit non-production wording,
-                                then re-run runtime gates before any production
-                                claim on a later tag.
+Latest evidenced production tag: v0.5.0 (cut 2026-06-05 from main at 6df5fab)
+RC tag:                          v0.5.0-rc.1 (commit 6df5fab, smoke run 26993419772)
+Production evidence:             docs/release/release-evidence-v0.5.0.json
+RC evidence:                     docs/release/release-evidence-v0.5.0-rc.1.json
+Next:                            v0.6.x AI-native differentiation (issues #232–#236)
 ```
 
 ## What closed for v0.3.0 (2026-06-03)
