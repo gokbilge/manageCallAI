@@ -1,4 +1,4 @@
-# Release Checklist
+﻿# Release Checklist
 
 Use this checklist before promoting manageCallAI beyond development or staging.
 
@@ -11,11 +11,19 @@ Use this checklist before promoting manageCallAI beyond development or staging.
 | Public beta candidate | Complete ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `v0.2.0-beta.1` | Beta implementation present and evidenced |
 | Public beta ready | Complete ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `v0.2.0-beta.1` | FreeSWITCH smoke run 26825030902, SDK dry-run, MCP/n8n/webhook evidenced |
 | Production release candidate | Complete ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `v0.3.0-rc.1` | Smoke run 26903877370 on `rc/v0.3.0`, evidence manifest passes `pnpm release:evidence-check` |
-| **Production** | **Historical evidence exists for `v0.3.0`** | Production claims must be re-evidenced for any later tag that changes runtime behavior |
+| **Production** | **Current: `v0.6.0`** (2026-06-05) | All Category A gates re-run per release. Category B gates inherited per `docs/release/evidence-inheritance-policy.md`. |
 
-Latest evidenced production tag: **v0.3.0** (2026-06-03).
-Current tag target: **v0.3.5** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â prerelease packaging and setup/bootstrap release.
-Do not treat `v0.3.0` evidence as automatic proof for `v0.3.5`.
+Latest evidenced production tag: **v0.6.0** (2026-06-05).
+Evidence: `docs/release/release-evidence-v0.6.0.json`
+Product audit: `docs/release/product-release-audit-v0.6.0.md`
+Evidence inheritance policy: `docs/release/evidence-inheritance-policy.md`
+
+Release history:
+- v0.6.0 — AI-native differentiation (2026-06-05)
+- v0.5.0 — operational maturity (2026-06-05)
+- v0.4.0 — competitive baseline (2026-06-05)
+- v0.3.5 — setup/bootstrap/deployment packaging (2026-06-04)
+- v0.3.0 — first full production release (2026-06-03)
 
 ## Stage Gate Separation
 

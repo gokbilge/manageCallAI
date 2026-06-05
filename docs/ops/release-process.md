@@ -7,6 +7,11 @@ gates, building evidence, and promoting to production.
 sequencing constraints imposed by the `Release and RC smoke gate` repository
 ruleset.
 
+**Evidence inheritance:** Some gates may be inherited from prior releases
+when the tested code path has not changed. See
+`docs/release/evidence-inheritance-policy.md` for the full policy, gate
+categories, age limits, and the current inheritance record.
+
 ---
 
 ## Overview
@@ -349,7 +354,18 @@ edit them after the fact:
 gh release edit vX.Y.Z --notes "..."
 ```
 
-### 5.5  Commit the docs updates
+### 5.5  Update release tracking docs
+
+After every production release, update these files to keep them consistent:
+
+- `docs/release/release-checklist.md` — update "Latest evidenced production tag" and release history
+- `docs/planning/open-release-blockers.md` — update Current Release Stage block, add shipped section
+- `docs/release/evidence-inheritance-policy.md` — update the inheritance record table and scheduled re-runs
+
+For each new minor release (0.MINOR.0), also create:
+- `docs/release/product-release-audit-vX.Y.Z.md` — fresh audit replacing the superseded prior audit
+
+### 5.6  Commit the docs updates
 
 README and CHANGELOG are committed files. Put them in a PR and merge:
 
