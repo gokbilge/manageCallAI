@@ -42,7 +42,7 @@ There are three supported setup paths in the repository.
 Use this if you want the fastest path on a fresh server.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gokbilge/manageCallAI/v0.3.5/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/gokbilge/manageCallAI/v0.5.0/install.sh | bash
 cd /opt/managecallai
 vi .env.production
 docker compose -f docker-compose.prod.yml up -d

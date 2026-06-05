@@ -120,7 +120,7 @@ Expected outcome:
 
 Goal: deepen operator trust, end-user completeness, and enterprise operations.
 
-**`v0.5.x` status as of 2026-06-05: 4 of 5 buckets shipped; bucket 5 remains open as issue #228.**
+**`v0.5.x` status as of 2026-06-05: all 5 buckets shipped. Production release v0.5.0 published.**
 
 ### Bucket 1: End-user portal completion
 

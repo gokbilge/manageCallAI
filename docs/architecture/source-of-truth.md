@@ -6,7 +6,8 @@ If another document conflicts with this one, this document wins until an explici
 
 ## 0. Current release posture
 
-Current code line: `v0.3.x`, including the `v0.3.5` setup/bootstrap and deployment-packaging slice in the repository.
+Current code line: `v0.5.x`. Production release v0.5.0 (2026-06-05) — operational maturity.
+Evidence: `docs/release/release-evidence-v0.5.0.json`.
 
 Release stage must be determined from release evidence, not from source inspection alone. When implementation and release claims drift, release claims must defer to:
 

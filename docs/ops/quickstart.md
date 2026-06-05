@@ -1,6 +1,6 @@
 # Quickstart
 
-This is the shortest path to a running `manageCallAI` `v0.3.5` deployment.
+This is the shortest path to a running `manageCallAI` `v0.5.0` deployment.
 
 If you want the full user-facing installation guide, start with
 [setup-guide.md](setup-guide.md).
@@ -14,7 +14,7 @@ If you want the full user-facing installation guide, start with
 ## Path 1: VPS installer
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gokbilge/manageCallAI/v0.3.5/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/gokbilge/manageCallAI/v0.5.0/install.sh | bash
 cd /opt/managecallai
 vi .env.production
 docker compose -f docker-compose.prod.yml up -d
