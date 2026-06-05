@@ -83,13 +83,13 @@ describe('Call Failure Explanation API integration', () => {
     const callId = `test-call-${Date.now()}`;
 
     await db.query(
-      `INSERT INTO call_events (tenant_id, call_id, event_type, source, payload)
-       VALUES ($1, $2, 'CHANNEL_ANSWER', 'freeswitch', '{}')`,
+      `INSERT INTO call_events (tenant_id, call_id, event_type, event_time, source, payload)
+       VALUES ($1, $2, 'CHANNEL_ANSWER', NOW(), 'freeswitch', '{}')`,
       [tenantId, callId],
     );
     await db.query(
-      `INSERT INTO call_events (tenant_id, call_id, event_type, source, payload)
-       VALUES ($1, $2, 'CHANNEL_HANGUP_COMPLETE', 'freeswitch', '{"Hangup-Cause":"NORMAL_CLEARING"}')`,
+      `INSERT INTO call_events (tenant_id, call_id, event_type, event_time, source, payload)
+       VALUES ($1, $2, 'CHANNEL_HANGUP_COMPLETE', NOW(), 'freeswitch', '{"Hangup-Cause":"NORMAL_CLEARING"}')`,
       [tenantId, callId],
     );
 
@@ -111,8 +111,8 @@ describe('Call Failure Explanation API integration', () => {
     const callId = `failed-call-${Date.now()}`;
 
     await db.query(
-      `INSERT INTO call_events (tenant_id, call_id, event_type, source, payload)
-       VALUES ($1, $2, 'outbound_call_failed', 'go-agent', '{"failure_reason":"NO_ROUTE_FOR_PREFIX"}')`,
+      `INSERT INTO call_events (tenant_id, call_id, event_type, event_time, source, payload)
+       VALUES ($1, $2, 'outbound_call_failed', NOW(), 'go-agent', '{"failure_reason":"NO_ROUTE_FOR_PREFIX"}')`,
       [tenantId, callId],
     );
 
@@ -148,8 +148,8 @@ describe('Call Failure Explanation API integration', () => {
     const callId = `isolated-call-${Date.now()}`;
 
     await db.query(
-      `INSERT INTO call_events (tenant_id, call_id, event_type, source, payload)
-       VALUES ($1, $2, 'outbound_call_failed', 'go-agent', '{"failure_reason":"USER_BUSY"}')`,
+      `INSERT INTO call_events (tenant_id, call_id, event_type, event_time, source, payload)
+       VALUES ($1, $2, 'outbound_call_failed', NOW(), 'go-agent', '{"failure_reason":"USER_BUSY"}')`,
       [tenantA, callId],
     );
 
