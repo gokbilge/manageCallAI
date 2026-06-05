@@ -17,13 +17,13 @@ vi.mock('@/lib/auth/use-auth', () => ({
 
 import { useAuth } from '@/lib/auth/use-auth';
 
-function makeSession(role = 'tenant_admin') {
+function makeSession(role = 'tenant_admin', workspaces = ['platform', 'tenant']) {
   return {
     token: 'tok',
     tenantName: 'Acme',
     tenantSlug: 'acme',
     claims: { sub: 'u1', tenant_id: 't1', email: 'u@example.com', role },
-    workspaces: ['tenant'],
+    workspaces,
   };
 }
 
