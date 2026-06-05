@@ -290,3 +290,10 @@ registry.register('UpdateFeatureCodeBody', featureCodes.UpdateFeatureCodeBodySch
 
 // runtime-apply
 registry.register('RuntimeApplyRequest', runtimeApply.RuntimeApplyRequestSchema);
+
+// risk-analysis
+import * as riskAnalysis from './risk-analysis.js';
+registry.register('RiskConcern', riskAnalysis.RiskConcernSchema);
+registry.register('AffectedObject', riskAnalysis.AffectedObjectSchema);
+registry.register('RouteRiskAnalysis', riskAnalysis.RouteRiskAnalysisSchema);
+registry.register('RouteRiskAnalysisRequest', riskAnalysis.RouteRiskAnalysisRequestSchema);

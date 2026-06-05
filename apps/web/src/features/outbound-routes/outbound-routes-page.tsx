@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, Plus, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, CheckCircle, Info, Plus, RefreshCcw, ShieldAlert, XCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
@@ -21,6 +22,21 @@ type OutboundRoute = {
   created_at: string;
 };
 
+type RiskConcern = { code: string; severity: 'info' | 'warning' | 'error'; message: string };
+type AffectedObject = { type: string; id: string; name: string; role: string };
+type RiskAnalysis = {
+  target_type: string;
+  target_id: string;
+  target_name: string;
+  target_status: string;
+  risk_level: 'low' | 'medium' | 'high';
+  affected_objects: AffectedObject[];
+  unresolved_concerns: RiskConcern[];
+  summary: string;
+  is_advisory: true;
+  analyzed_at: string;
+};
+
 type CreateRouteForm = {
   name: string;
   match_prefix: string;
@@ -29,9 +45,84 @@ type CreateRouteForm = {
   start_as_draft: boolean;
 };
 
+function riskLevelColor(level: 'low' | 'medium' | 'high') {
+  if (level === 'high') return 'text-[var(--color-danger)]';
+  if (level === 'medium') return 'text-[var(--color-warning)]';
+  return 'text-[var(--color-success)]';
+}
+
+function severityIcon(severity: 'info' | 'warning' | 'error') {
+  if (severity === 'error') return <XCircle className="size-3.5 shrink-0 text-[var(--color-danger)]" aria-hidden="true" />;
+  if (severity === 'warning') return <AlertTriangle className="size-3.5 shrink-0 text-[var(--color-warning)]" aria-hidden="true" />;
+  return <Info className="size-3.5 shrink-0 text-[var(--color-info)]" aria-hidden="true" />;
+}
+
+function RiskAnalysisPanel({ analysis, onClose }: { analysis: RiskAnalysis; onClose: () => void }) {
+  return (
+    <div
+      className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-4 space-y-3"
+      role="region"
+      aria-label="Risk analysis result"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="size-4 text-[var(--color-muted-fg)]" aria-hidden="true" />
+          <span className="text-sm font-semibold">Risk Analysis</span>
+          <span className={`text-xs font-bold uppercase ${riskLevelColor(analysis.risk_level)}`}>
+            {analysis.risk_level}
+          </span>
+        </div>
+        <button
+          className="text-xs text-[var(--color-muted-fg)] hover:text-[var(--color-fg)]"
+          onClick={onClose}
+          aria-label="Close risk analysis"
+        >
+          ✕
+        </button>
+      </div>
+
+      <p className="text-xs text-[var(--color-muted-fg)]">{analysis.summary}</p>
+
+      {analysis.unresolved_concerns.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-[var(--color-fg)]">Concerns</p>
+          {analysis.unresolved_concerns.map((c) => (
+            <div key={c.code} className="flex items-start gap-1.5 text-xs">
+              {severityIcon(c.severity)}
+              <span className="text-[var(--color-muted-fg)]">{c.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {analysis.unresolved_concerns.length === 0 && (
+        <div className="flex items-center gap-1.5 text-xs text-[var(--color-success)]">
+          <CheckCircle className="size-3.5" aria-hidden="true" />
+          No concerns found — route looks good to publish.
+        </div>
+      )}
+
+      {analysis.affected_objects.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-[var(--color-fg)]">Affected objects</p>
+          {analysis.affected_objects.map((o) => (
+            <div key={`${o.type}-${o.id}`} className="flex items-center gap-2 text-xs text-[var(--color-muted-fg)]">
+              <span className="rounded bg-[var(--color-surface)] border border-[var(--color-border)] px-1.5 py-0.5 font-mono">{o.role}</span>
+              <span>{o.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-[10px] text-[var(--color-muted-fg)]">Advisory only — this analysis does not publish or modify any route.</p>
+    </div>
+  );
+}
+
 export function OutboundRoutesPage() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
+  const [riskTargetId, setRiskTargetId] = useState<string | null>(null);
   const form = useForm<CreateRouteForm>({
     defaultValues: { name: '', match_prefix: '', sip_trunk_id: '', priority: 100, start_as_draft: false },
   });
@@ -42,6 +133,19 @@ export function OutboundRoutesPage() {
     queryFn: async () => {
       const result = await apiRequest<{ data: OutboundRoute[] }>('/outbound-routes', {
         accessToken: session!.token,
+      });
+      return result.data;
+    },
+  });
+
+  const riskQuery = useQuery({
+    queryKey: ['risk-analysis', 'outbound_route', riskTargetId],
+    enabled: Boolean(session?.token && riskTargetId),
+    queryFn: async () => {
+      const result = await apiRequest<{ data: RiskAnalysis }>('/risk-analysis/route', {
+        method: 'POST',
+        accessToken: session!.token,
+        body: JSON.stringify({ target_type: 'outbound_route', target_id: riskTargetId }),
       });
       return result.data;
     },
@@ -102,119 +206,150 @@ export function OutboundRoutesPage() {
         }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
-        <DataCard title="Route Inventory" description="Draft, active, and inactive outbound routes ordered by priority. Publish a draft to start routing live calls.">
-          {routesQuery.isLoading ? (
-            <p className="text-sm text-[var(--color-muted-fg)]">Loading routes...</p>
-          ) : routesQuery.isError ? (
-            <ErrorState
-              title="Could not load outbound routes"
-              message={routesQuery.error instanceof Error ? routesQuery.error.message : 'Unknown error'}
-            />
-          ) : routesQuery.data && routesQuery.data.length > 0 ? (
-            <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)]">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[var(--color-surface-muted)] text-[var(--color-muted-fg)]">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Name</th>
-                    <th className="px-3 py-2 font-medium">Prefix</th>
-                    <th className="px-3 py-2 font-medium">Priority</th>
-                    <th className="px-3 py-2 font-medium">Trunk</th>
-                    <th className="px-3 py-2 font-medium">Rate cap</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 font-medium"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)] bg-[var(--color-surface)]">
-                  {routesQuery.data.map((r) => (
-                    <tr key={r.id}>
-                      <td className="px-3 py-2 font-medium">
-                        <span className="flex items-center gap-2">
-                          <ArrowUpRight className="size-3.5 text-[var(--color-muted-fg)]" aria-hidden="true" />
-                          {r.name}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs">{r.match_prefix}</td>
-                      <td className="px-3 py-2 text-[var(--color-muted-fg)]">{r.priority}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-[var(--color-muted-fg)]">{r.sip_trunk_id.slice(0, 8)}…</td>
-                      <td className="px-3 py-2 text-[var(--color-muted-fg)]">
-                        {r.max_calls_per_minute ? `${r.max_calls_per_minute}/min` : '—'}
-                      </td>
-                      <td className="px-3 py-2">
-                        <StatusBadge status={r.status} />
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          {r.status === 'draft' && (
-                            <Button
-                              variant="secondary"
-                              onClick={() => publishMutation.mutate(r.id)}
-                              disabled={publishMutation.isPending}
-                              aria-label={`Publish ${r.name}`}
-                            >
-                              Publish
-                            </Button>
-                          )}
-                          {r.status === 'active' && (
-                            <Button
-                              variant="secondary"
-                              onClick={() => deactivateMutation.mutate(r.id)}
-                              disabled={deactivateMutation.isPending}
-                              aria-label={`Deactivate ${r.name}`}
-                            >
-                              Deactivate
-                            </Button>
-                          )}
-                        </div>
-                      </td>
+      <div className="space-y-4">
+        <div className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
+          <DataCard title="Route Inventory" description="Draft, active, and inactive outbound routes ordered by priority. Publish a draft to start routing live calls.">
+            {routesQuery.isLoading ? (
+              <p className="text-sm text-[var(--color-muted-fg)]">Loading routes...</p>
+            ) : routesQuery.isError ? (
+              <ErrorState
+                title="Could not load outbound routes"
+                message={routesQuery.error instanceof Error ? routesQuery.error.message : 'Unknown error'}
+              />
+            ) : routesQuery.data && routesQuery.data.length > 0 ? (
+              <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)]">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-[var(--color-surface-muted)] text-[var(--color-muted-fg)]">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">Prefix</th>
+                      <th className="px-3 py-2 font-medium">Priority</th>
+                      <th className="px-3 py-2 font-medium">Trunk</th>
+                      <th className="px-3 py-2 font-medium">Rate cap</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
+                      <th className="px-3 py-2 font-medium"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <EmptyState
-              title="No outbound routes yet"
-              description="Create an outbound route to define how calls are placed through SIP trunks."
-            />
-          )}
-        </DataCard>
-
-        <DataCard title="Create Route" description="Map a dial prefix to a SIP trunk. The backend uses longest-prefix match then priority to select routes.">
-          <form className="space-y-4" onSubmit={form.handleSubmit((v) => createMutation.mutate(v))}>
-            <Field label="Name">
-              <input className={inputClass} {...form.register('name', { required: true })} />
-            </Field>
-            <Field label="Match prefix (e.g. +1 or 001)">
-              <input className={inputClass} placeholder="+1" {...form.register('match_prefix', { required: true })} />
-            </Field>
-            <Field label="SIP trunk ID (UUID)">
-              <input className={inputClass} {...form.register('sip_trunk_id', { required: true })} />
-            </Field>
-            <Field label="Priority (lower = higher priority)">
-              <input className={inputClass} type="number" min={1} max={9999} {...form.register('priority', { required: true, valueAsNumber: true })} />
-            </Field>
-
-            {createMutation.isError ? (
-              <div className="rounded-[var(--radius-md)] border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]">
-                {createMutation.error instanceof ApiError ? createMutation.error.message : 'Could not create route'}
+                  </thead>
+                  <tbody className="divide-y divide-[var(--color-border)] bg-[var(--color-surface)]">
+                    {routesQuery.data.map((r) => (
+                      <tr key={r.id}>
+                        <td className="px-3 py-2 font-medium">
+                          <span className="flex items-center gap-2">
+                            <ArrowUpRight className="size-3.5 text-[var(--color-muted-fg)]" aria-hidden="true" />
+                            {r.name}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs">{r.match_prefix}</td>
+                        <td className="px-3 py-2 text-[var(--color-muted-fg)]">{r.priority}</td>
+                        <td className="px-3 py-2 font-mono text-xs text-[var(--color-muted-fg)]">{r.sip_trunk_id.slice(0, 8)}…</td>
+                        <td className="px-3 py-2 text-[var(--color-muted-fg)]">
+                          {r.max_calls_per_minute ? `${r.max_calls_per_minute}/min` : '—'}
+                        </td>
+                        <td className="px-3 py-2">
+                          <StatusBadge status={r.status} />
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="secondary"
+                              onClick={() => setRiskTargetId(riskTargetId === r.id ? null : r.id)}
+                              aria-label={`Analyze risk for ${r.name}`}
+                              aria-pressed={riskTargetId === r.id}
+                            >
+                              <ShieldAlert className="size-3.5" aria-hidden="true" />
+                              Risk
+                            </Button>
+                            {r.status === 'draft' && (
+                              <Button
+                                variant="secondary"
+                                onClick={() => publishMutation.mutate(r.id)}
+                                disabled={publishMutation.isPending}
+                                aria-label={`Publish ${r.name}`}
+                              >
+                                Publish
+                              </Button>
+                            )}
+                            {r.status === 'active' && (
+                              <Button
+                                variant="secondary"
+                                onClick={() => deactivateMutation.mutate(r.id)}
+                                disabled={deactivateMutation.isPending}
+                                aria-label={`Deactivate ${r.name}`}
+                              >
+                                Deactivate
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ) : null}
+            ) : (
+              <EmptyState
+                title="No outbound routes yet"
+                description="Create an outbound route to define how calls are placed through SIP trunks."
+              />
+            )}
+          </DataCard>
 
-            <label className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm">
-              <input type="checkbox" {...form.register('start_as_draft')} />
-              <div>
-                <p className="font-medium">Create as draft</p>
-                <p className="text-xs text-[var(--color-muted-fg)]">Route won't route calls until published.</p>
-              </div>
-            </label>
+          <DataCard title="Create Route" description="Map a dial prefix to a SIP trunk. The backend uses longest-prefix match then priority to select routes.">
+            <form className="space-y-4" onSubmit={form.handleSubmit((v) => createMutation.mutate(v))}>
+              <Field label="Name">
+                <input className={inputClass} {...form.register('name', { required: true })} />
+              </Field>
+              <Field label="Match prefix (e.g. +1 or 001)">
+                <input className={inputClass} placeholder="+1" {...form.register('match_prefix', { required: true })} />
+              </Field>
+              <Field label="SIP trunk ID (UUID)">
+                <input className={inputClass} {...form.register('sip_trunk_id', { required: true })} />
+              </Field>
+              <Field label="Priority (lower = higher priority)">
+                <input className={inputClass} type="number" min={1} max={9999} {...form.register('priority', { required: true, valueAsNumber: true })} />
+              </Field>
 
-            <Button className="w-full" disabled={createMutation.isPending} type="submit">
-              <Plus className="size-4" aria-hidden="true" />
-              {createMutation.isPending ? 'Creating...' : 'Create Route'}
-            </Button>
-          </form>
-        </DataCard>
+              {createMutation.isError ? (
+                <div className="rounded-[var(--radius-md)] border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]">
+                  {createMutation.error instanceof ApiError ? createMutation.error.message : 'Could not create route'}
+                </div>
+              ) : null}
+
+              <label className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm">
+                <input type="checkbox" {...form.register('start_as_draft')} />
+                <div>
+                  <p className="font-medium">Create as draft</p>
+                  <p className="text-xs text-[var(--color-muted-fg)]">Route won't route calls until published.</p>
+                </div>
+              </label>
+
+              <Button className="w-full" disabled={createMutation.isPending} type="submit">
+                <Plus className="size-4" aria-hidden="true" />
+                {createMutation.isPending ? 'Creating...' : 'Create Route'}
+              </Button>
+            </form>
+          </DataCard>
+        </div>
+
+        {riskTargetId && (
+          <div>
+            {riskQuery.isLoading && (
+              <p className="text-sm text-[var(--color-muted-fg)]" role="status">Analyzing route risk...</p>
+            )}
+            {riskQuery.isError && (
+              <ErrorState
+                title="Risk analysis failed"
+                message={riskQuery.error instanceof Error ? riskQuery.error.message : 'Unknown error'}
+              />
+            )}
+            {riskQuery.data && (
+              <RiskAnalysisPanel
+                analysis={riskQuery.data}
+                onClose={() => setRiskTargetId(null)}
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

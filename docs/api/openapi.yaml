@@ -2117,6 +2117,36 @@ paths:
                 type: string
         default:
           $ref: "#/components/responses/ErrorResponse"
+  /risk-analysis/route:
+    post:
+      tags:
+        - RiskAnalysis
+      summary: Analyze route or trunk risk
+      description: >
+        Advisory-only risk analysis for an outbound route, inbound route, or SIP trunk. Returns affected objects,
+        unresolved concerns, and a risk summary. Never publishes or modifies any object.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RouteRiskAnalysisRequest"
+      responses:
+        "200":
+          description: Risk analysis result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/RouteRiskAnalysis"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -4241,6 +4271,7 @@ components:
               - tenant.security.alerts.manage
               - tenant.fraud_policy.view
               - tenant.fraud_policy.manage
+              - tenant.risk_analysis.run
               - "*"
         created_by:
           type:
@@ -7598,3 +7629,99 @@ components:
         - error_message
         - created_at
         - updated_at
+    RiskConcern:
+      type: object
+      properties:
+        code:
+          type: string
+        severity:
+          type: string
+          enum:
+            - info
+            - warning
+            - error
+        message:
+          type: string
+      required:
+        - code
+        - severity
+        - message
+    AffectedObject:
+      type: object
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        role:
+          type: string
+      required:
+        - type
+        - id
+        - name
+        - role
+    RouteRiskAnalysis:
+      type: object
+      properties:
+        target_type:
+          type: string
+          enum: &a32
+            - outbound_route
+            - inbound_route
+            - sip_trunk
+        target_id:
+          type: string
+          format: uuid
+        target_name:
+          type: string
+        target_status:
+          type: string
+        risk_level:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+        affected_objects:
+          type: array
+          items:
+            $ref: "#/components/schemas/AffectedObject"
+        unresolved_concerns:
+          type: array
+          items:
+            $ref: "#/components/schemas/RiskConcern"
+        summary:
+          type: string
+        is_advisory:
+          type: boolean
+          enum:
+            - true
+        analyzed_at:
+          type: string
+          format: date-time
+      required:
+        - target_type
+        - target_id
+        - target_name
+        - target_status
+        - risk_level
+        - affected_objects
+        - unresolved_concerns
+        - summary
+        - is_advisory
+        - analyzed_at
+    RouteRiskAnalysisRequest:
+      type: object
+      properties:
+        target_type:
+          type: string
+          enum: *a32
+        target_id:
+          type: string
+          format: uuid
+      required:
+        - target_type
+        - target_id

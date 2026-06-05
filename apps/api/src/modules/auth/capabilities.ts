@@ -107,6 +107,9 @@ export const CAPABILITIES = {
   // SLICE-45: telecom fraud policy
   TENANT_FRAUD_POLICY_VIEW: 'tenant.fraud_policy.view',
   TENANT_FRAUD_POLICY_MANAGE: 'tenant.fraud_policy.manage',
+
+  // v0.6: AI-assisted advisory risk analysis (read-only, advisory only)
+  TENANT_RISK_ANALYSIS: 'tenant.risk_analysis.run',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -179,6 +182,7 @@ const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_CHANNEL_ACCOUNTS_MANAGE,
   CAPABILITIES.TENANT_CHANNEL_MESSAGES_SEND,
   CAPABILITIES.TENANT_MEETING_SESSIONS_MANAGE,
+  CAPABILITIES.TENANT_RISK_ANALYSIS,
 ];
 
 const TENANT_CAPABILITIES: readonly Capability[] = [
