@@ -356,14 +356,15 @@ gh release edit vX.Y.Z --notes "..."
 
 ### 5.5  Update release tracking docs
 
-After every production release, update these files to keep them consistent:
+After every production release, update these files in-place:
 
-- `docs/release/release-checklist.md` — update "Latest evidenced production tag" and release history
-- `docs/planning/open-release-blockers.md` — update Current Release Stage block, add shipped section
-- `docs/release/evidence-inheritance-policy.md` — update the inheritance record table and scheduled re-runs
+- `docs/release/product-release-audit.md` — update the header fields, gate summary, and distribution table. This is a **living document**, not a versioned copy. Prior state is in git history.
+- `docs/release/evidence-inheritance-policy.md` — update "Current release", increment ages, add any new gates to "Scheduled re-runs".
+- `docs/release/release-checklist.md` — update "Latest evidenced production tag" and release history.
+- `docs/planning/open-release-blockers.md` — update Current Release Stage block, add shipped section.
+- `install.sh` — update the `VERSION` default to the new release tag.
 
-For each new minor release (0.MINOR.0), also create:
-- `docs/release/product-release-audit-vX.Y.Z.md` — fresh audit replacing the superseded prior audit
+Do not create version-suffixed copies of `product-release-audit.md`. The file's git history is the archive.
 
 ### 5.6  Commit the docs updates
 
@@ -380,6 +381,38 @@ gh workflow run ci.yml --ref chore/vX.Y.Z-post-release-docs
 # merge (disable enforce_admins if needed):
 gh pr merge <PR> --squash --admin ...
 ```
+
+### 5.7  Distribution: make GHCR packages public and run install smoke
+
+After the production tag is pushed and Docker images are published:
+
+**Make packages public** (required once per package, or when new packages are added):
+
+```sh
+# Requires write:packages scope — refresh if needed:
+gh auth refresh -s write:packages
+
+# Then set each package to public via the GitHub web UI:
+# GitHub → Profile → Packages → managecallai-* → Package settings → Change visibility → Public
+```
+
+Packages: `managecallai-api`, `managecallai-web`, `managecallai-mcp`,
+`managecallai-worker`, `managecallai-freeswitch-agent`.
+
+**Run the external install smoke test:**
+
+```sh
+MANAGECALLAI_VERSION=vX.Y.Z ./scripts/external-install-smoke.sh
+```
+
+This script:
+1. Pulls the public GHCR image — verifies distribution is reachable
+2. Starts postgres + api with a minimal `.env`
+3. Waits for `/health` to return `ok`
+4. Verifies `/setup` returns 200 (wizard mode)
+5. Tears down completely
+
+Record the result in `product-release-audit.md` under Distribution readiness.
 
 ---
 

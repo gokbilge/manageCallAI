@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${MANAGECALLAI_VERSION:-v0.3.5}"
+VERSION="${MANAGECALLAI_VERSION:-v0.6.0}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/managecallai}"
 RAW_BASE="https://raw.githubusercontent.com/gokbilge/manageCallAI/${VERSION}"
 

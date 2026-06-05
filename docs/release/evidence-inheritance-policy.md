@@ -117,29 +117,43 @@ behavior in scope for that gate. Specifically:
 
 ---
 
-## Evidence inheritance record for v0.6.0
+## Current release inheritance record
 
-| Gate | Inherited from | Valid because |
-|------|---------------|---------------|
-| Helm lint | v0.5.0-rc.1 | No changes to `charts/` in v0.6 |
-| docker-compose.prod.yml smoke | v0.5.0 | No changes to deployment config in v0.6 |
-| Rotation rehearsal | v0.5.0 | No changes to `apps/api/src/modules/auth/` in v0.6 |
-| Soak / SLO | v0.3.0 | No call-path changes in v0.4, v0.5, or v0.6 |
-| Carrier interop | v0.3.0 | No SIP/trunk/gateway changes in v0.4, v0.5, or v0.6 |
-| Restore rehearsal | v0.5.0 | No new migrations in v0.6 |
+Update this section at each release. The version column is the release being
+cut; the "inherited from" column is where the evidence was originally collected.
 
-Age check at v0.6.0:
-- Soak/SLO from v0.3.0 = 3 minor versions ago. **Exceeds the 2-version limit.**
-  Accepted for v0.6.0 because v0.4, v0.5, v0.6 made no call-path changes.
-  Must re-run before v0.7.0 regardless of code changes.
-- Carrier interop from v0.3.0 = same condition. Must re-run before v0.7.0.
+**Current release: v0.6.0**
+
+| Gate | Inherited from | Valid because | Age (versions) |
+|------|---------------|---------------|----------------|
+| Helm lint | v0.5.0-rc.1 | No `charts/` changes | 1 |
+| docker-compose smoke | v0.5.0 | No deployment changes | 1 |
+| Rotation rehearsal | v0.5.0 | No auth-path changes | 1 |
+| Soak / SLO | v0.3.0 | No call-path changes | 3 — age limit exceeded; **re-run at v0.7.0** |
+| Carrier interop | v0.3.0 | No SIP/gateway changes | 3 — age limit exceeded; **re-run at v0.7.0** |
+| Restore rehearsal | v0.5.0 | No new migrations | 1 |
 
 ---
 
-## Scheduling re-runs
+## Scheduled re-runs
 
-| Evidence | Next required by | Trigger condition |
-|----------|-----------------|-------------------|
-| Full carrier interop | v0.7.0 | Age limit reached |
-| Full soak / SLO | v0.7.0 | Age limit reached |
-| Rotation rehearsal (live) | v0.7.0 | Minor version boundary |
+Gates that have reached or exceeded their age limit must be re-run at the next
+release. Update this table when a gate is re-run or a new age limit is reached.
+
+| Gate | Last run | Age at current release | Re-run required by | Status |
+|------|----------|----------------------|--------------------|--------|
+| Full carrier interop | v0.3.0 | 3 versions | v0.7.0 | Scheduled |
+| Full soak / SLO | v0.3.0 | 3 versions | v0.7.0 | Scheduled |
+| Live rotation rehearsal | v0.5.0 | 1 version | v0.7.0 | Scheduled |
+
+---
+
+## How to update this document for a new release
+
+1. Change "Current release" to the new version.
+2. For each Category B gate: determine whether it should be inherited or re-run.
+   - If inherited: update the "inherited from" version and confirm the condition still holds.
+   - If re-run: move it to the gate summary in `product-release-audit.md` as a fresh run.
+3. Increment the age counter for each inherited gate.
+4. Check each gate against its age limit. Add any exceeding limits to "Scheduled re-runs."
+5. Remove gates from "Scheduled re-runs" once they have been re-run.

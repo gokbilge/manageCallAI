@@ -16,7 +16,7 @@ Latest evidenced production tag: v0.6.0 (cut 2026-06-05 from main at a840863)
 RC tag:                          v0.6.0-rc.1 (commit b3de1de, smoke run 27028911635)
 Production evidence:             docs/release/release-evidence-v0.6.0.json
 RC evidence:                     docs/release/release-evidence-v0.6.0-rc.1.json
-Product audit:                   docs/release/product-release-audit-v0.6.0.md
+Product audit:                   docs/release/product-release-audit.md
 Evidence inheritance policy:     docs/release/evidence-inheritance-policy.md
 Next:                            v0.7.x (not yet planned)
 ```
