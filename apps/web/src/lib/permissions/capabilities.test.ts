@@ -14,6 +14,11 @@ describe('hasCapability', () => {
     expect(hasCapability('tenant_viewer', CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_MANAGE)).toBe(false);
   });
 
+  it('keeps end_user out of admin capabilities', () => {
+    expect(hasCapability('end_user', CAPABILITIES.TENANT_EXTENSIONS_VIEW)).toBe(false);
+    expect(hasCapability('end_user', CAPABILITIES.TENANT_IVR_FLOWS_VIEW)).toBe(false);
+  });
+
   it('allows operators to validate and simulate but not publish, rollback, or manage users', () => {
     expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_VALIDATE)).toBe(true);
     expect(hasCapability('tenant_operator', CAPABILITIES.TENANT_IVR_FLOWS_SIMULATE)).toBe(true);

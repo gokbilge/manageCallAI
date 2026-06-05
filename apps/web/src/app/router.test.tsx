@@ -4,6 +4,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthContext } from '@/lib/auth/auth-context';
 import { RequireCapability } from '@/lib/auth/require-capability';
+import { RequireNonEndUser } from '@/lib/auth/require-non-end-user';
 import { RequireSession } from '@/lib/auth/require-session';
 import { CAPABILITIES } from '@/lib/permissions/capabilities';
 import { getWorkspaceFromPath } from '@/lib/routes/workspace';
@@ -115,6 +116,32 @@ describe('route guards', () => {
   it('tenant_operator can reach operator-level routes', () => {
     renderGuardedRoute(withAuth('tenant_operator'), '/protected', CAPABILITIES.TENANT_IVR_FLOWS_CREATE);
     expect(screen.getByText('Protected page')).toBeInTheDocument();
+  });
+
+  it('end_user is redirected away from tenant admin routes', () => {
+    const authCtx: ContextType<typeof AuthContext> = {
+      session: makeSession('end_user'),
+      isAuthenticated: true,
+      signIn: () => undefined,
+      signOut: () => undefined,
+    };
+
+    render(
+      <MemoryRouter initialEntries={['/tenant/extensions']}>
+        <AuthContext.Provider value={authCtx}>
+          <Routes>
+            <Route element={<RequireSession />}>
+              <Route element={<RequireNonEndUser />}>
+                <Route path="/tenant/extensions" element={<div>Extensions page</div>} />
+              </Route>
+              <Route path="/tenant/me" element={<div>My settings</div>} />
+            </Route>
+          </Routes>
+        </AuthContext.Provider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('My settings')).toBeInTheDocument();
   });
 });
 

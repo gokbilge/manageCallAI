@@ -38,6 +38,10 @@ const SecurityAlertsPage = lazy(() => import('@/features/security-alerts/securit
 const CompliancePage = lazy(() => import('@/features/compliance/compliance-page').then(m => ({ default: m.CompliancePage })));
 const SipTrunksPage = lazy(() => import('@/features/sip-trunks/sip-trunks-page').then(m => ({ default: m.SipTrunksPage })));
 const ParkingLotsPage = lazy(() => import('@/features/parking-lots/parking-lots-page').then(m => ({ default: m.ParkingLotsPage })));
+const AuditLogPage = lazy(() => import('@/features/audit/audit-log-page').then(m => ({ default: m.AuditLogPage })));
+const SelfServicePage = lazy(() => import('@/features/user/self-service-page').then(m => ({ default: m.SelfServicePage })));
+const ExportPage = lazy(() => import('@/features/export/export-page').then(m => ({ default: m.ExportPage })));
+const CarrierHealthPage = lazy(() => import('@/features/integrations/carrier-health-page').then(m => ({ default: m.CarrierHealthPage })));
 
 function PageLoader() {
   return <div className="flex items-center justify-center p-8 text-[var(--color-muted)]" aria-label="Loading" />;
@@ -65,6 +69,7 @@ const router = createBrowserRouter([
             ],
           },
           { path: 'tenant', element: <Navigate to="/tenant/extensions" replace /> },
+          { path: 'tenant/me', element: <Suspense fallback={<PageLoader />}><SelfServicePage /></Suspense> },
           { path: 'tenant/dashboard', element: <TenantDashboardPage /> },
           { path: 'tenant/cockpit', element: <Suspense fallback={<PageLoader />}><ObservabilityCockpitPage /></Suspense> },
           { path: 'tenant/extensions', element: <ExtensionsPage /> },
@@ -178,6 +183,24 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_PARKING_LOTS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/parking-lots', element: <Suspense fallback={<PageLoader />}><ParkingLotsPage /></Suspense> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_AUDIT_LOG_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/audit', element: <Suspense fallback={<PageLoader />}><AuditLogPage /></Suspense> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_EXPORT_RUN} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/export', element: <Suspense fallback={<PageLoader />}><ExportPage /></Suspense> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_SIP_TRUNKS_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/integrations/carrier-health', element: <Suspense fallback={<PageLoader />}><CarrierHealthPage /></Suspense> },
             ],
           },
         ],

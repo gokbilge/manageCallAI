@@ -316,4 +316,121 @@ describe('Self-service API integration', () => {
     expect(cfGet.statusCode).toBe(200);
     expect(cfGet.json<{ data: { call_forward_enabled: boolean } }>().data.call_forward_enabled).toBe(true);
   });
+
+  it('lists voicemail, call history, devices, and resets SIP credentials for the owned extension', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const tenantSlug = `tenant-${suffix}`;
+    const { token: adminToken, tenantId } = await register(suffix);
+    const endUserEmail = `portal-${suffix}@example.com`;
+
+    const createUser = await app.inject({
+      method: 'POST',
+      url: '/api/v1/users',
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: {
+        email: endUserEmail,
+        display_name: 'Portal User',
+        role: 'end_user',
+        password: 'Secret123!',
+      },
+    });
+    expect(createUser.statusCode).toBe(201);
+
+    const endUserRow = await db.query<{ id: string }>(
+      'SELECT id FROM users WHERE tenant_id = $1 AND email = $2',
+      [tenantId, endUserEmail],
+    );
+    const endUserId = endUserRow.rows[0]!.id;
+
+    const extCreate = await app.inject({
+      method: 'POST',
+      url: '/api/v1/extensions',
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { extension_number: '220', display_name: 'Portal Desk', sip_password: 'PhonePass123!' },
+    });
+    expect(extCreate.statusCode).toBe(201);
+    const extensionId = extCreate.json<{ data: { id: string } }>().data.id;
+    await db.query('UPDATE extensions SET owner_user_id = $1 WHERE id = $2 AND tenant_id = $3', [
+      endUserId,
+      extensionId,
+      tenantId,
+    ]);
+
+    const voicemailBox = await db.query<{ id: string }>(
+      `INSERT INTO voicemail_boxes (tenant_id, name, mailbox_number)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [tenantId, `Mailbox ${suffix}`, '220'],
+    );
+    const voicemailBoxId = voicemailBox.rows[0]!.id;
+
+    await db.query(
+      `INSERT INTO voicemail_messages (tenant_id, voicemail_box_id, call_id, storage_path, duration_secs, size_bytes)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [tenantId, voicemailBoxId, 'call-vm-1', 'vm/call-vm-1.wav', 12, 2048],
+    );
+
+    await db.query(
+      `INSERT INTO call_events (tenant_id, call_id, event_type, event_time, source, payload)
+       VALUES ($1, $2, $3, NOW(), $4, $5::jsonb)`,
+      [tenantId, 'call-history-1', 'outbound_call_completed', 'freeswitch-agent', JSON.stringify({
+        direction: 'outbound',
+        from_number: '220',
+        to_number: '+14155550100',
+      })],
+    );
+
+    await db.query(
+      `INSERT INTO extension_registrations
+         (tenant_id, extension_id, extension_number, status, contact_domain, user_agent, registered_at, last_seen_at)
+       VALUES ($1, $2, $3, 'registered', $4, $5, NOW(), NOW())`,
+      [tenantId, extensionId, '220', 'pbx.example.com', 'Linphone'],
+    );
+
+    const policyUpdate = await app.inject({
+      method: 'PUT',
+      url: '/api/v1/tenant/self-service-policy',
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { sip_credential_reset: true },
+    });
+    expect(policyUpdate.statusCode).toBe(200);
+
+    const endUserToken = await login(tenantSlug, endUserEmail);
+
+    const voicemail = await app.inject({
+      method: 'GET',
+      url: '/api/v1/me/voicemail-messages',
+      headers: { authorization: `Bearer ${endUserToken}` },
+    });
+    expect(voicemail.statusCode).toBe(200);
+    expect(voicemail.json<{ data: Array<{ call_id: string }> }>().data[0]?.call_id).toBe('call-vm-1');
+
+    const history = await app.inject({
+      method: 'GET',
+      url: '/api/v1/me/call-history',
+      headers: { authorization: `Bearer ${endUserToken}` },
+    });
+    expect(history.statusCode).toBe(200);
+    expect(history.json<{ data: Array<{ call_id: string }> }>().data[0]?.call_id).toBe('call-history-1');
+
+    const devices = await app.inject({
+      method: 'GET',
+      url: '/api/v1/me/devices',
+      headers: { authorization: `Bearer ${endUserToken}` },
+    });
+    expect(devices.statusCode).toBe(200);
+    expect(devices.json<{ data: Array<{ status: string; user_agent: string | null }> }>().data[0]).toMatchObject({
+      status: 'registered',
+      user_agent: 'Linphone',
+    });
+
+    const reset = await app.inject({
+      method: 'POST',
+      url: '/api/v1/me/sip-credential/reset',
+      headers: { authorization: `Bearer ${endUserToken}` },
+    });
+    expect(reset.statusCode).toBe(200);
+    expect(reset.json<{ data: { sip_password: string; sip_username: string } }>().data.sip_username).toBe('220');
+    expect(reset.json<{ data: { sip_password: string } }>().data.sip_password).toMatch(/^mcai-/);
+  });
 });

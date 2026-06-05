@@ -1,4 +1,4 @@
-export type Role = 'platform_admin' | 'tenant_admin' | 'tenant_operator' | 'tenant_viewer';
+export type Role = 'platform_admin' | 'tenant_admin' | 'tenant_operator' | 'tenant_viewer' | 'end_user';
 
 export const CAPABILITIES = {
   PLATFORM_TENANTS_VIEW: 'platform.tenants.view',
@@ -211,6 +211,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   tenant_admin: TENANT_CAPABILITIES,
   tenant_operator: TENANT_OPERATOR_CAPABILITIES,
   tenant_viewer: TENANT_VIEW_CAPABILITIES,
+  end_user: [],
 };
 
 export function hasCapability(role: Role | string | undefined, capability: Capability): boolean {

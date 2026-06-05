@@ -15,7 +15,7 @@ export function TopBar({ workspace }: TopBarProps) {
 
   function switchWorkspace() {
     if (workspace === 'platform') {
-      navigate('/tenant/extensions');
+      navigate(session?.claims.role === 'end_user' ? '/tenant/me' : '/tenant/extensions');
     } else {
       navigate('/platform');
     }
@@ -40,7 +40,7 @@ export function TopBar({ workspace }: TopBarProps) {
         </div>
         <div className="flex items-center gap-3">
           <WorkspaceBadge workspace={workspace} />
-          {session && (
+          {session && session.workspaces.includes('platform') && (
             <button
               onClick={switchWorkspace}
               className="flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-sm transition-colors hover:bg-[var(--color-border)]"

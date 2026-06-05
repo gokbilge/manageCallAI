@@ -7,9 +7,11 @@ import {
   Building2,
   CalendarClock,
   ClipboardCheck,
+  Download,
   FileAudio,
   GitBranch,
   Hash,
+  HeartPulse,
   LayoutDashboard,
   Mic,
   MonitorPlay,
@@ -19,8 +21,10 @@ import {
   ScanEye,
   PauseCircle,
   Server,
+  Shield,
   ShieldCheck,
   TestTube2,
+  UserCog,
   Users,
   Workflow,
   Zap,
@@ -71,19 +75,32 @@ const tenantNav: NavItem[] = [
   { to: '/tenant/webhooks', label: 'Webhooks', icon: Zap, capability: CAPABILITIES.TENANT_AUTOMATION_WEBHOOKS_VIEW },
   { to: '/tenant/security-alerts', label: 'Security Alerts', icon: AlertTriangle, capability: CAPABILITIES.TENANT_SECURITY_ALERTS_VIEW },
   { to: '/tenant/compliance', label: 'Compliance', icon: ShieldCheck, capability: CAPABILITIES.TENANT_COMPLIANCE_ADMIN },
+  { to: '/tenant/integrations/carrier-health', label: 'Carrier Health', icon: HeartPulse, capability: CAPABILITIES.TENANT_SIP_TRUNKS_VIEW },
   { to: '/tenant/integrations/directory-smoke-test', label: 'Smoke Test', icon: TestTube2 },
   { to: '/tenant/integrations/trunk-test-workflow', label: 'Trunk Test', icon: Activity, capability: CAPABILITIES.TENANT_SIP_TRUNKS_TEST },
+  { to: '/tenant/audit', label: 'Audit Log', icon: Shield, capability: CAPABILITIES.TENANT_AUDIT_LOG_VIEW },
+  { to: '/tenant/export', label: 'Export Data', icon: Download, capability: CAPABILITIES.TENANT_EXPORT_RUN },
+  { to: '/tenant/me', label: 'My Settings', icon: UserCog },
+];
+
+const endUserTenantNav: NavItem[] = [
+  { to: '/tenant/me', label: 'My Settings', icon: UserCog },
 ];
 
 export function AppSidebar({ workspace }: AppSidebarProps) {
   const { session } = useAuth();
   const role = session?.claims.role;
   const canAccessPlatform = hasCapability(role, CAPABILITIES.PLATFORM_TENANTS_VIEW);
+  const isEndUser = role === 'end_user';
 
   const items = workspace === 'platform'
     ? (canAccessPlatform ? platformNav : [])
-    : tenantNav.filter((item) => !item.capability || hasCapability(role, item.capability));
-  const workspaceTitle = workspace === 'platform' ? 'Platform Workspace' : 'Tenant Workspace';
+    : (isEndUser ? endUserTenantNav : tenantNav.filter((item) => !item.capability || hasCapability(role, item.capability)));
+  const workspaceTitle = workspace === 'platform'
+    ? 'Platform Workspace'
+    : isEndUser
+      ? 'Self-Service Workspace'
+      : 'Tenant Workspace';
 
   return (
     <aside className="rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)]">

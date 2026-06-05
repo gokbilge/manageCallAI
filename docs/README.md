@@ -92,6 +92,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [user/admin-tasks.md](user/admin-tasks.md)
   User-facing guide for tenant and platform admin tasks in the web UI.
 
+- [user/end-user-self-service.md](user/end-user-self-service.md)
+  User-facing guide for the end-user self-service workspace at `/tenant/me`.
+
 ## UI Documents
 
 - [ui/UI_ARCHITECTURE.md](ui/UI_ARCHITECTURE.md)
