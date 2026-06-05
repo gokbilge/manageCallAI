@@ -371,8 +371,8 @@ describe('Self-service API integration', () => {
     );
 
     await db.query(
-      `INSERT INTO call_events (tenant_id, call_id, event_type, source, payload)
-       VALUES ($1, $2, $3, $4, $5::jsonb)`,
+      `INSERT INTO call_events (tenant_id, call_id, event_type, event_time, source, payload)
+       VALUES ($1, $2, $3, NOW(), $4, $5::jsonb)`,
       [tenantId, 'call-history-1', 'outbound_call_completed', 'freeswitch-agent', JSON.stringify({
         direction: 'outbound',
         from_number: '220',
