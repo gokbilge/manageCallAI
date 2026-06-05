@@ -33,6 +33,12 @@ Planning baseline for the next feature releases:
 - `v0.5.x` = P1 operational maturity
 - `v0.6.x` = P2 AI-native differentiation
 
+Current queue state:
+
+- `v0.4.x` shipped
+- `v0.5.x` is down to issue `#228`
+- `v0.6.x` planning is prepared, but implementation should treat `#228` as a dependency unless it is split
+
 - [release-buckets-v0.4-v0.6.md](release-buckets-v0.4-v0.6.md)
   Concrete issue buckets for the `v0.4`, `v0.5`, and `v0.6` release train.
 

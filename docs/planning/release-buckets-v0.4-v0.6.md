@@ -1,6 +1,6 @@
 # Release Buckets `v0.4` - `v0.6`
 
-Last updated: 2026-06-04 (v0.4.x bucket status updated).
+Last updated: 2026-06-05 (`v0.5.x` status corrected; `v0.6.x` queue prepared).
 
 This document turns the competitive gap audit into concrete issue buckets for
 the next three planned product releases:
@@ -120,6 +120,8 @@ Expected outcome:
 
 Goal: deepen operator trust, end-user completeness, and enterprise operations.
 
+**`v0.5.x` status as of 2026-06-05: 4 of 5 buckets shipped; bucket 5 remains open as issue #228.**
+
 ### Bucket 1: End-user portal completion
 
 Why:
@@ -190,10 +192,31 @@ Suggested issues:
 Expected outcome:
 - manageCallAI feels more like one coherent safe control plane
 
+Current dependency:
+- issue #228 remains open and should close before `v0.6.x` implementation starts in earnest
+
 ## `v0.6.x` - P2 AI-native differentiation
 
 Goal: deliver buyer-visible AI features that reduce operator work and explain
 risk clearly.
+
+Entry condition:
+- complete the remaining `v0.5.x` lifecycle-consistency work in issue #228 so
+  AI explanations and risk views can rely on broader publish-lifecycle parity
+  across PBX objects
+
+Design constraints:
+- AI is assistive, not autonomous
+- outputs must be grounded in normalized API-owned records
+- any proposed change remains a draft until normal lifecycle checks approve it
+- natural-language queries compile to bounded report filters, not raw SQL or shell
+
+Planned queue:
+- umbrella issue: `#232` `v0.6 AI-native differentiation release queue`
+- bucket issue: `#233` `v0.6: AI call failure explanation`
+- bucket issue: `#234` `v0.6: AI route and change risk analysis`
+- bucket issue: `#235` `v0.6: AI voicemail/call summaries and operator review`
+- bucket issue: `#236` `v0.6: natural-language telecom reporting`
 
 ### Bucket 1: AI incident and failure explanation
 
@@ -284,3 +307,6 @@ Open first for `v0.4.x`:
 Open first for `v0.5.x` only after `v0.4.x` scope is staffed.
 
 Open first for `v0.6.x` only after `v0.5.x` scope is materially underway.
+
+Start implementation for `v0.6.x` only after issue #228 is closed or explicitly
+split so AI risk/explanation work has a stable lifecycle baseline.

@@ -24,12 +24,15 @@ const baseRoute: OutboundRoute = {
   updated_at: new Date(),
 };
 
+const draftRoute: OutboundRoute = { ...baseRoute, id: 'route-draft', status: 'draft' };
+
 function makeRepo(overrides: Partial<OutboundRouteRepository> = {}): OutboundRouteRepository {
   return {
     findAllByTenant: vi.fn().mockResolvedValue([baseRoute]),
     findById: vi.fn().mockResolvedValue(baseRoute),
     create: vi.fn().mockResolvedValue(baseRoute),
     update: vi.fn().mockResolvedValue(baseRoute),
+    publish: vi.fn().mockResolvedValue({ ...baseRoute, status: 'active' }),
     deactivate: vi.fn().mockResolvedValue({ ...baseRoute, status: 'inactive' }),
     findActiveTrunk: vi.fn().mockResolvedValue({ id: TRUNK_A }),
     resolveRouteForNumber: vi.fn().mockResolvedValue({
@@ -139,14 +142,44 @@ describe('OutboundRouteService', () => {
     })).rejects.toThrow(OutboundRouteValidationError);
   });
 
-  it('deactivates a route', async () => {
+  it('deactivates an active route', async () => {
     const result = await service.deactivate('route-1', TENANT);
     expect(result.status).toBe('inactive');
   });
 
+  it('throws ValidationError when deactivating a non-active route', async () => {
+    vi.mocked(repo.findById).mockResolvedValue(draftRoute);
+    await expect(service.deactivate('route-draft', TENANT)).rejects.toThrow(OutboundRouteValidationError);
+  });
+
   it('throws NotFoundError when deactivating missing route', async () => {
-    vi.mocked(repo.deactivate).mockResolvedValue(null);
+    vi.mocked(repo.findById).mockResolvedValue(null);
     await expect(service.deactivate('missing', TENANT)).rejects.toThrow(OutboundRouteNotFoundError);
+  });
+
+  it('publishes a draft route', async () => {
+    vi.mocked(repo.findById).mockResolvedValue(draftRoute);
+    const result = await service.publish('route-draft', TENANT);
+    expect(result.status).toBe('active');
+    expect(repo.publish).toHaveBeenCalledWith('route-draft', TENANT);
+  });
+
+  it('throws ValidationError when publishing a non-draft route', async () => {
+    await expect(service.publish('route-1', TENANT)).rejects.toThrow(OutboundRouteValidationError);
+  });
+
+  it('throws NotFoundError when publishing missing route', async () => {
+    vi.mocked(repo.findById).mockResolvedValue(null);
+    await expect(service.publish('missing', TENANT)).rejects.toThrow(OutboundRouteNotFoundError);
+  });
+
+  it('creates a route as draft when start_as_draft is true', async () => {
+    vi.mocked(repo.create).mockResolvedValue(draftRoute);
+    const result = await service.create({
+      tenant_id: TENANT, name: 'Draft Route', match_prefix: '+44', sip_trunk_id: TRUNK_A, start_as_draft: true,
+    });
+    expect(result.status).toBe('draft');
+    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ start_as_draft: true }));
   });
 
   it('resolves a route for a dial number', async () => {

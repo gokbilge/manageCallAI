@@ -1,6 +1,6 @@
 # Competitive Gap Analysis
 
-Last updated: 2026-06-04.
+Last updated: 2026-06-05.
 
 This document evaluates `manageCallAI` against the requirements for becoming a
 hard competitor to mature PBX products such as FusionPBX, FreePBX, 3CX, and
@@ -56,6 +56,13 @@ This mapping is intentionally product-first:
 - `v0.4.x` closes the most visible table-stakes and operator workflow gaps
 - `v0.5.x` deepens operational maturity and end-user completeness
 - `v0.6.x` delivers the clearest AI-native differentiators
+
+Current queue state:
+
+- `v0.4.x` buckets are shipped
+- `v0.5.x` is down to issue `#228` for broader lifecycle consistency
+- `v0.6.x` should be staffed now as a design and issue queue, but it still
+  depends on the `v0.5.x` lifecycle baseline
 
 ## PBX completeness audit
 
@@ -239,9 +246,14 @@ Release target: `v0.5.x`
 ### P2
 
 1. AI call failure explanation
-2. AI route risk analysis
-3. AI voicemail/call summaries
-4. Natural-language reporting
+2. AI route and change risk analysis
+3. AI voicemail/call summaries and operator review
+4. Natural-language telecom reporting
+
+Dependency:
+
+- close or explicitly split `#228` so AI risk and explanation features can rely
+  on broader publish-lifecycle consistency across PBX objects
 
 Release target: `v0.6.x`
 

@@ -2,7 +2,7 @@ export type OutboundRoute = {
   id: string;
   tenant_id: string;
   name: string;
-  status: 'active' | 'inactive';
+  status: 'draft' | 'active' | 'inactive';
   match_prefix: string;
   priority: number;
   sip_trunk_id: string;
@@ -26,6 +26,7 @@ export type CreateOutboundRouteInput = {
   allowed_caller_id_numbers_json?: string[] | null;
   allowed_destination_prefixes_json?: string[] | null;
   blocked_destination_prefixes_json?: string[] | null;
+  start_as_draft?: boolean;
 };
 
 export type UpdateOutboundRouteInput = {
@@ -38,7 +39,7 @@ export type UpdateOutboundRouteInput = {
   allowed_caller_id_numbers_json?: string[] | null;
   allowed_destination_prefixes_json?: string[] | null;
   blocked_destination_prefixes_json?: string[] | null;
-  status?: 'active' | 'inactive';
+  status?: 'draft' | 'active' | 'inactive';
 };
 
 export type ResolvedOutboundRoute = {

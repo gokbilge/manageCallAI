@@ -244,4 +244,83 @@ describe('ConferenceRoomsPage', () => {
     });
     expect(screen.getByText(/already in use for this tenant/i)).toBeInTheDocument();
   });
+
+  it('shows live badge on selected room when participants are present', async () => {
+    vi.mocked(apiRequest).mockImplementation(async (path) => {
+      if (path === '/conference-rooms') return { data: [conferenceRoom] };
+      if (path === '/conference-rooms/room-1/participants') return { data: [participant] };
+      throw new Error(`Unexpected: ${path}`);
+    });
+    renderWithProviders(<ConferenceRoomsPage />);
+    await screen.findByText('Board Room');
+    await waitFor(() => {
+      expect(screen.getByText('1 live')).toBeInTheDocument();
+    });
+  });
+
+  it('shows active-participant warning before disable (singular) and cancels', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    vi.mocked(apiRequest).mockImplementation(async (path) => {
+      if (path === '/conference-rooms') return { data: [conferenceRoom] };
+      if (path === '/conference-rooms/room-1/participants') return { data: [participant] };
+      throw new Error(`Unexpected: ${path}`);
+    });
+    renderWithProviders(<ConferenceRoomsPage />);
+    await screen.findByText('Board Room');
+    // wait for participant data to load so activeParticipants.length > 0
+    await screen.findByText('1 active participant');
+    fireEvent.click(screen.getByRole('button', { name: 'Disable' }));
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('1 participant is currently in this room'));
+    expect(vi.mocked(apiRequest)).not.toHaveBeenCalledWith(
+      expect.stringContaining('/disable'),
+      expect.anything(),
+    );
+    confirmSpy.mockRestore();
+  });
+
+  it('shows active-participant warning before disable (plural) and proceeds', async () => {
+    const secondParticipant = { ...participant, id: 'part-2', call_id: 'call-456' };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.mocked(apiRequest).mockImplementation(async (path, options) => {
+      if (path === '/conference-rooms') return { data: [conferenceRoom] };
+      if (path === '/conference-rooms/room-1/participants') return { data: [participant, secondParticipant] };
+      if (path === '/conference-rooms/room-1/disable' && options?.method === 'POST') {
+        return { data: { ...conferenceRoom, status: 'disabled' } };
+      }
+      throw new Error(`Unexpected: ${options?.method ?? 'GET'} ${path}`);
+    });
+    renderWithProviders(<ConferenceRoomsPage />);
+    await screen.findByText('Board Room');
+    // wait for participant data to load so activeParticipants.length > 0
+    await screen.findByText('2 active participants');
+    fireEvent.click(screen.getByRole('button', { name: 'Disable' }));
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('2 participants are currently in this room'));
+    await waitFor(() => {
+      expect(vi.mocked(apiRequest)).toHaveBeenCalledWith(
+        '/conference-rooms/room-1/disable',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+    confirmSpy.mockRestore();
+  });
+
+  it('shows active-participant warning before delete and cancels', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    vi.mocked(apiRequest).mockImplementation(async (path) => {
+      if (path === '/conference-rooms') return { data: [conferenceRoom] };
+      if (path === '/conference-rooms/room-1/participants') return { data: [participant] };
+      throw new Error(`Unexpected: ${path}`);
+    });
+    renderWithProviders(<ConferenceRoomsPage />);
+    await screen.findByText('Board Room');
+    // wait for participant data to load so activeParticipants.length > 0
+    await screen.findByText('1 active participant');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('currently in this room'));
+    expect(vi.mocked(apiRequest)).not.toHaveBeenCalledWith(
+      expect.stringContaining('/room-1'),
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    confirmSpy.mockRestore();
+  });
 });

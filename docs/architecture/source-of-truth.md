@@ -191,3 +191,33 @@ After successful completion, the setup surface is removed.
 `docs/api/openapi.yaml` and `packages/sdk/src/generated/schema.ts` are generated artifacts and must stay aligned with the contracts and architecture.
 
 OpenAPI is the canonical machine-readable client artifact. It does not override architecture or domain intent.
+
+## 10. Planned `v0.6.x` AI-native differentiation guardrails
+
+The next planned product release after the `v0.5.x` operational-maturity lane is
+`v0.6.x`, focused on buyer-visible AI assistance for operators.
+
+That release is constrained by these rules:
+
+- AI is assistive, not autonomous.
+- AI may explain, summarize, classify, and propose drafts.
+- AI may not publish, reload, route, or mutate live call behavior outside the
+  existing validation, simulation, approval, publish, and rollback lifecycle.
+- AI outputs must be tenant-scoped, capability-gated, audited, and replay-safe.
+- AI explanations must be grounded in normalized records already owned by the
+  API, such as call events, runtime status snapshots, recordings, validation
+  results, simulation results, and publish history.
+- AI tools must not read raw FreeSWITCH runtime internals directly when the API
+  already provides a normalized business-level view.
+- Natural-language reporting must compile to bounded domain queries instead of
+  ad hoc SQL, shell, or runtime commands.
+
+Planned `v0.6.x` operator outcomes:
+
+- call failure explanation
+- route and change risk analysis
+- voicemail and call summaries
+- natural-language reporting over normalized telecom records
+
+These are product-planning targets, not claims that the current code line
+already ships those features.

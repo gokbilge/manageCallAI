@@ -65,6 +65,9 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [design/software-design.md](design/software-design.md)
   Software Design Description covering modules, services, domain model responsibilities, workflows, interfaces, and design decisions.
 
+- [design/ai-operator-workflows.md](design/ai-operator-workflows.md)
+  Planned `v0.6.x` AI-assisted operator workflows, constraints, service boundaries, and acceptance bar.
+
 - [design/setup-bootstrap.md](design/setup-bootstrap.md)
   First-run setup, headless bootstrap, and deployment packaging design.
 

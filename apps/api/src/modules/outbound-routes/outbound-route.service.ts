@@ -137,7 +137,23 @@ export class OutboundRouteService {
     return r;
   }
 
+  async publish(id: string, tenantId: string): Promise<OutboundRoute> {
+    const existing = await this.repo.findById(id, tenantId);
+    if (!existing) throw new OutboundRouteNotFoundError(id);
+    if (existing.status !== 'draft') {
+      throw new OutboundRouteValidationError(`Only draft routes can be published. Current status: ${existing.status}`);
+    }
+    const r = await this.repo.publish(id, tenantId);
+    if (!r) throw new OutboundRouteNotFoundError(id);
+    return r;
+  }
+
   async deactivate(id: string, tenantId: string): Promise<OutboundRoute> {
+    const existing = await this.repo.findById(id, tenantId);
+    if (!existing) throw new OutboundRouteNotFoundError(id);
+    if (existing.status !== 'active') {
+      throw new OutboundRouteValidationError(`Only active routes can be deactivated. Current status: ${existing.status}`);
+    }
     const r = await this.repo.deactivate(id, tenantId);
     if (!r) throw new OutboundRouteNotFoundError(id);
     return r;

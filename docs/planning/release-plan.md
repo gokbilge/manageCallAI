@@ -138,6 +138,30 @@ Release intent:
   operations, and carrier/operator maturity
 - `v0.6.x`: deliver the most important AI-native operator differentiators
 
+## 3.2 Current release queue state
+
+As of 2026-06-05:
+
+- `v0.4.x` competitive-baseline buckets are shipped
+- `v0.5.x` operational-maturity buckets `#224` through `#227` are shipped
+- `v0.5.x` bucket `#228` remains open for broader lifecycle consistency
+
+That means `v0.6.x` planning can be prepared now, but `v0.6.x` implementation
+should assume `#228` as a dependency unless that work is explicitly split.
+
+## 3.3 `v0.6.x` execution thesis
+
+`v0.6.x` should make AI visible where operators already lose time today:
+
+1. explain failed calls using normalized runtime and route facts
+2. explain route and publish risk before live changes
+3. summarize voicemail and call-review artifacts
+4. make bounded telecom reporting queryable in natural language
+
+`v0.6.x` should not be used to introduce AI-controlled live mutation paths. The
+existing draft, validate, simulate, approve, publish, and rollback lifecycle
+remains the only path to live telecom change.
+
 ## 4. Slice Map
 
 ```text
