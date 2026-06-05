@@ -231,6 +231,61 @@ describe('RecordingService', () => {
       expect(review.completed_at).toBe('2026-06-05T08:05:00.000Z');
       expect(review.provider_metadata).toEqual({});
     });
+
+    it('returns unavailable for call review when no linked recording exists', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.findLatestByCallId).mockResolvedValueOnce(null);
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForCall('call-missing', 'tenant-1', {
+        canViewTranscript: false,
+      });
+
+      expect(review).toMatchObject({
+        resource_type: 'call',
+        resource_id: 'call-missing',
+        status: 'unavailable',
+        reason: 'no_linked_recording',
+        transcript_access: 'restricted',
+      });
+    });
+
+    it('returns voicemail review using the linked recording and compliance gate', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.findLatestByCallId).mockResolvedValueOnce(baseRecording);
+      vi.mocked(repo.findLatestAnalysisRequestForRecording).mockResolvedValueOnce({
+        id: 'analysis-2',
+        tenant_id: 'tenant-1',
+        recording_id: 'rec-1',
+        requested_outputs: ['summary'],
+        language_hint: null,
+        status: 'completed',
+        processor_id: 'processor-2',
+        claimed_at: '2026-06-05T09:00:00Z',
+        language: 'en',
+        transcript_text: 'Transcript hidden',
+        summary_text: 'Voicemail summary',
+        error_message: null,
+        provider_metadata: { source: 'test' },
+        metadata: {},
+        created_at: '2026-06-05T09:00:00Z',
+        completed_at: '2026-06-05T09:01:00Z',
+      });
+      const service = new RecordingService(repo);
+
+      const review = await service.getSummaryReviewForVoicemail('vm-1', 'call-abc', 'tenant-1', {
+        canViewTranscript: false,
+      });
+
+      expect(review).toMatchObject({
+        resource_type: 'voicemail',
+        resource_id: 'vm-1',
+        linked_recording_id: 'rec-1',
+        summary_text: 'Voicemail summary',
+        transcript_text: null,
+        transcript_access: 'restricted',
+      });
+    });
   });
 
   // ── SLICE-47: Retention policy ────────────────────────────────────────────
