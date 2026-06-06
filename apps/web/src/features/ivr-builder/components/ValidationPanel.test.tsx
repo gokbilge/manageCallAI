@@ -15,6 +15,7 @@ function makeVersion() {
     validated_at: null,
     simulated_at: null,
     published_at: null,
+    metadata: {},
   };
 }
 
