@@ -1,0 +1,63 @@
+{
+  "release_version": "v0.6.2-rc.1",
+  "commit_sha": "15a206483048592505f010cae62d8a0c82f3f482",
+  "generated_at": "2026-06-06T14:30:00Z",
+  "stage": "rc",
+
+  "notes": "Combined v0.6.1 AI-expansion + v0.6.2 end-user comms release. v0.6.1 was not cut as a separate release. All 17 feature issues closed. FreeSWITCH smoke passed on enlogy@10.0.0.32. CI, CodeQL, and coverage all green at RC SHA.",
+
+  "scope": {
+    "v0_6_1_ai_expansion": {
+      "issues": [
+        "#252 — provider-backed AI policy framework",
+        "#253 — natural-language IVR generation",
+        "#254 — AI-assisted IVR and route editing with structured diffs",
+        "#255/#257 — recording AI lifecycle and clean",
+        "#256 — semantic recording and transcript search",
+        "#258 — AI route and fraud-policy recommendation engine",
+        "#259 — incident investigation assistant",
+        "#260 — carrier configuration assistant"
+      ]
+    },
+    "v0_6_2_end_user_comms": {
+      "issues": [
+        "#263 — softphone provisioning and onboarding flow",
+        "#264 — QR-code SIP client provisioning",
+        "#265 — device provisioning UX",
+        "#266 — mobile-friendly end-user call controls",
+        "#267 — presence and status model",
+        "#268 — contacts directory for end users",
+        "#269 — click-to-call UX from end-user surfaces",
+        "#270 — push-notification integration guidance and delivery plan"
+      ]
+    }
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27060589534",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27060589538",
+  "coverage_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27060589530",
+  "freeswitch_smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27060704683",
+
+  "db_migrations_since_v0_6_0": [
+    "0055_ai_provider_policy.sql",
+    "0056_ai_audit_and_approval_lineage.sql",
+    "0057_presence.sql",
+    "0058_push_notification_tokens.sql",
+    "0059_recording_analysis_provider_policy.sql",
+    "0060_ivr_ai_generation_and_patches.sql",
+    "0061_ai_recommendations_and_investigation.sql",
+    "0062_recording_search_fts_index.sql"
+  ],
+
+  "helm_lint": "Inherited from v0.6.0. No Helm chart changes in v0.6.1 or v0.6.2. PASSED.",
+  "docker_compose_prod_smoke": "Inherited from v0.6.0. No deployment or runtime boundary changes.",
+  "rotation_rehearsal": {
+    "status": "inherited",
+    "note": "Inherited from v0.6.0. No auth middleware or token-handling changes."
+  },
+
+  "known_gaps_before_production": [
+    "docker-compose.prod.yml smoke with actual GHCR rc.1 images (requires images to publish after tag)",
+    "Live rotation rehearsal (pnpm rotation:rehearsal — not just --check-config)"
+  ]
+}
