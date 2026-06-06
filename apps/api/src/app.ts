@@ -62,6 +62,8 @@ import { callFailureExplanationController } from './modules/call-failure-explana
 import { platformAiPolicyController, tenantAiPolicyController } from './modules/ai-policy/ai-policy.controller.js';
 import { aiRecommendationsController } from './modules/ai-recommendations/ai-recommendations.controller.js';
 import { incidentInvestigationController } from './modules/incident-investigation/incident-investigation.controller.js';
+import { agentProfileController, agentWorkspaceMeController, queueAgentAvailabilityController } from './modules/agent-workspace/agent-workspace.controller.js';
+import { skillController, agentProfileSkillController, queueSkillController } from './modules/skills/skills.controller.js';
 import { setupController } from './modules/setup/setup.controller.js';
 import { db } from './db/client.js';
 import { registerErrorHandler } from './errors/index.js';
@@ -118,6 +120,13 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(approvalController, { prefix: '/api/v1/approvals' });
   app.register(policiesController, { prefix: '/api/v1/policies' });
   app.register(scheduleController, { prefix: '/api/v1/schedules' });
+  // Contact-center: agent workspace (#271), availability (#272), skills-based routing (#273)
+  app.register(agentProfileController, { prefix: '/api/v1/agent-profiles' });
+  app.register(agentProfileSkillController, { prefix: '/api/v1/agent-profiles' });
+  app.register(agentWorkspaceMeController, { prefix: '/api/v1/me/agent-workspace' });
+  app.register(queueAgentAvailabilityController, { prefix: '/api/v1/queues' });
+  app.register(skillController, { prefix: '/api/v1/skills' });
+  app.register(queueSkillController, { prefix: '/api/v1/queues' });
 }
 
 /**
