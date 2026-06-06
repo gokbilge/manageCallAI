@@ -37,6 +37,21 @@ It describes the primary entities, their responsibilities, key relationships, an
 - ConferenceRoom
 - EndUserSelfServicePolicy
 
+Planned enterprise-model additions tracked in `#300` through `#315`:
+
+- NumberingPlan
+- NumberingPlanRule
+- CallingPolicy
+- Site
+- Location
+- NetworkZone
+- TrunkGroup
+- RouteList
+- Device
+- LineAppearance
+- ScheduleGroup
+- HolidayCalendar
+
 ### 3.3 Lifecycle and governance
 
 - FlowVersion
@@ -119,6 +134,11 @@ Invariants:
 - `extensionNumber` is unique within tenant scope
 - `callForwardTarget` is blank when call forwarding is disabled
 
+Planned evolution:
+
+- `#308` through `#310` split extension relationships more explicitly from user
+  identity and device ownership
+
 ### 5.2 SIPTrunk
 
 Represents an external telephony connectivity definition used by FreeSWITCH.
@@ -136,6 +156,11 @@ Represents logic for handling inbound calls from a number or trunk context.
 ### 5.5 OutboundRoute
 
 Represents policy-controlled outbound dialing behavior.
+
+Planned evolution:
+
+- `#300` through `#307` move outbound decisioning onto explicit numbering,
+  calling-policy, site, and trunk-group concepts instead of route-only logic
 
 ### 5.6 PromptAsset
 
@@ -160,6 +185,36 @@ Represents a tenant-scoped conference bridge definition.
 ### 5.11 EndUserSelfServicePolicy
 
 Represents tenant policy controlling what an `end_user` can change on their own extension.
+
+## 5.12 Planned enterprise entities
+
+### NumberingPlan and NumberingPlanRule
+
+Planned in `#300` and `#302` to model enterprise dialing intent explicitly.
+
+### CallingPolicy
+
+Planned in `#301` and `#302` to model outbound permissions and exception rules
+separately from route records.
+
+### Site, Location, and NetworkZone
+
+Planned in `#303` and `#304` to model enterprise topology, timezone, language,
+and emergency defaults.
+
+### TrunkGroup and RouteList
+
+Planned in `#305` through `#307` to model failover-aware carrier selection.
+
+### Device and LineAppearance
+
+Planned in `#308` through `#315` to separate endpoint ownership and device
+presentation from the flat extension-centric baseline.
+
+### ScheduleGroup and HolidayCalendar
+
+Planned in `#311` through `#313` to represent enterprise business-hours,
+closure, and override behavior.
 
 ## 6. Lifecycle and operational entities
 

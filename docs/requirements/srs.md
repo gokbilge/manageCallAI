@@ -57,6 +57,8 @@ This creates steep onboarding cost, unsafe automation surfaces, weak change mana
 - Support safe creation and lifecycle management of IVR and routing configuration
 - Make configuration changes validated, auditable, and reversible
 - Expose a stable abstraction equally usable by UI, API, workflows, and AI agents
+- Support later enterprise PBX model expansion without abandoning the same
+  desired-state, validation, simulation, approval, publish, and rollback model
 
 ### 2.4 Non-Goals
 
@@ -170,6 +172,30 @@ This creates steep onboarding cost, unsafe automation surfaces, weak change mana
 - FR-37: The system shall store call timeline and event data for inspection.
 - FR-38: The system shall provide visibility into validation, simulation, publish, and rollback outcomes.
 
+### 4.14 Planned Enterprise Model Expansion
+
+- FR-39: The system shall support first-class numbering plans, numbering rules,
+  and numbering assignments for enterprise dialing intent.
+- FR-40: The system shall support calling policies that model outbound
+  permissions and restrictions independently of direct route records.
+- FR-41: The system shall support explicit site, location, and network-zone
+  objects with tenant-scoped ownership.
+- FR-42: The system shall support trunk groups and route lists for failover-aware
+  carrier selection.
+- FR-43: The system shall support explicit user, extension, and device
+  separation for enterprise endpoint modeling.
+- FR-44: The system shall support enterprise schedule groups, holiday calendars,
+  and temporary overrides with expiry.
+- FR-45: The system shall support line-appearance modeling as groundwork for
+  later shared-line and executive workflows.
+
+Planned release mapping:
+
+- `v0.6.3` through `v0.6.8` implement the core enterprise model (`#300`-`#315`)
+- `v0.7.0` through `v0.7.4` stabilize and productize that model (`#316`-`#330`)
+- `v0.8.x` documents migration-analysis and source mappings before any importer
+  lane (`#331`-`#334`)
+
 ## 5. Non-Functional Requirements
 
 ### 5.1 Safety
@@ -202,6 +228,8 @@ This creates steep onboarding cost, unsafe automation surfaces, weak change mana
 ### 5.6 Extensibility
 
 - NFR-13: The design should allow future multi-tenant isolation, richer policy engines, and broader workflow integration without replacing the core domain model.
+- NFR-14: Future migration tooling shall build on the control-plane model rather
+  than forcing importer-first approximations of unsupported enterprise concepts.
 
 ## 6. Constraints
 
@@ -270,3 +298,5 @@ Preferred implementation order:
 - `../architecture/source-of-truth.md` defines product intent and architectural boundaries.
 - `../architecture/overview.md` defines runtime structure and integration topology.
 - `../design/software-design.md` defines the internal software decomposition and major design choices.
+- `../planning/enterprise-migration-release-train.md` defines the phased
+  enterprise-model, migration-analysis, and importer roadmap (`#300`-`#339`).
