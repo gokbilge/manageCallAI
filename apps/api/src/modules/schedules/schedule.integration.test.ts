@@ -161,6 +161,157 @@ describe('Schedules API integration', () => {
     expect(cancelOverride.json<{ data: { lifecycle_state: string } }>().data.lifecycle_state).toBe('cancelled');
   });
 
+  it('lists schedule assets, syncs holiday calendar updates, and deactivates schedules', async () => {
+    const { token } = await register(randomUUID().slice(0, 8));
+
+    const createGroup = await app.inject({
+      method: 'POST',
+      url: '/api/v1/schedules/groups',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Operations',
+        weekly_rules_json: [
+          { day_of_week: 1, open_time: '09:00', close_time: '17:00' },
+        ],
+      },
+    });
+    expect(createGroup.statusCode).toBe(201);
+    const groupId = createGroup.json<{ data: { id: string } }>().data.id;
+
+    const createCalendar = await app.inject({
+      method: 'POST',
+      url: '/api/v1/schedules/holiday-calendars',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Regional Holidays',
+        entries_json: [
+          { date: '2026-11-26', closed: true, name: 'Thanksgiving' },
+        ],
+      },
+    });
+    expect(createCalendar.statusCode).toBe(201);
+    const calendarId = createCalendar.json<{ data: { id: string } }>().data.id;
+
+    const createSchedule = await app.inject({
+      method: 'POST',
+      url: '/api/v1/schedules',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Regional Support',
+        timezone: 'America/New_York',
+        schedule_group_id: groupId,
+        holiday_calendar_id: calendarId,
+      },
+    });
+    expect(createSchedule.statusCode).toBe(201);
+    const scheduleId = createSchedule.json<{ data: { id: string } }>().data.id;
+
+    const listGroups = await app.inject({
+      method: 'GET',
+      url: '/api/v1/schedules/groups',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(listGroups.statusCode).toBe(200);
+    expect(listGroups.json<{ data: Array<{ id: string }> }>().data.map((group) => group.id)).toContain(groupId);
+
+    const listCalendars = await app.inject({
+      method: 'GET',
+      url: '/api/v1/schedules/holiday-calendars',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(listCalendars.statusCode).toBe(200);
+    expect(listCalendars.json<{ data: Array<{ id: string }> }>().data.map((calendar) => calendar.id)).toContain(calendarId);
+
+    const patchCalendar = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/schedules/holiday-calendars/${calendarId}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        entries_json: [
+          { date: '2026-11-26', closed: true, name: 'Thanksgiving' },
+          { date: '2026-12-24', closed: false, open_time: '10:00', close_time: '14:00', name: 'Christmas Eve' },
+        ],
+      },
+    });
+    expect(patchCalendar.statusCode).toBe(200);
+
+    const getSchedule = await app.inject({
+      method: 'GET',
+      url: `/api/v1/schedules/${scheduleId}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(getSchedule.statusCode).toBe(200);
+    expect(getSchedule.json<{ data: { holiday_overrides_json: unknown[] } }>().data.holiday_overrides_json).toHaveLength(2);
+
+    const deactivateSchedule = await app.inject({
+      method: 'POST',
+      url: `/api/v1/schedules/${scheduleId}/deactivate`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(deactivateSchedule.statusCode).toBe(200);
+    expect(deactivateSchedule.json<{ data: { status: string } }>().data.status).toBe('inactive');
+  });
+
+  it('rejects conflicting linked schedule inputs and invalid custom-hour overrides', async () => {
+    const { token } = await register(randomUUID().slice(0, 8));
+
+    const createGroup = await app.inject({
+      method: 'POST',
+      url: '/api/v1/schedules/groups',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Linked Rules',
+        weekly_rules_json: [
+          { day_of_week: 1, open_time: '09:00', close_time: '17:00' },
+        ],
+      },
+    });
+    expect(createGroup.statusCode).toBe(201);
+    const groupId = createGroup.json<{ data: { id: string } }>().data.id;
+
+    const invalidSchedule = await app.inject({
+      method: 'POST',
+      url: '/api/v1/schedules',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Broken Schedule',
+        timezone: 'UTC',
+        schedule_group_id: groupId,
+        weekly_rules_json: [
+          { day_of_week: 2, open_time: '08:00', close_time: '16:00' },
+        ],
+      },
+    });
+    expect(invalidSchedule.statusCode).toBe(400);
+
+    const createSchedule = await app.inject({
+      method: 'POST',
+      url: '/api/v1/schedules',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Primary Support',
+        timezone: 'UTC',
+      },
+    });
+    expect(createSchedule.statusCode).toBe(201);
+    const scheduleId = createSchedule.json<{ data: { id: string } }>().data.id;
+
+    const invalidOverride = await app.inject({
+      method: 'POST',
+      url: `/api/v1/schedules/${scheduleId}/overrides`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        name: 'Bad custom hours',
+        mode: 'custom_hours',
+        open_time: '18:00',
+        close_time: '09:00',
+        starts_at: '2026-06-10T10:00:00.000Z',
+        ends_at: '2026-06-10T12:00:00.000Z',
+      },
+    });
+    expect(invalidOverride.statusCode).toBe(400);
+  });
+
   it('rejects overlapping overrides for the same schedule', async () => {
     const { token } = await register(randomUUID().slice(0, 8));
 
