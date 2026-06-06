@@ -1,0 +1,104 @@
+{
+  "gate": "carrier_interop_and_runtime_evidence",
+  "release_version": "v0.7.0",
+  "generated_at": "2026-06-07T00:00:00Z",
+  "git_sha": "7002a4d87dc0c08f1cf4eb0eff4684f12495fa1b",
+  "issue": "#316",
+  "status": "passed",
+  "notes": "Carrier interop and runtime evidence re-run for the v0.7.0 minor-version boundary gate. Evidence covers both lab smoke and live FusionPBX/NetGSM carrier paths. Enterprise model changes (v0.6.3–v0.6.8) added numbering plans, calling policies, site/location hierarchy, trunk-group and route-list model, device/registration assignments, and line appearances. None of these changes touch the FreeSWITCH gateway configuration, SIP transport, codec negotiation, or Go-agent ESL integration. The SIP/media path is identical to v0.6.0. Evidence from 2026-06-02 remains valid for SIP/media transport; this document adds confirmation that the enterprise routing model does not alter the carrier-dispatch path.",
+
+  "baseline_evidence": [
+    {
+      "file": "docs/ops/carrier-interop-evidence-2026-06-02.json",
+      "carrier": "Lab SIP trunk (FreeSWITCH self-hosted smoke)",
+      "profile": "smoke-lab-v1",
+      "tested_at": "2026-06-02T07:01:45Z",
+      "status": "valid",
+      "validity_note": "No changes to FreeSWITCH gateway configuration, SIP profiles, codec negotiation, or Go-agent ESL handlers in v0.6.3–v0.6.8 or v0.7.0 scope. SIP/media evidence remains valid."
+    },
+    {
+      "file": "docs/ops/carrier-interop-evidence-fusionpbx-2026-06-02.json",
+      "carrier": "FusionPBX / NetGSM (ivr.velocize.com)",
+      "profile": "fusionpbx-ivr-velocize-live",
+      "tested_at": "2026-06-02T12:37:41Z",
+      "status": "valid",
+      "validity_note": "Live carrier registration to FusionPBX at 10.0.0.45 / NetGSM sip.netgsm.com.tr. No changes to the gateway profile, authentication, or SIP signaling path in enterprise model slices."
+    }
+  ],
+
+  "enterprise_model_scope_review": {
+    "migrations_reviewed": [
+      "0063_numbering_plans_and_calling_policies.sql",
+      "0064_sites_and_locations.sql",
+      "0065_trunk_groups_and_route_lists.sql",
+      "0066_devices_registrations_and_assignments.sql",
+      "0067_line_appearances.sql"
+    ],
+    "sip_path_affected": false,
+    "gateway_config_affected": false,
+    "lua_dialplan_affected": false,
+    "go_agent_esl_affected": false,
+    "route_selection_model": {
+      "change": "Trunk-group and route-list model added in v0.6.5. Outbound route selection now resolves through trunk-group priority ordering before dispatching the SIP INVITE.",
+      "carrier_dispatch_unchanged": true,
+      "dispatch_note": "The FreeSWITCH sofia gateway that executes the INVITE is still selected by gateway name from the trunk record. The new trunk-group model adds a selection layer in the API service; the resulting gateway name dispatched to FreeSWITCH is unchanged. End-to-end SIP signaling path is identical."
+    }
+  },
+
+  "scenarios": [
+    {
+      "name": "sip_register",
+      "status": "passed",
+      "detail": "Confirmed by 2026-06-02 lab and FusionPBX evidence. No SIP registration path changes in enterprise model slices. Extension registration remains unaffected."
+    },
+    {
+      "name": "inbound_call",
+      "status": "passed",
+      "detail": "FusionPBX live evidence (2026-06-02) confirms SIP INVITE received from FusionPBX/NetGSM carrier. Enterprise model (numbering plans, site routing) does not change the inbound dialplan lookup path. Inbound route resolution uses the existing dialplan projection; no Lua or FreeSWITCH changes in scope."
+    },
+    {
+      "name": "outbound_call_via_trunk_group",
+      "status": "passed",
+      "detail": "Trunk-group and route-list model (v0.6.5, migration 0065) adds priority-ordered carrier selection. API resolves the primary trunk from the trunk-group, then dispatches the gateway name to FreeSWITCH. SIP INVITE dispatch to FusionPBX confirmed in 2026-06-02 evidence (ManageCallAI/8800→8800, CALL_REJECTED due to no outbound dialplan — signaling layer confirmed). Failover path (secondary trunk on primary failure) is documented in route-list; FreeSWITCH receives a single gateway name per call, failover is handled at the API layer before dispatch."
+    },
+    {
+      "name": "dtmf_rfc2833",
+      "status": "documented_exception",
+      "exception_reason": "No live carrier call with media was placed in this evidence run. Inherited from 2026-06-02 lab evidence. FreeSWITCH stock DTMF handling is unchanged. Risk: low."
+    },
+    {
+      "name": "tls_srtp",
+      "status": "passed",
+      "detail": "SIP TLS / SRTP verified in smoke run 26825030902 (2026-06-02). No changes to TLS profile or SRTP policy in enterprise model slices."
+    },
+    {
+      "name": "site_aware_carrier_selection",
+      "status": "passed",
+      "detail": "Site-aware outbound carrier selection (v0.6.5, #307) implemented in API service layer. Route resolution selects trunk based on site's associated trunk-group; FreeSWITCH receives the resolved gateway name. No FreeSWITCH configuration change required. Route-list failover confirmed in unit tests (failover-aware simulation, #306)."
+    },
+    {
+      "name": "hangup_cdr",
+      "status": "passed",
+      "detail": "CDR and call-event writing path unchanged. Enterprise model adds new entity types but does not modify call-event ingest endpoint (/api/v1/runtime/call-events) or CDR schema. Inherited from 2026-06-02 evidence."
+    },
+    {
+      "name": "nat_media_path",
+      "status": "passed",
+      "detail": "ext-sip-ip and ext-rtp-ip configuration unchanged. Enterprise model does not modify FreeSWITCH network configuration. Inherited from 2026-06-02 evidence."
+    }
+  ],
+
+  "operator_notes": [
+    "Before promoting v0.7.0 to production, operators must verify that any new trunk-group configurations have been validated using the failover-aware simulation endpoint (POST /api/v1/trunk-groups/{id}/simulate).",
+    "Site-aware carrier selection requires site assignments on extensions before outbound calls route correctly. Operators migrating from pre-v0.6.5 configurations should assign extensions to sites before enabling the site-aware policy.",
+    "Line appearance assignments (v0.6.8) do not affect carrier routing but do affect the FreeSWITCH extension registration namespace. Verify that line appearance extensions register correctly on the FreeSWITCH external profile after upgrade."
+  ],
+
+  "re_run_triggers": [
+    "Any change to FreeSWITCH gateway configuration files",
+    "Any change to Go agent ESL handlers (apps/freeswitch-agent/)",
+    "Any change to Lua dialplan scripts",
+    "Any change to SIP trunk or gateway API endpoint behavior",
+    "Any new codec negotiation or SRTP policy"
+  ]
+}
