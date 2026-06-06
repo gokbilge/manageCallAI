@@ -253,9 +253,18 @@ The current code line is organized around route modules plus service/repository 
 - `RuntimeNodeStatusService`
 - `SetupService`
 - `AiPolicyService`
-- planned `NumberingPlanService`
-- planned `CallingPolicyService`
-- planned `SiteService`
+- `NumberingPlanService`
+- `CallingPolicyService`
+- `SiteService`
+- `RouteRiskAnalysisService`
+- `CallFailureExplanationService`
+- `NlReportingService`
+- `IncidentInvestigationService`
+- carrier-assistant service behavior currently lives inside the SIP trunk module
+  boundary as `CarrierAssistantService`
+- AI recommendation behavior currently lives inside the route/policy advisory
+  boundary as `AiRecommendationsService`
+- planned `TrunkGroupService`
 - planned `TrunkGroupService`
 - planned `DeviceService`
 - planned `EnterpriseScheduleService`
@@ -265,12 +274,9 @@ The current code line is organized around route modules plus service/repository 
 - planned `CompatibilityReportService`
 - planned `MigrationDraftImportService`
 - planned `MigrationEvidenceService`
-- planned `CallFailureExplanationService`
-- planned `RouteRiskAnalysisService`
 - `RecordingSummaryService` behavior currently lives inside the recordings and
   voicemail service boundary, exposing bounded summary review for recordings,
   call-detail lookups, and voicemail-linked media review
-- planned `NaturalLanguageReportingService`
 
 ## 6. Design constraints
 

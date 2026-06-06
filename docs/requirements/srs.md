@@ -6,7 +6,8 @@
 
 This Software Requirements Specification defines the product and system requirements for `manageCallAI`.
 
-The document is intended to guide implementation, validation, and future design decisions for the initial platform and MVP scope.
+The document is intended to guide implementation, validation, and future design
+decisions for the active product baseline.
 
 ### 1.2 Scope
 
@@ -14,7 +15,15 @@ The document is intended to guide implementation, validation, and future design 
 
 It enables humans, workflows, and AI agents to manage PBX and IVR behavior through safe, high-level operations rather than low-level telecom internals.
 
-The initial product scope focuses on a safe IVR and routing control plane with validation, simulation, publish, rollback, and auditability.
+The current product scope includes:
+
+- core PBX control-plane objects such as extensions, trunks, numbers, routes,
+  queues, voicemail, feature codes, parking, and conferencing
+- safe lifecycle operations such as validation, simulation, publish, rollback,
+  audit, and approval-aware flows
+- runtime visibility, reporting, self-service, and compliance-oriented
+  operational surfaces
+- bounded AI assistance and a phased enterprise-model expansion roadmap
 
 ### 1.3 Intended Audience
 
@@ -262,6 +271,10 @@ Responsibility split:
 - Runtime event/control agent: Go or Node
 
 ## 8. MVP Acceptance Criteria
+
+This section is retained as the historical foundational acceptance baseline for
+the original control-plane slice. It is not the full acceptance definition for
+the current product line.
 
 - AC-1: An administrator can define extensions, a trunk, numbers, and basic routes.
 - AC-2: An administrator can create and edit an IVR flow draft.
