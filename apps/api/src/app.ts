@@ -36,6 +36,7 @@ import { voicemailBoxController } from './modules/voicemail-boxes/voicemail-box.
 import { voicemailMessageController } from './modules/voicemail-boxes/voicemail-message.controller.js';
 import { auditController } from './modules/audit/audit.controller.js';
 import { recordingAnalysisController, recordingController } from './modules/recordings/recording.controller.js';
+import { recordingSearchController } from './modules/recordings/recording-search.controller.js';
 import { exportController } from './modules/export/export.controller.js';
 import { userController } from './modules/users/user.controller.js';
 import { ivrAiController, promptGenerationController, ivrGenerationWorkerController, ivrAiPatchWorkerController } from './modules/provider-work/provider-work.controller.js';
@@ -113,6 +114,7 @@ function registerRuntimeModules(app: FastifyInstance): void {
   app.register(outboundCallController, { prefix: '/api/v1/runtime' });
   app.register(extensionEventController, { prefix: '/api/v1/runtime' });
   app.register(recordingController, { prefix: '/api/v1/recordings' });
+  app.register(recordingSearchController, { prefix: '/api/v1/recordings' });
   app.register(recordingAnalysisController, { prefix: '/api/v1/recording-analysis' });
   app.register(promptGenerationController, { prefix: '/api/v1/prompt-generation' });
   app.register(ivrGenerationController, { prefix: '/api/v1/ivr-generation' });
