@@ -99,6 +99,7 @@ export const tenantAiPolicyController: FastifyPluginAsyncZod = async (app) => {
             provider_backed_enabled: policy.provider_backed_enabled,
             prompt_generation_enabled: policy.feature_policies.prompt_generation.enabled,
             ivr_ai_turn_enabled: policy.feature_policies.ivr_ai_turn.enabled,
+            recording_analysis_enabled: policy.feature_policies.recording_analysis.enabled,
           },
         });
         return reply.send({ data: policy });

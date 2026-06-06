@@ -50,7 +50,8 @@ export class AiPolicyRepository {
     const result = await this.db.query<TenantAiPolicyOverride>(
       `SELECT tenant_id, provider_backed_enabled, prompt_generation_enabled,
               prompt_generation_preferred_provider, ivr_ai_turn_enabled,
-              ivr_ai_turn_preferred_provider, created_at, updated_at
+              ivr_ai_turn_preferred_provider, recording_analysis_enabled,
+              recording_analysis_preferred_provider, created_at, updated_at
        FROM tenant_ai_policy_overrides
        WHERE tenant_id = $1`,
       [tenantId],
@@ -61,21 +62,26 @@ export class AiPolicyRepository {
   async upsertTenantOverride(tenantId: string, input: UpdateTenantAiPolicyInput): Promise<TenantAiPolicyOverride> {
     const promptOverride = input.feature_overrides?.prompt_generation;
     const ivrOverride = input.feature_overrides?.ivr_ai_turn;
+    const recordingOverride = input.feature_overrides?.recording_analysis;
     const result = await this.db.query<TenantAiPolicyOverride>(
       `INSERT INTO tenant_ai_policy_overrides
          (tenant_id, provider_backed_enabled, prompt_generation_enabled, prompt_generation_preferred_provider,
-          ivr_ai_turn_enabled, ivr_ai_turn_preferred_provider)
-       VALUES ($1, $2, $3, $4, $5, $6)
+          ivr_ai_turn_enabled, ivr_ai_turn_preferred_provider, recording_analysis_enabled,
+          recording_analysis_preferred_provider)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (tenant_id)
        DO UPDATE SET provider_backed_enabled = EXCLUDED.provider_backed_enabled,
                      prompt_generation_enabled = EXCLUDED.prompt_generation_enabled,
                      prompt_generation_preferred_provider = EXCLUDED.prompt_generation_preferred_provider,
                      ivr_ai_turn_enabled = EXCLUDED.ivr_ai_turn_enabled,
                      ivr_ai_turn_preferred_provider = EXCLUDED.ivr_ai_turn_preferred_provider,
+                     recording_analysis_enabled = EXCLUDED.recording_analysis_enabled,
+                     recording_analysis_preferred_provider = EXCLUDED.recording_analysis_preferred_provider,
                      updated_at = NOW()
        RETURNING tenant_id, provider_backed_enabled, prompt_generation_enabled,
                  prompt_generation_preferred_provider, ivr_ai_turn_enabled,
-                 ivr_ai_turn_preferred_provider, created_at, updated_at`,
+                 ivr_ai_turn_preferred_provider, recording_analysis_enabled,
+                 recording_analysis_preferred_provider, created_at, updated_at`,
       [
         tenantId,
         input.provider_backed_enabled,
@@ -83,6 +89,8 @@ export class AiPolicyRepository {
         promptOverride?.preferred_provider ?? null,
         ivrOverride?.enabled ?? false,
         ivrOverride?.preferred_provider ?? null,
+        recordingOverride?.enabled ?? false,
+        recordingOverride?.preferred_provider ?? null,
       ],
     );
     return result.rows[0]!;

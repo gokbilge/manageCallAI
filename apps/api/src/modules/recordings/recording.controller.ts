@@ -9,19 +9,30 @@ import { config } from '../../config/env.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
+import { fireAuditEvent } from '../audit/fire-audit.js';
+import { AiPolicyRepository } from '../ai-policy/ai-policy.repository.js';
+import { AiPolicyService, AiProviderRequestDeniedError } from '../ai-policy/ai-policy.service.js';
 import { fireWebhooks } from '../automation/webhook-delivery.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { RecordingRepository } from './recording.repository.js';
 import { RecordingNotFoundError, RecordingPlaybackPathError, RecordingService } from './recording.service.js';
-import { sendNotFound, sendFailedPrecondition } from '../../errors/index.js';
+import { sendNotFound, sendFailedPrecondition, sendPermissionDenied } from '../../errors/index.js';
 
-const service = new RecordingService(new RecordingRepository(db), config.recordingStorageRoot);
+const aiPolicyService = new AiPolicyService(new AiPolicyRepository(db));
+const service = new RecordingService(new RecordingRepository(db), config.recordingStorageRoot, aiPolicyService);
 
 function canViewTranscript(user: AuthClaims): boolean {
   if (user.capabilities !== undefined) {
     return user.capabilities.includes('*') || user.capabilities.includes(CAPABILITIES.TENANT_COMPLIANCE_ADMIN);
   }
   return hasCapability(user.role, CAPABILITIES.TENANT_COMPLIANCE_ADMIN);
+}
+
+function canUseProviderBackedAi(user: AuthClaims): boolean {
+  if (user.capabilities !== undefined) {
+    return user.capabilities.includes('*') || user.capabilities.includes(CAPABILITIES.TENANT_AI_PROVIDER_BACKED_USE);
+  }
+  return user.role === 'tenant_admin' || user.role === 'tenant_operator' || user.role === 'platform_admin';
 }
 
 export const recordingController: FastifyPluginAsyncZod = async (app) => {
@@ -150,11 +161,32 @@ export const recordingController: FastifyPluginAsyncZod = async (app) => {
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      if ((req.body.provider_hint ?? 'auto') !== 'auto' && !canUseProviderBackedAi(user)) {
+        return sendPermissionDenied(reply, 'Provider-backed AI use requires tenant.ai.provider_backed.use');
+      }
       try {
         const request = await service.createAnalysisRequest(req.params.id, user.tenant_id, req.body);
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role ?? null,
+          action: 'recording.analysis_requested',
+          resource_type: 'recording_analysis_request',
+          resource_id: request.id,
+          metadata: {
+            recording_id: request.recording_id,
+            requested_outputs: request.requested_outputs,
+            provider_hint: request.provider_hint,
+            source_mode: request.source_mode,
+            transcript_status: request.transcript_status,
+            summary_status: request.summary_status,
+            policy: request.metadata['ai_policy'] ?? null,
+          },
+        });
         return reply.code(201).send({ data: request });
       } catch (err) {
         if (err instanceof RecordingNotFoundError) return sendNotFound(reply, err.message);
+        if (err instanceof AiProviderRequestDeniedError) return sendFailedPrecondition(reply, err.message);
         throw err;
       }
     },
@@ -383,7 +415,25 @@ export const recordingAnalysisController: FastifyPluginAsyncZod = async (app) =>
     },
     async (req, reply) => {
       try {
-        return { data: await service.completeAnalysisRequest(req.params.requestId, req.body) };
+        const request = await service.completeAnalysisRequest(req.params.requestId, req.body);
+        fireAuditEvent({
+          tenant_id: request.tenant_id,
+          actor_id: null,
+          actor_role: 'system',
+          action: req.body.status === 'completed' ? 'recording.analysis_completed' : 'recording.analysis_failed',
+          resource_type: 'recording_analysis_request',
+          resource_id: request.id,
+          metadata: {
+            recording_id: request.recording_id,
+            provider_hint: request.provider_hint,
+            source_mode: request.source_mode,
+            transcript_status: request.transcript_status,
+            summary_status: request.summary_status,
+            provider_metadata: request.provider_metadata,
+            error_message: request.error_message,
+          },
+        });
+        return { data: request };
       } catch (err) {
         if (err instanceof RecordingNotFoundError) return sendNotFound(reply, err.message);
         throw err;

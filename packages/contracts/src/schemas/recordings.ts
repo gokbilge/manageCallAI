@@ -1,4 +1,5 @@
 import { z } from '../registry.js';
+import { IntegrationProviderSchema } from './provider-work.js';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 export const RecordingStatusSchema = z.enum(['pending', 'available', 'deleted']);
@@ -15,6 +16,8 @@ export type RecordingAnalysisStatus = z.infer<typeof RecordingAnalysisStatusSche
 
 export const RecordingAnalysisOutputSchema = z.enum(['transcript', 'summary']);
 export type RecordingAnalysisOutput = z.infer<typeof RecordingAnalysisOutputSchema>;
+export const RecordingAnalysisSourceModeSchema = z.enum(['deterministic', 'provider_backed']);
+export type RecordingAnalysisSourceMode = z.infer<typeof RecordingAnalysisSourceModeSchema>;
 
 // ── Resource schemas ──────────────────────────────────────────────────────────
 export const RecordingSchema = z.object({
@@ -37,7 +40,10 @@ export const RecordingAnalysisRequestSchema = z.object({
   recording_id: z.string().uuid(),
   requested_outputs: z.array(RecordingAnalysisOutputSchema),
   language_hint: z.string().nullable(),
+  provider_hint: IntegrationProviderSchema,
   status: RecordingAnalysisStatusSchema,
+  transcript_status: RecordingAnalysisStatusSchema.nullable(),
+  summary_status: RecordingAnalysisStatusSchema.nullable(),
   processor_id: z.string().nullable(),
   claimed_at: z.string().datetime().nullable(),
   language: z.string().nullable(),
@@ -46,6 +52,7 @@ export const RecordingAnalysisRequestSchema = z.object({
   error_message: z.string().nullable(),
   provider_metadata: z.record(z.unknown()),
   metadata: z.record(z.unknown()),
+  source_mode: RecordingAnalysisSourceModeSchema,
   created_at: z.string().datetime(),
   completed_at: z.string().datetime().nullable(),
 }).openapi('RecordingAnalysisRequest');
@@ -80,6 +87,10 @@ export const SummaryReviewSchema = z.object({
   linked_recording_id: z.string().uuid().nullable(),
   analysis_request_id: z.string().uuid().nullable(),
   status: SummaryReviewStatusSchema,
+  transcript_status: RecordingAnalysisStatusSchema.nullable(),
+  summary_status: RecordingAnalysisStatusSchema.nullable(),
+  source_mode: RecordingAnalysisSourceModeSchema,
+  provider_hint: IntegrationProviderSchema,
   reason: SummaryReviewReasonSchema.nullable(),
   summary_text: z.string().nullable(),
   transcript_text: z.string().nullable(),
@@ -106,6 +117,7 @@ export type IngestRecordingBody = z.infer<typeof IngestRecordingBodySchema>;
 export const CreateRecordingAnalysisBodySchema = z.object({
   requested_outputs: z.array(RecordingAnalysisOutputSchema).min(1),
   language_hint: z.string().nullable().optional(),
+  provider_hint: IntegrationProviderSchema.optional(),
   metadata: z.record(z.unknown()).optional(),
 }).openapi('CreateRecordingAnalysisBody');
 export type CreateRecordingAnalysisBody = z.infer<typeof CreateRecordingAnalysisBodySchema>;

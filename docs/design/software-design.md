@@ -109,6 +109,8 @@ Current implementation status:
   services
 - `v0.6.1` introduces platform policy plus tenant opt-in for provider-backed
   prompt generation and IVR AI execution
+- the same policy foundation now governs optional provider-backed recording
+  transcript and summary analysis requests
 - provider-backed execution still resolves through provider-neutral work-request
   contracts and can fall back to deterministic `auto` mode when policy forbids it
 

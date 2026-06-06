@@ -18,6 +18,10 @@ export type SummaryReview = {
   linked_recording_id: string | null;
   analysis_request_id: string | null;
   status: SummaryReviewStatus;
+  transcript_status: SummaryReviewStatus | null;
+  summary_status: SummaryReviewStatus | null;
+  source_mode: 'deterministic' | 'provider_backed';
+  provider_hint: 'auto' | 'openai' | 'elevenlabs' | 'whisper' | 'external' | 'custom';
   reason:
     | 'no_linked_recording'
     | 'no_analysis_request'
@@ -110,4 +114,30 @@ export function reasonLabel(reason: SummaryReview['reason']): string | null {
     default:
       return null;
   }
+}
+
+export function outputStatusLabel(status: SummaryReviewStatus | null): string {
+  switch (status) {
+    case 'queued':
+      return 'Queued';
+    case 'processing':
+      return 'Running';
+    case 'completed':
+      return 'Completed';
+    case 'failed':
+      return 'Failed';
+    case 'cancelled':
+      return 'Cancelled';
+    default:
+      return 'Not requested';
+  }
+}
+
+export function sourceModeLabel(review: SummaryReview): string {
+  if (review.source_mode === 'provider_backed') {
+    return review.provider_hint === 'auto'
+      ? 'Provider-backed'
+      : `Provider-backed (${review.provider_hint})`;
+  }
+  return 'Deterministic fallback';
 }

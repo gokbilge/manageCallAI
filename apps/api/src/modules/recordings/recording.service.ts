@@ -16,6 +16,8 @@ import type {
   UpdateRetentionPolicyInput,
 } from './recording.types.js';
 import type { RecordingRepository } from './recording.repository.js';
+import type { AiPolicyService } from '../ai-policy/ai-policy.service.js';
+import type { IntegrationProvider } from '../provider-work/provider-work.types.js';
 
 export class RecordingNotFoundError extends Error {
   constructor(id: string) {
@@ -35,6 +37,7 @@ export class RecordingService {
   constructor(
     private readonly repo: RecordingRepository,
     private readonly storageRoot = resolve('recordings'),
+    private readonly aiPolicyService?: AiPolicyService,
   ) {}
 
   async ingest(input: IngestRecordingInput): Promise<Recording> {
@@ -70,33 +73,48 @@ export class RecordingService {
     input: CreateRecordingAnalysisInput,
   ): Promise<RecordingAnalysisRequest> {
     this.validateRequestedOutputs(input.requested_outputs);
-    const request = await this.repo.createAnalysisRequest(recordingId, tenantId, input);
+    const resolved = await this.resolveProvider(tenantId, input.provider_hint, input.requested_outputs);
+    const request = await this.repo.createAnalysisRequest(recordingId, tenantId, {
+      ...input,
+      provider_hint: resolved.effective_provider_hint,
+      metadata: {
+        ...(input.metadata ?? {}),
+        ai_policy: {
+          requested_provider_hint: resolved.requested_provider_hint,
+          effective_provider_hint: resolved.effective_provider_hint,
+          provider_backed_requested: resolved.provider_backed_requested,
+          provider_backed_allowed: resolved.provider_backed_allowed,
+          fallback_reason: resolved.fallback_reason,
+        },
+      },
+    });
     if (!request) throw new RecordingNotFoundError(recordingId);
-    return request;
+    return this.normalizeAnalysisRequest(request);
   }
 
   async listAnalysisRequests(recordingId: string, tenantId: string): Promise<RecordingAnalysisRequest[]> {
     const recording = await this.repo.findById(recordingId, tenantId);
     if (!recording) throw new RecordingNotFoundError(recordingId);
-    return this.repo.listAnalysisRequests(recordingId, tenantId);
+    const requests = await this.repo.listAnalysisRequests(recordingId, tenantId);
+    return requests.map((request) => this.normalizeAnalysisRequest(request));
   }
 
   async getAnalysisRequest(id: string, tenantId: string): Promise<RecordingAnalysisRequest> {
     const request = await this.repo.findAnalysisRequest(id, tenantId);
     if (!request) throw new RecordingNotFoundError(id);
-    return request;
+    return this.normalizeAnalysisRequest(request);
   }
 
   async claimAnalysisRequest(id: string, input: ClaimRecordingAnalysisInput): Promise<RecordingAnalysisRequest> {
     const request = await this.repo.claimAnalysisRequest(id, input);
     if (!request) throw new RecordingNotFoundError(id);
-    return request;
+    return this.normalizeAnalysisRequest(request);
   }
 
   async completeAnalysisRequest(id: string, input: CompleteRecordingAnalysisInput): Promise<RecordingAnalysisRequest> {
     const request = await this.repo.completeAnalysisRequest(id, input);
     if (!request) throw new RecordingNotFoundError(id);
-    return request;
+    return this.normalizeAnalysisRequest(request);
   }
 
   async getSummaryReviewForRecording(
@@ -153,6 +171,10 @@ export class RecordingService {
       linked_recording_id: null,
       analysis_request_id: null,
       status: 'unavailable',
+      transcript_status: null,
+      summary_status: null,
+      source_mode: 'deterministic',
+      provider_hint: 'auto',
       reason: 'no_linked_recording',
       summary_text: null,
       transcript_text: null,
@@ -185,6 +207,10 @@ export class RecordingService {
         linked_recording_id: recording.id,
         analysis_request_id: null,
         status: 'missing_analysis',
+        transcript_status: null,
+        summary_status: null,
+        source_mode: 'deterministic',
+        provider_hint: 'auto',
         reason: 'no_analysis_request',
         summary_text: null,
         transcript_text: null,
@@ -196,36 +222,37 @@ export class RecordingService {
         provider_metadata: {},
       });
     }
+    const normalizedAnalysis = this.normalizeAnalysisRequest(analysis);
 
     const [summaryHeld, transcriptHeld] = await Promise.all([
-      this.hasRetentionOverride(recording.tenant_id, resourceType, resourceId, 'summary', analysis.id, recording.id),
-      this.hasRetentionOverride(recording.tenant_id, resourceType, resourceId, 'transcript', analysis.id, recording.id),
+      this.hasRetentionOverride(recording.tenant_id, resourceType, resourceId, 'summary', normalizedAnalysis.id, recording.id),
+      this.hasRetentionOverride(recording.tenant_id, resourceType, resourceId, 'transcript', normalizedAnalysis.id, recording.id),
     ]);
 
     const summaryAvailable = this.isWithinRetentionWindow(
-      analysis.completed_at ?? analysis.created_at,
+      normalizedAnalysis.completed_at ?? normalizedAnalysis.created_at,
       policy?.ai_summary_retention_days ?? null,
       summaryHeld,
     );
     const transcriptAvailable = this.isWithinRetentionWindow(
-      analysis.completed_at ?? analysis.created_at,
+      normalizedAnalysis.completed_at ?? normalizedAnalysis.created_at,
       policy?.transcript_retention_days ?? null,
       transcriptHeld,
     );
 
-    const summaryText = analysis.summary_text && summaryAvailable ? analysis.summary_text : null;
-    const transcriptText = options.canViewTranscript && analysis.transcript_text && transcriptAvailable
-      ? analysis.transcript_text
+    const summaryText = normalizedAnalysis.summary_text && summaryAvailable ? normalizedAnalysis.summary_text : null;
+    const transcriptText = options.canViewTranscript && normalizedAnalysis.transcript_text && transcriptAvailable
+      ? normalizedAnalysis.transcript_text
       : null;
 
     let reason: SummaryReviewReason | null = null;
-    if (analysis.status === 'failed') {
+    if (normalizedAnalysis.status === 'failed') {
       reason = 'analysis_failed';
-    } else if (analysis.status === 'cancelled') {
+    } else if (normalizedAnalysis.status === 'cancelled') {
       reason = 'analysis_cancelled';
-    } else if (analysis.status === 'completed' && !summaryText) {
-      reason = analysis.summary_text ? 'summary_retention_elapsed' : 'summary_missing';
-    } else if (analysis.status === 'completed' && options.canViewTranscript && analysis.transcript_text && !transcriptText) {
+    } else if (normalizedAnalysis.status === 'completed' && !summaryText) {
+      reason = normalizedAnalysis.summary_text ? 'summary_retention_elapsed' : 'summary_missing';
+    } else if (normalizedAnalysis.status === 'completed' && options.canViewTranscript && normalizedAnalysis.transcript_text && !transcriptText) {
       reason = 'transcript_retention_elapsed';
     }
 
@@ -234,30 +261,76 @@ export class RecordingService {
       resource_id: resourceId,
       call_id: callId,
       linked_recording_id: recording.id,
-      analysis_request_id: analysis.id,
-      status: analysis.status,
+      analysis_request_id: normalizedAnalysis.id,
+      status: normalizedAnalysis.status,
+      transcript_status: normalizedAnalysis.transcript_status,
+      summary_status: normalizedAnalysis.summary_status,
+      source_mode: normalizedAnalysis.source_mode,
+      provider_hint: normalizedAnalysis.provider_hint,
       reason,
       summary_text: summaryText,
       transcript_text: transcriptText,
       transcript_access: options.canViewTranscript
-        ? (analysis.transcript_text ? (transcriptAvailable ? 'granted' : 'unavailable') : 'unavailable')
+        ? (normalizedAnalysis.transcript_text ? (transcriptAvailable ? 'granted' : 'unavailable') : 'unavailable')
         : 'restricted',
       can_view_transcript: options.canViewTranscript,
-      language: analysis.language,
-      requested_outputs: [...analysis.requested_outputs],
-      completed_at: analysis.completed_at,
-      provider_metadata: analysis.provider_metadata,
+      language: normalizedAnalysis.language,
+      requested_outputs: [...normalizedAnalysis.requested_outputs],
+      completed_at: normalizedAnalysis.completed_at,
+      provider_metadata: normalizedAnalysis.provider_metadata,
     });
+  }
+
+  private normalizeAnalysisRequest(request: RecordingAnalysisRequest): RecordingAnalysisRequest {
+    return {
+      ...request,
+      provider_hint: request.provider_hint ?? 'auto',
+      transcript_status: request.transcript_status ?? null,
+      summary_status: request.summary_status ?? null,
+      source_mode: resolveSourceMode(request.provider_hint, request.metadata),
+      claimed_at: request.claimed_at ? new Date(request.claimed_at).toISOString() : null,
+      completed_at: request.completed_at ? new Date(request.completed_at).toISOString() : null,
+      created_at: new Date(request.created_at).toISOString(),
+      provider_metadata: request.provider_metadata ?? {},
+      metadata: request.metadata ?? {},
+      requested_outputs: [...request.requested_outputs],
+    };
   }
 
   private normalizeSummaryReview(review: SummaryReview): SummaryReview {
     return {
       ...review,
       language: review.language ?? null,
+      transcript_status: review.transcript_status ?? null,
+      summary_status: review.summary_status ?? null,
+      source_mode: review.source_mode ?? 'deterministic',
+      provider_hint: review.provider_hint ?? 'auto',
       requested_outputs: [...review.requested_outputs],
       completed_at: review.completed_at ? new Date(review.completed_at).toISOString() : null,
       provider_metadata: review.provider_metadata ?? {},
     };
+  }
+
+  private async resolveProvider(
+    tenantId: string,
+    providerHint: IntegrationProvider | undefined,
+    requestedOutputs: string[],
+  ) {
+    if (!this.aiPolicyService) {
+      return {
+        requested_provider_hint: providerHint ?? 'auto',
+        effective_provider_hint: providerHint ?? 'auto',
+        provider_backed_requested: (providerHint ?? 'auto') !== 'auto',
+        provider_backed_allowed: (providerHint ?? 'auto') !== 'auto',
+        fallback_reason: providerHint ? null : 'requested_auto',
+      };
+    }
+    return this.aiPolicyService.requireProviderBackedAccess({
+      tenant_id: tenantId,
+      feature: 'recording_analysis',
+      requested_provider_hint: providerHint ?? 'auto',
+      input_text: requestedOutputs.join(','),
+    });
   }
 
   private isWithinRetentionWindow(referenceAt: string | null, retentionDays: number | null, held: boolean): boolean {
@@ -320,4 +393,18 @@ export class RecordingService {
   async hasActiveLegalHold(tenantId: string, resourceType: string, resourceId?: string): Promise<boolean> {
     return this.repo.hasActiveLegalHold(tenantId, resourceType, resourceId);
   }
+}
+
+function resolveSourceMode(
+  providerHint: IntegrationProvider | undefined,
+  metadata: Record<string, unknown> | undefined,
+): 'deterministic' | 'provider_backed' {
+  const aiPolicy = metadata?.['ai_policy'];
+  if (typeof aiPolicy === 'object' && aiPolicy !== null) {
+    const effectiveProvider = (aiPolicy as { effective_provider_hint?: unknown }).effective_provider_hint;
+    if (typeof effectiveProvider === 'string' && effectiveProvider !== 'auto') {
+      return 'provider_backed';
+    }
+  }
+  return providerHint && providerHint !== 'auto' ? 'provider_backed' : 'deterministic';
 }
