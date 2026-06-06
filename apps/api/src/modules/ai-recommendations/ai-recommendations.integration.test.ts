@@ -362,6 +362,46 @@ describe('AI recommendations and incident investigation endpoints', () => {
       expect(res.json<{ data: { id: string } }>().data.id).toBe(invId);
     });
 
+    it('includes recording citations when recording analysis exists and the operator can view recordings', async () => {
+      const token = await register(randomUUID().slice(0, 8));
+      const tenantRow = await db.query<{ id: string }>(`SELECT id FROM tenants LIMIT 1`);
+      const tenantId = tenantRow.rows[0]!.id;
+
+      await db.query(
+        `INSERT INTO call_events (tenant_id, call_id, event_type, event_time, source, payload)
+         VALUES ($1, $2, $3, NOW(), $4, $5::jsonb)`,
+        [tenantId, 'call-rec-1', 'call.failed', 'test', JSON.stringify({ reason: 'NO_ROUTE_DESTINATION' })],
+      );
+
+      const recording = await db.query<{ id: string }>(
+        `INSERT INTO call_recordings (tenant_id, call_id, storage_path, duration_secs, size_bytes)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id`,
+        [tenantId, 'call-rec-1', 'recordings/call-rec-1.wav', 14, 1024],
+      );
+
+      await db.query(
+        `INSERT INTO recording_analysis_requests
+           (tenant_id, recording_id, requested_outputs, status, transcript_status, summary_status, summary_text, provider_hint, provider_metadata, metadata, completed_at)
+         VALUES ($1, $2, $3::text[], 'completed', NULL, 'completed', $4, 'auto', '{}'::jsonb, '{}'::jsonb, NOW())`,
+        [tenantId, recording.rows[0]!.id, ['summary'], 'Caller hit a failed route because no outbound carrier path matched the destination.'],
+      );
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/incidents/investigate',
+        headers: { authorization: `Bearer ${token}` },
+        payload: {
+          question: 'Why did this call fail?',
+          context: { call_ids: ['call-rec-1'] },
+        },
+      });
+
+      expect(res.statusCode).toBe(201);
+      const citations = res.json<{ data: { citations: Array<{ source: string; fact: string }> } }>().data.citations;
+      expect(citations.some((citation) => citation.source === 'recording' && citation.fact.includes('Recording summary'))).toBe(true);
+    });
+
     it('returns 404 for unknown investigation', async () => {
       const token = await register(randomUUID().slice(0, 8));
       const res = await app.inject({

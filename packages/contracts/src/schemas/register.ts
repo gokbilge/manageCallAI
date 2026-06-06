@@ -22,6 +22,7 @@ import * as schedules from './schedules.js';
 import * as outboundRoutes from './outbound-routes.js';
 import * as users from './users.js';
 import * as recordings from './recordings.js';
+import * as incidentInvestigation from './incident-investigation.js';
 import * as runtime from './runtime.js';
 import * as channelAccounts from './channel-accounts.js';
 import * as channelMessages from './channel-messages.js';
@@ -31,6 +32,7 @@ import * as platform from './platform.js';
 import * as responses from './responses.js';
 import * as featureCodes from './feature-codes.js';
 import * as runtimeApply from './runtime-apply.js';
+import * as carrierAssistant from './carrier-assistant.js';
 
 // common
 registry.register('ErrorResponse', common.ErrorResponseSchema);
@@ -178,6 +180,11 @@ registry.register('RecordingAnalysisRequest', recordings.RecordingAnalysisReques
 registry.register('IngestRecordingBody', recordings.IngestRecordingBodySchema);
 registry.register('CreateRecordingAnalysisBody', recordings.CreateRecordingAnalysisBodySchema);
 registry.register('CompleteRecordingAnalysisBody', recordings.CompleteRecordingAnalysisBodySchema);
+registry.register('InvestigationCitation', incidentInvestigation.InvestigationCitationSchema);
+registry.register('InvestigationContextTimeRange', incidentInvestigation.InvestigationContextTimeRangeSchema);
+registry.register('InvestigationContext', incidentInvestigation.InvestigationContextSchema);
+registry.register('IncidentInvestigation', incidentInvestigation.IncidentInvestigationSchema);
+registry.register('CreateIncidentInvestigationBody', incidentInvestigation.CreateIncidentInvestigationBodySchema);
 
 // runtime
 registry.register('IvrRuntimeSession', runtime.IvrRuntimeSessionSchema);
@@ -261,6 +268,9 @@ registry.register('RecordingResponse', responses.RecordingResponseSchema);
 registry.register('RecordingListResponse', responses.RecordingListResponseSchema);
 registry.register('RecordingAnalysisRequestResponse', responses.RecordingAnalysisRequestResponseSchema);
 registry.register('RecordingAnalysisRequestListResponse', responses.RecordingAnalysisRequestListResponseSchema);
+registry.register('IncidentInvestigationResponse', responses.IncidentInvestigationResponseSchema);
+registry.register('IncidentInvestigationListResponse', responses.IncidentInvestigationListResponseSchema);
+registry.register('CarrierAssistantSuggestionResponse', responses.CarrierAssistantSuggestionResponseSchema);
 registry.register('WebhookDeliveryQueueListResponse', responses.WebhookDeliveryQueueListResponseSchema);
 registry.register('ChannelAccountResponse', responses.ChannelAccountResponseSchema);
 registry.register('ChannelAccountListResponse', responses.ChannelAccountListResponseSchema);
@@ -290,6 +300,12 @@ registry.register('UpdateFeatureCodeBody', featureCodes.UpdateFeatureCodeBodySch
 
 // runtime-apply
 registry.register('RuntimeApplyRequest', runtimeApply.RuntimeApplyRequestSchema);
+registry.register('CarrierAssistantDraft', carrierAssistant.CarrierAssistantDraftSchema);
+registry.register('CarrierAssistantMissingField', carrierAssistant.CarrierAssistantMissingFieldSchema);
+registry.register('CarrierAssistantValidationCheck', carrierAssistant.CarrierAssistantValidationCheckSchema);
+registry.register('CarrierAssistantRuntimeHint', carrierAssistant.CarrierAssistantRuntimeHintSchema);
+registry.register('CarrierAssistantSuggestion', carrierAssistant.CarrierAssistantSuggestionSchema);
+registry.register('CreateCarrierAssistantSuggestionBody', carrierAssistant.CreateCarrierAssistantSuggestionBodySchema);
 
 // risk-analysis
 import * as riskAnalysis from './risk-analysis.js';

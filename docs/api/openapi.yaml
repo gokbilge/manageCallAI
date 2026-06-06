@@ -39,6 +39,8 @@ tags:
     description: SIP extension management
   - name: SipTrunks
     description: SIP trunk management
+  - name: IncidentInvestigations
+    description: Read-only cited investigation over tenant incident data
   - name: PhoneNumbers
     description: Phone number management
   - name: Prompts
@@ -280,6 +282,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SipTrunkResponse"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /sip-trunks/assistant/draft:
+    post:
+      tags:
+        - SipTrunks
+      summary: Generate a draft-only SIP trunk suggestion from a carrier brief
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCarrierAssistantSuggestionBody"
+      responses:
+        "200":
+          description: Draft suggestion generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CarrierAssistantSuggestionResponse"
         default:
           $ref: "#/components/responses/ErrorResponse"
   /phone-numbers:
@@ -2147,6 +2169,55 @@ paths:
                   - data
         default:
           $ref: "#/components/responses/ErrorResponse"
+  /incidents/investigate:
+    get:
+      tags:
+        - IncidentInvestigations
+      summary: List recent tenant incident investigations
+      responses:
+        "200":
+          description: Investigation history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentInvestigationListResponse"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags:
+        - IncidentInvestigations
+      summary: Run a read-only cited tenant incident investigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIncidentInvestigationBody"
+      responses:
+        "201":
+          description: Investigation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentInvestigationResponse"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /incidents/investigate/{id}:
+    parameters:
+      - $ref: "#/components/parameters/InvestigationIdParam"
+    get:
+      tags:
+        - IncidentInvestigations
+      summary: Get a specific tenant incident investigation
+      responses:
+        "200":
+          description: Investigation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentInvestigationResponse"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
   /reporting/nl-query:
     post:
       tags:
@@ -2215,6 +2286,13 @@ components:
         format: uuid
     NumberIdParam:
       name: numberId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    InvestigationIdParam:
+      name: id
       in: path
       required: true
       schema:
@@ -5732,6 +5810,123 @@ components:
           additionalProperties: {}
       required:
         - status
+    InvestigationCitation:
+      type: object
+      properties:
+        source:
+          type: string
+          enum:
+            - call_event
+            - inbound_route
+            - outbound_route
+            - sip_trunk
+            - recording
+            - gateway_status
+        id:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+        fact:
+          type: string
+          minLength: 1
+      required:
+        - source
+        - id
+        - label
+        - fact
+    InvestigationContextTimeRange:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+      required:
+        - from
+        - to
+    InvestigationContext:
+      type: object
+      properties:
+        call_ids:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 25
+        route_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 25
+        time_range:
+          $ref: "#/components/schemas/InvestigationContextTimeRange"
+    IncidentInvestigation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        question:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        context:
+          $ref: "#/components/schemas/InvestigationContext"
+        answer:
+          type:
+            - string
+            - "null"
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvestigationCitation"
+        data_sources:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        is_advisory:
+          type: boolean
+          enum:
+            - true
+        created_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - question
+        - context
+        - answer
+        - citations
+        - data_sources
+        - is_advisory
+        - created_by
+        - created_at
+    CreateIncidentInvestigationBody:
+      type: object
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        context:
+          $ref: "#/components/schemas/InvestigationContext"
+      required:
+        - question
     IvrRuntimeSession:
       type: object
       properties:
@@ -7290,6 +7485,249 @@ components:
             $ref: "#/components/schemas/RecordingAnalysisRequest"
       required:
         - data
+    IncidentInvestigationResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/IncidentInvestigation"
+      required:
+        - data
+    IncidentInvestigationListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentInvestigation"
+      required:
+        - data
+    CarrierAssistantDraft:
+      type: object
+      properties:
+        name:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        direction:
+          type:
+            - string
+            - "null"
+          enum: *a3
+        username:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        realm:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        proxy:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        port:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 65535
+        transport:
+          type:
+            - string
+            - "null"
+          enum: *a4
+        auth_username:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        dtmf_mode:
+          type:
+            - string
+            - "null"
+          enum: *a5
+        codec_prefs:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+            minLength: 1
+            maxLength: 32
+          maxItems: 16
+        srtp_policy:
+          type:
+            - string
+            - "null"
+          enum: *a6
+      required:
+        - name
+        - direction
+        - username
+        - realm
+        - proxy
+        - port
+        - transport
+        - auth_username
+        - dtmf_mode
+        - codec_prefs
+        - srtp_policy
+    CarrierAssistantMissingField:
+      type: object
+      properties:
+        field:
+          type: string
+          minLength: 1
+          maxLength: 64
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+        - field
+        - reason
+    CarrierAssistantValidationCheck:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+        status:
+          type: string
+          enum:
+            - ready
+            - needs_input
+            - recommended
+      required:
+        - code
+        - description
+        - status
+    CarrierAssistantRuntimeHint:
+      type:
+        - object
+        - "null"
+      properties:
+        gateway_state:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 64
+        gateway_observed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        latest_apply_status:
+          type:
+            - string
+            - "null"
+          enum:
+            - pending
+            - applying
+            - applied
+            - failed
+            - cancelled
+        latest_apply_error:
+          type:
+            - string
+            - "null"
+      required:
+        - gateway_state
+        - gateway_observed_at
+        - latest_apply_status
+        - latest_apply_error
+    CarrierAssistantSuggestion:
+      type: object
+      properties:
+        assistant_mode:
+          type: string
+          enum:
+            - create
+            - update
+        target_trunk_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        target_trunk_name:
+          type:
+            - string
+            - "null"
+        matched_template:
+          type:
+            - string
+            - "null"
+        suggested_config:
+          $ref: "#/components/schemas/CarrierAssistantDraft"
+        missing_fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/CarrierAssistantMissingField"
+        assumptions:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
+        warnings:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
+        validation_errors:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
+        validation_checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/CarrierAssistantValidationCheck"
+        next_steps:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
+        runtime_hint:
+          $ref: "#/components/schemas/CarrierAssistantRuntimeHint"
+      required:
+        - assistant_mode
+        - target_trunk_id
+        - target_trunk_name
+        - matched_template
+        - suggested_config
+        - missing_fields
+        - assumptions
+        - warnings
+        - validation_errors
+        - validation_checks
+        - next_steps
+        - runtime_hint
+    CarrierAssistantSuggestionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/CarrierAssistantSuggestion"
+      required:
+        - data
     WebhookDeliveryQueueListResponse:
       type: object
       properties:
@@ -7752,6 +8190,18 @@ components:
         - error_message
         - created_at
         - updated_at
+    CreateCarrierAssistantSuggestionBody:
+      type: object
+      properties:
+        intent:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        trunk_id:
+          type: string
+          format: uuid
+      required:
+        - intent
     RiskConcern:
       type: object
       properties:

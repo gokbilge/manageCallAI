@@ -5,6 +5,7 @@ import type {
   IncidentInvestigation,
   InvestigationCitation,
   InvestigationContext,
+  RecordingEvidenceRow,
   RouteRow,
 } from './incident-investigation.types.js';
 
@@ -71,6 +72,31 @@ function buildGatewayCitations(gateways: GatewayStatusRow[]): InvestigationCitat
     label: g.gateway_name,
     fact: `State: ${g.state}, ping: ${g.ping_time_ms != null ? `${g.ping_time_ms}ms` : 'unknown'}, last seen: ${g.updated_at.toISOString()}`,
   }));
+}
+
+function summarizeText(text: string, maxLength: number): string {
+  const normalized = text.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function buildRecordingCitations(recordings: RecordingEvidenceRow[]): InvestigationCitation[] {
+  return recordings.map((recording) => {
+    const summary = recording.summary_text ? summarizeText(recording.summary_text, 180) : null;
+    const transcript = !summary && recording.transcript_text ? summarizeText(recording.transcript_text, 160) : null;
+    const fact = summary
+      ? `Recording summary (${recording.source_mode ?? 'unknown'}): ${summary}`
+      : transcript
+        ? `Recording transcript excerpt: ${transcript}`
+        : `Recording captured at ${recording.recorded_at.toISOString()}, but no stored transcript or summary is available.`;
+
+    return {
+      source: 'recording' as const,
+      id: recording.recording_id,
+      label: `Recording for call ${recording.call_id.slice(0, 8)}`,
+      fact,
+    };
+  });
 }
 
 function synthesizeAnswer(
@@ -150,18 +176,22 @@ export class IncidentInvestigationService {
     const category = classifyQuestion(question);
     const citations: InvestigationCitation[] = [];
     const dataSources: string[] = [];
+    const relatedCallIds = new Set<string>();
 
     // Gather call events
     if (context.call_ids?.length) {
       const events = await this.repo.findCallEvents(context.call_ids, tenantId);
+      for (const callId of context.call_ids) relatedCallIds.add(callId);
       citations.push(...buildCallCitations(events));
       if (events.length) dataSources.push('call_events');
     } else if (context.time_range) {
       const events = await this.repo.findCallEventsByTimeRange(tenantId, context.time_range.from, context.time_range.to);
+      for (const event of events) relatedCallIds.add(event.call_id);
       citations.push(...buildCallCitations(events));
       if (events.length) dataSources.push('call_events');
     } else if (category === 'calls') {
       const recent = await this.repo.findRecentFailedCalls(tenantId);
+      for (const row of recent) relatedCallIds.add(row.call_id);
       const pseudoEvents: CallEventRow[] = recent.map((r) => ({
         call_id: r.call_id,
         event_type: r.event_type,
@@ -192,9 +222,10 @@ export class IncidentInvestigationService {
     }
 
     // Recording citations are only included if operator has permission
-    if (canViewRecordings && context.call_ids?.length) {
-      // Recording data is gathered when analysis results are already stored
-      dataSources.push('recordings_allowed');
+    if (canViewRecordings && relatedCallIds.size > 0) {
+      const recordings = await this.repo.findRecordingEvidence([...relatedCallIds].slice(0, 10), tenantId);
+      citations.push(...buildRecordingCitations(recordings));
+      if (recordings.length) dataSources.push('recordings');
     }
 
     const answer = synthesizeAnswer(question, category, citations, context);

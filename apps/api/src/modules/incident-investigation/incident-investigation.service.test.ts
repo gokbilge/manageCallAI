@@ -27,7 +27,23 @@ function makeInvestigation(overrides: Partial<IncidentInvestigation> = {}): Inci
 
 function makeRepo(overrides: Partial<IncidentInvestigationRepository> = {}): IncidentInvestigationRepository {
   return {
-    create: vi.fn().mockResolvedValue(makeInvestigation()),
+    create: vi.fn().mockImplementation(async (
+      tenantId: string,
+      question: string,
+      context: IncidentInvestigation['context'],
+      answer: string,
+      citations: IncidentInvestigation['citations'],
+      dataSources: string[],
+      createdBy: string | null,
+    ) => makeInvestigation({
+      tenant_id: tenantId,
+      question,
+      context,
+      answer,
+      citations,
+      data_sources: dataSources,
+      created_by: createdBy,
+    })),
     listByTenant: vi.fn().mockResolvedValue([makeInvestigation()]),
     findById: vi.fn().mockResolvedValue(makeInvestigation()),
     findCallEvents: vi.fn().mockResolvedValue([
@@ -46,6 +62,17 @@ function makeRepo(overrides: Partial<IncidentInvestigationRepository> = {}): Inc
     ]),
     findGatewayStatus: vi.fn().mockResolvedValue([
       { gateway_name: 'Main Node', state: 'up', ping_time_ms: 12, updated_at: new Date() },
+    ]),
+    findRecordingEvidence: vi.fn().mockResolvedValue([
+      {
+        recording_id: 'rec-1',
+        call_id: 'call-1',
+        recorded_at: new Date('2026-06-06T09:58:00Z'),
+        summary_text: 'Caller reached the platform but outbound routing failed due to no route.',
+        transcript_text: null,
+        source_mode: 'deterministic',
+        provider_hint: 'auto',
+      },
     ]),
     findRecentFailedCalls: vi.fn().mockResolvedValue([]),
     ...overrides,
@@ -115,11 +142,11 @@ describe('IncidentInvestigationService', () => {
     );
   });
 
-  it('includes recordings_allowed in data_sources when operator has recording permission', async () => {
+  it('includes recording citations when operator has recording permission', async () => {
     const repo = makeRepo();
     const service = new IncidentInvestigationService(repo);
 
-    await service.investigate(
+    const result = await service.investigate(
       TENANT,
       'What happened on this call?',
       { call_ids: ['call-1'] },
@@ -127,15 +154,8 @@ describe('IncidentInvestigationService', () => {
       true,
     );
 
-    expect(repo.create).toHaveBeenCalledWith(
-      TENANT,
-      expect.any(String),
-      expect.any(Object),
-      expect.any(String),
-      expect.any(Array),
-      expect.arrayContaining(['recordings_allowed']),
-      'user-1',
-    );
+    expect(repo.findRecordingEvidence).toHaveBeenCalledWith(['call-1'], TENANT);
+    expect(result.citations.some((citation: IncidentInvestigation['citations'][number]) => citation.source === 'recording')).toBe(true);
   });
 
   it('uses time range when no call ids provided', async () => {

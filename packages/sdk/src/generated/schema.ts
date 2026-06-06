@@ -428,6 +428,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sip-trunks/assistant/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a draft-only SIP trunk suggestion from a carrier brief */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateCarrierAssistantSuggestionBody"];
+                };
+            };
+            responses: {
+                /** @description Draft suggestion generated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CarrierAssistantSuggestionResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/phone-numbers": {
         parameters: {
             query?: never;
@@ -3956,6 +3997,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/incidents/investigate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List recent tenant incident investigations */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Investigation history */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncidentInvestigationListResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /** Run a read-only cited tenant incident investigation */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateIncidentInvestigationBody"];
+                };
+            };
+            responses: {
+                /** @description Investigation created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncidentInvestigationResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/incidents/investigate/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["InvestigationIdParam"];
+            };
+            cookie?: never;
+        };
+        /** Get a specific tenant incident investigation */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["InvestigationIdParam"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Investigation detail */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncidentInvestigationResponse"];
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reporting/nl-query": {
         parameters: {
             query?: never;
@@ -4655,7 +4799,7 @@ export interface components {
         };
         AiAssistedContext: {
             /** @enum {string} */
-            source_request_type?: "prompt_generation" | "ivr_ai_turn";
+            source_request_type?: "prompt_generation" | "ivr_ai_turn" | "ivr_generation" | "ivr_ai_patch";
             /** Format: uuid */
             source_request_id?: string;
             prompt_template_id?: string;
@@ -5241,6 +5385,45 @@ export interface components {
             provider_metadata?: {
                 [key: string]: unknown;
             };
+        };
+        InvestigationCitation: {
+            /** @enum {string} */
+            source: "call_event" | "inbound_route" | "outbound_route" | "sip_trunk" | "recording" | "gateway_status";
+            id: string;
+            label: string;
+            fact: string;
+        };
+        InvestigationContextTimeRange: {
+            /** Format: date-time */
+            from: string;
+            /** Format: date-time */
+            to: string;
+        };
+        InvestigationContext: {
+            call_ids?: string[];
+            route_ids?: string[];
+            time_range?: components["schemas"]["InvestigationContextTimeRange"];
+        };
+        IncidentInvestigation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            question: string;
+            context: components["schemas"]["InvestigationContext"];
+            answer: string | null;
+            citations: components["schemas"]["InvestigationCitation"][];
+            data_sources: string[];
+            /** @enum {boolean} */
+            is_advisory: true;
+            /** Format: uuid */
+            created_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CreateIncidentInvestigationBody: {
+            question: string;
+            context?: components["schemas"]["InvestigationContext"];
         };
         IvrRuntimeSession: {
             /** Format: uuid */
@@ -5857,6 +6040,66 @@ export interface components {
         RecordingAnalysisRequestListResponse: {
             data: components["schemas"]["RecordingAnalysisRequest"][];
         };
+        IncidentInvestigationResponse: {
+            data: components["schemas"]["IncidentInvestigation"];
+        };
+        IncidentInvestigationListResponse: {
+            data: components["schemas"]["IncidentInvestigation"][];
+        };
+        CarrierAssistantDraft: {
+            name: string | null;
+            /** @enum {string|null} */
+            direction: "inbound" | "outbound" | "bidirectional" | null;
+            username: string | null;
+            realm: string | null;
+            proxy: string | null;
+            port: number | null;
+            /** @enum {string|null} */
+            transport: "udp" | "tcp" | "tls" | null;
+            auth_username: string | null;
+            /** @enum {string|null} */
+            dtmf_mode: "rfc2833" | "info" | "inband" | "auto" | null;
+            codec_prefs: string[] | null;
+            /** @enum {string|null} */
+            srtp_policy: "disabled" | "optional" | "required" | null;
+        };
+        CarrierAssistantMissingField: {
+            field: string;
+            reason: string;
+        };
+        CarrierAssistantValidationCheck: {
+            code: string;
+            description: string;
+            /** @enum {string} */
+            status: "ready" | "needs_input" | "recommended";
+        };
+        CarrierAssistantRuntimeHint: {
+            gateway_state: string | null;
+            /** Format: date-time */
+            gateway_observed_at: string | null;
+            /** @enum {string|null} */
+            latest_apply_status: "pending" | "applying" | "applied" | "failed" | "cancelled" | null;
+            latest_apply_error: string | null;
+        } | null;
+        CarrierAssistantSuggestion: {
+            /** @enum {string} */
+            assistant_mode: "create" | "update";
+            /** Format: uuid */
+            target_trunk_id: string | null;
+            target_trunk_name: string | null;
+            matched_template: string | null;
+            suggested_config: components["schemas"]["CarrierAssistantDraft"];
+            missing_fields: components["schemas"]["CarrierAssistantMissingField"][];
+            assumptions: string[];
+            warnings: string[];
+            validation_errors: string[];
+            validation_checks: components["schemas"]["CarrierAssistantValidationCheck"][];
+            next_steps: string[];
+            runtime_hint: components["schemas"]["CarrierAssistantRuntimeHint"];
+        };
+        CarrierAssistantSuggestionResponse: {
+            data: components["schemas"]["CarrierAssistantSuggestion"];
+        };
         WebhookDeliveryQueueListResponse: {
             data: components["schemas"]["WebhookDeliveryQueueItem"][];
         };
@@ -6029,6 +6272,11 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        CreateCarrierAssistantSuggestionBody: {
+            intent: string;
+            /** Format: uuid */
+            trunk_id?: string;
+        };
         RiskConcern: {
             code: string;
             /** @enum {string} */
@@ -6134,6 +6382,7 @@ export interface components {
         ExtensionIdParam: string;
         TrunkIdParam: string;
         NumberIdParam: string;
+        InvestigationIdParam: string;
         PromptIdParam: string;
         QueueIdParam: string;
         VoicemailBoxIdParam: string;
