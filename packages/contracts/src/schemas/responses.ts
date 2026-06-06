@@ -24,11 +24,13 @@ import { IvrRuntimeSessionSchema, IvrRuntimeSessionResultSchema } from './runtim
 import { PromptGenerationRequestSchema, IvrAiTurnRequestSchema } from './provider-work.js';
 import { CallEventSchema } from './call-events.js';
 import { RecordingSchema, RecordingAnalysisRequestSchema } from './recordings.js';
+import { IncidentInvestigationSchema } from './incident-investigation.js';
 import { WebhookDeliveryQueueItemSchema } from './automation.js';
 import { ChannelAccountSchema } from './channel-accounts.js';
 import { ChannelMessageSchema, ChannelMessageRequestSchema } from './channel-messages.js';
 import { MeetingSessionSchema } from './meeting-sessions.js';
 import { TenantSummarySchema, RuntimeHealthSummarySchema, PlatformRuntimeSummarySchema } from './platform.js';
+import { CarrierAssistantSuggestionSchema } from './carrier-assistant.js';
 
 // ── Extensions ────────────────────────────────────────────────────────────────
 export const ExtensionResponseSchema = z.object({ data: ExtensionSchema }).openapi('ExtensionResponse');
@@ -129,6 +131,12 @@ export const RecordingAnalysisRequestResponseSchema = z.object({ data: Recording
 export type RecordingAnalysisRequestResponse = z.infer<typeof RecordingAnalysisRequestResponseSchema>;
 export const RecordingAnalysisRequestListResponseSchema = z.object({ data: z.array(RecordingAnalysisRequestSchema) }).openapi('RecordingAnalysisRequestListResponse');
 export type RecordingAnalysisRequestListResponse = z.infer<typeof RecordingAnalysisRequestListResponseSchema>;
+export const IncidentInvestigationResponseSchema = z.object({ data: IncidentInvestigationSchema }).openapi('IncidentInvestigationResponse');
+export type IncidentInvestigationResponse = z.infer<typeof IncidentInvestigationResponseSchema>;
+export const IncidentInvestigationListResponseSchema = z.object({ data: z.array(IncidentInvestigationSchema) }).openapi('IncidentInvestigationListResponse');
+export type IncidentInvestigationListResponse = z.infer<typeof IncidentInvestigationListResponseSchema>;
+export const CarrierAssistantSuggestionResponseSchema = z.object({ data: CarrierAssistantSuggestionSchema }).openapi('CarrierAssistantSuggestionResponse');
+export type CarrierAssistantSuggestionResponse = z.infer<typeof CarrierAssistantSuggestionResponseSchema>;
 
 // ── Automation / Webhooks ─────────────────────────────────────────────────────
 export const WebhookDeliveryQueueListResponseSchema = z.object({ data: z.array(WebhookDeliveryQueueItemSchema) }).openapi('WebhookDeliveryQueueListResponse');

@@ -1,28 +1,10 @@
-export interface InvestigationCitation {
-  source: 'call_event' | 'inbound_route' | 'outbound_route' | 'sip_trunk' | 'recording' | 'gateway_status';
-  id: string;
-  label: string;
-  fact: string;
-}
+import type {
+  IncidentInvestigation,
+  InvestigationCitation,
+  InvestigationContext,
+} from '@managecallai/contracts';
 
-export interface InvestigationContext {
-  call_ids?: string[];
-  route_ids?: string[];
-  time_range?: { from: string; to: string };
-}
-
-export interface IncidentInvestigation {
-  id: string;
-  tenant_id: string;
-  question: string;
-  context: InvestigationContext;
-  answer: string | null;
-  citations: InvestigationCitation[];
-  data_sources: string[];
-  is_advisory: true;
-  created_by: string | null;
-  created_at: string;
-}
+export type { IncidentInvestigation, InvestigationCitation, InvestigationContext };
 
 export interface CallEventRow {
   call_id: string;
@@ -49,4 +31,14 @@ export interface GatewayStatusRow {
   state: string;
   ping_time_ms: number | null;
   updated_at: Date;
+}
+
+export interface RecordingEvidenceRow {
+  recording_id: string;
+  call_id: string;
+  recorded_at: Date;
+  summary_text: string | null;
+  transcript_text: string | null;
+  source_mode: 'deterministic' | 'provider_backed' | null;
+  provider_hint: string | null;
 }

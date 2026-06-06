@@ -1,7 +1,11 @@
 import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { z } from 'zod';
-import { UuidParamsSchema } from '@managecallai/contracts';
+import {
+  CreateIncidentInvestigationBodySchema,
+  IncidentInvestigationListResponseSchema,
+  IncidentInvestigationResponseSchema,
+  UuidParamsSchema,
+} from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -16,20 +20,6 @@ import {
 
 const service = new IncidentInvestigationService(new IncidentInvestigationRepository(db));
 
-const InvestigationContextSchema = z.object({
-  call_ids: z.array(z.string()).optional(),
-  route_ids: z.array(z.string().uuid()).optional(),
-  time_range: z.object({
-    from: z.string().datetime(),
-    to: z.string().datetime(),
-  }).optional(),
-});
-
-const InvestigateBodySchema = z.object({
-  question: z.string().min(1).max(2000),
-  context: InvestigationContextSchema.optional(),
-});
-
 function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof IncidentInvestigationNotFoundError) {
     return sendNotFound(reply, (err as Error).message);
@@ -41,7 +31,10 @@ export const incidentInvestigationController: FastifyPluginAsyncZod = async (app
   // List past investigations
   app.get(
     '/',
-    { preHandler: requireCapability(CAPABILITIES.TENANT_RISK_ANALYSIS) },
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_RISK_ANALYSIS),
+      schema: { response: { 200: IncidentInvestigationListResponseSchema } },
+    },
     async (req) => {
       const user = req.user as AuthClaims;
       return { data: await service.list(user.tenant_id) };
@@ -53,7 +46,10 @@ export const incidentInvestigationController: FastifyPluginAsyncZod = async (app
     '/:id',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_RISK_ANALYSIS),
-      schema: { params: UuidParamsSchema },
+      schema: {
+        params: UuidParamsSchema,
+        response: { 200: IncidentInvestigationResponseSchema },
+      },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
@@ -70,7 +66,10 @@ export const incidentInvestigationController: FastifyPluginAsyncZod = async (app
     '/',
     {
       preHandler: requireCapability(CAPABILITIES.TENANT_RISK_ANALYSIS),
-      schema: { body: InvestigateBodySchema },
+      schema: {
+        body: CreateIncidentInvestigationBodySchema,
+        response: { 201: IncidentInvestigationResponseSchema },
+      },
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;

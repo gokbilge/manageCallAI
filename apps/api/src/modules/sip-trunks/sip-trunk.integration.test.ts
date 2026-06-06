@@ -139,4 +139,46 @@ describe('SIP Trunks API integration', () => {
     const res = await app.inject({ method: 'GET', url: `/api/v1/sip-trunks/${id}`, headers: { authorization: `Bearer ${token2}` } });
     expect(res.statusCode).toBe(404);
   });
+
+  it('POST /sip-trunks/assistant/draft → returns a draft suggestion for a new carrier brief', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/sip-trunks/assistant/draft',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        intent: 'Create a Twilio SIP trunk using sip.twilio.example and auth username trunk-user',
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const { data } = res.json<{ data: Record<string, unknown> }>();
+    expect(data['assistant_mode']).toBe('create');
+    expect(data['matched_template']).toBe('Twilio Elastic SIP');
+    expect((data['suggested_config'] as Record<string, unknown>)['transport']).toBe('tls');
+    expect((data['missing_fields'] as Array<Record<string, unknown>>).some((item) => item['field'] === 'auth_password')).toBe(true);
+  });
+
+  it('POST /sip-trunks/assistant/draft → overlays an existing trunk draft', async () => {
+    const token = await register(randomUUID().slice(0, 8));
+    const create = await app.inject({ method: 'POST', url: '/api/v1/sip-trunks', headers: { authorization: `Bearer ${token}` }, payload: validBody() });
+    const trunkId = create.json<{ data: { id: string } }>().data.id;
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/sip-trunks/assistant/draft',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        trunk_id: trunkId,
+        intent: 'Update this trunk to use tls on port 5061 and proxy sip.new-provider.example',
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const { data } = res.json<{ data: { assistant_mode: string; target_trunk_id: string; suggested_config: Record<string, unknown> } }>();
+    expect(data.assistant_mode).toBe('update');
+    expect(data.target_trunk_id).toBe(trunkId);
+    expect(data.suggested_config.transport).toBe('tls');
+    expect(data.suggested_config.port).toBe(5061);
+  });
 });

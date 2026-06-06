@@ -43,6 +43,8 @@ const SelfServicePage = lazy(() => import('@/features/user/self-service-page').t
 const ContactsDirectoryPage = lazy(() => import('@/features/user/contacts-directory-page').then(m => ({ default: m.ContactsDirectoryPage })));
 const ExportPage = lazy(() => import('@/features/export/export-page').then(m => ({ default: m.ExportPage })));
 const CarrierHealthPage = lazy(() => import('@/features/integrations/carrier-health-page').then(m => ({ default: m.CarrierHealthPage })));
+const CarrierAssistantPage = lazy(() => import('@/features/integrations/carrier-assistant-page').then(m => ({ default: m.CarrierAssistantPage })));
+const IncidentInvestigationPage = lazy(() => import('@/features/ai/incident-investigation-page').then(m => ({ default: m.IncidentInvestigationPage })));
 const ReportingPage = lazy(() => import('@/features/reporting/reporting-page').then(m => ({ default: m.ReportingPage })));
 
 function PageLoader() {
@@ -204,6 +206,13 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_SIP_TRUNKS_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/integrations/carrier-health', element: <Suspense fallback={<PageLoader />}><CarrierHealthPage /></Suspense> },
+              { path: 'tenant/integrations/carrier-assistant', element: <Suspense fallback={<PageLoader />}><CarrierAssistantPage /></Suspense> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_RISK_ANALYSIS} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/investigations', element: <Suspense fallback={<PageLoader />}><IncidentInvestigationPage /></Suspense> },
             ],
           },
           {

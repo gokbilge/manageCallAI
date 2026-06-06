@@ -5,6 +5,7 @@ import type {
   IncidentInvestigation,
   InvestigationCitation,
   InvestigationContext,
+  RecordingEvidenceRow,
   RouteRow,
 } from './incident-investigation.types.js';
 
@@ -115,6 +116,30 @@ export class IncidentInvestigationRepository {
        JOIN freeswitch_nodes n ON n.id = s.node_id
        WHERE n.status = 'active'
        ORDER BY s.queried_at DESC LIMIT 20`,
+    );
+    return result.rows;
+  }
+
+  async findRecordingEvidence(callIds: string[], tenantId: string): Promise<RecordingEvidenceRow[]> {
+    if (callIds.length === 0) return [];
+    const result = await this.db.query<RecordingEvidenceRow>(
+      `SELECT DISTINCT ON (r.call_id)
+              r.id AS recording_id,
+              r.call_id,
+              r.recorded_at,
+              ar.summary_text,
+              ar.transcript_text,
+              ar.source_mode,
+              ar.provider_hint
+       FROM call_recordings r
+       LEFT JOIN recording_analysis_requests ar
+         ON ar.recording_id = r.id
+        AND ar.tenant_id = r.tenant_id
+       WHERE r.tenant_id = $2
+         AND r.call_id = ANY($1)
+         AND r.status != 'deleted'
+       ORDER BY r.call_id, r.recorded_at DESC, ar.created_at DESC NULLS LAST`,
+      [callIds, tenantId],
     );
     return result.rows;
   }

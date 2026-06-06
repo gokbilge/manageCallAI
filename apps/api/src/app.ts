@@ -25,6 +25,7 @@ import { promptAssetController } from './modules/prompts/prompt-asset.controller
 import { ivrRuntimeController } from './modules/runtime/ivr-runtime.controller.js';
 import { outboundCallController } from './modules/runtime/outbound-call.controller.js';
 import { sipTrunkController } from './modules/sip-trunks/sip-trunk.controller.js';
+import { carrierAssistantController } from './modules/sip-trunks/carrier-assistant.controller.js';
 import { runtimeApplyController } from './modules/sip-trunks/runtime-apply.controller.js';
 import { featureCodeController } from './modules/feature-codes/feature-code.controller.js';
 import { parkingLotController, parkingRuntimeController } from './modules/parking/parking-lot.controller.js';
@@ -75,6 +76,7 @@ import {
 function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(extensionController, { prefix: '/api/v1/extensions' });
   app.register(sipTrunkController, { prefix: '/api/v1/sip-trunks' });
+  app.register(carrierAssistantController, { prefix: '/api/v1/sip-trunks' });
   app.register(featureCodeController, { prefix: '/api/v1/feature-codes' });
   app.register(parkingLotController, { prefix: '/api/v1/parking-lots' });
   app.register(conferenceRoomController, { prefix: '/api/v1/conference-rooms' });

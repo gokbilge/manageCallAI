@@ -23,8 +23,10 @@ export const paths = {
     exportData: '/tenant/export',
     selfService: '/tenant/me',
     carrierHealth: '/tenant/integrations/carrier-health',
+    carrierAssistant: '/tenant/integrations/carrier-assistant',
     smokeTest: '/tenant/integrations/directory-smoke-test',
     trunkTestWorkflow: '/tenant/integrations/trunk-test-workflow',
+    investigations: '/tenant/investigations',
     reporting: '/tenant/reporting',
   },
 } as const;
