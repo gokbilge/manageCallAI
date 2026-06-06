@@ -27,11 +27,21 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [competitive-gap-analysis.md](competitive-gap-analysis.md)
   Competitive audit of PBX completeness, operator UX, runtime operations, integrations, enterprise posture, and AI gaps versus mature PBX products.
 
+- [pbx-migration-gap-analysis.md](pbx-migration-gap-analysis.md)
+  Strategic PBX migration gap analysis covering target-model requirements,
+  migration safety, and source-system mapping scope.
+
 Planning baseline for the next feature releases:
 
 - `v0.4.x` = P0 competitive baseline
 - `v0.5.x` = P1 operational maturity
 - `v0.6.x` = P2 AI-native differentiation
+
+Enterprise PBX and migration follow-on planning is tracked separately in:
+
+- [enterprise-migration-release-train.md](enterprise-migration-release-train.md)
+  Phased split for enterprise product-model expansion before `v0.7.0`,
+  migration-analysis slices in `v0.8.x`, and importer slices after `v0.8.x`.
 
 Current queue state:
 
@@ -44,6 +54,14 @@ Current queue state:
 
 - [post-release-roadmap.md](post-release-roadmap.md)
   Seven post-release expansion workstreams that now map to explicit follow-on slices.
+
+- [enterprise-migration-release-train.md](enterprise-migration-release-train.md)
+  Release and slice plan for enterprise PBX model expansion, later migration
+  analysis, and later importer workflows.
+
+- [pbx-migration-gap-analysis.md](pbx-migration-gap-analysis.md)
+  Strategic migration gap analysis that feeds the release train and later
+  migration-readiness planning.
 
 - [verification/slice-07-live-proof.md](verification/slice-07-live-proof.md)
   Live close-out checklist for the inbound IVR and call-group runtime proof.

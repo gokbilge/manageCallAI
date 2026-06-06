@@ -114,7 +114,35 @@ Current implementation status:
 - provider-backed execution still resolves through provider-neutral work-request
   contracts and can fall back to deterministic `auto` mode when policy forbids it
 
-### 3.10 Release evidence layer
+### 3.10 Enterprise PBX expansion layer
+
+The next planned non-AI expansion lane is an enterprise-model track that stays
+inside the same API-owned control-plane boundaries.
+
+Responsibilities:
+
+- introduce explicit numbering-plan and calling-policy objects
+- introduce explicit site, location, and carrier-topology objects
+- separate users, extensions, devices, credentials, and registrations more clearly
+- deepen schedule and line-appearance modeling without bypassing the existing
+  safety lifecycle
+
+Planned sequencing:
+
+- `v0.6.3` through `v0.6.8` add the core enterprise model (`#300`-`#315`)
+- `v0.7.0` through `v0.7.4` stabilize lifecycle, validation, simulation, and
+  operator productization (`#316`-`#330`)
+- `v0.8.x` documents migration-analysis and source mappings against that model
+  (`#331`-`#334`)
+- importer workflows come later (`#335`-`#339`)
+
+Non-responsibilities:
+
+- importer-first approximation of missing enterprise concepts
+- direct source-PBX execution or raw dialplan import
+- autonomous publish of imported routes or trunks
+
+### 3.11 Release evidence layer
 
 - validators and smoke scripts under `scripts/`
 - release and operations documentation under `docs/release/` and `docs/ops/`
@@ -141,6 +169,21 @@ Responsibilities:
 - parking lot
 - conference room
 - end-user self-service policy
+
+Planned enterprise-model additions:
+
+- numbering plan
+- numbering plan rule
+- calling policy
+- site
+- location
+- network zone
+- trunk group
+- route list
+- device
+- line appearance
+- schedule group
+- holiday calendar
 
 ### 4.2 Operational objects
 
@@ -180,6 +223,13 @@ The current code line is organized around route modules plus service/repository 
 - `RuntimeNodeStatusService`
 - `SetupService`
 - `AiPolicyService`
+- planned `NumberingPlanService`
+- planned `CallingPolicyService`
+- planned `SiteService`
+- planned `TrunkGroupService`
+- planned `DeviceService`
+- planned `EnterpriseScheduleService`
+- planned `LineAppearanceService`
 - planned `CallFailureExplanationService`
 - planned `RouteRiskAnalysisService`
 - `RecordingSummaryService` behavior currently lives inside the recordings and

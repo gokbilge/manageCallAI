@@ -237,3 +237,50 @@ workflows:
 - AI-originated IVR drafts persist structured lineage in API-owned metadata and
   always require a human approval record before publish or rollback can affect
   live call behavior
+
+## 11. Planned enterprise model and migration sequencing
+
+After the `v0.6.x` AI differentiation lane, the next planned expansion is not a
+single migration-assistant release.
+
+It is intentionally split into three phases:
+
+1. enterprise product-model expansion before `v0.7.0`
+2. enterprise-model stabilization and productization in `v0.7.x`
+3. migration-analysis documents in `v0.8.x`, followed later by importer work
+
+Planned pre-`v0.7.0` product-model releases:
+
+- `v0.6.3` numbering and outbound policy (`#300`, `#301`, `#302`)
+- `v0.6.4` site and location core (`#303`, `#304`)
+- `v0.6.5` trunk-group routing (`#305`, `#306`, `#307`)
+- `v0.6.6` people, extensions, and devices (`#308`, `#309`, `#310`)
+- `v0.6.7` enterprise schedules (`#311`, `#312`, `#313`)
+- `v0.6.8` line appearance foundation (`#314`, `#315`)
+
+Planned `v0.7.x` stabilization releases:
+
+- `v0.7.0` evidence boundary and model freeze (`#316`, `#317`, `#318`)
+- `v0.7.1` lifecycle parity across enterprise objects (`#319`, `#320`, `#321`)
+- `v0.7.2` validation and simulation depth (`#322`, `#323`, `#324`)
+- `v0.7.3` operator and admin productization (`#325`, `#326`, `#327`)
+- `v0.7.4` enterprise baseline close-out (`#328`, `#329`, `#330`)
+
+Planned `v0.8.x` migration-analysis lane:
+
+- `v0.8.0` capability matrix and support taxonomy (`#331`)
+- `v0.8.1` open-source PBX mapping set (`#332`)
+- `v0.8.2` enterprise PBX mapping set (`#333`)
+- `v0.8.3` migration readiness roadmap and compatibility report design (`#334`)
+
+Post-`v0.8.x` importer work remains a later implementation lane:
+
+- canonical snapshot and parser contracts (`#335`)
+- source adapters (`#336`)
+- compatibility engine (`#337`)
+- draft importer (`#338`)
+- cutover and evidence workflow (`#339`)
+
+This sequence is planning guidance, not release evidence. Architecture intent
+still forbids importer-first development that forces unsafe approximations into
+the control-plane model.

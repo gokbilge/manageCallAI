@@ -92,6 +92,13 @@ Planned `v0.6.x` AI assistance is explicitly assistive. It may generate
 explanations, summaries, and draft-safe recommendations, but it must not bypass
 validation, simulation, approval, publish, rollback, or runtime auth controls.
 
+The planned enterprise and migration lane after `v0.6.x` is also phased:
+
+- `v0.6.3` through `v0.6.8` add enterprise product-model depth (`#300`-`#315`)
+- `v0.7.0` through `v0.7.4` stabilize and productize that model (`#316`-`#330`)
+- `v0.8.x` produces migration-analysis and mapping documents (`#331`-`#334`)
+- importer execution follows only after those phases (`#335`-`#339`)
+
 ### 5.7 FreeSWITCH adapter layer
 
 - Go adapter service coordinating FreeSWITCH integration
