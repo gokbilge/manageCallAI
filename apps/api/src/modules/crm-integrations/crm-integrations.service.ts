@@ -60,7 +60,7 @@ export class CrmIntegrationsService {
     // Resolve the lookup URL by substituting {caller_id}.
     const lookupUrl = integration.lookup_url_template.replace('{caller_id}', encodeURIComponent(input.caller_id));
 
-    let outcome: CrmLookupLog['outcome'] = 'not_found';
+    let outcome: CrmLookupLog['outcome'];
     let responseSummary: string | null = null;
     let errorDetail: string | null = null;
 
