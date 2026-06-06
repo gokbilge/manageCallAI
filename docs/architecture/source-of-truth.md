@@ -115,6 +115,8 @@ The API owns:
 - audit and normalized observability
 - setup/bootstrap lifecycle
 - runtime callback intake and node-scoped runtime auth
+- AI policy enforcement for optional provider-backed transcript, summary,
+  prompt-generation, and bounded IVR-assist paths
 
 The API must not delegate business lifecycle decisions to Lua, the Go agent, MCP, or n8n.
 

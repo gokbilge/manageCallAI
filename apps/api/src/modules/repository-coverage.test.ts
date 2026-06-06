@@ -243,7 +243,27 @@ describe('Repository coverage', () => {
     const member = { id: 'member-1', call_group_id: 'group-1', tenant_id: 'tenant-1', extension_id: 'ext-1', position: 1 };
     const prompt = { id: 'prompt-1', tenant_id: 'tenant-1', name: 'Prompt', media_type: 'audio/wav', storage_uri: 'prompt.wav', status: 'active' };
     const recording = { id: 'recording-1', tenant_id: 'tenant-1', call_id: 'call-1', storage_path: 'recording.wav', status: 'available' };
-    const analysis = { id: 'analysis-1', tenant_id: 'tenant-1', recording_id: 'recording-1', status: 'queued', requested_outputs: ['transcript'] };
+    const analysis = {
+      id: 'analysis-1',
+      tenant_id: 'tenant-1',
+      recording_id: 'recording-1',
+      status: 'queued',
+      requested_outputs: ['transcript'],
+      language_hint: null,
+      provider_hint: 'auto',
+      transcript_status: 'queued',
+      summary_status: null,
+      processor_id: null,
+      claimed_at: null,
+      language: null,
+      transcript_text: null,
+      summary_text: null,
+      error_message: null,
+      provider_metadata: {},
+      metadata: {},
+      created_at: '2026-06-06T00:00:00.000Z',
+      completed_at: null,
+    };
     const policy = { id: 'policy-1', tenant_id: 'tenant-1', recording_retention_days: 30 };
     const hold = { id: 'hold-1', tenant_id: 'tenant-1', resource_type: 'recording', status: 'active' };
     const pool = makePool([

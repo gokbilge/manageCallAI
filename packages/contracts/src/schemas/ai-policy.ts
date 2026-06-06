@@ -1,7 +1,7 @@
 import { z } from '../registry.js';
 import { IntegrationProviderSchema } from './provider-work.js';
 
-export const AiFeatureSchema = z.enum(['prompt_generation', 'ivr_ai_turn']);
+export const AiFeatureSchema = z.enum(['prompt_generation', 'ivr_ai_turn', 'recording_analysis']);
 export type AiFeature = z.infer<typeof AiFeatureSchema>;
 
 const NonAutoIntegrationProviderSchema = z.enum(['openai', 'elevenlabs', 'whisper', 'external', 'custom']);
@@ -23,6 +23,7 @@ export const PlatformAiPolicySchema = z.object({
   feature_policies: z.object({
     prompt_generation: AiFeaturePolicySchema,
     ivr_ai_turn: AiFeaturePolicySchema,
+    recording_analysis: AiFeaturePolicySchema,
   }),
   updated_at: z.string().datetime(),
   updated_by_actor_id: z.string().nullable(),
@@ -38,6 +39,7 @@ export const UpdatePlatformAiPolicyBodySchema = z.object({
   feature_policies: z.object({
     prompt_generation: AiFeaturePolicySchema,
     ivr_ai_turn: AiFeaturePolicySchema,
+    recording_analysis: AiFeaturePolicySchema,
   }),
 }).openapi('UpdatePlatformAiPolicyBody');
 export type UpdatePlatformAiPolicyBody = z.infer<typeof UpdatePlatformAiPolicyBodySchema>;
@@ -60,6 +62,7 @@ export const TenantAiPolicySchema = z.object({
   feature_policies: z.object({
     prompt_generation: TenantAiFeaturePolicySchema,
     ivr_ai_turn: TenantAiFeaturePolicySchema,
+    recording_analysis: TenantAiFeaturePolicySchema,
   }),
   updated_at: z.string().datetime(),
 }).openapi('TenantAiPolicy');
@@ -73,6 +76,10 @@ export const UpdateTenantAiPolicyBodySchema = z.object({
       preferred_provider: NonAutoIntegrationProviderSchema.nullable().optional(),
     }).optional(),
     ivr_ai_turn: z.object({
+      enabled: z.boolean(),
+      preferred_provider: NonAutoIntegrationProviderSchema.nullable().optional(),
+    }).optional(),
+    recording_analysis: z.object({
       enabled: z.boolean(),
       preferred_provider: NonAutoIntegrationProviderSchema.nullable().optional(),
     }).optional(),

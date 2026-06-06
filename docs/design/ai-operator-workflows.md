@@ -95,6 +95,12 @@ Current implementation status:
 - call-detail review resolves through the linked call recording when one exists
 - voicemail review resolves through the linked call recording for the voicemail
   `call_id`
+- recording-analysis requests now expose explicit transcript and summary lifecycle
+  state per request
+- provider-backed transcript and summary generation is optional and policy-gated;
+  deterministic fallback remains the default path
+- summary-review responses distinguish deterministic fallback from
+  provider-backed output and preserve provider metadata for operator review
 - transcript text is additionally gated by `tenant.compliance.admin`
 - missing recording-analysis or elapsed retention windows produce explicit
   unavailable states instead of fabricated output
@@ -187,6 +193,7 @@ This foundation currently governs:
 
 - prompt generation requests
 - runtime IVR AI turn requests
+- recording transcript and summary analysis requests
 
 It does not relax any publish, approval, or runtime-mutation boundary.
 

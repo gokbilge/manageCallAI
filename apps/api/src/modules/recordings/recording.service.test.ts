@@ -57,7 +57,10 @@ function makeMockRepo(): RecordingRepository {
       recording_id: 'rec-1',
       requested_outputs: ['transcript', 'summary'],
       language_hint: 'en-US',
+      provider_hint: 'auto',
       status: 'queued',
+      transcript_status: 'queued',
+      summary_status: 'queued',
       processor_id: null,
       claimed_at: null,
       language: null,
@@ -66,6 +69,7 @@ function makeMockRepo(): RecordingRepository {
       error_message: null,
       provider_metadata: {},
       metadata: {},
+      source_mode: 'deterministic',
       created_at: '2026-05-29T10:00:02Z',
       completed_at: null,
     }),
@@ -78,7 +82,10 @@ function makeMockRepo(): RecordingRepository {
       recording_id: 'rec-1',
       requested_outputs: ['transcript', 'summary'],
       language_hint: 'en-US',
+      provider_hint: 'auto',
       status: 'completed',
+      transcript_status: 'completed',
+      summary_status: 'completed',
       processor_id: 'processor-1',
       claimed_at: '2026-05-29T10:00:03Z',
       language: 'en',
@@ -87,6 +94,7 @@ function makeMockRepo(): RecordingRepository {
       error_message: null,
       provider_metadata: {},
       metadata: {},
+      source_mode: 'deterministic',
       created_at: '2026-05-29T10:00:02Z',
       completed_at: '2026-05-29T10:01:00Z',
     }),
@@ -189,6 +197,60 @@ describe('RecordingService', () => {
       }));
     });
 
+    it('records provider-backed policy metadata when explicit provider-backed analysis is allowed', async () => {
+      const repo = makeMockRepo();
+      vi.mocked(repo.createAnalysisRequest).mockResolvedValueOnce({
+        id: 'analysis-9',
+        tenant_id: 'tenant-1',
+        recording_id: 'rec-1',
+        requested_outputs: ['transcript', 'summary'],
+        language_hint: null,
+        provider_hint: 'whisper',
+        status: 'queued',
+        transcript_status: 'queued',
+        summary_status: 'queued',
+        processor_id: null,
+        claimed_at: null,
+        language: null,
+        transcript_text: null,
+        summary_text: null,
+        error_message: null,
+        provider_metadata: {},
+        metadata: { ai_policy: { effective_provider_hint: 'whisper' } },
+        source_mode: 'provider_backed',
+        created_at: '2026-06-05T10:00:00Z',
+        completed_at: null,
+      });
+      const aiPolicyService = {
+        requireProviderBackedAccess: vi.fn().mockResolvedValue({
+          requested_provider_hint: 'whisper',
+          effective_provider_hint: 'whisper',
+          provider_backed_requested: true,
+          provider_backed_allowed: true,
+          fallback_reason: null,
+        }),
+      };
+      const service = new RecordingService(repo, 'recordings', aiPolicyService as never);
+
+      const result = await service.createAnalysisRequest('rec-1', 'tenant-1', {
+        requested_outputs: ['transcript', 'summary'],
+        provider_hint: 'whisper',
+      });
+
+      expect(result.provider_hint).toBe('whisper');
+      expect(result.source_mode).toBe('provider_backed');
+      expect(repo.createAnalysisRequest).toHaveBeenCalledWith('rec-1', 'tenant-1', expect.objectContaining({
+        provider_hint: 'whisper',
+        metadata: expect.objectContaining({
+          ai_policy: expect.objectContaining({
+            requested_provider_hint: 'whisper',
+            effective_provider_hint: 'whisper',
+            provider_backed_allowed: true,
+          }),
+        }),
+      }));
+    });
+
     it('checks the parent recording before listing analysis requests', async () => {
       const repo = makeMockRepo();
       const service = new RecordingService(repo);
@@ -218,7 +280,10 @@ describe('RecordingService', () => {
         recording_id: 'rec-1',
         requested_outputs: ['transcript', 'summary'],
         language_hint: 'en-US',
+        provider_hint: 'auto',
         status: 'completed',
+        transcript_status: 'completed',
+        summary_status: 'completed',
         processor_id: 'processor-1',
         claimed_at: '2026-06-05T08:00:00Z',
         language: 'en',
@@ -227,6 +292,7 @@ describe('RecordingService', () => {
         error_message: null,
         provider_metadata: {},
         metadata: {},
+        source_mode: 'deterministic',
         created_at: '2026-06-05T08:00:00Z',
         completed_at: new Date('2026-06-05T08:05:00.000Z') as unknown as string,
       });
@@ -268,7 +334,10 @@ describe('RecordingService', () => {
         recording_id: 'rec-1',
         requested_outputs: ['summary'],
         language_hint: null,
+        provider_hint: 'openai',
         status: 'completed',
+        transcript_status: null,
+        summary_status: 'completed',
         processor_id: 'processor-2',
         claimed_at: '2026-06-05T09:00:00Z',
         language: 'en',
@@ -276,7 +345,8 @@ describe('RecordingService', () => {
         summary_text: 'Voicemail summary',
         error_message: null,
         provider_metadata: { source: 'test' },
-        metadata: {},
+        metadata: { ai_policy: { effective_provider_hint: 'openai' } },
+        source_mode: 'provider_backed',
         created_at: '2026-06-05T09:00:00Z',
         completed_at: '2026-06-05T09:01:00Z',
       });
@@ -290,6 +360,8 @@ describe('RecordingService', () => {
         resource_type: 'voicemail',
         resource_id: 'vm-1',
         linked_recording_id: 'rec-1',
+        source_mode: 'provider_backed',
+        provider_hint: 'openai',
         summary_text: 'Voicemail summary',
         transcript_text: null,
         transcript_access: 'restricted',
@@ -326,7 +398,10 @@ describe('RecordingService', () => {
         recording_id: 'rec-1',
         requested_outputs: ['summary'],
         language_hint: null,
+        provider_hint: 'auto',
         status: 'completed',
+        transcript_status: null,
+        summary_status: 'completed',
         processor_id: 'processor-3',
         claimed_at: '2026-01-01T00:00:00Z',
         language: 'en',
@@ -335,6 +410,7 @@ describe('RecordingService', () => {
         error_message: null,
         provider_metadata: {},
         metadata: {},
+        source_mode: 'deterministic',
         created_at: '2026-01-01T00:00:00Z',
         completed_at: '2026-01-01T00:01:00Z',
       });
@@ -364,7 +440,10 @@ describe('RecordingService', () => {
         recording_id: 'rec-1',
         requested_outputs: ['summary', 'transcript'],
         language_hint: null,
+        provider_hint: 'auto',
         status: 'completed',
+        transcript_status: 'completed',
+        summary_status: 'completed',
         processor_id: 'processor-4',
         claimed_at: '2026-01-01T00:00:00Z',
         language: 'en',
@@ -373,6 +452,7 @@ describe('RecordingService', () => {
         error_message: null,
         provider_metadata: {},
         metadata: {},
+        source_mode: 'deterministic',
         created_at: '2026-01-01T00:00:00Z',
         completed_at: '2026-01-01T00:01:00Z',
       });
@@ -417,7 +497,10 @@ describe('RecordingService', () => {
         recording_id: 'rec-1',
         requested_outputs: ['summary'],
         language_hint: null,
+        provider_hint: 'auto',
         status: 'completed',
+        transcript_status: null,
+        summary_status: 'failed',
         processor_id: 'processor-5',
         claimed_at: null,
         language: null,
@@ -426,6 +509,7 @@ describe('RecordingService', () => {
         error_message: null,
         provider_metadata: {},
         metadata: {},
+        source_mode: 'deterministic',
         created_at: null as unknown as string,
         completed_at: null,
       });
@@ -455,7 +539,10 @@ describe('RecordingService', () => {
         recording_id: 'rec-1',
         requested_outputs: ['summary'],
         language_hint: null,
+        provider_hint: 'openai',
         status: 'failed',
+        transcript_status: null,
+        summary_status: 'failed',
         processor_id: 'processor-6',
         claimed_at: '2026-06-05T09:00:00Z',
         language: 'en',
@@ -463,7 +550,8 @@ describe('RecordingService', () => {
         summary_text: null,
         error_message: 'provider timeout',
         provider_metadata: {},
-        metadata: {},
+        metadata: { ai_policy: { effective_provider_hint: 'openai' } },
+        source_mode: 'provider_backed',
         created_at: '2026-06-05T09:00:00Z',
         completed_at: '2026-06-05T09:01:00Z',
       });
@@ -487,7 +575,10 @@ describe('RecordingService', () => {
         recording_id: 'rec-1',
         requested_outputs: ['summary'],
         language_hint: null,
+        provider_hint: 'auto',
         status: 'cancelled',
+        transcript_status: null,
+        summary_status: 'cancelled',
         processor_id: 'processor-7',
         claimed_at: '2026-06-05T09:00:00Z',
         language: 'en',
@@ -496,6 +587,7 @@ describe('RecordingService', () => {
         error_message: null,
         provider_metadata: {},
         metadata: {},
+        source_mode: 'deterministic',
         created_at: '2026-06-05T09:00:00Z',
         completed_at: '2026-06-05T09:01:00Z',
       });

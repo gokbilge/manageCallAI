@@ -1,7 +1,7 @@
 import { BrainCircuit, FileText, ShieldAlert, Sparkles } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { SummaryReview } from '@/lib/ai/summary-review-api';
-import { reasonLabel, statusLabel } from '@/lib/ai/summary-review-api';
+import { outputStatusLabel, reasonLabel, sourceModeLabel, statusLabel } from '@/lib/ai/summary-review-api';
 
 export function SummaryReviewPanel({
   review,
@@ -40,6 +40,9 @@ export function SummaryReviewPanel({
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <Fact label="AI review state" value={statusLabel(review)} icon={BrainCircuit} />
+        <Fact label="Summary source" value={sourceModeLabel(review)} icon={Sparkles} />
+        <Fact label="Summary lifecycle" value={outputStatusLabel(review.summary_status)} icon={Sparkles} />
+        <Fact label="Transcript lifecycle" value={outputStatusLabel(review.transcript_status)} icon={FileText} />
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3">
           <p className="text-xs text-[var(--color-muted-fg)]">Transcript access</p>
           <div className="mt-2 flex items-center justify-between gap-3">

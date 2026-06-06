@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reasonLabel, statusLabel, type SummaryReview } from './summary-review-api';
+import { outputStatusLabel, reasonLabel, sourceModeLabel, statusLabel, type SummaryReview } from './summary-review-api';
 
 function makeReview(overrides: Partial<SummaryReview> = {}): SummaryReview {
   return {
@@ -9,6 +9,10 @@ function makeReview(overrides: Partial<SummaryReview> = {}): SummaryReview {
     linked_recording_id: 'rec-1',
     analysis_request_id: 'analysis-1',
     status: 'completed',
+    transcript_status: null,
+    summary_status: 'completed',
+    source_mode: 'deterministic',
+    provider_hint: 'auto',
     reason: null,
     summary_text: 'Summary',
     transcript_text: null,
@@ -43,5 +47,12 @@ describe('summary-review-api labels', () => {
     expect(reasonLabel('analysis_failed')).toMatch(/analysis run failed/i);
     expect(reasonLabel('analysis_cancelled')).toMatch(/analysis run was cancelled/i);
     expect(reasonLabel(null)).toBeNull();
+  });
+
+  it('returns source and output lifecycle labels', () => {
+    expect(sourceModeLabel(makeReview())).toBe('Deterministic fallback');
+    expect(sourceModeLabel(makeReview({ source_mode: 'provider_backed', provider_hint: 'openai' }))).toBe('Provider-backed (openai)');
+    expect(outputStatusLabel('processing')).toBe('Running');
+    expect(outputStatusLabel(null)).toBe('Not requested');
   });
 });

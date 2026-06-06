@@ -1,6 +1,6 @@
 import type { IntegrationProvider } from '../provider-work/provider-work.types.js';
 
-export type AiFeature = 'prompt_generation' | 'ivr_ai_turn';
+export type AiFeature = 'prompt_generation' | 'ivr_ai_turn' | 'recording_analysis';
 export type NonAutoIntegrationProvider = Exclude<IntegrationProvider, 'auto'>;
 
 export interface AiFeaturePolicy {
@@ -28,6 +28,8 @@ export interface TenantAiPolicyOverride {
   prompt_generation_preferred_provider: NonAutoIntegrationProvider | null;
   ivr_ai_turn_enabled: boolean;
   ivr_ai_turn_preferred_provider: NonAutoIntegrationProvider | null;
+  recording_analysis_enabled: boolean;
+  recording_analysis_preferred_provider: NonAutoIntegrationProvider | null;
   created_at: string;
   updated_at: string;
 }

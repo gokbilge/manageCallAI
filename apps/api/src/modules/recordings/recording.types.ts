@@ -1,3 +1,5 @@
+import type { IntegrationProvider } from '../provider-work/provider-work.types.js';
+
 export type RecordingStatus = 'pending' | 'available' | 'deleted';
 
 export interface Recording {
@@ -25,6 +27,7 @@ export interface IngestRecordingInput {
 
 export type RecordingAnalysisStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
 export type RecordingAnalysisOutput = 'transcript' | 'summary';
+export type RecordingAnalysisSourceMode = 'deterministic' | 'provider_backed';
 
 export interface RecordingAnalysisRequest {
   id: string;
@@ -32,7 +35,10 @@ export interface RecordingAnalysisRequest {
   recording_id: string;
   requested_outputs: RecordingAnalysisOutput[];
   language_hint: string | null;
+  provider_hint: IntegrationProvider;
   status: RecordingAnalysisStatus;
+  transcript_status: RecordingAnalysisStatus | null;
+  summary_status: RecordingAnalysisStatus | null;
   processor_id: string | null;
   claimed_at: string | null;
   language: string | null;
@@ -41,6 +47,7 @@ export interface RecordingAnalysisRequest {
   error_message: string | null;
   provider_metadata: Record<string, unknown>;
   metadata: Record<string, unknown>;
+  source_mode: RecordingAnalysisSourceMode;
   created_at: string;
   completed_at: string | null;
 }
@@ -48,6 +55,7 @@ export interface RecordingAnalysisRequest {
 export interface CreateRecordingAnalysisInput {
   requested_outputs: RecordingAnalysisOutput[];
   language_hint?: string | null;
+  provider_hint?: IntegrationProvider;
   metadata?: Record<string, unknown>;
 }
 
@@ -89,6 +97,10 @@ export interface SummaryReview {
   linked_recording_id: string | null;
   analysis_request_id: string | null;
   status: SummaryReviewStatus;
+  transcript_status: RecordingAnalysisStatus | null;
+  summary_status: RecordingAnalysisStatus | null;
+  source_mode: RecordingAnalysisSourceMode;
+  provider_hint: IntegrationProvider;
   reason: SummaryReviewReason | null;
   summary_text: string | null;
   transcript_text: string | null;

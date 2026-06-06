@@ -14,6 +14,7 @@ import type { AiPolicyRepository } from './ai-policy.repository.js';
 
 const PROMPT_PROVIDERS: readonly NonAutoIntegrationProvider[] = ['openai', 'elevenlabs', 'external', 'custom'];
 const IVR_AI_PROVIDERS: readonly NonAutoIntegrationProvider[] = ['openai', 'external', 'custom'];
+const RECORDING_ANALYSIS_PROVIDERS: readonly NonAutoIntegrationProvider[] = ['openai', 'whisper', 'external', 'custom'];
 
 export class AiPolicyValidationError extends Error {
   constructor(message: string) {
@@ -33,7 +34,7 @@ export class AiPolicyService {
   constructor(private readonly repo: AiPolicyRepository) {}
 
   async getPlatformPolicy(): Promise<PlatformAiPolicy> {
-    return (await this.repo.findPlatformPolicy()) ?? defaultPlatformPolicy();
+    return normalizePlatformPolicy((await this.repo.findPlatformPolicy()) ?? defaultPlatformPolicy());
   }
 
   async updatePlatformPolicy(input: UpdatePlatformAiPolicyInput, actor: AuthClaims): Promise<PlatformAiPolicy> {
@@ -152,6 +153,7 @@ export class AiPolicyService {
     const providerBackedEnabled = platform.provider_backed_enabled && (override?.provider_backed_enabled ?? false);
     const promptPolicy = platform.feature_policies.prompt_generation;
     const ivrPolicy = platform.feature_policies.ivr_ai_turn;
+    const recordingPolicy = platform.feature_policies.recording_analysis;
 
     return {
       tenant_id: tenantId,
@@ -173,6 +175,16 @@ export class AiPolicyService {
           allowed_models: ivrPolicy.allowed_models,
           preferred_provider: resolvePreferredProvider(ivrPolicy.allowed_providers, override?.ivr_ai_turn_preferred_provider ?? null),
           max_input_characters: ivrPolicy.max_input_characters,
+        },
+        recording_analysis: {
+          enabled: providerBackedEnabled && recordingPolicy.enabled && (override?.recording_analysis_enabled ?? false),
+          allowed_providers: recordingPolicy.allowed_providers,
+          allowed_models: recordingPolicy.allowed_models,
+          preferred_provider: resolvePreferredProvider(
+            recordingPolicy.allowed_providers,
+            override?.recording_analysis_preferred_provider ?? null,
+          ),
+          max_input_characters: recordingPolicy.max_input_characters,
         },
       },
       updated_at: normalizeIsoTimestamp(override?.updated_at ?? platform.updated_at),
@@ -228,9 +240,27 @@ function defaultPlatformPolicy(): PlatformAiPolicy {
         allowed_models: [],
         max_input_characters: 2000,
       },
+      recording_analysis: {
+        enabled: false,
+        allowed_providers: [...RECORDING_ANALYSIS_PROVIDERS],
+        allowed_models: [],
+        max_input_characters: null,
+      },
     },
     updated_at: new Date(0).toISOString(),
     updated_by_actor_id: null,
     updated_by_actor_role: null,
+  };
+}
+
+function normalizePlatformPolicy(policy: PlatformAiPolicy): PlatformAiPolicy {
+  const fallback = defaultPlatformPolicy();
+  return {
+    ...policy,
+    feature_policies: {
+      prompt_generation: policy.feature_policies.prompt_generation ?? fallback.feature_policies.prompt_generation,
+      ivr_ai_turn: policy.feature_policies.ivr_ai_turn ?? fallback.feature_policies.ivr_ai_turn,
+      recording_analysis: policy.feature_policies.recording_analysis ?? fallback.feature_policies.recording_analysis,
+    },
   };
 }

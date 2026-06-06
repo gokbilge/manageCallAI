@@ -84,18 +84,20 @@ export class RecordingRepository {
   ): Promise<RecordingAnalysisRequest> {
     const result = await this.db.query<RecordingAnalysisRequest>(
       `INSERT INTO recording_analysis_requests
-         (tenant_id, recording_id, requested_outputs, language_hint, metadata)
-       SELECT $1, id, $3, $4, $5::jsonb
+         (tenant_id, recording_id, requested_outputs, language_hint, provider_hint, transcript_status, summary_status, metadata)
+       SELECT $1, id, $3, $4, $5, CASE WHEN 'transcript' = ANY($3::text[]) THEN 'queued' ELSE NULL END,
+              CASE WHEN 'summary' = ANY($3::text[]) THEN 'queued' ELSE NULL END, $6::jsonb
        FROM call_recordings
        WHERE id = $2 AND tenant_id = $1 AND status != 'deleted'
-       RETURNING id, tenant_id, recording_id, requested_outputs, language_hint, status, processor_id,
-                 claimed_at, language, transcript_text, summary_text, error_message, provider_metadata,
-                 metadata, created_at, completed_at`,
+       RETURNING id, tenant_id, recording_id, requested_outputs, language_hint, provider_hint, status,
+                 transcript_status, summary_status, processor_id, claimed_at, language, transcript_text, summary_text,
+                 error_message, provider_metadata, metadata, created_at, completed_at`,
       [
         tenantId,
         recordingId,
         input.requested_outputs,
         input.language_hint ?? null,
+        input.provider_hint ?? 'auto',
         JSON.stringify(input.metadata ?? {}),
       ],
     );
@@ -105,8 +107,8 @@ export class RecordingRepository {
   async listAnalysisRequests(recordingId: string, tenantId: string): Promise<RecordingAnalysisRequest[]> {
     const result = await this.db.query<RecordingAnalysisRequest>(
       `SELECT id, tenant_id, recording_id, requested_outputs, language_hint, status, processor_id,
-              claimed_at, language, transcript_text, summary_text, error_message, provider_metadata,
-              metadata, created_at, completed_at
+              provider_hint, transcript_status, summary_status, claimed_at, language, transcript_text,
+              summary_text, error_message, provider_metadata, metadata, created_at, completed_at
        FROM recording_analysis_requests
        WHERE tenant_id = $1 AND recording_id = $2
        ORDER BY created_at DESC`,
@@ -118,8 +120,8 @@ export class RecordingRepository {
   async findAnalysisRequest(id: string, tenantId: string): Promise<RecordingAnalysisRequest | null> {
     const result = await this.db.query<RecordingAnalysisRequest>(
       `SELECT id, tenant_id, recording_id, requested_outputs, language_hint, status, processor_id,
-              claimed_at, language, transcript_text, summary_text, error_message, provider_metadata,
-              metadata, created_at, completed_at
+              provider_hint, transcript_status, summary_status, claimed_at, language, transcript_text,
+              summary_text, error_message, provider_metadata, metadata, created_at, completed_at
        FROM recording_analysis_requests
        WHERE id = $1 AND tenant_id = $2`,
       [id, tenantId],
@@ -130,8 +132,8 @@ export class RecordingRepository {
   async findLatestAnalysisRequestForRecording(recordingId: string, tenantId: string): Promise<RecordingAnalysisRequest | null> {
     const result = await this.db.query<RecordingAnalysisRequest>(
       `SELECT id, tenant_id, recording_id, requested_outputs, language_hint, status, processor_id,
-              claimed_at, language, transcript_text, summary_text, error_message, provider_metadata,
-              metadata, created_at, completed_at
+              provider_hint, transcript_status, summary_status, claimed_at, language, transcript_text,
+              summary_text, error_message, provider_metadata, metadata, created_at, completed_at
        FROM recording_analysis_requests
        WHERE tenant_id = $1 AND recording_id = $2
        ORDER BY created_at DESC
@@ -146,11 +148,13 @@ export class RecordingRepository {
       `UPDATE recording_analysis_requests
        SET status = 'processing',
            processor_id = $2,
-           claimed_at = NOW()
+           claimed_at = NOW(),
+           transcript_status = CASE WHEN transcript_status = 'queued' THEN 'processing' ELSE transcript_status END,
+           summary_status = CASE WHEN summary_status = 'queued' THEN 'processing' ELSE summary_status END
        WHERE id = $1 AND status = 'queued'
-       RETURNING id, tenant_id, recording_id, requested_outputs, language_hint, status, processor_id,
-                 claimed_at, language, transcript_text, summary_text, error_message, provider_metadata,
-                 metadata, created_at, completed_at`,
+       RETURNING id, tenant_id, recording_id, requested_outputs, language_hint, provider_hint, status,
+                 transcript_status, summary_status, processor_id, claimed_at, language, transcript_text, summary_text,
+                 error_message, provider_metadata, metadata, created_at, completed_at`,
       [id, input.processor_id ?? null],
     );
     return result.rows[0] ?? null;
@@ -165,11 +169,21 @@ export class RecordingRepository {
            summary_text = $5,
            error_message = LEFT($6, 500),
            provider_metadata = $7::jsonb,
+           transcript_status = CASE
+             WHEN 'transcript' = ANY(requested_outputs) AND $2 = 'completed' AND $4::text IS NOT NULL THEN 'completed'
+             WHEN 'transcript' = ANY(requested_outputs) THEN $2
+             ELSE NULL
+           END,
+           summary_status = CASE
+             WHEN 'summary' = ANY(requested_outputs) AND $2 = 'completed' AND $5::text IS NOT NULL THEN 'completed'
+             WHEN 'summary' = ANY(requested_outputs) THEN $2
+             ELSE NULL
+           END,
            completed_at = NOW()
        WHERE id = $1 AND status IN ('queued', 'processing')
-       RETURNING id, tenant_id, recording_id, requested_outputs, language_hint, status, processor_id,
-                 claimed_at, language, transcript_text, summary_text, error_message, provider_metadata,
-                 metadata, created_at, completed_at`,
+       RETURNING id, tenant_id, recording_id, requested_outputs, language_hint, provider_hint, status,
+                 transcript_status, summary_status, processor_id, claimed_at, language, transcript_text, summary_text,
+                 error_message, provider_metadata, metadata, created_at, completed_at`,
       [
         id,
         input.status,

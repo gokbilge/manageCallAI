@@ -5185,7 +5185,13 @@ export interface components {
             requested_outputs: ("transcript" | "summary")[];
             language_hint: string | null;
             /** @enum {string} */
+            provider_hint: "auto" | "openai" | "elevenlabs" | "whisper" | "external" | "custom";
+            /** @enum {string} */
             status: "queued" | "processing" | "completed" | "failed" | "cancelled";
+            /** @enum {string|null} */
+            transcript_status: "queued" | "processing" | "completed" | "failed" | "cancelled" | null;
+            /** @enum {string|null} */
+            summary_status: "queued" | "processing" | "completed" | "failed" | "cancelled" | null;
             processor_id: string | null;
             /** Format: date-time */
             claimed_at: string | null;
@@ -5199,6 +5205,8 @@ export interface components {
             metadata: {
                 [key: string]: unknown;
             };
+            /** @enum {string} */
+            source_mode: "deterministic" | "provider_backed";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -5217,6 +5225,8 @@ export interface components {
         CreateRecordingAnalysisBody: {
             requested_outputs: ("transcript" | "summary")[];
             language_hint?: string | null;
+            /** @enum {string} */
+            provider_hint?: "auto" | "openai" | "elevenlabs" | "whisper" | "external" | "custom";
             metadata?: {
                 [key: string]: unknown;
             };

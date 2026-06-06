@@ -72,6 +72,12 @@ describe('AI policy integration', () => {
             allowed_models: ['gpt-4.1-mini'],
             max_input_characters: 500,
           },
+          recording_analysis: {
+            enabled: true,
+            allowed_providers: ['openai', 'whisper', 'external'],
+            allowed_models: ['gpt-4.1-mini', 'whisper-1'],
+            max_input_characters: null,
+          },
         },
       },
     });
@@ -86,6 +92,7 @@ describe('AI policy integration', () => {
         feature_overrides: {
           prompt_generation: { enabled: true, preferred_provider: 'openai' },
           ivr_ai_turn: { enabled: true, preferred_provider: 'openai' },
+          recording_analysis: { enabled: true, preferred_provider: 'whisper' },
         },
       },
     });
@@ -111,6 +118,7 @@ describe('AI policy integration', () => {
         provider_backed_enabled: true,
         feature_policies: {
           prompt_generation: { enabled: true },
+          recording_analysis: { enabled: true },
         },
       });
   });
@@ -197,6 +205,49 @@ describe('AI policy integration', () => {
           ai_policy: {
             effective_provider_hint: 'auto',
             fallback_reason: 'tenant_provider_backed_disabled',
+          },
+        },
+      });
+  });
+
+  it('creates a provider-backed recording analysis request after platform and tenant policy opt-in', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const platformToken = await registerUser(`platform-rec-${suffix}`, PLATFORM_EMAIL);
+    const tenantToken = await registerUser(`tenant-rec-${suffix}`, `tenant-rec-${suffix}@example.com`);
+    await enableProviderBackedAi(platformToken, tenantToken);
+
+    const authRes = await app.inject({
+      method: 'GET',
+      url: '/api/v1/tenant/ai-policy',
+      headers: { authorization: `Bearer ${tenantToken}` },
+    });
+    const tenantId = authRes.json<{ data: { tenant_id: string } }>().data.tenant_id;
+
+    const recording = await db.query<{ id: string }>(
+      `INSERT INTO call_recordings (tenant_id, call_id, storage_path, duration_secs, size_bytes)
+       VALUES ($1, $2, $3, 45, 4096)
+       RETURNING id`,
+      [tenantId, `call-${suffix}`, `${tenantId}/call-${suffix}.wav`],
+    );
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/recordings/${recording.rows[0]!.id}/analysis-requests`,
+      headers: { authorization: `Bearer ${tenantToken}` },
+      payload: {
+        requested_outputs: ['transcript', 'summary'],
+        provider_hint: 'whisper',
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.json<{ data: { provider_hint: string; source_mode: string; metadata: { ai_policy: { provider_backed_allowed: boolean } } } }>().data)
+      .toMatchObject({
+        provider_hint: 'whisper',
+        source_mode: 'provider_backed',
+        metadata: {
+          ai_policy: {
+            provider_backed_allowed: true,
           },
         },
       });
