@@ -6,8 +6,8 @@ If another document conflicts with this one, this document wins until an explici
 
 ## 0. Current release posture
 
-Current code line: `v0.5.x`. Production release v0.5.0 (2026-06-05) — operational maturity.
-Evidence: `docs/release/release-evidence-v0.5.0.json`.
+Current code line: `v0.6.2`. Production release `v0.6.2` (2026-06-06).
+Evidence: `docs/release/release-evidence-v0.6.2.json`.
 
 Release stage must be determined from release evidence, not from source inspection alone. When implementation and release claims drift, release claims must defer to:
 
@@ -167,12 +167,15 @@ Source inspection shows the repository currently includes:
 
 - auth, tenant/user roles, and capability checks
 - extensions, trunks, phone numbers, schedules, inbound and outbound routes
+- numbering plans, calling policies, and site-aware enterprise-model foundations
 - queues, call groups, voicemail boxes, prompt assets, recordings, and call events
 - IVR draft/version lifecycle with validate, simulate, publish, and rollback
 - approval-aware IVR publish flows
 - FreeSWITCH directory and dialplan callbacks over `mod_xml_curl`
 - runtime session handling and Go-agent event intake
 - feature codes, parking, conference rooms, runtime apply requests, and end-user self-service
+- AI call failure explanation, route risk analysis, AI recommendations,
+  incident investigation, and natural-language telecom reporting
 - platform and tenant runtime status visibility
 - setup/bootstrap and deployment packaging
 

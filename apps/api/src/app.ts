@@ -56,6 +56,7 @@ import { callingPolicyController } from './modules/calling-policies/calling-poli
 import { siteController } from './modules/sites/site.controller.js';
 import { trunkGroupController, routeListController, carrierResolutionController } from './modules/trunk-groups/trunk-group.controller.js';
 import { deviceController, extensionAssignmentController, deviceRegistrationController } from './modules/devices/device.controller.js';
+import { lineAppearanceController, deviceAppearanceController } from './modules/line-appearances/line-appearance.controller.js';
 import { reportingController } from './modules/reporting/reporting.controller.js';
 import { callFailureExplanationController } from './modules/call-failure-explanation/call-failure-explanation.controller.js';
 import { platformAiPolicyController, tenantAiPolicyController } from './modules/ai-policy/ai-policy.controller.js';
@@ -107,7 +108,9 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(routeListController, { prefix: '/api/v1/route-lists' });
   app.register(carrierResolutionController, { prefix: '/api/v1/outbound-routing' });
   app.register(deviceController, { prefix: '/api/v1/devices' });
+  app.register(deviceAppearanceController, { prefix: '/api/v1/devices' });
   app.register(extensionAssignmentController, { prefix: '/api/v1/extensions' });
+  app.register(lineAppearanceController, { prefix: '/api/v1/line-appearances' });
   app.register(aiRecommendationsController, { prefix: '/api/v1/ai-recommendations' });
   app.register(incidentInvestigationController, { prefix: '/api/v1/incidents/investigate' });
   app.register(reportingController, { prefix: '/api/v1/reporting' });
