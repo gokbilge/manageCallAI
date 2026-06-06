@@ -10,6 +10,10 @@ vi.mock('@/lib/api/client', async () => {
   return { ...actual, apiRequest: vi.fn() };
 });
 
+vi.mock('@/lib/provisioning/sip-provisioning', () => ({
+  getSipServer: vi.fn().mockReturnValue('pbx.example.com'),
+}));
+
 const contacts = [
   { extension_id: 'ext-1', extension_number: '101', display_name: 'Alice Smith', presence_status: 'available' },
   { extension_id: 'ext-2', extension_number: '102', display_name: 'Bob Jones', presence_status: 'busy' },
@@ -68,5 +72,13 @@ describe('ContactsDirectoryPage', () => {
     await waitFor(() =>
       expect(screen.getByText(/failed to load contacts/i)).toBeInTheDocument(),
     );
+  });
+
+  it('renders a call link for each contact when SIP domain is configured', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Alice Smith')).toBeInTheDocument());
+    const callLinks = screen.getAllByRole('link', { name: /call /i });
+    expect(callLinks.length).toBeGreaterThanOrEqual(3);
+    expect(callLinks[0]).toHaveAttribute('href', 'sip:101@pbx.example.com');
   });
 });

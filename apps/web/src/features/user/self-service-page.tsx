@@ -11,6 +11,7 @@ import {
   KeyRound,
   type LucideIcon,
   Phone,
+  PhoneCall,
   PhoneForwarded,
   QrCode,
   RefreshCcw,
@@ -31,6 +32,7 @@ import {
   getSipServer,
   SUPPORTED_SIP_CLIENTS,
 } from '@/lib/provisioning/sip-provisioning';
+import { buildCallHref, CALL_FALLBACK_MESSAGES } from '@/lib/calling/click-to-call';
 
 type ExtensionState = {
   id: string;
@@ -483,6 +485,7 @@ export function SelfServicePage() {
                         <th className="px-3 py-2 font-medium">Outcome</th>
                         <th className="px-3 py-2 font-medium">Last event</th>
                         <th className="px-3 py-2 font-medium">Seen</th>
+                        <th className="px-3 py-2 font-medium sr-only">Call back</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--color-border)] bg-[var(--color-surface)]">
@@ -495,6 +498,11 @@ export function SelfServicePage() {
                           </td>
                           <td className="px-3 py-2 text-xs text-[var(--color-muted-fg)]">{summary.failure_reason ?? summary.last_event_type}</td>
                           <td className="px-3 py-2 text-xs text-[var(--color-muted-fg)]">{formatTimestamp(summary.last_event_at)}</td>
+                          <td className="px-3 py-2">
+                            {summary.counterpart ? (
+                              <CallbackLink number={summary.counterpart} />
+                            ) : null}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -517,7 +525,9 @@ export function SelfServicePage() {
                 <PolicyOrErrorState error={voicemailQuery.error} disabledMessage="Your organization disabled voicemail self-service." />
               ) : voicemailQuery.data && voicemailQuery.data.length > 0 ? (
                 <div className="space-y-3">
-                  {voicemailQuery.data.map((message) => (
+                  {voicemailQuery.data.map((message) => {
+                    const vmCaller = callSummaries.find(s => s.call_id === message.call_id)?.counterpart ?? null;
+                    return (
                     <div
                       key={message.id}
                       className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3"
@@ -534,6 +544,7 @@ export function SelfServicePage() {
                           </p>
                         </div>
                         <div className="flex flex-wrap shrink-0 items-center gap-2">
+                          {vmCaller ? <CallbackLink number={vmCaller} /> : null}
                           <a
                             className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-surface-muted)]"
                             href={`${apiBaseUrl()}/me/voicemail-messages/${message.id}/playback`}
@@ -562,7 +573,8 @@ export function SelfServicePage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               ) : (
                 <InlineMuted>No voicemail messages are available for your mailbox.</InlineMuted>
@@ -794,6 +806,32 @@ function ErrorBanner({ error }: { error: unknown }) {
 
 function InlineMuted({ children }: { children: ReactNode }) {
   return <p className="text-sm text-[var(--color-muted-fg)]">{children}</p>;
+}
+
+function CallbackLink({ number }: { number: string }) {
+  const result = buildCallHref(number);
+  if (!result.supported) {
+    return (
+      <span
+        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-muted-fg)] opacity-60"
+        title={CALL_FALLBACK_MESSAGES[result.reason]}
+        aria-disabled="true"
+      >
+        <PhoneCall className="size-3.5" aria-hidden="true" />
+        Call back
+      </span>
+    );
+  }
+  return (
+    <a
+      href={result.href}
+      className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1 text-xs font-medium text-[var(--color-fg)] hover:bg-[var(--color-surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-tenant)]"
+      aria-label={`Call back ${number}`}
+    >
+      <PhoneCall className="size-3.5" aria-hidden="true" />
+      Call back
+    </a>
+  );
 }
 
 function formatTimestamp(value: string | null): string {

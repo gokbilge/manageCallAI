@@ -99,3 +99,12 @@ export interface DirectoryContact {
   display_name: string;
   presence_status: PresenceStatus | null;
 }
+
+export type PushPlatform = 'apns' | 'fcm' | 'web';
+
+export interface PushNotificationToken {
+  user_id: string;
+  tenant_id: string;
+  platform: PushPlatform;
+  updated_at: Date;
+}

@@ -3,7 +3,7 @@ import { stat } from 'node:fs/promises';
 import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import type { PresenceStatus } from './self-service.types.js';
+import type { PresenceStatus, PushPlatform } from './self-service.types.js';
 import { db } from '../../db/client.js';
 import { authenticate } from '../auth/authenticate.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -28,6 +28,12 @@ const DndBodySchema = z.object({ enabled: z.boolean() });
 const UuidParamsSchema = z.object({ id: z.string().uuid() });
 const PRESENCE_STATUSES = ['available', 'away', 'busy', 'dnd', 'offline'] as const;
 const PresenceBodySchema = z.object({ status: z.enum(PRESENCE_STATUSES) });
+const PUSH_PLATFORMS = ['apns', 'fcm', 'web'] as const;
+const PushTokenBodySchema = z.object({
+  platform: z.enum(PUSH_PLATFORMS),
+  token: z.string().min(1).max(4096),
+});
+const PushPlatformParamsSchema = z.object({ platform: z.enum(PUSH_PLATFORMS) });
 
 const CallForwardBodySchema = z.object({
   enabled: z.boolean(),
@@ -286,6 +292,28 @@ export const selfServiceMeController: FastifyPluginAsyncZod = async (app) => {
     const user = req.user as AuthClaims;
     return { data: await service.listContacts(user.tenant_id) };
   });
+
+  app.post('/push-tokens', { schema: { body: PushTokenBodySchema } }, async (req) => {
+    const user = req.user as AuthClaims;
+    const token = await service.registerPushToken(
+      user.sub,
+      user.tenant_id,
+      req.body.platform as PushPlatform,
+      req.body.token,
+    );
+    return { data: token };
+  });
+
+  app.delete(
+    '/push-tokens/:platform',
+    { schema: { params: PushPlatformParamsSchema } },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      const deleted = await service.revokePushToken(user.sub, req.params.platform as PushPlatform);
+      if (!deleted) return sendNotFound(reply, `No push token found for platform: ${req.params.platform}`);
+      return reply.code(204).send();
+    },
+  );
 };
 
 // /tenant/self-service-policy — tenant_admin only

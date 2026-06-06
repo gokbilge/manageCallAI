@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Phone, Circle } from 'lucide-react';
+import { Search, Phone, PhoneCall, Circle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { DataCard } from '@/components/data/data-card';
 import { apiRequest } from '@/lib/api/client';
+import { buildCallHref, CALL_FALLBACK_MESSAGES } from '@/lib/calling/click-to-call';
 
 type PresenceStatus = 'available' | 'away' | 'busy' | 'dnd' | 'offline';
 
@@ -37,6 +38,32 @@ function PresenceDot({ status }: { status: PresenceStatus | null }) {
       className={`size-2.5 fill-current ${PRESENCE_COLOR[s]}`}
       aria-label={PRESENCE_LABEL[s]}
     />
+  );
+}
+
+function CallButton({ number, label }: { number: string; label: string }) {
+  const result = buildCallHref(number);
+  if (!result.supported) {
+    return (
+      <span
+        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-muted-fg)] opacity-60"
+        title={CALL_FALLBACK_MESSAGES[result.reason]}
+        aria-disabled="true"
+      >
+        <PhoneCall className="size-3.5" aria-hidden="true" />
+        Call
+      </span>
+    );
+  }
+  return (
+    <a
+      href={result.href}
+      className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1 text-xs font-medium text-[var(--color-fg)] hover:bg-[var(--color-surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-tenant)]"
+      aria-label={`Call ${label}`}
+    >
+      <PhoneCall className="size-3.5" aria-hidden="true" />
+      Call
+    </a>
   );
 }
 
@@ -118,11 +145,14 @@ export function ContactsDirectoryPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 pl-6 sm:pl-0">
-                    <Phone className="size-3.5 text-[var(--color-muted-fg)]" aria-hidden="true" />
-                    <span className="font-mono text-sm text-[var(--color-fg)]">
-                      {contact.extension_number}
-                    </span>
+                  <div className="flex items-center gap-3 pl-6 sm:pl-0">
+                    <div className="flex items-center gap-1.5 text-[var(--color-muted-fg)]">
+                      <Phone className="size-3.5" aria-hidden="true" />
+                      <span className="font-mono text-sm text-[var(--color-fg)]">
+                        {contact.extension_number}
+                      </span>
+                    </div>
+                    <CallButton number={contact.extension_number} label={contact.display_name} />
                   </div>
                 </li>
               ))}
