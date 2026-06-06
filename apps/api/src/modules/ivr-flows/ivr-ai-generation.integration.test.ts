@@ -6,14 +6,16 @@ import type { Pool } from 'pg';
 describe('IVR AI generation and patch endpoints', () => {
   let app: FastifyInstance;
   let db: Pool;
-  const runtimeToken = 'test-runtime-token';
+  let runtimeToken: string;
 
   beforeAll(async () => {
-    process.env.RUNTIME_API_TOKEN ??= runtimeToken;
+    process.env.RUNTIME_API_TOKEN ??= 'test-runtime-token';
     process.env.JWT_SECRET ??= 'test-jwt-secret';
     process.env.SIP_SECRET_MASTER_KEY ??=
       '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
     process.env.SIP_SECRET_KEY_ID ??= 'test-v1';
+
+    runtimeToken = process.env.RUNTIME_API_TOKEN;
 
     const { buildApp } = await import('../../app.js');
     ({ db } = await import('../../db/client.js'));
@@ -136,7 +138,7 @@ describe('IVR AI generation and patch endpoints', () => {
       const claimRes = await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-generation/internal/${genId}/claim`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: { processor_id: 'worker-1' },
       });
       expect(claimRes.statusCode).toBe(200);
@@ -154,7 +156,7 @@ describe('IVR AI generation and patch endpoints', () => {
       const completeRes = await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-generation/internal/${genId}/result`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: { status: 'completed', generated_graph: generatedGraph },
       });
       expect(completeRes.statusCode).toBe(200);
@@ -176,14 +178,14 @@ describe('IVR AI generation and patch endpoints', () => {
       await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-generation/internal/${genId}/claim`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: {},
       });
 
       const res = await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-generation/internal/${genId}/result`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: { status: 'failed', error_message: 'Provider timeout' },
       });
       expect(res.statusCode).toBe(200);
@@ -286,7 +288,7 @@ describe('IVR AI generation and patch endpoints', () => {
         url: `/api/v1/ivr-flows/${flow.id}/ai-patches/${patchId}/accept`,
         headers: { authorization: `Bearer ${token}` },
       });
-      expect(res.statusCode).toBe(412);
+      expect(res.statusCode).toBe(409);
     });
 
     it('rejects reject on a queued (not completed) patch', async () => {
@@ -305,7 +307,7 @@ describe('IVR AI generation and patch endpoints', () => {
         url: `/api/v1/ivr-flows/${flow.id}/ai-patches/${patchId}/reject`,
         headers: { authorization: `Bearer ${token}` },
       });
-      expect(res.statusCode).toBe(412);
+      expect(res.statusCode).toBe(409);
     });
   });
 
@@ -326,7 +328,7 @@ describe('IVR AI generation and patch endpoints', () => {
       const claimRes = await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-ai-patches/internal/${patchId}/claim`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: { processor_id: 'worker-1' },
       });
       expect(claimRes.statusCode).toBe(200);
@@ -348,7 +350,7 @@ describe('IVR AI generation and patch endpoints', () => {
       const completeRes = await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-ai-patches/internal/${patchId}/result`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: {
           status: 'completed',
           diff_json: diff,
@@ -389,13 +391,13 @@ describe('IVR AI generation and patch endpoints', () => {
       await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-ai-patches/internal/${patchId}/claim`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: {},
       });
       await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-ai-patches/internal/${patchId}/result`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: {
           status: 'completed',
           diff_json: { nodes: { add: [], remove: ['end'], modify: [] } },
@@ -427,13 +429,13 @@ describe('IVR AI generation and patch endpoints', () => {
       await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-ai-patches/internal/${patchId}/claim`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: {},
       });
       await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-ai-patches/internal/${patchId}/result`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: { status: 'completed', diff_json: null },
       });
 
@@ -442,7 +444,7 @@ describe('IVR AI generation and patch endpoints', () => {
         url: `/api/v1/ivr-flows/${flow.id}/ai-patches/${patchId}/accept`,
         headers: { authorization: `Bearer ${token}` },
       });
-      expect(res.statusCode).toBe(412);
+      expect(res.statusCode).toBe(409);
     });
   });
 
@@ -534,13 +536,13 @@ describe('IVR AI generation and patch endpoints', () => {
       await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-ai-patches/internal/${patchId}/claim`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: {},
       });
       await app.inject({
         method: 'POST',
         url: `/api/v1/ivr-ai-patches/internal/${patchId}/result`,
-        headers: { authorization: `Bearer ${runtimeToken}` },
+        headers: { 'x-managecallai-runtime-token': runtimeToken },
         payload: {
           status: 'completed',
           diff_json: { fields: { target_type: 'extension' } },
