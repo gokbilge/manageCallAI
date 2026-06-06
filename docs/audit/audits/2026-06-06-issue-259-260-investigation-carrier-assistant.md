@@ -13,7 +13,7 @@
 - **Location:** `apps/api/src/modules/incident-investigation`, `apps/api/src/modules/sip-trunks`, `apps/web/src/features/ai`, `apps/web/src/features/integrations`
 - **Finding:** The new incident investigation and carrier assistant surfaces are tenant-scoped, draft-only where required, contract-backed, and covered by focused API and web tests.
 - **Fix:** No code change required beyond the implementation in this branch.
-- **Resolved:** pending current branch commit
+- **Resolved:** 316f475
 
 ## Verification Notes
 
