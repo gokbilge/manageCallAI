@@ -1,0 +1,74 @@
+{
+  "release_version": "v0.6.2",
+  "commit_sha": "0443b48",
+  "generated_at": "2026-06-06T14:00:00Z",
+  "stage": "rc-pending",
+  "notes": "Combined release: v0.6.1 AI-expansion scope and v0.6.2 end-user comms scope shipped together. v0.6.1 was not cut as a separate release. All 17 issues across both scopes are closed. CI, CodeQL, and coverage gates green on main at this commit.",
+
+  "scope": {
+    "v0_6_1_ai_expansion": {
+      "description": "AI-native operator workflows built on the v0.6 policy framework",
+      "issues": [
+        "#252 — optional provider-backed AI policy framework (shipped in v0.6 cycle, closed)",
+        "#253 — natural-language IVR generation",
+        "#254 — AI-assisted IVR and route editing with structured diffs",
+        "#255 — recording analysis lifecycle (shipped in v0.6 cycle)",
+        "#256 — semantic recording and transcript search",
+        "#257 — recording AI clean (shipped in v0.6 cycle)",
+        "#258 — AI route and fraud-policy recommendation engine",
+        "#259 — incident investigation assistant",
+        "#260 — carrier configuration assistant"
+      ]
+    },
+    "v0_6_2_end_user_comms": {
+      "description": "End-user communications experience expansion",
+      "issues": [
+        "#263 — softphone provisioning and onboarding flow",
+        "#264 — QR-code SIP client provisioning",
+        "#265 — device provisioning UX",
+        "#266 — mobile-friendly end-user call controls",
+        "#267 — presence and status model",
+        "#268 — contacts directory for end users",
+        "#269 — click-to-call UX from end-user surfaces",
+        "#270 — push-notification integration guidance and delivery plan"
+      ]
+    }
+  },
+
+  "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27060023531",
+  "codeql_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/27060023519",
+
+  "db_migrations": [
+    "0055_ai_provider_policy.sql",
+    "0056_ai_audit_and_approval_lineage.sql",
+    "0057_presence.sql",
+    "0058_push_notification_tokens.sql",
+    "0059_recording_analysis_provider_policy.sql",
+    "0060_ivr_ai_generation_and_patches.sql",
+    "0061_ai_recommendations_and_investigation.sql",
+    "0062_recording_search_fts_index.sql"
+  ],
+
+  "helm_lint": "Inherited from v0.6.0. No Helm chart changes in v0.6.1 or v0.6.2. All new features are additive API endpoints.",
+  "docker_compose_prod_smoke": "Inherited from v0.6.0. No deployment or runtime boundary changes.",
+  "rotation_rehearsal": {
+    "status": "inherited",
+    "note": "Inherited from v0.6.0. No auth middleware or token-handling changes."
+  },
+
+  "gates": {
+    "ci_green_on_main": "PASSED",
+    "codeql_green_on_main": "PASSED",
+    "coverage_threshold": "PASSED — ≥80% lines/statements, ≥68% branches",
+    "openapi_drift": "PASSED",
+    "mcp_schema_drift": "PASSED",
+    "webhook_payload_coverage": "PASSED",
+    "api_key_capability_alignment": "PASSED",
+    "db_contracts": "PENDING — requires running against live DB (CI gate)",
+    "freeswitch_smoke": "PENDING — requires self-hosted runner at enlogy@10.0.0.32"
+  },
+
+  "rc_branch": "rc/v0.6.2",
+  "rc_tag": "v0.6.2-rc.1",
+  "production_tag": "v0.6.2"
+}
