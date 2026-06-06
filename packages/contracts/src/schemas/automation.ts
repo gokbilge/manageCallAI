@@ -197,6 +197,18 @@ export const API_KEY_CAPABILITIES = [
   'tenant.supervisor.controls.manage',
   'tenant.queue_callbacks.view',
   'tenant.queue_callbacks.manage',
+  // tenant — disposition codes and call notes (v0.7.0 #278)
+  'tenant.dispositions.view',
+  'tenant.dispositions.manage',
+  'tenant.call_notes.view',
+  'tenant.call_notes.manage',
+  // tenant — QA scoring workflow (v0.7.0 #279)
+  'tenant.qa.scorecards.view',
+  'tenant.qa.scorecards.manage',
+  'tenant.qa.reviews.view',
+  'tenant.qa.reviews.manage',
+  // tenant — supervisor artifact search (v0.7.0 #280)
+  'tenant.supervisor.artifact_search',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;

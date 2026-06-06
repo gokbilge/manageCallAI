@@ -69,6 +69,9 @@ import { campaignController } from './modules/campaigns/campaigns.controller.js'
 import { supervisorControlsController } from './modules/supervisor-controls/supervisor-controls.controller.js';
 import { queueCallbackController, queueScopedCallbackController } from './modules/queue-callbacks/queue-callbacks.controller.js';
 import { supervisorDashboardController } from './modules/supervisor-dashboard/supervisor-dashboard.controller.js';
+import { dispositionCodeController, callDispositionController } from './modules/dispositions/dispositions.controller.js';
+import { qaTemplateController, qaReviewController } from './modules/qa-scoring/qa-scoring.controller.js';
+import { supervisorArtifactSearchController } from './modules/supervisor-controls/supervisor-artifact-search.controller.js';
 import { setupController } from './modules/setup/setup.controller.js';
 import { db } from './db/client.js';
 import { registerErrorHandler } from './errors/index.js';
@@ -138,8 +141,15 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   // Contact-center: supervisor dashboard (#274,#277), monitor/whisper/barge (#275), queue callbacks (#276)
   app.register(supervisorDashboardController, { prefix: '/api/v1/supervisor' });
   app.register(supervisorControlsController, { prefix: '/api/v1/supervisor/controls' });
+  app.register(supervisorArtifactSearchController, { prefix: '/api/v1/supervisor' });
   app.register(queueCallbackController, { prefix: '/api/v1/queue-callbacks' });
   app.register(queueScopedCallbackController, { prefix: '/api/v1/queues' });
+  // Contact-center: disposition codes and call notes (#278)
+  app.register(dispositionCodeController, { prefix: '/api/v1/disposition-codes' });
+  app.register(callDispositionController, { prefix: '/api/v1/calls' });
+  // Contact-center: QA scoring (#279)
+  app.register(qaTemplateController, { prefix: '/api/v1/qa-scorecards' });
+  app.register(qaReviewController, { prefix: '/api/v1/qa-reviews' });
 }
 
 /**
