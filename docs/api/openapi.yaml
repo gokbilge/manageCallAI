@@ -4454,6 +4454,14 @@ components:
               - tenant.ai.policy.view
               - tenant.ai.policy.manage
               - tenant.ai.provider_backed.use
+              - tenant.agents.profiles.view
+              - tenant.agents.profiles.manage
+              - tenant.agents.availability.view
+              - tenant.agents.availability.set
+              - tenant.agents.workspace.view
+              - tenant.skills.view
+              - tenant.skills.manage
+              - tenant.routing.evaluate
               - "*"
         created_by:
           type:
