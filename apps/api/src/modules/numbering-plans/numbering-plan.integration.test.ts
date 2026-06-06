@@ -208,5 +208,86 @@ describe('Numbering plans, calling policies, and sites (#300–#304)', () => {
       const res = await app.inject({ method: 'GET', url: `/api/v1/sites/${siteId}`, headers: { authorization: `Bearer ${tokenB}` } });
       expect(res.statusCode).toBe(404);
     });
+
+    it('updates a site and deletes a location', async () => {
+      const token = await register(randomUUID().slice(0, 8));
+      const createRes = await app.inject({ method: 'POST', url: '/api/v1/sites', headers: { authorization: `Bearer ${token}` }, payload: { name: 'Site X' } });
+      const siteId = createRes.json<{ data: { id: string } }>().data.id;
+
+      const patchRes = await app.inject({ method: 'PATCH', url: `/api/v1/sites/${siteId}`, headers: { authorization: `Bearer ${token}` }, payload: { timezone: 'Europe/London', emergency_number: '999' } });
+      expect(patchRes.statusCode).toBe(200);
+      expect(patchRes.json<{ data: { emergency_number: string } }>().data.emergency_number).toBe('999');
+
+      const locRes = await app.inject({ method: 'POST', url: `/api/v1/sites/${siteId}/locations`, headers: { authorization: `Bearer ${token}` }, payload: { name: 'West Wing', floor: '2' } });
+      const locId = locRes.json<{ data: { id: string } }>().data.id;
+
+      const delLocRes = await app.inject({ method: 'DELETE', url: `/api/v1/sites/${siteId}/locations/${locId}`, headers: { authorization: `Bearer ${token}` } });
+      expect(delLocRes.statusCode).toBe(204);
+    });
+  });
+
+  describe('Calling policy assignment and check (#302)', () => {
+    it('assigns policy to tenant and check returns policy-aware result', async () => {
+      const token = await register(randomUUID().slice(0, 8));
+
+      const createRes = await app.inject({
+        method: 'POST', url: '/api/v1/calling-policies',
+        headers: { authorization: `Bearer ${token}` },
+        payload: { name: 'No International', allow_international: false, allow_premium_rate: false },
+      });
+      const polId = createRes.json<{ data: { id: string } }>().data.id;
+
+      // Assign to tenant scope
+      const assignRes = await app.inject({
+        method: 'PUT', url: `/api/v1/calling-policies/${polId}/assignment`,
+        headers: { authorization: `Bearer ${token}` },
+        payload: { assignable_type: 'tenant' },
+      });
+      expect(assignRes.statusCode).toBe(200);
+
+      // Check — international should now be blocked
+      const checkRes = await app.inject({
+        method: 'POST', url: '/api/v1/calling-policies/check',
+        headers: { authorization: `Bearer ${token}` },
+        payload: { call_type: 'international' },
+      });
+      expect(checkRes.statusCode).toBe(200);
+      const body = checkRes.json<{ data: { allowed: boolean; policy_id: string } }>();
+      expect(body.data.allowed).toBe(false);
+      expect(body.data.policy_id).toBe(polId);
+    });
+
+    it('deletes a numbering plan rule and deletes the plan', async () => {
+      const token = await register(randomUUID().slice(0, 8));
+      const planRes = await app.inject({ method: 'POST', url: '/api/v1/numbering-plans', headers: { authorization: `Bearer ${token}` }, payload: { name: 'Test Plan' } });
+      const planId = planRes.json<{ data: { id: string } }>().data.id;
+
+      const ruleRes = await app.inject({ method: 'POST', url: `/api/v1/numbering-plans/${planId}/rules`, headers: { authorization: `Bearer ${token}` }, payload: { name: 'Intl', pattern: '^\\+', call_type: 'international' } });
+      const ruleId = ruleRes.json<{ data: { id: string } }>().data.id;
+
+      const delRuleRes = await app.inject({ method: 'DELETE', url: `/api/v1/numbering-plans/${planId}/rules/${ruleId}`, headers: { authorization: `Bearer ${token}` } });
+      expect(delRuleRes.statusCode).toBe(204);
+
+      const delPlanRes = await app.inject({ method: 'DELETE', url: `/api/v1/numbering-plans/${planId}`, headers: { authorization: `Bearer ${token}` } });
+      expect(delPlanRes.statusCode).toBe(204);
+    });
+
+    it('patches a numbering plan name', async () => {
+      const token = await register(randomUUID().slice(0, 8));
+      const planRes = await app.inject({ method: 'POST', url: '/api/v1/numbering-plans', headers: { authorization: `Bearer ${token}` }, payload: { name: 'Old Name' } });
+      const planId = planRes.json<{ data: { id: string } }>().data.id;
+
+      const patchRes = await app.inject({ method: 'PATCH', url: `/api/v1/numbering-plans/${planId}`, headers: { authorization: `Bearer ${token}` }, payload: { name: 'New Name', status: 'inactive' } });
+      expect(patchRes.statusCode).toBe(200);
+      expect(patchRes.json<{ data: { name: string } }>().data.name).toBe('New Name');
+    });
+
+    it('deletes a calling policy', async () => {
+      const token = await register(randomUUID().slice(0, 8));
+      const createRes = await app.inject({ method: 'POST', url: '/api/v1/calling-policies', headers: { authorization: `Bearer ${token}` }, payload: { name: 'To Delete' } });
+      const polId = createRes.json<{ data: { id: string } }>().data.id;
+      const delRes = await app.inject({ method: 'DELETE', url: `/api/v1/calling-policies/${polId}`, headers: { authorization: `Bearer ${token}` } });
+      expect(delRes.statusCode).toBe(204);
+    });
   });
 });
