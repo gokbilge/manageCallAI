@@ -12,16 +12,16 @@ import type {
 } from './schedule.types.js';
 
 const SCHEDULE_COLUMNS = `
-  s.id,
-  s.tenant_id,
-  s.name,
-  s.description,
-  s.status,
-  s.timezone,
-  s.weekly_rules_json,
-  s.holiday_overrides_json,
-  s.created_at,
-  s.updated_at
+  id,
+  tenant_id,
+  name,
+  description,
+  status,
+  timezone,
+  weekly_rules_json,
+  holiday_overrides_json,
+  created_at,
+  updated_at
 `;
 
 const HOLIDAY_CALENDAR_COLUMNS = `
