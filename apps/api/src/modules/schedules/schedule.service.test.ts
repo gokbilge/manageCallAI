@@ -110,6 +110,25 @@ describe('ScheduleService', () => {
     await expect(service.listByTenant('tenant-1')).resolves.toEqual([baseSchedule]);
   });
 
+  it('lists schedule groups and holiday calendars by tenant', async () => {
+    await expect(service.listScheduleGroups('tenant-1')).resolves.toEqual([baseGroup]);
+    await expect(service.listHolidayCalendars('tenant-1')).resolves.toEqual([baseCalendar]);
+  });
+
+  it('gets a schedule by id and throws when it does not exist', async () => {
+    await expect(service.getById(baseSchedule.id, 'tenant-1')).resolves.toEqual(baseSchedule);
+    vi.mocked(repo.findById).mockResolvedValueOnce(null);
+    await expect(service.getById('missing', 'tenant-1')).rejects.toThrow(ScheduleNotFoundError);
+  });
+
+  it('rejects invalid schedule groups before persistence', async () => {
+    await expect(service.createGroup({
+      tenant_id: 'tenant-1',
+      name: 'Broken group',
+      weekly_rules_json: [{ day_of_week: 9, open_time: '09:00', close_time: '17:00' }],
+    })).rejects.toThrow(ScheduleValidationError);
+  });
+
   it('creates a schedule from schedule group and holiday calendar snapshots', async () => {
     await service.create({
       tenant_id: 'tenant-1',
@@ -147,6 +166,21 @@ describe('ScheduleService', () => {
     })).rejects.toThrow(ScheduleGroupNotFoundError);
   });
 
+  it('rejects invalid schedule timezones and inline holiday payloads', async () => {
+    await expect(service.create({
+      tenant_id: 'tenant-1',
+      name: 'Bad timezone',
+      timezone: 'Not/A Timezone',
+    })).rejects.toThrow(ScheduleValidationError);
+
+    await expect(service.create({
+      tenant_id: 'tenant-1',
+      name: 'Bad holiday override',
+      timezone: 'UTC',
+      holiday_overrides_json: [{ date: '2026-12-24', closed: false }],
+    })).rejects.toThrow(ScheduleValidationError);
+  });
+
   it('updates a schedule group and syncs linked schedules', async () => {
     const rules = [{ day_of_week: 2, open_time: '09:00', close_time: '19:00' }];
     const result = await service.updateGroup(baseGroup.id, 'tenant-1', { weekly_rules_json: rules });
@@ -154,11 +188,39 @@ describe('ScheduleService', () => {
     expect(repo.syncSchedulesForGroup).toHaveBeenCalledWith(baseGroup.id, 'tenant-1', rules);
   });
 
+  it('throws when updating a missing schedule group', async () => {
+    vi.mocked(repo.updateScheduleGroup).mockResolvedValue(null);
+    await expect(service.updateGroup(baseGroup.id, 'tenant-1', { name: 'Missing' })).rejects.toThrow(ScheduleGroupNotFoundError);
+  });
+
   it('updates a holiday calendar and syncs linked schedules', async () => {
     const entries = [{ date: '2026-12-31', closed: false, open_time: '10:00', close_time: '13:00' }];
     const result = await service.updateHolidayCalendar(baseCalendar.id, 'tenant-1', { entries_json: entries });
     expect(result).toEqual(baseCalendar);
     expect(repo.syncSchedulesForHolidayCalendar).toHaveBeenCalledWith(baseCalendar.id, 'tenant-1', entries);
+  });
+
+  it('throws when updating a missing holiday calendar', async () => {
+    vi.mocked(repo.updateHolidayCalendar).mockResolvedValue(null);
+    await expect(service.updateHolidayCalendar(baseCalendar.id, 'tenant-1', { name: 'Missing' })).rejects.toThrow(HolidayCalendarNotFoundError);
+  });
+
+  it('updates schedules with resolved linked assets and validates patch payloads', async () => {
+    await service.update(baseSchedule.id, 'tenant-1', {
+      schedule_group_id: baseGroup.id,
+      holiday_calendar_id: baseCalendar.id,
+    });
+
+    expect(repo.update).toHaveBeenCalledWith(baseSchedule.id, 'tenant-1', expect.objectContaining({
+      schedule_group_id: baseGroup.id,
+      holiday_calendar_id: baseCalendar.id,
+      weekly_rules_json: baseGroup.weekly_rules_json,
+      holiday_overrides_json: baseCalendar.entries_json,
+    }));
+
+    await expect(service.update(baseSchedule.id, 'tenant-1', {
+      timezone: 'Bad/Timezone/Value',
+    })).rejects.toThrow(ScheduleValidationError);
   });
 
   it('lists schedule overrides with computed lifecycle state', async () => {
@@ -178,6 +240,26 @@ describe('ScheduleService', () => {
     });
     expect(result.id).toBe(baseOverride.id);
     expect(repo.createOverride).toHaveBeenCalled();
+  });
+
+  it('allows overlaps when existing overrides are already expired', async () => {
+    vi.mocked(repo.findOverlappingOverrides).mockResolvedValue([
+      {
+        ...baseOverride,
+        starts_at: new Date('2026-06-10T06:00:00.000Z'),
+        ends_at: new Date('2026-06-10T08:00:00.000Z'),
+      },
+    ]);
+
+    await expect(service.createOverride({
+      tenant_id: 'tenant-1',
+      schedule_id: baseSchedule.id,
+      name: 'Later closure',
+      mode: 'closed',
+      starts_at: '2026-06-10T10:00:00.000Z',
+      ends_at: '2026-06-10T12:00:00.000Z',
+      created_by: 'user-1',
+    })).resolves.toEqual(expect.objectContaining({ id: baseOverride.id }));
   });
 
   it('rejects overlapping active or scheduled overrides', async () => {
@@ -213,6 +295,16 @@ describe('ScheduleService', () => {
     expect(repo.cancelOverride).toHaveBeenCalledWith(baseOverride.id, baseSchedule.id, 'tenant-1', { cancelled_by: 'user-1' });
   });
 
+  it('rejects cancelling an override twice', async () => {
+    vi.mocked(repo.findOverrideById).mockResolvedValue({
+      ...baseOverride,
+      cancelled_at: new Date('2026-06-10T09:30:00.000Z'),
+      cancelled_by: 'user-1',
+    });
+    await expect(service.cancelOverride(baseSchedule.id, baseOverride.id, 'tenant-1', { cancelled_by: 'user-1' }))
+      .rejects.toThrow(ScheduleConflictError);
+  });
+
   it('throws when cancelling a missing override', async () => {
     vi.mocked(repo.findOverrideById).mockResolvedValue(null);
     await expect(service.cancelOverride(baseSchedule.id, 'missing', 'tenant-1', { cancelled_by: 'user-1' })).rejects.toThrow(ScheduleOverrideNotFoundError);
@@ -234,5 +326,12 @@ describe('ScheduleService', () => {
   it('throws when holiday calendar reference is missing during schedule update', async () => {
     vi.mocked(repo.findHolidayCalendarById).mockResolvedValue(null);
     await expect(service.update(baseSchedule.id, 'tenant-1', { holiday_calendar_id: baseCalendar.id })).rejects.toThrow(HolidayCalendarNotFoundError);
+  });
+
+  it('deactivates schedules and throws when the schedule is missing', async () => {
+    await expect(service.deactivate(baseSchedule.id, 'tenant-1')).resolves.toEqual(expect.objectContaining({ status: 'inactive' }));
+
+    vi.mocked(repo.deactivate).mockResolvedValueOnce(null);
+    await expect(service.deactivate(baseSchedule.id, 'tenant-1')).rejects.toThrow(ScheduleNotFoundError);
   });
 });
