@@ -4146,6 +4146,534 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tenant schedules */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Schedule inventory */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Schedule"][];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /** Create a tenant schedule */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateScheduleBody"];
+                };
+            };
+            responses: {
+                /** @description Schedule created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Schedule"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List reusable schedule groups */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Schedule groups */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ScheduleGroup"][];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /** Create a reusable schedule group */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateScheduleGroupBody"];
+                };
+            };
+            responses: {
+                /** @description Schedule group created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ScheduleGroup"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a reusable schedule group */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateScheduleGroupBody"];
+                };
+            };
+            responses: {
+                /** @description Schedule group updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ScheduleGroup"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        trace?: never;
+    };
+    "/schedules/holiday-calendars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List reusable holiday calendars */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Holiday calendars */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["HolidayCalendar"][];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /** Create a reusable holiday calendar */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateHolidayCalendarBody"];
+                };
+            };
+            responses: {
+                /** @description Holiday calendar created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["HolidayCalendar"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/holiday-calendars/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a reusable holiday calendar */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateHolidayCalendarBody"];
+                };
+            };
+            responses: {
+                /** @description Holiday calendar updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["HolidayCalendar"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        trace?: never;
+    };
+    "/schedules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get a tenant schedule */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Schedule detail */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Schedule"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a tenant schedule */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateScheduleBody"];
+                };
+            };
+            responses: {
+                /** @description Schedule updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Schedule"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        trace?: never;
+    };
+    "/schedules/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deactivate a tenant schedule */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Schedule deactivated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Schedule"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/{id}/overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List temporary overrides for a schedule */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Schedule override timeline */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ScheduleOverride"][];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /** Create a temporary schedule override */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateScheduleOverrideBody"];
+                };
+            };
+            responses: {
+                /** @description Schedule override created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ScheduleOverride"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/{id}/overrides/{overrideId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                overrideId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a temporary schedule override */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    overrideId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CancelScheduleOverrideBody"];
+                };
+            };
+            responses: {
+                /** @description Schedule override cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ScheduleOverride"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5164,11 +5692,77 @@ export interface components {
             open_time: string;
             close_time: string;
         };
+        HolidayCalendarEntry: {
+            date: string;
+            closed: boolean;
+            open_time?: string;
+            close_time?: string;
+            name?: string;
+        };
         HolidayOverride: {
             date: string;
             closed: boolean;
             open_time?: string;
             close_time?: string;
+            name?: string;
+        };
+        ScheduleGroup: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            weekly_rules_json: components["schemas"]["WeeklyRule"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        HolidayCalendar: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            entries_json: components["schemas"]["HolidayCalendarEntry"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ScheduleOverride: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            schedule_id: string;
+            name: string;
+            reason: string | null;
+            /** @enum {string} */
+            mode: "closed" | "custom_hours";
+            open_time: string | null;
+            close_time: string | null;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            /** @enum {string} */
+            lifecycle_state: "scheduled" | "active" | "expired" | "cancelled";
+            /** Format: date-time */
+            cancelled_at: string | null;
+            cancelled_by: string | null;
+            created_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         Schedule: {
             /** Format: uuid */
@@ -5179,6 +5773,10 @@ export interface components {
             /** @enum {string} */
             status: "active" | "inactive";
             timezone: string;
+            /** Format: uuid */
+            schedule_group_id: string | null;
+            /** Format: uuid */
+            holiday_calendar_id: string | null;
             weekly_rules_json: components["schemas"]["WeeklyRule"][];
             holiday_overrides_json: components["schemas"]["HolidayOverride"][];
             /** Format: date-time */
@@ -5189,16 +5787,67 @@ export interface components {
         CreateScheduleBody: {
             name: string;
             timezone: string;
+            /** Format: uuid */
+            schedule_group_id?: string | null;
+            /** Format: uuid */
+            holiday_calendar_id?: string | null;
             weekly_rules_json?: components["schemas"]["WeeklyRule"][];
             holiday_overrides_json?: components["schemas"]["HolidayOverride"][];
         };
         UpdateScheduleBody: {
             name?: string;
             timezone?: string;
+            /** Format: uuid */
+            schedule_group_id?: string | null;
+            /** Format: uuid */
+            holiday_calendar_id?: string | null;
             weekly_rules_json?: components["schemas"]["WeeklyRule"][];
             holiday_overrides_json?: components["schemas"]["HolidayOverride"][];
             /** @enum {string} */
             status?: "active" | "inactive";
+        };
+        CreateScheduleGroupBody: {
+            name: string;
+            description?: string | null;
+            weekly_rules_json: components["schemas"]["WeeklyRule"][];
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        UpdateScheduleGroupBody: {
+            name?: string;
+            description?: string | null;
+            weekly_rules_json?: components["schemas"]["WeeklyRule"][];
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        CreateHolidayCalendarBody: {
+            name: string;
+            description?: string | null;
+            entries_json: components["schemas"]["HolidayCalendarEntry"][];
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        UpdateHolidayCalendarBody: {
+            name?: string;
+            description?: string | null;
+            entries_json?: components["schemas"]["HolidayCalendarEntry"][];
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        CreateScheduleOverrideBody: {
+            name: string;
+            reason?: string | null;
+            /** @enum {string} */
+            mode: "closed" | "custom_hours";
+            open_time?: string | null;
+            close_time?: string | null;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+        };
+        CancelScheduleOverrideBody: {
+            reason?: string | null;
         };
         OutboundRoute: {
             /** Format: uuid */

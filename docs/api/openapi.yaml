@@ -37,6 +37,8 @@ tags:
     description: Tenant registration and login
   - name: Extensions
     description: SIP extension management
+  - name: Schedules
+    description: Enterprise schedule, holiday calendar, and temporary override management
   - name: SipTrunks
     description: SIP trunk management
   - name: IncidentInvestigations
@@ -2249,6 +2251,371 @@ paths:
                   - data
         default:
           $ref: "#/components/responses/ErrorResponse"
+  /schedules:
+    get:
+      tags:
+        - Schedules
+      summary: List tenant schedules
+      responses:
+        "200":
+          description: Schedule inventory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Schedule"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags:
+        - Schedules
+      summary: Create a tenant schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateScheduleBody"
+      responses:
+        "201":
+          description: Schedule created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Schedule"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /schedules/groups:
+    get:
+      tags:
+        - Schedules
+      summary: List reusable schedule groups
+      responses:
+        "200":
+          description: Schedule groups
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScheduleGroup"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags:
+        - Schedules
+      summary: Create a reusable schedule group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateScheduleGroupBody"
+      responses:
+        "201":
+          description: Schedule group created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ScheduleGroup"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /schedules/groups/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags:
+        - Schedules
+      summary: Update a reusable schedule group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateScheduleGroupBody"
+      responses:
+        "200":
+          description: Schedule group updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ScheduleGroup"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /schedules/holiday-calendars:
+    get:
+      tags:
+        - Schedules
+      summary: List reusable holiday calendars
+      responses:
+        "200":
+          description: Holiday calendars
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/HolidayCalendar"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags:
+        - Schedules
+      summary: Create a reusable holiday calendar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHolidayCalendarBody"
+      responses:
+        "201":
+          description: Holiday calendar created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HolidayCalendar"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /schedules/holiday-calendars/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags:
+        - Schedules
+      summary: Update a reusable holiday calendar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHolidayCalendarBody"
+      responses:
+        "200":
+          description: Holiday calendar updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HolidayCalendar"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /schedules/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Schedules
+      summary: Get a tenant schedule
+      responses:
+        "200":
+          description: Schedule detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Schedule"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    patch:
+      tags:
+        - Schedules
+      summary: Update a tenant schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateScheduleBody"
+      responses:
+        "200":
+          description: Schedule updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Schedule"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /schedules/{id}/deactivate:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+        - Schedules
+      summary: Deactivate a tenant schedule
+      responses:
+        "200":
+          description: Schedule deactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Schedule"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /schedules/{id}/overrides:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Schedules
+      summary: List temporary overrides for a schedule
+      responses:
+        "200":
+          description: Schedule override timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScheduleOverride"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags:
+        - Schedules
+      summary: Create a temporary schedule override
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateScheduleOverrideBody"
+      responses:
+        "201":
+          description: Schedule override created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ScheduleOverride"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /schedules/{id}/overrides/{overrideId}/cancel:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: path
+        name: overrideId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+        - Schedules
+      summary: Cancel a temporary schedule override
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelScheduleOverrideBody"
+      responses:
+        "200":
+          description: Schedule override cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ScheduleOverride"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -4167,7 +4534,7 @@ components:
           maxLength: 2000
         provider:
           type: string
-          enum: &a24
+          enum: &a25
             - auto
             - openai
             - elevenlabs
@@ -5190,6 +5557,22 @@ components:
         - day_of_week
         - open_time
         - close_time
+    HolidayCalendarEntry:
+      type: object
+      properties:
+        date:
+          type: string
+        closed:
+          type: boolean
+        open_time:
+          type: string
+        close_time:
+          type: string
+        name:
+          type: string
+      required:
+        - date
+        - closed
     HolidayOverride:
       type: object
       properties:
@@ -5201,9 +5584,167 @@ components:
           type: string
         close_time:
           type: string
+        name:
+          type: string
       required:
         - date
         - closed
+    ScheduleGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum: &a21
+            - active
+            - inactive
+        weekly_rules_json:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeeklyRule"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - description
+        - status
+        - weekly_rules_json
+        - created_at
+        - updated_at
+    HolidayCalendar:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum: *a21
+        entries_json:
+          type: array
+          items:
+            $ref: "#/components/schemas/HolidayCalendarEntry"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - description
+        - status
+        - entries_json
+        - created_at
+        - updated_at
+    ScheduleOverride:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        schedule_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        reason:
+          type:
+            - string
+            - "null"
+        mode:
+          type: string
+          enum: &a22
+            - closed
+            - custom_hours
+        open_time:
+          type:
+            - string
+            - "null"
+        close_time:
+          type:
+            - string
+            - "null"
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        lifecycle_state:
+          type: string
+          enum:
+            - scheduled
+            - active
+            - expired
+            - cancelled
+        cancelled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        cancelled_by:
+          type:
+            - string
+            - "null"
+        created_by:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - schedule_id
+        - name
+        - reason
+        - mode
+        - open_time
+        - close_time
+        - starts_at
+        - ends_at
+        - lifecycle_state
+        - cancelled_at
+        - cancelled_by
+        - created_by
+        - created_at
+        - updated_at
     Schedule:
       type: object
       properties:
@@ -5217,11 +5758,19 @@ components:
           type: string
         status:
           type: string
-          enum: &a21
-            - active
-            - inactive
+          enum: *a21
         timezone:
           type: string
+        schedule_group_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        holiday_calendar_id:
+          type:
+            - string
+            - "null"
+          format: uuid
         weekly_rules_json:
           type: array
           items:
@@ -5242,6 +5791,8 @@ components:
         - name
         - status
         - timezone
+        - schedule_group_id
+        - holiday_calendar_id
         - weekly_rules_json
         - holiday_overrides_json
         - created_at
@@ -5255,6 +5806,16 @@ components:
         timezone:
           type: string
           minLength: 1
+        schedule_group_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        holiday_calendar_id:
+          type:
+            - string
+            - "null"
+          format: uuid
         weekly_rules_json:
           type: array
           items:
@@ -5275,6 +5836,16 @@ components:
         timezone:
           type: string
           minLength: 1
+        schedule_group_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        holiday_calendar_id:
+          type:
+            - string
+            - "null"
+          format: uuid
         weekly_rules_json:
           type: array
           items:
@@ -5286,6 +5857,129 @@ components:
         status:
           type: string
           enum: *a21
+    CreateScheduleGroupBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        weekly_rules_json:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeeklyRule"
+          minItems: 1
+        status:
+          type: string
+          enum: *a21
+      required:
+        - name
+        - weekly_rules_json
+    UpdateScheduleGroupBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        weekly_rules_json:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeeklyRule"
+          minItems: 1
+        status:
+          type: string
+          enum: *a21
+    CreateHolidayCalendarBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        entries_json:
+          type: array
+          items:
+            $ref: "#/components/schemas/HolidayCalendarEntry"
+          minItems: 1
+        status:
+          type: string
+          enum: *a21
+      required:
+        - name
+        - entries_json
+    UpdateHolidayCalendarBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        entries_json:
+          type: array
+          items:
+            $ref: "#/components/schemas/HolidayCalendarEntry"
+          minItems: 1
+        status:
+          type: string
+          enum: *a21
+    CreateScheduleOverrideBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        mode:
+          type: string
+          enum: *a22
+        open_time:
+          type:
+            - string
+            - "null"
+        close_time:
+          type:
+            - string
+            - "null"
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+      required:
+        - name
+        - mode
+        - starts_at
+        - ends_at
+    CancelScheduleOverrideBody:
+      type: object
+      properties:
+        reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
     OutboundRoute:
       type: object
       properties:
@@ -5299,7 +5993,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a22
+          enum: &a23
             - draft
             - active
             - inactive
@@ -5486,7 +6180,7 @@ components:
             type: string
         status:
           type: string
-          enum: *a22
+          enum: *a23
     ResolveOutboundRouteBody:
       type: object
       properties:
@@ -5514,7 +6208,7 @@ components:
           type: string
         role:
           type: string
-          enum: &a23
+          enum: &a24
             - tenant_admin
             - tenant_operator
             - tenant_viewer
@@ -5555,7 +6249,7 @@ components:
           maxLength: 255
         role:
           type: string
-          enum: *a23
+          enum: *a24
         password:
           type: string
           minLength: 8
@@ -5574,7 +6268,7 @@ components:
           maxLength: 255
         role:
           type: string
-          enum: *a23
+          enum: *a24
     ChangePasswordBody:
       type: object
       properties:
@@ -5653,7 +6347,7 @@ components:
           type: array
           items:
             type: string
-            enum: &a26
+            enum: &a27
               - transcript
               - summary
         language_hint:
@@ -5662,10 +6356,10 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         status:
           type: string
-          enum: &a25
+          enum: &a26
             - queued
             - processing
             - completed
@@ -5675,12 +6369,12 @@ components:
           type:
             - string
             - "null"
-          enum: *a25
+          enum: *a26
         summary_status:
           type:
             - string
             - "null"
-          enum: *a25
+          enum: *a26
         processor_id:
           type:
             - string
@@ -5781,7 +6475,7 @@ components:
           type: array
           items:
             type: string
-            enum: *a26
+            enum: *a27
           minItems: 1
         language_hint:
           type:
@@ -5789,7 +6483,7 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         metadata:
           type: object
           additionalProperties: {}
@@ -5960,7 +6654,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a27
+          enum: &a28
             - running
             - completed
             - failed
@@ -6062,7 +6756,7 @@ components:
             - "null"
         resulting_status:
           type: string
-          enum: *a27
+          enum: *a28
         variables_json:
           type: object
           additionalProperties:
@@ -6361,7 +7055,7 @@ components:
           format: uuid
         provider_type:
           type: string
-          enum: &a28
+          enum: &a29
             - whatsapp
             - telegram
             - google_meet
@@ -6401,7 +7095,7 @@ components:
       properties:
         provider_type:
           type: string
-          enum: *a28
+          enum: *a29
         name:
           type: string
           minLength: 1
@@ -6447,7 +7141,7 @@ components:
             - outbound
         message_type:
           type: string
-          enum: &a29
+          enum: &a30
             - text
             - voice_message
             - meeting
@@ -6512,7 +7206,7 @@ components:
           type: string
         message_type:
           type: string
-          enum: *a29
+          enum: *a30
         body:
           type:
             - string
@@ -6587,7 +7281,7 @@ components:
           format: uuid
         message_type:
           type: string
-          enum: *a29
+          enum: *a30
         external_id:
           type: string
         sender_id:
@@ -6619,7 +7313,7 @@ components:
           minLength: 1
         message_type:
           type: string
-          enum: *a29
+          enum: *a30
         body:
           type: string
         media_reference:
@@ -6686,7 +7380,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a30
+          enum: &a31
             - scheduled
             - active
             - completed
@@ -6755,7 +7449,7 @@ components:
       properties:
         status:
           type: string
-          enum: *a30
+          enum: *a31
         meeting_url:
           type: string
         participant_count:
@@ -6803,10 +7497,10 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         status:
           type: string
-          enum: &a31
+          enum: &a32
             - queued
             - processing
             - completed
@@ -6907,10 +7601,10 @@ components:
             type: string
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         status:
           type: string
-          enum: *a31
+          enum: *a32
         processor_id:
           type:
             - string
@@ -6999,7 +7693,7 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         metadata:
           type: object
           additionalProperties: {}
@@ -7069,7 +7763,7 @@ components:
           minItems: 1
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         metadata:
           type: object
           additionalProperties: {}
@@ -8014,7 +8708,7 @@ components:
             - "null"
         action_type:
           type: string
-          enum: &a32
+          enum: &a33
             - voicemail_access
             - call_forward_enable
             - call_forward_disable
@@ -8083,7 +8777,7 @@ components:
           maxLength: 500
         action_type:
           type: string
-          enum: *a32
+          enum: *a33
         action_config:
           type: object
           additionalProperties: {}
@@ -8107,7 +8801,7 @@ components:
           maxLength: 500
         action_type:
           type: string
-          enum: *a32
+          enum: *a33
         action_config:
           type: object
           additionalProperties: {}
@@ -8255,7 +8949,7 @@ components:
       properties:
         target_type:
           type: string
-          enum: &a33
+          enum: &a34
             - outbound_route
             - inbound_route
             - sip_trunk
@@ -8305,7 +8999,7 @@ components:
       properties:
         target_type:
           type: string
-          enum: *a33
+          enum: *a34
         target_id:
           type: string
           format: uuid

@@ -191,7 +191,7 @@ Responsibilities:
 - conference room
 - end-user self-service policy
 
-Planned enterprise-model additions:
+Enterprise-model additions implemented or actively staged in the `v0.6.x` line:
 
 - numbering plan
 - numbering plan rule
@@ -205,6 +205,7 @@ Planned enterprise-model additions:
 - line appearance
 - schedule group
 - holiday calendar
+- schedule override
 
 Planned migration/adoption additions:
 

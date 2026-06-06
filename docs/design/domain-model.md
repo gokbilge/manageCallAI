@@ -229,10 +229,18 @@ Planned in `#305` through `#307` to model failover-aware carrier selection.
 Planned in `#308` through `#315` to separate endpoint ownership and device
 presentation from the flat extension-centric baseline.
 
-### ScheduleGroup and HolidayCalendar
+### ScheduleGroup, HolidayCalendar, and ScheduleOverride
 
-Planned in `#311` through `#313` to represent enterprise business-hours,
-closure, and override behavior.
+Implemented in `#311` and `#312`, with route and IVR consumption depth planned
+to continue in `#313`.
+
+`ScheduleGroup` holds reusable weekly business-hour rules.
+
+`HolidayCalendar` holds reusable one-off closures or reduced-hours entries.
+
+`ScheduleOverride` represents temporary, explicit, expiring schedule changes
+such as emergency closures or one-time custom-hours windows. Overrides are
+auditable and reversible and remain attached to a concrete `Schedule`.
 
 ## 5.13 Contact-center entities (v0.7.0)
 

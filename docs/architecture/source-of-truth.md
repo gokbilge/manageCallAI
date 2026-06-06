@@ -168,6 +168,7 @@ Source inspection shows the repository currently includes:
 - auth, tenant/user roles, and capability checks
 - extensions, trunks, phone numbers, schedules, inbound and outbound routes
 - numbering plans, calling policies, and site-aware enterprise-model foundations
+- schedule groups, holiday calendars, and expiring temporary schedule overrides
 - queues, call groups, voicemail boxes, prompt assets, recordings, and call events
 - IVR draft/version lifecycle with validate, simulate, publish, and rollback
 - approval-aware IVR publish flows

@@ -103,6 +103,116 @@ describe('Repository coverage', () => {
     expect(await repo.findActiveVoicemailTargets('tenant-1', ['vm-1'])).toHaveProperty('size', 1);
   });
 
+  it('covers schedule repository query paths for groups, calendars, and overrides', async () => {
+    const { ScheduleRepository } = await import('./schedules/schedule.repository.js');
+    const schedule = {
+      id: 'schedule-1',
+      tenant_id: 'tenant-1',
+      name: 'Business Hours',
+      status: 'active',
+      timezone: 'UTC',
+      schedule_group_id: 'group-1',
+      holiday_calendar_id: 'calendar-1',
+      weekly_rules_json: [],
+      holiday_overrides_json: [],
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    const group = {
+      id: 'group-1',
+      tenant_id: 'tenant-1',
+      name: 'Weekday Core',
+      description: null,
+      status: 'active',
+      weekly_rules_json: [],
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    const calendar = {
+      id: 'calendar-1',
+      tenant_id: 'tenant-1',
+      name: 'Holiday Set',
+      description: null,
+      status: 'active',
+      entries_json: [],
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    const override = {
+      id: 'override-1',
+      tenant_id: 'tenant-1',
+      schedule_id: 'schedule-1',
+      name: 'Closure',
+      reason: 'storm',
+      mode: 'closed',
+      open_time: null,
+      close_time: null,
+      starts_at: new Date(),
+      ends_at: new Date(Date.now() + 60_000),
+      cancelled_at: null,
+      cancelled_by: null,
+      created_by: 'user-1',
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    const pool = makePool([
+      rows([schedule]),
+      row(schedule),
+      row(schedule),
+      row(schedule),
+      row({ ...schedule, status: 'inactive' }),
+      rows([schedule]),
+      row(group),
+      rows([group]),
+      row(group),
+      row(group),
+      empty(),
+      row(calendar),
+      rows([calendar]),
+      row(calendar),
+      row(calendar),
+      empty(),
+      rows([override]),
+      row(override),
+      rows([override]),
+      row(override),
+      row({ ...override, cancelled_at: new Date(), cancelled_by: 'user-1' }),
+    ]);
+    const repo = new ScheduleRepository(pool);
+
+    await expect(repo.findAllByTenant('tenant-1')).resolves.toHaveLength(1);
+    await expect(repo.findById('schedule-1', 'tenant-1')).resolves.toMatchObject({ id: 'schedule-1' });
+    await expect(repo.create({ tenant_id: 'tenant-1', name: 'Schedule', timezone: 'UTC' })).resolves.toMatchObject({ id: 'schedule-1' });
+    await expect(repo.update('schedule-1', 'tenant-1', { name: 'Updated' })).resolves.toMatchObject({ id: 'schedule-1' });
+    await expect(repo.deactivate('schedule-1', 'tenant-1')).resolves.toMatchObject({ status: 'inactive' });
+    expect(await repo.findActiveByIds('tenant-1', ['schedule-1'])).toHaveProperty('size', 1);
+
+    await expect(repo.findScheduleGroupById('group-1', 'tenant-1')).resolves.toMatchObject({ id: 'group-1' });
+    await expect(repo.findAllScheduleGroupsByTenant('tenant-1')).resolves.toHaveLength(1);
+    await expect(repo.createScheduleGroup({ tenant_id: 'tenant-1', name: 'Weekday Core', weekly_rules_json: [] })).resolves.toMatchObject({ id: 'group-1' });
+    await expect(repo.updateScheduleGroup('group-1', 'tenant-1', { name: 'Updated' })).resolves.toMatchObject({ id: 'group-1' });
+    await expect(repo.syncSchedulesForGroup('group-1', 'tenant-1', [])).resolves.toBeUndefined();
+
+    await expect(repo.findHolidayCalendarById('calendar-1', 'tenant-1')).resolves.toMatchObject({ id: 'calendar-1' });
+    await expect(repo.findAllHolidayCalendarsByTenant('tenant-1')).resolves.toHaveLength(1);
+    await expect(repo.createHolidayCalendar({ tenant_id: 'tenant-1', name: 'Holiday Set', entries_json: [] })).resolves.toMatchObject({ id: 'calendar-1' });
+    await expect(repo.updateHolidayCalendar('calendar-1', 'tenant-1', { name: 'Updated' })).resolves.toMatchObject({ id: 'calendar-1' });
+    await expect(repo.syncSchedulesForHolidayCalendar('calendar-1', 'tenant-1', [])).resolves.toBeUndefined();
+
+    await expect(repo.findOverridesBySchedule('schedule-1', 'tenant-1')).resolves.toHaveLength(1);
+    await expect(repo.findOverrideById('override-1', 'schedule-1', 'tenant-1')).resolves.toMatchObject({ id: 'override-1' });
+    await expect(repo.findOverlappingOverrides('schedule-1', 'tenant-1', new Date(), new Date(Date.now() + 60_000))).resolves.toHaveLength(1);
+    await expect(repo.createOverride({
+      tenant_id: 'tenant-1',
+      schedule_id: 'schedule-1',
+      name: 'Closure',
+      mode: 'closed',
+      starts_at: new Date().toISOString(),
+      ends_at: new Date(Date.now() + 60_000).toISOString(),
+    })).resolves.toMatchObject({ id: 'override-1' });
+    await expect(repo.cancelOverride('override-1', 'schedule-1', 'tenant-1', { cancelled_by: 'user-1' })).resolves.toMatchObject({ id: 'override-1', cancelled_by: 'user-1' });
+  });
+
   it('covers node registry token and nonce repository paths', async () => {
     const { encryptSipPassword } = await import('../crypto/sip-secret.js');
     const { NodeRegistryRepository } = await import('./runtime/node-registry.repository.js');
