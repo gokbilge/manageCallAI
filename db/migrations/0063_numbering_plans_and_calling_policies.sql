@@ -32,9 +32,9 @@ CREATE TABLE numbering_plan_assignments (
   plan_id UUID NOT NULL REFERENCES numbering_plans(id) ON DELETE CASCADE,
   assignable_type TEXT NOT NULL CHECK (assignable_type IN ('extension', 'sip_trunk', 'tenant')),
   assignable_id UUID,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (tenant_id, assignable_type, COALESCE(assignable_id, '00000000-0000-0000-0000-000000000000'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX ON numbering_plan_assignments (tenant_id, assignable_type, COALESCE(assignable_id, '00000000-0000-0000-0000-000000000000'));
 
 CREATE INDEX ON numbering_plans (tenant_id, status);
 CREATE INDEX ON numbering_rules (tenant_id, plan_id, priority);
@@ -67,9 +67,9 @@ CREATE TABLE calling_policy_assignments (
   policy_id UUID NOT NULL REFERENCES calling_policies(id) ON DELETE CASCADE,
   assignable_type TEXT NOT NULL CHECK (assignable_type IN ('extension', 'call_group', 'tenant')),
   assignable_id UUID,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (tenant_id, assignable_type, COALESCE(assignable_id, '00000000-0000-0000-0000-000000000000'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX ON calling_policy_assignments (tenant_id, assignable_type, COALESCE(assignable_id, '00000000-0000-0000-0000-000000000000'));
 
 CREATE INDEX ON calling_policies (tenant_id, status);
 CREATE INDEX ON calling_policy_assignments (tenant_id, assignable_type, assignable_id);
