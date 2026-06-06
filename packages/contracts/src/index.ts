@@ -42,3 +42,7 @@ export * from './schemas/agent-workspace.js';
 export * from './schemas/skills.js';
 export * from './schemas/crm-integrations.js';
 export * from './schemas/campaigns.js';
+
+export * from './schemas/supervisor-controls.js';
+export * from './schemas/queue-callbacks.js';
+export * from './schemas/supervisor-dashboard.js';

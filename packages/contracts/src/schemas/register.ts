@@ -317,6 +317,26 @@ registry.register('CarrierAssistantRuntimeHint', carrierAssistant.CarrierAssista
 registry.register('CarrierAssistantSuggestion', carrierAssistant.CarrierAssistantSuggestionSchema);
 registry.register('CreateCarrierAssistantSuggestionBody', carrierAssistant.CreateCarrierAssistantSuggestionBodySchema);
 
+// supervisor-controls
+import * as supervisorControls from './supervisor-controls.js';
+registry.register('SupervisorControl', supervisorControls.SupervisorControlSchema);
+registry.register('CreateSupervisorControlBody', supervisorControls.CreateSupervisorControlBodySchema);
+registry.register('UpdateSupervisorControlBody', supervisorControls.UpdateSupervisorControlBodySchema);
+
+// queue-callbacks
+import * as queueCallbacks from './queue-callbacks.js';
+registry.register('QueueCallback', queueCallbacks.QueueCallbackSchema);
+registry.register('CreateQueueCallbackBody', queueCallbacks.CreateQueueCallbackBodySchema);
+registry.register('UpdateQueueCallbackBody', queueCallbacks.UpdateQueueCallbackBodySchema);
+
+// supervisor-dashboard
+import * as supervisorDashboard from './supervisor-dashboard.js';
+registry.register('QueueStat', supervisorDashboard.QueueStatSchema);
+registry.register('AgentSummary', supervisorDashboard.AgentSummarySchema);
+registry.register('SlaMetric', supervisorDashboard.SlaMetricSchema);
+registry.register('DashboardView', supervisorDashboard.DashboardViewSchema);
+registry.register('WallboardView', supervisorDashboard.WallboardViewSchema);
+
 // risk-analysis
 import * as riskAnalysis from './risk-analysis.js';
 registry.register('RiskConcern', riskAnalysis.RiskConcernSchema);

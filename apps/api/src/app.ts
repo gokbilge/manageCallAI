@@ -66,6 +66,9 @@ import { agentProfileController, agentWorkspaceMeController, queueAgentAvailabil
 import { skillController, agentProfileSkillController, queueSkillController } from './modules/skills/skills.controller.js';
 import { crmIntegrationController } from './modules/crm-integrations/crm-integrations.controller.js';
 import { campaignController } from './modules/campaigns/campaigns.controller.js';
+import { supervisorControlsController } from './modules/supervisor-controls/supervisor-controls.controller.js';
+import { queueCallbackController, queueScopedCallbackController } from './modules/queue-callbacks/queue-callbacks.controller.js';
+import { supervisorDashboardController } from './modules/supervisor-dashboard/supervisor-dashboard.controller.js';
 import { setupController } from './modules/setup/setup.controller.js';
 import { db } from './db/client.js';
 import { registerErrorHandler } from './errors/index.js';
@@ -132,6 +135,11 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   // Contact-center: CRM screen-pop (#281), campaign management (#282)
   app.register(crmIntegrationController, { prefix: '/api/v1/crm-integrations' });
   app.register(campaignController, { prefix: '/api/v1/campaigns' });
+  // Contact-center: supervisor dashboard (#274,#277), monitor/whisper/barge (#275), queue callbacks (#276)
+  app.register(supervisorDashboardController, { prefix: '/api/v1/supervisor' });
+  app.register(supervisorControlsController, { prefix: '/api/v1/supervisor/controls' });
+  app.register(queueCallbackController, { prefix: '/api/v1/queue-callbacks' });
+  app.register(queueScopedCallbackController, { prefix: '/api/v1/queues' });
 }
 
 /**
