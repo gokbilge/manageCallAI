@@ -4462,6 +4462,12 @@ components:
               - tenant.skills.view
               - tenant.skills.manage
               - tenant.routing.evaluate
+              - tenant.crm.integrations.view
+              - tenant.crm.integrations.manage
+              - tenant.crm.lookup
+              - tenant.campaigns.view
+              - tenant.campaigns.manage
+              - tenant.campaigns.contacts.manage
               - "*"
         created_by:
           type:
