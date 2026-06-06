@@ -30,6 +30,7 @@ runtime-token*
 !docs/security/runtime-token-hardening.md
 
 # Keep release-train planning docs tracked under docs/planning/.
+# CI note: harmless tracked-comment updates may be used to force required checks on docs-only PRs.
 # Local AI context files - not for version control
 CLAUDE.md
 AGENTS.md

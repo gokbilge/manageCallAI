@@ -61,6 +61,15 @@ Contact-center additions tracked in `#271` through `#273` (v0.7.0):
 - QueueSkillRequirement
 - RoutingEvaluationLog
 
+Planned migration/adoption entities:
+
+- MigrationSource
+- CanonicalMigrationSnapshot
+- CompatibilityReport
+- ManualReviewItem
+- MigrationDraftImport
+- MigrationEvidenceBundle
+
 ### 3.3 Lifecycle and governance
 
 - FlowVersion
@@ -273,6 +282,31 @@ a queue's skill requirements. Provides explainable, auditable routing.
 Implemented in `#273`. Evaluation is deterministic — all inputs (requirements,
 agent skills) are read at evaluation time and the result plus a human-readable
 reason are persisted.
+
+### MigrationSource and CanonicalMigrationSnapshot
+
+Planned for the post-`v0.8.x` migration-assistant lane to represent source
+metadata, normalized imported inventory, source references, hashes, confidence
+scores, and unsupported-item inventories.
+
+### CompatibilityReport and ManualReviewItem
+
+Planned to capture exact/equivalent/approximate/manual/unsupported/unknown
+classification for source objects, plus operator-visible rationale.
+
+### MigrationEvidenceBundle
+
+Planned to capture source snapshot hash, compatibility output, draft object
+references, validation/simulation results, manual review decisions, cutover
+checklist state, runtime smoke evidence, and rollback guidance.
+
+## 8. Migration and Adoption Toolkit
+
+manageCallAI will support migration through a staged, evidence-based process:
+source discovery, compatibility analysis, draft import, validation, simulation,
+operator approval, cutover checklist, runtime smoke, and rollback evidence.
+
+The importer must not auto-publish live objects or execute source custom logic.
 
 ## 6. Lifecycle and operational entities
 

@@ -142,7 +142,28 @@ Non-responsibilities:
 - direct source-PBX execution or raw dialplan import
 - autonomous publish of imported routes or trunks
 
-### 3.11 Release evidence layer
+### 3.11 Migration and adoption toolkit layer
+
+This later lane sits on top of the stabilized enterprise model and remains
+draft-only.
+
+Responsibilities:
+
+- source discovery and upload intake
+- canonical migration snapshot normalization
+- compatibility classification and confidence scoring
+- draft object generation for supported target objects
+- validation, simulation, and manual-review output
+- cutover checklist and evidence-bundle generation
+
+Non-responsibilities:
+
+- direct source-PBX execution
+- blind credential reuse
+- auto-publish of imported objects
+- conversion of unknown source logic into live production routing
+
+### 3.12 Release evidence layer
 
 - validators and smoke scripts under `scripts/`
 - release and operations documentation under `docs/release/` and `docs/ops/`
@@ -184,6 +205,15 @@ Planned enterprise-model additions:
 - line appearance
 - schedule group
 - holiday calendar
+
+Planned migration/adoption additions:
+
+- migration source
+- canonical migration snapshot
+- compatibility report
+- manual review item
+- migration draft import
+- migration evidence bundle
 
 ### 4.2 Operational objects
 
@@ -239,6 +269,11 @@ The current code line is organized around route modules plus service/repository 
 - planned `DeviceService`
 - planned `EnterpriseScheduleService`
 - planned `LineAppearanceService`
+- planned `MigrationSourceService`
+- planned `MigrationSnapshotService`
+- planned `CompatibilityReportService`
+- planned `MigrationDraftImportService`
+- planned `MigrationEvidenceService`
 - `RecordingSummaryService` behavior currently lives inside the recordings and
   voicemail service boundary, exposing bounded summary review for recordings,
   call-detail lookups, and voicemail-linked media review
@@ -252,3 +287,5 @@ The current code line is organized around route modules plus service/repository 
 - release stage claims require evidence outside the code itself
 - AI assistance must remain advisory unless the normal lifecycle explicitly turns
   a result into a validated, simulated, approved, and published change
+- migration assistance must remain draft-only until normal lifecycle controls
+  explicitly publish a reviewed object

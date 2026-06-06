@@ -99,6 +99,19 @@ The planned enterprise and migration lane after `v0.6.x` is also phased:
 - `v0.8.x` produces migration-analysis and mapping documents (`#331`-`#334`)
 - importer execution follows only after those phases (`#335`-`#339`)
 
+The migration/adoption toolkit must remain evidence-driven:
+
+- source discovery
+- compatibility analysis
+- draft import
+- validation and simulation
+- operator approval
+- cutover checklist
+- runtime smoke
+- rollback evidence
+
+It must not auto-publish imported objects or execute source custom logic.
+
 ### 5.7 FreeSWITCH adapter layer
 
 - Go adapter service coordinating FreeSWITCH integration

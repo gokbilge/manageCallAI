@@ -408,19 +408,19 @@ lane closes.
 Focus:
 
 - [#331](https://github.com/gokbilge/manageCallAI/issues/331) `v0.8.0: capability matrix and support taxonomy`
-- `docs/planning/pbx-migration-gap-analysis.md`
+- `docs/migration/pbx-capability-gap-analysis.md`
 - `docs/migration/source-system-capability-matrix.md`
 - `docs/migration/import-support-levels.md`
-- support levels `A` through `E`
+- `docs/migration/managecallai-target-capability-model.md`
+- support levels `A` through `U`
 
 ### `v0.8.1` - Open-Source PBX Mapping Set
 
 Focus:
 
 - [#332](https://github.com/gokbilge/manageCallAI/issues/332) `v0.8.1: open-source PBX mapping set`
-- `FreePBX`
-- `Asterisk`
-- `FusionPBX`
+- `docs/migration/freepbx-asterisk-migration-map.md`
+- `docs/migration/fusionpbx-migration-map.md`
 - generic CSV/manual inventory mapping
 
 ### `v0.8.2` - Enterprise PBX Mapping Set
@@ -428,10 +428,10 @@ Focus:
 Focus:
 
 - [#333](https://github.com/gokbilge/manageCallAI/issues/333) `v0.8.2: enterprise PBX mapping set`
-- `Cisco CUCM`
-- `Avaya Aura`
-- `Alcatel OmniPCX`
-- `Mitel`
+- `docs/migration/cisco-cucm-migration-map.md`
+- `docs/migration/avaya-aura-migration-map.md`
+- `docs/migration/alcatel-omnipcx-migration-map.md`
+- Mitel remains matrix-only until a separate source mapping document is justified
 
 ### `v0.8.3` - Migration Readiness Roadmap And Compatibility Report Design
 

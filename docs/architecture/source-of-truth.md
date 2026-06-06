@@ -6,7 +6,7 @@ If another document conflicts with this one, this document wins until an explici
 
 ## 0. Current release posture
 
-Current code line: `v0.6.2`. Production release `v0.6.2` (2026-06-06).
+Current code line: `v0.6.2`. Production release `v0.6.2` (2026-06-06) - combined AI-expansion and end-user communications release.
 Evidence: `docs/release/release-evidence-v0.6.2.json`.
 
 Release stage must be determined from release evidence, not from source inspection alone. When implementation and release claims drift, release claims must defer to:
@@ -287,3 +287,18 @@ Post-`v0.8.x` importer work remains a later implementation lane:
 This sequence is planning guidance, not release evidence. Architecture intent
 still forbids importer-first development that forces unsafe approximations into
 the control-plane model.
+
+## 12. Migration and adoption toolkit
+
+manageCallAI will support migration through a staged, evidence-based process:
+source discovery, compatibility analysis, draft import, validation, simulation,
+operator approval, cutover checklist, runtime smoke, and rollback evidence.
+
+Architecture rules for this lane:
+
+- migration tooling must remain narrower than the core REST control plane
+- importer flows must create drafts, not live objects
+- unknown source behavior must remain review-only
+- source custom logic must never be executed or imported as live executable routing
+- AI may explain and summarize migration findings, but it may not autonomously
+  convert unknown behavior into production logic
