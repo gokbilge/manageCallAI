@@ -121,11 +121,21 @@ export const CAPABILITIES = {
   TENANT_AI_POLICY_VIEW: 'tenant.ai.policy.view',
   TENANT_AI_POLICY_MANAGE: 'tenant.ai.policy.manage',
   TENANT_AI_PROVIDER_BACKED_USE: 'tenant.ai.provider_backed.use',
+
+  // v0.7.0 contact-center: agent workspace (#271), availability (#272), skills (#273)
+  TENANT_AGENT_PROFILES_VIEW: 'tenant.agents.profiles.view',
+  TENANT_AGENT_PROFILES_MANAGE: 'tenant.agents.profiles.manage',
+  TENANT_AGENT_AVAILABILITY_VIEW: 'tenant.agents.availability.view',
+  TENANT_AGENT_AVAILABILITY_SET: 'tenant.agents.availability.set',
+  TENANT_AGENT_WORKSPACE_VIEW: 'tenant.agents.workspace.view',
+  TENANT_SKILLS_VIEW: 'tenant.skills.view',
+  TENANT_SKILLS_MANAGE: 'tenant.skills.manage',
+  TENANT_ROUTING_EVALUATE: 'tenant.routing.evaluate',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
 
-export type Role = 'platform_admin' | 'tenant_admin' | 'tenant_operator' | 'tenant_viewer' | 'end_user';
+export type Role = 'platform_admin' | 'tenant_admin' | 'tenant_operator' | 'tenant_viewer' | 'end_user' | 'agent';
 
 const TENANT_VIEW_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_DASHBOARD_VIEW,
@@ -151,6 +161,9 @@ const TENANT_VIEW_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_CHANNEL_MESSAGES_VIEW,
   CAPABILITIES.TENANT_MEETING_SESSIONS_VIEW,
   CAPABILITIES.TENANT_AI_POLICY_VIEW,
+  CAPABILITIES.TENANT_AGENT_PROFILES_VIEW,
+  CAPABILITIES.TENANT_AGENT_AVAILABILITY_VIEW,
+  CAPABILITIES.TENANT_SKILLS_VIEW,
 ];
 
 const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
@@ -198,6 +211,7 @@ const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_NL_REPORTING,
   CAPABILITIES.TENANT_CALL_FAILURE_EXPLAIN,
   CAPABILITIES.TENANT_AI_PROVIDER_BACKED_USE,
+  CAPABILITIES.TENANT_ROUTING_EVALUATE,
 ];
 
 const TENANT_CAPABILITIES: readonly Capability[] = [
@@ -222,6 +236,8 @@ const TENANT_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_SECURITY_ALERTS_MANAGE,
   CAPABILITIES.TENANT_FRAUD_POLICY_MANAGE,
   CAPABILITIES.TENANT_AI_POLICY_MANAGE,
+  CAPABILITIES.TENANT_AGENT_PROFILES_MANAGE,
+  CAPABILITIES.TENANT_SKILLS_MANAGE,
 ];
 
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
@@ -235,6 +251,12 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   tenant_operator: TENANT_OPERATOR_CAPABILITIES,
   tenant_viewer: TENANT_VIEW_CAPABILITIES,
   end_user: [],
+  agent: [
+    CAPABILITIES.TENANT_AGENT_WORKSPACE_VIEW,
+    CAPABILITIES.TENANT_AGENT_AVAILABILITY_SET,
+    CAPABILITIES.TENANT_QUEUES_VIEW,
+    CAPABILITIES.TENANT_EXTENSIONS_VIEW,
+  ],
 };
 
 export function hasCapability(role: Role | string | undefined, capability: Capability): boolean {

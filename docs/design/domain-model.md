@@ -52,6 +52,15 @@ Planned enterprise-model additions tracked in `#300` through `#315`:
 - ScheduleGroup
 - HolidayCalendar
 
+Contact-center additions tracked in `#271` through `#273` (v0.7.0):
+
+- AgentProfile
+- AgentAvailability
+- Skill
+- AgentSkill
+- QueueSkillRequirement
+- RoutingEvaluationLog
+
 Planned migration/adoption entities:
 
 - MigrationSource
@@ -224,6 +233,55 @@ presentation from the flat extension-centric baseline.
 
 Planned in `#311` through `#313` to represent enterprise business-hours,
 closure, and override behavior.
+
+## 5.13 Contact-center entities (v0.7.0)
+
+### AgentProfile
+
+Represents a contact-center agent's workspace configuration. One profile per user
+per tenant. Holds display name, max concurrent calls, and active/inactive status.
+
+Implemented in `#271`. Distinct from the PBX `User` — models the agent's role
+in queue handling, not their authentication identity.
+
+Role boundary: `agent` role grants access to the agent self-service workspace
+(`TENANT_AGENT_WORKSPACE_VIEW`, `TENANT_AGENT_AVAILABILITY_SET`). Admin/operator
+roles manage profiles via `TENANT_AGENT_PROFILES_MANAGE`.
+
+### AgentAvailability
+
+Represents the explicit, queue-visible availability state for an agent.
+
+States: `available`, `busy`, `away`, `wrap_up`, `offline`.
+
+Implemented in `#272`. Distinct from general PBX presence (`#057`): presence
+tracks SIP registration and DND; agent availability tracks contact-center
+readiness and is queryable by queue routing logic.
+
+State transitions are enforced: `offline → available`, `available → busy/away/wrap_up/offline`,
+`busy → available/wrap_up/offline`, `wrap_up → available/away/offline`, `away → available/offline`.
+
+### Skill
+
+Represents a tenant-scoped named skill (e.g. "Spanish", "Tier-2 Support").
+
+### AgentSkill
+
+Assigns a skill to an agent with a proficiency level (1–5). An agent may hold
+multiple skills at different proficiency levels.
+
+### QueueSkillRequirement
+
+Specifies which skills a queue demands and the minimum proficiency level required.
+
+### RoutingEvaluationLog
+
+Immutable record of a routing eligibility decision: whether a given agent meets
+a queue's skill requirements. Provides explainable, auditable routing.
+
+Implemented in `#273`. Evaluation is deterministic — all inputs (requirements,
+agent skills) are read at evaluation time and the result plus a human-readable
+reason are persisted.
 
 ### MigrationSource and CanonicalMigrationSnapshot
 

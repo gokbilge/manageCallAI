@@ -175,6 +175,15 @@ export const API_KEY_CAPABILITIES = [
   'tenant.ai.policy.view',
   'tenant.ai.policy.manage',
   'tenant.ai.provider_backed.use',
+  // tenant — contact-center agent workspace and skills (v0.7.0)
+  'tenant.agents.profiles.view',
+  'tenant.agents.profiles.manage',
+  'tenant.agents.availability.view',
+  'tenant.agents.availability.set',
+  'tenant.agents.workspace.view',
+  'tenant.skills.view',
+  'tenant.skills.manage',
+  'tenant.routing.evaluate',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;
