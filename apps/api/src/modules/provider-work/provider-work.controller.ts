@@ -7,6 +7,8 @@ import {
   ClaimWorkRequestBodySchema,
   CreateIvrAiTurnBodySchema,
   CompleteIvrAiTurnBodySchema,
+  CompleteIvrGenerationBodySchema,
+  CompleteIvrAiPatchBodySchema,
 } from '@managecallai/contracts';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
@@ -227,3 +229,79 @@ export const ivrAiController: FastifyPluginAsyncZod = async (app) => {
 function requireProviderBackedCapability(role: AuthClaims['role']): boolean {
   return role === 'tenant_admin' || role === 'tenant_operator' || role === 'platform_admin';
 }
+
+export const ivrGenerationWorkerController: FastifyPluginAsyncZod = async (app) => {
+  app.post(
+    '/ivr-generation/internal/:requestId/claim',
+    {
+      preHandler: authenticateRuntime,
+      schema: {
+        params: z.object({ requestId: z.string() }),
+        body: ClaimWorkRequestBodySchema,
+      },
+    },
+    async (req, reply) => {
+      try {
+        return { data: await service.claimIvrGeneration(req.params.requestId, req.body) };
+      } catch (err) {
+        return replyNotFound(err, reply);
+      }
+    },
+  );
+
+  app.post(
+    '/ivr-generation/internal/:requestId/result',
+    {
+      preHandler: authenticateRuntime,
+      schema: {
+        params: z.object({ requestId: z.string() }),
+        body: CompleteIvrGenerationBodySchema,
+      },
+    },
+    async (req, reply) => {
+      try {
+        return { data: await service.completeIvrGeneration(req.params.requestId, req.body) };
+      } catch (err) {
+        return replyNotFound(err, reply);
+      }
+    },
+  );
+};
+
+export const ivrAiPatchWorkerController: FastifyPluginAsyncZod = async (app) => {
+  app.post(
+    '/ivr-ai-patches/internal/:requestId/claim',
+    {
+      preHandler: authenticateRuntime,
+      schema: {
+        params: z.object({ requestId: z.string() }),
+        body: ClaimWorkRequestBodySchema,
+      },
+    },
+    async (req, reply) => {
+      try {
+        return { data: await service.claimIvrAiPatch(req.params.requestId, req.body) };
+      } catch (err) {
+        return replyNotFound(err, reply);
+      }
+    },
+  );
+
+  app.post(
+    '/ivr-ai-patches/internal/:requestId/result',
+    {
+      preHandler: authenticateRuntime,
+      schema: {
+        params: z.object({ requestId: z.string() }),
+        body: CompleteIvrAiPatchBodySchema,
+      },
+    },
+    async (req, reply) => {
+      try {
+        return { data: await service.completeIvrAiPatch(req.params.requestId, req.body) };
+      } catch (err) {
+        return replyNotFound(err, reply);
+      }
+    },
+  );
+};

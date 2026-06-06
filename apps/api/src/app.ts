@@ -37,7 +37,8 @@ import { auditController } from './modules/audit/audit.controller.js';
 import { recordingAnalysisController, recordingController } from './modules/recordings/recording.controller.js';
 import { exportController } from './modules/export/export.controller.js';
 import { userController } from './modules/users/user.controller.js';
-import { ivrAiController, promptGenerationController } from './modules/provider-work/provider-work.controller.js';
+import { ivrAiController, promptGenerationController, ivrGenerationWorkerController, ivrAiPatchWorkerController } from './modules/provider-work/provider-work.controller.js';
+import { ivrGenerationController, ivrAiPatchController, inboundRouteAiPatchController } from './modules/ivr-flows/ivr-ai-generation.controller.js';
 import { channelAccountController } from './modules/channel-accounts/channel-account.controller.js';
 import { channelMessageController } from './modules/channel-messages/channel-message.controller.js';
 import { meetingSessionController } from './modules/meeting-sessions/meeting-session.controller.js';
@@ -80,11 +81,13 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(phoneNumberController, { prefix: '/api/v1/phone-numbers' });
   app.register(promptAssetController, { prefix: '/api/v1/prompts' });
   app.register(ivrFlowController, { prefix: '/api/v1/ivr-flows' });
+  app.register(ivrAiPatchController, { prefix: '/api/v1/ivr-flows' });
   app.register(callGroupController, { prefix: '/api/v1/call-groups' });
   app.register(queueController, { prefix: '/api/v1/queues' });
   app.register(voicemailBoxController, { prefix: '/api/v1/voicemail-boxes' });
   app.register(voicemailMessageController, { prefix: '/api/v1/voicemail-boxes' });
   app.register(inboundRouteController, { prefix: '/api/v1/inbound-routes' });
+  app.register(inboundRouteAiPatchController, { prefix: '/api/v1/inbound-routes' });
   app.register(outboundRouteController, { prefix: '/api/v1/outbound-routes' });
   app.register(riskAnalysisController, { prefix: '/api/v1/risk-analysis' });
   app.register(reportingController, { prefix: '/api/v1/reporting' });
@@ -106,7 +109,10 @@ function registerRuntimeModules(app: FastifyInstance): void {
   app.register(recordingController, { prefix: '/api/v1/recordings' });
   app.register(recordingAnalysisController, { prefix: '/api/v1/recording-analysis' });
   app.register(promptGenerationController, { prefix: '/api/v1/prompt-generation' });
+  app.register(ivrGenerationController, { prefix: '/api/v1/ivr-generation' });
   app.register(ivrAiController, { prefix: '/api/v1' });
+  app.register(ivrGenerationWorkerController, { prefix: '/api/v1' });
+  app.register(ivrAiPatchWorkerController, { prefix: '/api/v1' });
   app.register(freeswitchController, { prefix: '/api/v1/freeswitch' });
   // Gateway reload / runtime apply: tenant endpoints + Go agent runtime callbacks.
   app.register(runtimeApplyController, { prefix: '/api/v1' });
