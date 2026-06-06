@@ -40,3 +40,5 @@ export * from './schemas/call-failure-explanation.js';
 export * from './schemas/ai-policy.js';
 export * from './schemas/agent-workspace.js';
 export * from './schemas/skills.js';
+export * from './schemas/crm-integrations.js';
+export * from './schemas/campaigns.js';

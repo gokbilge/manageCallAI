@@ -633,4 +633,246 @@ describe('Repository coverage', () => {
     await expect(platform.listTenants()).resolves.toHaveLength(1);
     await expect(platform.getRuntimeSummary()).resolves.toMatchObject({ active_sessions: 1 });
   });
+
+  it('covers agent workspace and skills repository query paths', async () => {
+    const { AgentWorkspaceRepository } = await import('./agent-workspace/agent-workspace.repository.js');
+    const { SkillsRepository } = await import('./skills/skills.repository.js');
+    const profile = {
+      id: 'agent-1',
+      tenant_id: 'tenant-1',
+      user_id: 'user-1',
+      display_name: 'Alice Support',
+      max_concurrent_calls: 1,
+      status: 'active',
+      created_at: new Date(),
+      updated_at: new Date(),
+      av_id: 'av-1',
+      av_state: 'offline',
+      av_reason: null,
+      av_updated_at: new Date(),
+    };
+    const availability = {
+      id: 'av-1',
+      tenant_id: 'tenant-1',
+      agent_profile_id: 'agent-1',
+      state: 'available',
+      reason: null,
+      updated_at: new Date(),
+    };
+    const skill = {
+      id: 'skill-1',
+      tenant_id: 'tenant-1',
+      name: 'Spanish',
+      description: null,
+      status: 'active',
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    const agentSkill = {
+      id: 'as-1',
+      tenant_id: 'tenant-1',
+      agent_profile_id: 'agent-1',
+      skill_id: 'skill-1',
+      proficiency: 3,
+      created_at: new Date(),
+    };
+    const queueReq = {
+      id: 'req-1',
+      tenant_id: 'tenant-1',
+      queue_id: 'queue-1',
+      skill_id: 'skill-1',
+      min_proficiency: 2,
+      created_at: new Date(),
+    };
+    const routingEval = {
+      id: 'ev-1',
+      tenant_id: 'tenant-1',
+      queue_id: 'queue-1',
+      agent_profile_id: 'agent-1',
+      eligible: true,
+      reason: 'meets all',
+      evaluated_at: new Date(),
+    };
+    const agentPool = makePool([
+      rows([profile]),
+      row(profile),
+      row(profile),
+      empty(),
+      row({ id: 'agent-1', tenant_id: 'tenant-1', user_id: 'user-1', display_name: 'Alice', max_concurrent_calls: 1, status: 'active', created_at: new Date(), updated_at: new Date() }),
+      row({ id: 'agent-1', tenant_id: 'tenant-1', user_id: 'user-1', display_name: 'Alice', max_concurrent_calls: 1, status: 'inactive', created_at: new Date(), updated_at: new Date() }),
+      row(availability),
+      row(availability),
+      rows([profile]),
+    ]);
+    const agentRepo = new AgentWorkspaceRepository(agentPool);
+    await expect(agentRepo.findAllByTenant('tenant-1')).resolves.toHaveLength(1);
+    await expect(agentRepo.findById('agent-1', 'tenant-1')).resolves.toMatchObject({ id: 'agent-1' });
+    await expect(agentRepo.findByUserId('user-1', 'tenant-1')).resolves.toMatchObject({ id: 'agent-1' });
+    await expect(agentRepo.findById('missing', 'tenant-1')).resolves.toBeNull();
+    await expect(agentRepo.create({ tenant_id: 'tenant-1', user_id: 'user-1', display_name: 'Alice' })).resolves.toMatchObject({ id: 'agent-1' });
+    await expect(agentRepo.deactivate('agent-1', 'tenant-1')).resolves.toMatchObject({ status: 'inactive' });
+    await expect(agentRepo.getAvailability('agent-1', 'tenant-1')).resolves.toMatchObject({ id: 'av-1' });
+    await expect(agentRepo.upsertAvailability('agent-1', 'tenant-1', { state: 'available' })).resolves.toMatchObject({ state: 'available' });
+    await expect(agentRepo.findAvailableByQueue('queue-1', 'tenant-1')).resolves.toHaveLength(1);
+
+    // update with fields
+    const updatePool = makePool([row({ id: 'agent-1', tenant_id: 'tenant-1', user_id: 'user-1', display_name: 'Updated', max_concurrent_calls: 2, status: 'active', created_at: new Date(), updated_at: new Date() })]);
+    const agentRepo2 = new AgentWorkspaceRepository(updatePool);
+    await expect(agentRepo2.update('agent-1', 'tenant-1', { display_name: 'Updated', max_concurrent_calls: 2, status: 'active' })).resolves.toMatchObject({ display_name: 'Updated' });
+
+    const skillsPool = makePool([
+      rows([skill]),
+      row(skill),
+      row(skill),
+      row(skill),
+      row(skill),
+      rows([{ ...agentSkill, name: 'Spanish' }]),
+      row({ ...agentSkill }),
+      row({ name: 'Spanish' }),
+      { rows: [], rowCount: 1 },
+      { rows: [], rowCount: 0 },
+      rows([{ ...queueReq, name: 'Spanish' }]),
+      row({ ...queueReq }),
+      row({ name: 'Spanish' }),
+      { rows: [], rowCount: 1 },
+      { rows: [], rowCount: 0 },
+      row(routingEval),
+      rows([routingEval]),
+    ]);
+    const skillsRepo = new SkillsRepository(skillsPool);
+    await expect(skillsRepo.findAllByTenant('tenant-1')).resolves.toHaveLength(1);
+    await expect(skillsRepo.findById('skill-1', 'tenant-1')).resolves.toMatchObject({ id: 'skill-1' });
+    await expect(skillsRepo.findActiveById('skill-1', 'tenant-1')).resolves.toMatchObject({ id: 'skill-1' });
+    await expect(skillsRepo.create({ tenant_id: 'tenant-1', name: 'Spanish' })).resolves.toMatchObject({ id: 'skill-1' });
+    await expect(skillsRepo.update('skill-1', 'tenant-1', { name: 'Spanish2' })).resolves.toMatchObject({ id: 'skill-1' });
+    await expect(skillsRepo.findAgentSkills('agent-1', 'tenant-1')).resolves.toHaveLength(1);
+    await expect(skillsRepo.assignSkill('agent-1', 'tenant-1', { skill_id: 'skill-1', proficiency: 3 })).resolves.toMatchObject({ id: 'as-1' });
+    await expect(skillsRepo.removeSkill('agent-1', 'skill-1', 'tenant-1')).resolves.toBe(true);
+    await expect(skillsRepo.removeSkill('agent-1', 'missing', 'tenant-1')).resolves.toBe(false);
+    await expect(skillsRepo.findQueueRequirements('queue-1', 'tenant-1')).resolves.toHaveLength(1);
+    await expect(skillsRepo.addQueueRequirement('queue-1', 'tenant-1', { skill_id: 'skill-1', min_proficiency: 2 })).resolves.toMatchObject({ id: 'req-1' });
+    await expect(skillsRepo.removeQueueRequirement('queue-1', 'req-1', 'tenant-1')).resolves.toBe(true);
+    await expect(skillsRepo.removeQueueRequirement('queue-1', 'missing', 'tenant-1')).resolves.toBe(false);
+    await expect(skillsRepo.logRoutingEvaluation('tenant-1', 'queue-1', 'agent-1', true, 'meets all')).resolves.toMatchObject({ id: 'ev-1' });
+    await expect(skillsRepo.findRoutingLog('queue-1', 'tenant-1')).resolves.toHaveLength(1);
+  });
+
+  it('covers CRM integrations repository query paths', async () => {
+    const { CrmIntegrationsRepository } = await import('./crm-integrations/crm-integrations.repository.js');
+    const crm = {
+      id: 'crm-1',
+      tenant_id: 'tenant-1',
+      name: 'Salesforce',
+      provider: 'salesforce',
+      lookup_url_template: 'https://crm.example.com?phone={caller_id}',
+      payload_template: {},
+      status: 'active',
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    const log = {
+      id: 'log-1',
+      tenant_id: 'tenant-1',
+      crm_integration_id: 'crm-1',
+      call_uuid: 'call-1',
+      caller_id: '+1234567890',
+      outcome: 'found',
+      response_summary: 'HTTP 200',
+      error_detail: null,
+      looked_up_at: new Date(),
+    };
+    const pool = makePool([
+      rows([crm]),
+      row(crm),
+      row(crm),
+      rows([crm]),
+      row(crm),
+      row(crm),
+      row(log),
+      rows([log]),
+    ]);
+    const repo = new CrmIntegrationsRepository(pool);
+    await expect(repo.findAllByTenant('tenant-1')).resolves.toHaveLength(1);
+    await expect(repo.findById('crm-1', 'tenant-1')).resolves.toMatchObject({ id: 'crm-1' });
+    await expect(repo.findActiveByTenant('tenant-1')).resolves.toHaveLength(1);
+    await expect(repo.create({ tenant_id: 'tenant-1', name: 'x', provider: 'hubspot', lookup_url_template: 'https://x?p={caller_id}' })).resolves.toMatchObject({ id: 'crm-1' });
+    await expect(repo.update('crm-1', 'tenant-1', { name: 'Updated' })).resolves.toMatchObject({ id: 'crm-1' });
+    await expect(repo.update('crm-1', 'tenant-1', {})).resolves.toMatchObject({ id: 'crm-1' });
+    await expect(repo.logLookup('tenant-1', 'crm-1', 'call-1', '+1234', 'found', 'summary', null)).resolves.toMatchObject({ id: 'log-1' });
+    await expect(repo.findLookupLog('crm-1', 'tenant-1')).resolves.toHaveLength(1);
+  });
+
+  it('covers campaigns repository query paths', async () => {
+    const { CampaignsRepository } = await import('./campaigns/campaigns.repository.js');
+    const campaign = {
+      id: 'campaign-1',
+      tenant_id: 'tenant-1',
+      name: 'Summer Outreach',
+      description: null,
+      campaign_type: 'outbound_preview',
+      status: 'draft',
+      outbound_route_id: null,
+      max_concurrent_calls: 1,
+      schedule_start_time: null,
+      schedule_end_time: null,
+      schedule_timezone: 'UTC',
+      started_at: null,
+      completed_at: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    const contact = {
+      id: 'contact-1',
+      tenant_id: 'tenant-1',
+      campaign_id: 'campaign-1',
+      phone_number: '+15551234567',
+      display_name: 'Alice',
+      context: {},
+      dial_state: 'pending',
+      attempt_count: 0,
+      last_attempted_at: null,
+      created_at: new Date(),
+    };
+    const assignment = {
+      id: 'assign-1',
+      tenant_id: 'tenant-1',
+      campaign_id: 'campaign-1',
+      agent_profile_id: 'agent-1',
+      assigned_at: new Date(),
+    };
+    const pool = makePool([
+      rows([campaign]),
+      row(campaign),
+      row(campaign),
+      row({ ...campaign, status: 'active' }),
+      row(campaign),
+      rows([contact]),
+      row(contact),
+      { rows: [], rowCount: 1 },
+      { rows: [], rowCount: 0 },
+      rows([assignment]),
+      row(assignment),
+      { rows: [], rowCount: 1 },
+      { rows: [], rowCount: 0 },
+    ]);
+    const repo = new CampaignsRepository(pool);
+    await expect(repo.findAllByTenant('tenant-1')).resolves.toHaveLength(1);
+    await expect(repo.findById('campaign-1', 'tenant-1')).resolves.toMatchObject({ id: 'campaign-1' });
+    await expect(repo.create({ tenant_id: 'tenant-1', name: 'Test' })).resolves.toMatchObject({ id: 'campaign-1' });
+    await expect(repo.setStatus('campaign-1', 'tenant-1', 'active', 'started_at')).resolves.toMatchObject({ status: 'active' });
+    await expect(repo.update('campaign-1', 'tenant-1', {})).resolves.toMatchObject({ id: 'campaign-1' });
+
+    // update with fields
+    const updatePool = makePool([row({ ...campaign, name: 'Updated' })]);
+    const repo2 = new CampaignsRepository(updatePool);
+    await expect(repo2.update('campaign-1', 'tenant-1', { name: 'Updated', description: null, outbound_route_id: null, schedule_start_time: null, schedule_end_time: null })).resolves.toMatchObject({ name: 'Updated' });
+    await expect(repo.findContacts('campaign-1', 'tenant-1')).resolves.toHaveLength(1);
+    await expect(repo.addContact('campaign-1', 'tenant-1', { phone_number: '+1234' })).resolves.toMatchObject({ id: 'contact-1' });
+    await expect(repo.removeContact('campaign-1', 'contact-1', 'tenant-1')).resolves.toBe(true);
+    await expect(repo.removeContact('campaign-1', 'missing', 'tenant-1')).resolves.toBe(false);
+    await expect(repo.findAssignments('campaign-1', 'tenant-1')).resolves.toHaveLength(1);
+    await expect(repo.assignAgent('campaign-1', 'tenant-1', { agent_profile_id: 'agent-1' })).resolves.toMatchObject({ id: 'assign-1' });
+    await expect(repo.removeAgent('campaign-1', 'agent-1', 'tenant-1')).resolves.toBe(true);
+    await expect(repo.removeAgent('campaign-1', 'missing', 'tenant-1')).resolves.toBe(false);
+  });
 });

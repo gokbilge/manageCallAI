@@ -184,6 +184,13 @@ export const API_KEY_CAPABILITIES = [
   'tenant.skills.view',
   'tenant.skills.manage',
   'tenant.routing.evaluate',
+  // tenant — CRM screen-pop and campaign management (v0.7.0)
+  'tenant.crm.integrations.view',
+  'tenant.crm.integrations.manage',
+  'tenant.crm.lookup',
+  'tenant.campaigns.view',
+  'tenant.campaigns.manage',
+  'tenant.campaigns.contacts.manage',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;
