@@ -55,6 +55,7 @@ import { numberingPlanController } from './modules/numbering-plans/numbering-pla
 import { callingPolicyController } from './modules/calling-policies/calling-policy.controller.js';
 import { siteController } from './modules/sites/site.controller.js';
 import { trunkGroupController, routeListController, carrierResolutionController } from './modules/trunk-groups/trunk-group.controller.js';
+import { deviceController, extensionAssignmentController, deviceRegistrationController } from './modules/devices/device.controller.js';
 import { reportingController } from './modules/reporting/reporting.controller.js';
 import { callFailureExplanationController } from './modules/call-failure-explanation/call-failure-explanation.controller.js';
 import { platformAiPolicyController, tenantAiPolicyController } from './modules/ai-policy/ai-policy.controller.js';
@@ -105,6 +106,8 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(trunkGroupController, { prefix: '/api/v1/trunk-groups' });
   app.register(routeListController, { prefix: '/api/v1/route-lists' });
   app.register(carrierResolutionController, { prefix: '/api/v1/outbound-routing' });
+  app.register(deviceController, { prefix: '/api/v1/devices' });
+  app.register(extensionAssignmentController, { prefix: '/api/v1/extensions' });
   app.register(aiRecommendationsController, { prefix: '/api/v1/ai-recommendations' });
   app.register(incidentInvestigationController, { prefix: '/api/v1/incidents/investigate' });
   app.register(reportingController, { prefix: '/api/v1/reporting' });
@@ -134,6 +137,8 @@ function registerRuntimeModules(app: FastifyInstance): void {
   app.register(freeswitchController, { prefix: '/api/v1/freeswitch' });
   // Gateway reload / runtime apply: tenant endpoints + Go agent runtime callbacks.
   app.register(runtimeApplyController, { prefix: '/api/v1' });
+  // Device registration callbacks (Go agent / FreeSWITCH HMAC).
+  app.register(deviceRegistrationController, { prefix: '/api/v1' });
   // Parking and conference runtime callbacks (Go agent HMAC).
   app.register(parkingRuntimeController, { prefix: '/api/v1/runtime' });
   app.register(conferenceRuntimeController, { prefix: '/api/v1/runtime' });
