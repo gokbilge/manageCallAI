@@ -169,8 +169,8 @@ export class AiRecommendationRepository {
 
     const result = await this.db.query<{ id: string }>(
       `INSERT INTO route_versions
-         (tenant_id, route_type, route_id, version_number, definition, created_by)
-       VALUES ($1, 'inbound', $2, $3, $4::jsonb, $5)
+         (tenant_id, route_type, route_id, version_number, state, definition, created_by)
+       VALUES ($1, 'inbound', $2, $3, 'draft', $4::jsonb, $5)
        RETURNING id`,
       [tenantId, routeId, nextNum, JSON.stringify(definition), createdBy],
     );
