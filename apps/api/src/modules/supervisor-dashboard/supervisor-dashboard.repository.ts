@@ -39,8 +39,8 @@ export class SupervisorDashboardRepository {
          aa.reason,
          COUNT(DISTINCT qm.queue_id)::int AS queue_count
        FROM agent_profiles ap
-       LEFT JOIN agent_availability aa ON aa.agent_profile_id = ap.id
-       LEFT JOIN extensions e ON e.user_id = ap.user_id AND e.tenant_id = ap.tenant_id
+       LEFT JOIN agent_availability aa ON aa.agent_profile_id = ap.id AND aa.tenant_id = ap.tenant_id
+       LEFT JOIN extensions e ON e.owner_user_id = ap.user_id AND e.tenant_id = ap.tenant_id
        LEFT JOIN queue_members qm ON qm.extension_id = e.id
        WHERE ap.tenant_id = $1 AND ap.status = 'active'
        GROUP BY ap.id, ap.display_name, aa.state, aa.reason
