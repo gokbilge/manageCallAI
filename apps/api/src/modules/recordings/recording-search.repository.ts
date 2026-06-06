@@ -81,7 +81,7 @@ export class RecordingSearchRepository {
     filter: RecordingSearchFilter,
     limit: number,
   ): Promise<RawLexicalRow[]> {
-    const likePattern = `%${query.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+    const likePattern = `%${query.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
     const conditions: string[] = ['r.tenant_id = $1', 'r.status != \'deleted\''];
     const params: unknown[] = [tenantId, likePattern, limit];
     let idx = 4;
