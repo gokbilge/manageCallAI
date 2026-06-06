@@ -4468,6 +4468,11 @@ components:
               - tenant.campaigns.view
               - tenant.campaigns.manage
               - tenant.campaigns.contacts.manage
+              - tenant.supervisor.dashboard.view
+              - tenant.supervisor.controls.view
+              - tenant.supervisor.controls.manage
+              - tenant.queue_callbacks.view
+              - tenant.queue_callbacks.manage
               - "*"
         created_by:
           type:
@@ -8216,6 +8221,298 @@ components:
           format: uuid
       required:
         - intent
+    SupervisorControl:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        supervisor_user_id:
+          type: string
+          format: uuid
+        control_type:
+          type: string
+          enum: &a33
+            - monitor
+            - whisper
+            - barge
+        target_call_id:
+          type: string
+        status:
+          type: string
+          enum: &a34
+            - pending
+            - active
+            - ended
+        audit_note:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        ended_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - supervisor_user_id
+        - control_type
+        - target_call_id
+        - status
+        - audit_note
+        - created_at
+        - updated_at
+        - ended_at
+    CreateSupervisorControlBody:
+      type: object
+      properties:
+        control_type:
+          type: string
+          enum: *a33
+        target_call_id:
+          type: string
+          minLength: 1
+        audit_note:
+          type:
+            - string
+            - "null"
+      required:
+        - control_type
+        - target_call_id
+    UpdateSupervisorControlBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: *a34
+        audit_note:
+          type:
+            - string
+            - "null"
+    QueueCallback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        queue_id:
+          type: string
+          format: uuid
+        caller_phone:
+          type: string
+        caller_name:
+          type:
+            - string
+            - "null"
+        scheduled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        retry_count:
+          type: integer
+        max_retries:
+          type: integer
+        status:
+          type: string
+          enum: &a35
+            - pending
+            - scheduled
+            - calling
+            - reached
+            - cancelled
+            - expired
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - queue_id
+        - caller_phone
+        - caller_name
+        - scheduled_at
+        - retry_count
+        - max_retries
+        - status
+        - created_at
+        - updated_at
+    CreateQueueCallbackBody:
+      type: object
+      properties:
+        caller_phone:
+          type: string
+          minLength: 1
+        caller_name:
+          type:
+            - string
+            - "null"
+        scheduled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        max_retries:
+          type: integer
+          minimum: 0
+          maximum: 10
+      required:
+        - caller_phone
+    UpdateQueueCallbackBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: *a35
+        scheduled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        caller_name:
+          type:
+            - string
+            - "null"
+    QueueStat:
+      type: object
+      properties:
+        queue_id:
+          type: string
+          format: uuid
+        queue_name:
+          type: string
+        strategy:
+          type: string
+        status:
+          type: string
+        member_count:
+          type: integer
+        sla_target_seconds:
+          type: integer
+        pending_callbacks:
+          type: integer
+      required:
+        - queue_id
+        - queue_name
+        - strategy
+        - status
+        - member_count
+        - sla_target_seconds
+        - pending_callbacks
+    AgentSummary:
+      type: object
+      properties:
+        agent_profile_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        state:
+          type:
+            - string
+            - "null"
+        reason:
+          type:
+            - string
+            - "null"
+        queue_count:
+          type: integer
+      required:
+        - agent_profile_id
+        - display_name
+        - state
+        - reason
+        - queue_count
+    SlaMetric:
+      type: object
+      properties:
+        queue_id:
+          type: string
+          format: uuid
+        queue_name:
+          type: string
+        sla_target_seconds:
+          type: integer
+        pending_callbacks:
+          type: integer
+        scheduled_callbacks:
+          type: integer
+        reached_callbacks:
+          type: integer
+        expired_callbacks:
+          type: integer
+      required:
+        - queue_id
+        - queue_name
+        - sla_target_seconds
+        - pending_callbacks
+        - scheduled_callbacks
+        - reached_callbacks
+        - expired_callbacks
+    DashboardView:
+      type: object
+      properties:
+        queues:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueStat"
+        agents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentSummary"
+        sla_metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlaMetric"
+        captured_at:
+          type: string
+          format: date-time
+      required:
+        - queues
+        - agents
+        - sla_metrics
+        - captured_at
+    WallboardView:
+      type: object
+      properties:
+        queues:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueStat"
+        agents_available:
+          type: integer
+        agents_busy:
+          type: integer
+        agents_away:
+          type: integer
+        agents_offline:
+          type: integer
+        captured_at:
+          type: string
+          format: date-time
+      required:
+        - queues
+        - agents_available
+        - agents_busy
+        - agents_away
+        - agents_offline
+        - captured_at
     RiskConcern:
       type: object
       properties:
@@ -8255,7 +8552,7 @@ components:
       properties:
         target_type:
           type: string
-          enum: &a33
+          enum: &a36
             - outbound_route
             - inbound_route
             - sip_trunk
@@ -8305,7 +8602,7 @@ components:
       properties:
         target_type:
           type: string
-          enum: *a33
+          enum: *a36
         target_id:
           type: string
           format: uuid

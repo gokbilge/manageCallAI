@@ -191,6 +191,12 @@ export const API_KEY_CAPABILITIES = [
   'tenant.campaigns.view',
   'tenant.campaigns.manage',
   'tenant.campaigns.contacts.manage',
+  // tenant — supervisor dashboard, monitor/whisper/barge, queue callbacks, SLA (v0.7.0)
+  'tenant.supervisor.dashboard.view',
+  'tenant.supervisor.controls.view',
+  'tenant.supervisor.controls.manage',
+  'tenant.queue_callbacks.view',
+  'tenant.queue_callbacks.manage',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;
