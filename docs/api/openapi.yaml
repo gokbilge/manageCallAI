@@ -37,8 +37,6 @@ tags:
     description: Tenant registration and login
   - name: Extensions
     description: SIP extension management
-  - name: Schedules
-    description: Enterprise schedule, holiday calendar, and temporary override management
   - name: SipTrunks
     description: SIP trunk management
   - name: IncidentInvestigations
@@ -2247,371 +2245,6 @@ paths:
                 properties:
                   data:
                     $ref: "#/components/schemas/NlQueryResult"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-  /schedules:
-    get:
-      tags:
-        - Schedules
-      summary: List tenant schedules
-      responses:
-        "200":
-          description: Schedule inventory
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Schedule"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-    post:
-      tags:
-        - Schedules
-      summary: Create a tenant schedule
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateScheduleBody"
-      responses:
-        "201":
-          description: Schedule created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/Schedule"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-  /schedules/groups:
-    get:
-      tags:
-        - Schedules
-      summary: List reusable schedule groups
-      responses:
-        "200":
-          description: Schedule groups
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/ScheduleGroup"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-    post:
-      tags:
-        - Schedules
-      summary: Create a reusable schedule group
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateScheduleGroupBody"
-      responses:
-        "201":
-          description: Schedule group created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/ScheduleGroup"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-  /schedules/groups/{id}:
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-    patch:
-      tags:
-        - Schedules
-      summary: Update a reusable schedule group
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateScheduleGroupBody"
-      responses:
-        "200":
-          description: Schedule group updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/ScheduleGroup"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-  /schedules/holiday-calendars:
-    get:
-      tags:
-        - Schedules
-      summary: List reusable holiday calendars
-      responses:
-        "200":
-          description: Holiday calendars
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/HolidayCalendar"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-    post:
-      tags:
-        - Schedules
-      summary: Create a reusable holiday calendar
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateHolidayCalendarBody"
-      responses:
-        "201":
-          description: Holiday calendar created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/HolidayCalendar"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-  /schedules/holiday-calendars/{id}:
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-    patch:
-      tags:
-        - Schedules
-      summary: Update a reusable holiday calendar
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateHolidayCalendarBody"
-      responses:
-        "200":
-          description: Holiday calendar updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/HolidayCalendar"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-  /schedules/{id}:
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-    get:
-      tags:
-        - Schedules
-      summary: Get a tenant schedule
-      responses:
-        "200":
-          description: Schedule detail
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/Schedule"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-    patch:
-      tags:
-        - Schedules
-      summary: Update a tenant schedule
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateScheduleBody"
-      responses:
-        "200":
-          description: Schedule updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/Schedule"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-  /schedules/{id}/deactivate:
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-    post:
-      tags:
-        - Schedules
-      summary: Deactivate a tenant schedule
-      responses:
-        "200":
-          description: Schedule deactivated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/Schedule"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-  /schedules/{id}/overrides:
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-    get:
-      tags:
-        - Schedules
-      summary: List temporary overrides for a schedule
-      responses:
-        "200":
-          description: Schedule override timeline
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/ScheduleOverride"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-    post:
-      tags:
-        - Schedules
-      summary: Create a temporary schedule override
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateScheduleOverrideBody"
-      responses:
-        "201":
-          description: Schedule override created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/ScheduleOverride"
-                required:
-                  - data
-        default:
-          $ref: "#/components/responses/ErrorResponse"
-  /schedules/{id}/overrides/{overrideId}/cancel:
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-      - in: path
-        name: overrideId
-        required: true
-        schema:
-          type: string
-          format: uuid
-    post:
-      tags:
-        - Schedules
-      summary: Cancel a temporary schedule override
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CancelScheduleOverrideBody"
-      responses:
-        "200":
-          description: Schedule override cancelled
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/ScheduleOverride"
                 required:
                   - data
         default:
@@ -4835,6 +4468,11 @@ components:
               - tenant.campaigns.view
               - tenant.campaigns.manage
               - tenant.campaigns.contacts.manage
+              - tenant.supervisor.dashboard.view
+              - tenant.supervisor.controls.view
+              - tenant.supervisor.controls.manage
+              - tenant.queue_callbacks.view
+              - tenant.queue_callbacks.manage
               - "*"
         created_by:
           type:
@@ -8910,6 +8548,298 @@ components:
           format: uuid
       required:
         - intent
+    SupervisorControl:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        supervisor_user_id:
+          type: string
+          format: uuid
+        control_type:
+          type: string
+          enum: &a34
+            - monitor
+            - whisper
+            - barge
+        target_call_id:
+          type: string
+        status:
+          type: string
+          enum: &a35
+            - pending
+            - active
+            - ended
+        audit_note:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        ended_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - supervisor_user_id
+        - control_type
+        - target_call_id
+        - status
+        - audit_note
+        - created_at
+        - updated_at
+        - ended_at
+    CreateSupervisorControlBody:
+      type: object
+      properties:
+        control_type:
+          type: string
+          enum: *a34
+        target_call_id:
+          type: string
+          minLength: 1
+        audit_note:
+          type:
+            - string
+            - "null"
+      required:
+        - control_type
+        - target_call_id
+    UpdateSupervisorControlBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: *a35
+        audit_note:
+          type:
+            - string
+            - "null"
+    QueueCallback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        queue_id:
+          type: string
+          format: uuid
+        caller_phone:
+          type: string
+        caller_name:
+          type:
+            - string
+            - "null"
+        scheduled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        retry_count:
+          type: integer
+        max_retries:
+          type: integer
+        status:
+          type: string
+          enum: &a36
+            - pending
+            - scheduled
+            - calling
+            - reached
+            - cancelled
+            - expired
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - queue_id
+        - caller_phone
+        - caller_name
+        - scheduled_at
+        - retry_count
+        - max_retries
+        - status
+        - created_at
+        - updated_at
+    CreateQueueCallbackBody:
+      type: object
+      properties:
+        caller_phone:
+          type: string
+          minLength: 1
+        caller_name:
+          type:
+            - string
+            - "null"
+        scheduled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        max_retries:
+          type: integer
+          minimum: 0
+          maximum: 10
+      required:
+        - caller_phone
+    UpdateQueueCallbackBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: *a36
+        scheduled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        caller_name:
+          type:
+            - string
+            - "null"
+    QueueStat:
+      type: object
+      properties:
+        queue_id:
+          type: string
+          format: uuid
+        queue_name:
+          type: string
+        strategy:
+          type: string
+        status:
+          type: string
+        member_count:
+          type: integer
+        sla_target_seconds:
+          type: integer
+        pending_callbacks:
+          type: integer
+      required:
+        - queue_id
+        - queue_name
+        - strategy
+        - status
+        - member_count
+        - sla_target_seconds
+        - pending_callbacks
+    AgentSummary:
+      type: object
+      properties:
+        agent_profile_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        state:
+          type:
+            - string
+            - "null"
+        reason:
+          type:
+            - string
+            - "null"
+        queue_count:
+          type: integer
+      required:
+        - agent_profile_id
+        - display_name
+        - state
+        - reason
+        - queue_count
+    SlaMetric:
+      type: object
+      properties:
+        queue_id:
+          type: string
+          format: uuid
+        queue_name:
+          type: string
+        sla_target_seconds:
+          type: integer
+        pending_callbacks:
+          type: integer
+        scheduled_callbacks:
+          type: integer
+        reached_callbacks:
+          type: integer
+        expired_callbacks:
+          type: integer
+      required:
+        - queue_id
+        - queue_name
+        - sla_target_seconds
+        - pending_callbacks
+        - scheduled_callbacks
+        - reached_callbacks
+        - expired_callbacks
+    DashboardView:
+      type: object
+      properties:
+        queues:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueStat"
+        agents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentSummary"
+        sla_metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlaMetric"
+        captured_at:
+          type: string
+          format: date-time
+      required:
+        - queues
+        - agents
+        - sla_metrics
+        - captured_at
+    WallboardView:
+      type: object
+      properties:
+        queues:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueStat"
+        agents_available:
+          type: integer
+        agents_busy:
+          type: integer
+        agents_away:
+          type: integer
+        agents_offline:
+          type: integer
+        captured_at:
+          type: string
+          format: date-time
+      required:
+        - queues
+        - agents_available
+        - agents_busy
+        - agents_away
+        - agents_offline
+        - captured_at
     RiskConcern:
       type: object
       properties:
@@ -8949,7 +8879,7 @@ components:
       properties:
         target_type:
           type: string
-          enum: &a34
+          enum: &a37
             - outbound_route
             - inbound_route
             - sip_trunk
@@ -8999,7 +8929,7 @@ components:
       properties:
         target_type:
           type: string
-          enum: *a34
+          enum: *a37
         target_id:
           type: string
           format: uuid

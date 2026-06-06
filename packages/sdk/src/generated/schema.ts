@@ -4146,534 +4146,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/schedules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List tenant schedules */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Schedule inventory */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Schedule"][];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        /** Create a tenant schedule */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateScheduleBody"];
-                };
-            };
-            responses: {
-                /** @description Schedule created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Schedule"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/schedules/groups": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List reusable schedule groups */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Schedule groups */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["ScheduleGroup"][];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        /** Create a reusable schedule group */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateScheduleGroupBody"];
-                };
-            };
-            responses: {
-                /** @description Schedule group created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["ScheduleGroup"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/schedules/groups/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update a reusable schedule group */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateScheduleGroupBody"];
-                };
-            };
-            responses: {
-                /** @description Schedule group updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["ScheduleGroup"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        trace?: never;
-    };
-    "/schedules/holiday-calendars": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List reusable holiday calendars */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Holiday calendars */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["HolidayCalendar"][];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        /** Create a reusable holiday calendar */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateHolidayCalendarBody"];
-                };
-            };
-            responses: {
-                /** @description Holiday calendar created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["HolidayCalendar"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/schedules/holiday-calendars/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update a reusable holiday calendar */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateHolidayCalendarBody"];
-                };
-            };
-            responses: {
-                /** @description Holiday calendar updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["HolidayCalendar"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        trace?: never;
-    };
-    "/schedules/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        /** Get a tenant schedule */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Schedule detail */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Schedule"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update a tenant schedule */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateScheduleBody"];
-                };
-            };
-            responses: {
-                /** @description Schedule updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Schedule"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        trace?: never;
-    };
-    "/schedules/{id}/deactivate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Deactivate a tenant schedule */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Schedule deactivated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Schedule"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/schedules/{id}/overrides": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        /** List temporary overrides for a schedule */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Schedule override timeline */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["ScheduleOverride"][];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        put?: never;
-        /** Create a temporary schedule override */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateScheduleOverrideBody"];
-                };
-            };
-            responses: {
-                /** @description Schedule override created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["ScheduleOverride"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/schedules/{id}/overrides/{overrideId}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                overrideId: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancel a temporary schedule override */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                    overrideId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CancelScheduleOverrideBody"];
-                };
-            };
-            responses: {
-                /** @description Schedule override cancelled */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["ScheduleOverride"];
-                        };
-                    };
-                };
-                default: components["responses"]["ErrorResponse"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5420,7 +4892,7 @@ export interface components {
             tenant_id: string;
             name: string;
             key_prefix: string;
-            capabilities: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "tenant.reporting.nl_query" | "tenant.calls.explain_failure" | "tenant.ai.policy.view" | "tenant.ai.policy.manage" | "tenant.ai.provider_backed.use" | "tenant.agents.profiles.view" | "tenant.agents.profiles.manage" | "tenant.agents.availability.view" | "tenant.agents.availability.set" | "tenant.agents.workspace.view" | "tenant.skills.view" | "tenant.skills.manage" | "tenant.routing.evaluate" | "tenant.crm.integrations.view" | "tenant.crm.integrations.manage" | "tenant.crm.lookup" | "tenant.campaigns.view" | "tenant.campaigns.manage" | "tenant.campaigns.contacts.manage" | "*")[];
+            capabilities: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "tenant.reporting.nl_query" | "tenant.calls.explain_failure" | "tenant.ai.policy.view" | "tenant.ai.policy.manage" | "tenant.ai.provider_backed.use" | "tenant.agents.profiles.view" | "tenant.agents.profiles.manage" | "tenant.agents.availability.view" | "tenant.agents.availability.set" | "tenant.agents.workspace.view" | "tenant.skills.view" | "tenant.skills.manage" | "tenant.routing.evaluate" | "tenant.crm.integrations.view" | "tenant.crm.integrations.manage" | "tenant.crm.lookup" | "tenant.campaigns.view" | "tenant.campaigns.manage" | "tenant.campaigns.contacts.manage" | "tenant.supervisor.dashboard.view" | "tenant.supervisor.controls.view" | "tenant.supervisor.controls.manage" | "tenant.queue_callbacks.view" | "tenant.queue_callbacks.manage" | "*")[];
             /** Format: uuid */
             created_by: string | null;
             /** Format: date-time */
@@ -5653,7 +5125,7 @@ export interface components {
         };
         CreateApiKeyBody: {
             name: string;
-            capabilities?: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "tenant.reporting.nl_query" | "tenant.calls.explain_failure" | "tenant.ai.policy.view" | "tenant.ai.policy.manage" | "tenant.ai.provider_backed.use" | "tenant.agents.profiles.view" | "tenant.agents.profiles.manage" | "tenant.agents.availability.view" | "tenant.agents.availability.set" | "tenant.agents.workspace.view" | "tenant.skills.view" | "tenant.skills.manage" | "tenant.routing.evaluate" | "tenant.crm.integrations.view" | "tenant.crm.integrations.manage" | "tenant.crm.lookup" | "tenant.campaigns.view" | "tenant.campaigns.manage" | "tenant.campaigns.contacts.manage" | "*")[];
+            capabilities?: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "tenant.reporting.nl_query" | "tenant.calls.explain_failure" | "tenant.ai.policy.view" | "tenant.ai.policy.manage" | "tenant.ai.provider_backed.use" | "tenant.agents.profiles.view" | "tenant.agents.profiles.manage" | "tenant.agents.availability.view" | "tenant.agents.availability.set" | "tenant.agents.workspace.view" | "tenant.skills.view" | "tenant.skills.manage" | "tenant.routing.evaluate" | "tenant.crm.integrations.view" | "tenant.crm.integrations.manage" | "tenant.crm.lookup" | "tenant.campaigns.view" | "tenant.campaigns.manage" | "tenant.campaigns.contacts.manage" | "tenant.supervisor.dashboard.view" | "tenant.supervisor.controls.view" | "tenant.supervisor.controls.manage" | "tenant.queue_callbacks.view" | "tenant.queue_callbacks.manage" | "*")[];
         };
         CreateAutomationWebhookBody: {
             name: string;
@@ -6925,6 +6397,115 @@ export interface components {
             intent: string;
             /** Format: uuid */
             trunk_id?: string;
+        };
+        SupervisorControl: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            supervisor_user_id: string;
+            /** @enum {string} */
+            control_type: "monitor" | "whisper" | "barge";
+            target_call_id: string;
+            /** @enum {string} */
+            status: "pending" | "active" | "ended";
+            audit_note: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            ended_at: string | null;
+        };
+        CreateSupervisorControlBody: {
+            /** @enum {string} */
+            control_type: "monitor" | "whisper" | "barge";
+            target_call_id: string;
+            audit_note?: string | null;
+        };
+        UpdateSupervisorControlBody: {
+            /** @enum {string} */
+            status?: "pending" | "active" | "ended";
+            audit_note?: string | null;
+        };
+        QueueCallback: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            queue_id: string;
+            caller_phone: string;
+            caller_name: string | null;
+            /** Format: date-time */
+            scheduled_at: string | null;
+            retry_count: number;
+            max_retries: number;
+            /** @enum {string} */
+            status: "pending" | "scheduled" | "calling" | "reached" | "cancelled" | "expired";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateQueueCallbackBody: {
+            caller_phone: string;
+            caller_name?: string | null;
+            /** Format: date-time */
+            scheduled_at?: string | null;
+            max_retries?: number;
+        };
+        UpdateQueueCallbackBody: {
+            /** @enum {string} */
+            status?: "pending" | "scheduled" | "calling" | "reached" | "cancelled" | "expired";
+            /** Format: date-time */
+            scheduled_at?: string | null;
+            caller_name?: string | null;
+        };
+        QueueStat: {
+            /** Format: uuid */
+            queue_id: string;
+            queue_name: string;
+            strategy: string;
+            status: string;
+            member_count: number;
+            sla_target_seconds: number;
+            pending_callbacks: number;
+        };
+        AgentSummary: {
+            /** Format: uuid */
+            agent_profile_id: string;
+            display_name: string;
+            state: string | null;
+            reason: string | null;
+            queue_count: number;
+        };
+        SlaMetric: {
+            /** Format: uuid */
+            queue_id: string;
+            queue_name: string;
+            sla_target_seconds: number;
+            pending_callbacks: number;
+            scheduled_callbacks: number;
+            reached_callbacks: number;
+            expired_callbacks: number;
+        };
+        DashboardView: {
+            queues: components["schemas"]["QueueStat"][];
+            agents: components["schemas"]["AgentSummary"][];
+            sla_metrics: components["schemas"]["SlaMetric"][];
+            /** Format: date-time */
+            captured_at: string;
+        };
+        WallboardView: {
+            queues: components["schemas"]["QueueStat"][];
+            agents_available: number;
+            agents_busy: number;
+            agents_away: number;
+            agents_offline: number;
+            /** Format: date-time */
+            captured_at: string;
         };
         RiskConcern: {
             code: string;
