@@ -24,6 +24,14 @@ export class AiRecommendationStateError extends Error {
   constructor(msg: string) { super(msg); this.name = 'AiRecommendationStateError'; }
 }
 
+function extractNumberBefore(text: string, keyword: string): number | null {
+  const idx = text.indexOf(keyword);
+  if (idx === -1) return null;
+  const prefix = text.slice(Math.max(0, idx - 20), idx);
+  const m = prefix.match(/(\d+)\D*$/);
+  return m ? parseInt(m[1]!, 10) : null;
+}
+
 function parseIntent(intent: string): Record<string, string | boolean | number | null> {
   const lower = intent.toLowerCase();
   const result: Record<string, string | boolean | number | null> = {};
@@ -33,17 +41,18 @@ function parseIntent(intent: string): Record<string, string | boolean | number |
   else if (lower.includes('voicemail')) result.target_type = 'voicemail_box';
   else if (lower.includes('flow') || lower.includes('ivr')) result.target_type = 'flow';
 
-  const rateMatch = lower.match(/(\d+)\s*(?:calls?\s*(?:per|\/)\s*hour)/);
-  if (rateMatch) result.max_calls_per_hour = parseInt(rateMatch[1]!, 10);
+  const perHour = extractNumberBefore(lower, 'per hour') ?? extractNumberBefore(lower, '/hour');
+  if (perHour !== null) result.max_calls_per_hour = perHour;
 
-  const dayMatch = lower.match(/(\d+)\s*(?:calls?\s*(?:per|\/)\s*day)/);
-  if (dayMatch) result.max_calls_per_day = parseInt(dayMatch[1]!, 10);
+  const perDay = extractNumberBefore(lower, 'per day') ?? extractNumberBefore(lower, '/day');
+  if (perDay !== null) result.max_calls_per_day = perDay;
 
-  const durationMatch = lower.match(/(\d+)\s*(?:second|sec|minute|min)/);
-  if (durationMatch) {
-    const val = parseInt(durationMatch[1]!, 10);
-    const isMinutes = lower.includes('minute') || lower.includes('min');
-    result.max_call_duration_secs = isMinutes ? val * 60 : val;
+  const durationSec = extractNumberBefore(lower, 'second') ?? extractNumberBefore(lower, ' sec');
+  const durationMin = extractNumberBefore(lower, 'minute') ?? extractNumberBefore(lower, ' min');
+  if (durationMin !== null) {
+    result.max_call_duration_secs = durationMin * 60;
+  } else if (durationSec !== null) {
+    result.max_call_duration_secs = durationSec;
   }
 
   if (lower.includes('block international') || lower.includes('no international') || lower.includes('deny international')) {
