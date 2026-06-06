@@ -156,7 +156,7 @@ describe('Devices, registrations, and assignments (#308–#310)', () => {
 
       const res = await app.inject({
         method: 'POST', url: '/api/v1/registrations',
-        headers: { 'x-managecallai-runtime-token': 'test-runtime-token' },
+        headers: { 'x-managecallai-runtime-token': process.env.RUNTIME_API_TOKEN ?? 'test-runtime-token' },
         payload: { tenant_id: tenantId, sip_username: 'sip-RegDevice', device_id: devId, contact_uri: 'sip:phone@192.0.2.1:5060' },
       });
       expect(res.statusCode).toBe(201);
