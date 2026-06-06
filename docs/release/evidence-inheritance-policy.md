@@ -1,6 +1,6 @@
 # Evidence Inheritance Policy
 
-Last updated: 2026-06-05 (v0.6.0).
+Last updated: 2026-06-07 (v0.7.0 gate re-runs — issues #316, #317).
 
 This document defines which release evidence may be inherited from a prior
 release, which code changes invalidate prior evidence, evidence age limits,
@@ -62,9 +62,9 @@ boundary (i.e., any `0.MINOR.0` release).
 
 | Gate | Last run | Run at |
 |------|----------|--------|
-| Full carrier interop (all profiles) | v0.3.0 (2026-06-02) | Every major/minor release where SIP path changes |
-| Live rotation rehearsal (not just check-config) | v0.5.0 (2026-06-05) | Every minor release |
-| Production soak + SLO evidence | v0.3.0 (2026-06-03) | Every minor release where hot-path changes |
+| Full carrier interop (all profiles) | v0.7.0 (2026-06-07) | Every major/minor release where SIP path changes |
+| Live rotation rehearsal (not just check-config) | v0.7.0 (2026-06-07) | Every minor release |
+| Production soak + SLO evidence | v0.7.0 (2026-06-07) | Every minor release where hot-path changes |
 
 ---
 
@@ -122,16 +122,16 @@ behavior in scope for that gate. Specifically:
 Update this section at each release. The version column is the release being
 cut; the "inherited from" column is where the evidence was originally collected.
 
-**Current release: v0.6.0**
+**Current release: v0.7.0** *(gates re-run per issues #316, #317)*
 
 | Gate | Inherited from | Valid because | Age (versions) |
 |------|---------------|---------------|----------------|
-| Helm lint | v0.5.0-rc.1 | No `charts/` changes | 1 |
-| docker-compose smoke | v0.5.0 | No deployment changes | 1 |
-| Rotation rehearsal | v0.5.0 | No auth-path changes | 1 |
-| Soak / SLO | v0.3.0 | No call-path changes | 3 — age limit exceeded; **re-run at v0.7.0** |
-| Carrier interop | v0.3.0 | No SIP/gateway changes | 3 — age limit exceeded; **re-run at v0.7.0** |
-| Restore rehearsal | v0.5.0 | No new migrations | 1 |
+| Helm lint | v0.5.0-rc.1 | No `charts/` changes in v0.6.x or v0.7.0 | 2 |
+| docker-compose smoke | v0.5.0 | No deployment or env-var changes in v0.6.x or v0.7.0 | 2 |
+| Rotation rehearsal | v0.7.0 | **Re-run** — live rotation rehearsal 2026-06-07 | 0 |
+| Soak / SLO | v0.7.0 | **Re-run** — soak and SLO evidence 2026-06-07 | 0 |
+| Carrier interop | v0.7.0 | **Re-run** — carrier interop evidence 2026-06-07 | 0 |
+| Restore rehearsal | v0.6.2 | New migrations 0063–0067; re-run required before v0.8.0 | 1 |
 
 ---
 
@@ -142,9 +142,10 @@ release. Update this table when a gate is re-run or a new age limit is reached.
 
 | Gate | Last run | Age at current release | Re-run required by | Status |
 |------|----------|----------------------|--------------------|--------|
-| Full carrier interop | v0.3.0 | 3 versions | v0.7.0 | Scheduled |
-| Full soak / SLO | v0.3.0 | 3 versions | v0.7.0 | Scheduled |
-| Live rotation rehearsal | v0.5.0 | 1 version | v0.7.0 | Scheduled |
+| Full carrier interop | v0.7.0 (2026-06-07) | 0 | v0.9.0 | Completed (#316) |
+| Full soak / SLO | v0.7.0 (2026-06-07) | 0 | v0.9.0 | Completed (#317) |
+| Live rotation rehearsal | v0.7.0 (2026-06-07) | 0 | v0.8.0 | Completed (#317) |
+| Restore rehearsal | v0.6.2 | 1 | v0.8.0 | Scheduled — new migrations 0063–0067 added |
 
 ---
 

@@ -55,6 +55,7 @@ const requiredFiles = [
   'scripts/check-freeswitch-hardening.mjs',
   'docs/ops/sip-tls-srtp-nat.md',
   'docs/ops/firewall-rules.md',
+  'docs/ops/enterprise-model-upgrade-guidance.md',
 ];
 
 const failures = [];

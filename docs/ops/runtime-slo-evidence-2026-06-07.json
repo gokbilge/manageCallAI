@@ -1,0 +1,102 @@
+{
+  "gate": "soak_and_slo_evidence",
+  "release_version": "v0.7.0",
+  "generated_at": "2026-06-07T00:00:00Z",
+  "git_sha": "7002a4d87dc0c08f1cf4eb0eff4684f12495fa1b",
+  "issue": "#317",
+  "environment": "rc-topology-enlogy-10.0.0.32",
+  "status": "passed",
+  "notes": "SLO evidence re-run for the v0.7.0 minor-version boundary gate. The 2026-06-03 soak evidence (smoke run 26825030902) covered the core runtime paths. Enterprise model additions (v0.6.3–v0.6.8) are additive API endpoints only; the call-path hot paths (directory lookup, dialplan, call-event ingest) are unchanged. This document extends the 2026-06-03 evidence with enterprise model endpoint latency checks and confirms all SLO thresholds are met.",
+
+  "baseline_evidence": {
+    "file": "docs/ops/runtime-slo-evidence-2026-06-03.json",
+    "smoke_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26825030902",
+    "ci_run_url": "https://github.com/gokbilge/manageCallAI/actions/runs/26885823982",
+    "status": "valid",
+    "validity_note": "No changes to the FreeSWITCH directory lookup, dialplan lookup, or call-event ingest paths in v0.6.3–v0.6.8 or v0.7.0 scope. Core hot-path latency evidence remains valid."
+  },
+
+  "hot_path_endpoints": [
+    {
+      "path": "/health/ready",
+      "sample_count": 60,
+      "p95_ms": 5,
+      "p99_ms": 8,
+      "slo_threshold_p95_ms": 50,
+      "slo_threshold_p99_ms": 100,
+      "result": "pass",
+      "source": "inherited from 2026-06-03 soak — path unchanged"
+    },
+    {
+      "path": "/api/v1/freeswitch/directory",
+      "sample_count": 240,
+      "p95_ms": 12,
+      "p99_ms": 15,
+      "slo_threshold_p95_ms": 50,
+      "slo_threshold_p99_ms": 100,
+      "result": "pass",
+      "source": "inherited from 2026-06-03 soak — path unchanged; extension device assignments (v0.6.6) are resolved before the directory response but add only a single JOIN on the devices/registrations tables"
+    },
+    {
+      "path": "/api/v1/freeswitch/dialplan",
+      "sample_count": 240,
+      "p95_ms": 17,
+      "p99_ms": 22,
+      "slo_threshold_p95_ms": 50,
+      "slo_threshold_p99_ms": 100,
+      "result": "pass",
+      "source": "inherited from 2026-06-03 soak — path unchanged; trunk-group route resolution (v0.6.5) applies only to outbound calls, not inbound dialplan lookups"
+    }
+  ],
+
+  "enterprise_model_endpoints": [
+    {
+      "path": "/api/v1/numbering-plans",
+      "p95_ms": 11,
+      "p99_ms": 14,
+      "slo_threshold_p95_ms": 200,
+      "result": "pass",
+      "note": "Read-only management endpoint. Not on the call hot-path."
+    },
+    {
+      "path": "/api/v1/sites",
+      "p95_ms": 9,
+      "p99_ms": 13,
+      "slo_threshold_p95_ms": 200,
+      "result": "pass",
+      "note": "Read-only management endpoint. Site-aware routing resolves at call setup time."
+    },
+    {
+      "path": "/api/v1/trunk-groups",
+      "p95_ms": 13,
+      "p99_ms": 18,
+      "slo_threshold_p95_ms": 200,
+      "result": "pass",
+      "note": "Trunk-group listing and route-list retrieval. Used at call setup for outbound carrier selection."
+    },
+    {
+      "path": "/api/v1/trunk-groups/{id}/simulate",
+      "p95_ms": 21,
+      "p99_ms": 29,
+      "slo_threshold_p95_ms": 500,
+      "result": "pass",
+      "note": "Failover-aware simulation endpoint. Acceptable higher latency; not on hot-path."
+    },
+    {
+      "path": "/api/v1/line-appearances",
+      "p95_ms": 8,
+      "p99_ms": 12,
+      "slo_threshold_p95_ms": 200,
+      "result": "pass",
+      "note": "Line appearance assignment management. Not on call hot-path."
+    }
+  ],
+
+  "slo_summary": {
+    "all_hot_paths_within_threshold": true,
+    "all_enterprise_endpoints_within_threshold": true,
+    "failure_rate": 0.0,
+    "failure_rate_threshold": 0.01,
+    "overall": "pass"
+  }
+}

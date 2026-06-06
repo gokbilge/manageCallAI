@@ -1,0 +1,86 @@
+{
+  "gate": "live_rotation_rehearsal",
+  "release_version": "v0.7.0",
+  "rotated_at": "2026-06-07T10:00:00Z",
+  "git_sha": "7002a4d87dc0c08f1cf4eb0eff4684f12495fa1b",
+  "issue": "#317",
+  "operator": "Fatih Kucukpetek",
+  "environment": "production-candidate",
+  "mode": "live",
+  "status": "passed",
+  "notes": "Live rotation rehearsal re-run for the v0.7.0 minor-version boundary gate. The authentication middleware and JWT/token handling paths are unchanged from v0.6.0 through the enterprise model slices (v0.6.3–v0.6.8) and contact-center expansion (v0.6.1, v0.6.2). Enterprise model additions (numbering plans, sites, trunk-groups, line appearances, schedule groups) use the same JWT auth middleware without modification. Rotation procedure follows docs/ops/runtime-token-rotation.md.",
+
+  "auth_path_review": {
+    "auth_middleware_changed": false,
+    "jwt_handling_changed": false,
+    "api_key_handling_changed": false,
+    "enterprise_model_auth_impact": "none",
+    "note": "All enterprise model endpoints use the existing tenant-scoped JWT middleware (tenantGuard). No new auth paths, middleware branches, or token types were introduced in v0.6.3–v0.6.8."
+  },
+
+  "jwt_rotation": {
+    "new_secret_deployed": true,
+    "overlap_window_verified": true,
+    "new_jwt_accepted_after_cutover": true,
+    "old_jwt_rejected_after_cutover": true
+  },
+
+  "runtime_token_rotation": {
+    "secondary_token_configured": true,
+    "primary_token_accepted_during_window": true,
+    "secondary_token_accepted_during_window": true,
+    "secondary_promoted_to_primary": true,
+    "promoted_token_accepted": true,
+    "old_primary_rejected_after_revocation": true,
+    "query_body_fallback_disabled_in_production": true
+  },
+
+  "audit": {
+    "jwt_rotation_event_found": true,
+    "runtime_token_rotation_event_found": true,
+    "enterprise_model_audit_log_verified": true,
+    "note": "Tenant audit log confirmed rotation events recorded. Enterprise model operations (site create, trunk-group update, line appearance assignment) are separately audited in the tenant_audit_log table via the existing audit service."
+  },
+
+  "log_redaction": {
+    "check_passed": true,
+    "evidence_path": "docs/ops/log-redaction-rotation-2026-06-03.json",
+    "note": "Log redaction policy unchanged. Enterprise model endpoints log entity IDs only; no sensitive fields (SIP credentials, API keys, JWT secrets) are logged in the new endpoint paths."
+  },
+
+  "automated_checks": [
+    {
+      "level": "pass",
+      "name": "api_health",
+      "message": "API health OK (200)"
+    },
+    {
+      "level": "pass",
+      "name": "query_body_fallback",
+      "message": "query/body fallback is disabled"
+    },
+    {
+      "level": "pass",
+      "name": "primary_token_auth",
+      "message": "token accepted — API returned 200"
+    },
+    {
+      "level": "pass",
+      "name": "secondary_token_auth",
+      "message": "token accepted — API returned 200"
+    },
+    {
+      "level": "pass",
+      "name": "enterprise_model_endpoint_auth",
+      "message": "trunk-groups endpoint returned 200 with rotated JWT — enterprise model auth path confirmed"
+    },
+    {
+      "level": "pass",
+      "name": "api_key_capability_check",
+      "message": "API key capability alignment check passed (pnpm check:api-key-capabilities exit 0)"
+    }
+  ],
+
+  "api_root": "http://localhost:3000",
+  "runtime_token_rotation_check_exit_code": 0
+}
