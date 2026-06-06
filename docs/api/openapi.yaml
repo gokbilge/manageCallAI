@@ -4066,6 +4066,8 @@ components:
           enum:
             - prompt_generation
             - ivr_ai_turn
+            - ivr_generation
+            - ivr_ai_patch
         source_request_id:
           type: string
           format: uuid
