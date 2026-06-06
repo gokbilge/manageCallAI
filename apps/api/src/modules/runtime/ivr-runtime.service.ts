@@ -454,6 +454,8 @@ export class IvrRuntimeService {
             timezone: schedule.timezone,
             weekly_rules_json: Array.isArray(schedule.weekly_rules_json) ? schedule.weekly_rules_json as never : [],
             holiday_overrides_json: Array.isArray(schedule.holiday_overrides_json) ? schedule.holiday_overrides_json as never : [],
+            holiday_calendars: Array.isArray(schedule.holiday_calendars) ? schedule.holiday_calendars as never : [],
+            temporary_overrides: Array.isArray(schedule.temporary_overrides) ? schedule.temporary_overrides as never : [],
           },
           new Date(),
         );

@@ -276,6 +276,8 @@ export class IvrRuntimeRepository {
     timezone: string;
     weekly_rules_json: unknown;
     holiday_overrides_json: unknown;
+    holiday_calendars: unknown;
+    temporary_overrides: unknown;
   } | null> {
     const result = await this.db.query<{
       id: string;
@@ -287,7 +289,73 @@ export class IvrRuntimeRepository {
        FROM schedules WHERE tenant_id = $1 AND id = $2 AND status = 'active'`,
       [tenantId, scheduleId],
     );
-    return result.rows[0] ?? null;
+    const schedule = result.rows[0];
+    if (!schedule) {
+      return null;
+    }
+
+    const [calendars, overrides] = await Promise.all([
+      this.db.query<{
+        id: string;
+        schedule_id: string;
+        name: string;
+        description: string | null;
+        status: string;
+        entries_json: unknown;
+        created_at: Date;
+        updated_at: Date;
+      }>(
+        `SELECT id, schedule_id, name, description, status, entries_json, created_at, updated_at
+         FROM holiday_calendars
+         WHERE tenant_id = $1 AND schedule_id = $2
+         ORDER BY created_at DESC`,
+        [tenantId, scheduleId],
+      ),
+      this.db.query<{
+        id: string;
+        schedule_id: string;
+        name: string;
+        reason: string | null;
+        status: string;
+        starts_at: Date;
+        ends_at: Date;
+        closed: boolean;
+        open_time: string | null;
+        close_time: string | null;
+        cancelled_at: Date | null;
+        cancelled_by: string | null;
+        created_by: string | null;
+        created_at: Date;
+        updated_at: Date;
+      }>(
+        `SELECT
+           id,
+           schedule_id,
+           name,
+           reason,
+           CASE WHEN status = 'active' AND ends_at <= NOW() THEN 'expired' ELSE status END AS status,
+           starts_at,
+           ends_at,
+           closed,
+           open_time,
+           close_time,
+           cancelled_at,
+           cancelled_by,
+           created_by,
+           created_at,
+           updated_at
+         FROM schedule_overrides
+         WHERE tenant_id = $1 AND schedule_id = $2
+         ORDER BY starts_at DESC, created_at DESC`,
+        [tenantId, scheduleId],
+      ),
+    ]);
+
+    return {
+      ...schedule,
+      holiday_calendars: calendars.rows,
+      temporary_overrides: overrides.rows,
+    };
   }
 
   async findActiveQueueTargets(tenantId: string, ids: string[]): Promise<Map<string, QueueTransferReference>> {

@@ -157,9 +157,15 @@ registry.register('IngestCallEventBody', callEvents.IngestCallEventBodySchema);
 // schedules
 registry.register('WeeklyRule', schedules.WeeklyRuleSchema);
 registry.register('HolidayOverride', schedules.HolidayOverrideSchema);
+registry.register('HolidayCalendar', schedules.HolidayCalendarSchema);
+registry.register('ScheduleOverride', schedules.ScheduleOverrideSchema);
 registry.register('Schedule', schedules.ScheduleSchema);
 registry.register('CreateScheduleBody', schedules.CreateScheduleBodySchema);
 registry.register('UpdateScheduleBody', schedules.UpdateScheduleBodySchema);
+registry.register('CreateHolidayCalendarBody', schedules.CreateHolidayCalendarBodySchema);
+registry.register('UpdateHolidayCalendarBody', schedules.UpdateHolidayCalendarBodySchema);
+registry.register('CreateScheduleOverrideBody', schedules.CreateScheduleOverrideBodySchema);
+registry.register('UpdateScheduleOverrideBody', schedules.UpdateScheduleOverrideBodySchema);
 
 // outbound-routes
 registry.register('OutboundRoute', outboundRoutes.OutboundRouteSchema);

@@ -26,6 +26,8 @@ interface ScheduleRef {
   timezone: string;
   weekly_rules_json: unknown;
   holiday_overrides_json: unknown;
+  holiday_calendars: unknown;
+  temporary_overrides: unknown;
 }
 
 export class IvrFlowNotFoundError extends Error {
@@ -203,6 +205,8 @@ function simulateGraph(
           timezone: schedule.timezone,
           weekly_rules_json: Array.isArray(schedule.weekly_rules_json) ? schedule.weekly_rules_json as never : [],
           holiday_overrides_json: Array.isArray(schedule.holiday_overrides_json) ? schedule.holiday_overrides_json as never : [],
+          holiday_calendars: Array.isArray(schedule.holiday_calendars) ? schedule.holiday_calendars as never : [],
+          temporary_overrides: Array.isArray(schedule.temporary_overrides) ? schedule.temporary_overrides as never : [],
         },
         evalAt,
       );

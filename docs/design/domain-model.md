@@ -222,8 +222,18 @@ presentation from the flat extension-centric baseline.
 
 ### ScheduleGroup and HolidayCalendar
 
-Planned in `#311` through `#313` to represent enterprise business-hours,
-closure, and override behavior.
+Implemented in `#311` and `#312` through the `/schedules` aggregate, which now
+acts as the schedule-group resource while preserving backward compatibility for
+existing IVR `schedule_id` references.
+
+The aggregate now models:
+
+- recurring weekly business-hours rules
+- legacy inline holiday overrides for compatibility
+- explicit holiday-calendar child resources
+- temporary override records with expiry and cancellation metadata
+
+Timezone-aware multi-site evaluation remains the later `#313` lane.
 
 ### MigrationSource and CanonicalMigrationSnapshot
 

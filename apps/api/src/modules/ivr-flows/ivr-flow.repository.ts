@@ -558,14 +558,108 @@ export class IvrFlowRepository {
     return new Map(r.rows.map((row) => [row.id, row]));
   }
 
-  async findActiveScheduleRefs(tenantId: string, ids: string[]): Promise<Map<string, { id: string; timezone: string; weekly_rules_json: unknown; holiday_overrides_json: unknown }>> {
+  async findActiveScheduleRefs(
+    tenantId: string,
+    ids: string[],
+  ): Promise<Map<string, {
+    id: string;
+    timezone: string;
+    weekly_rules_json: unknown;
+    holiday_overrides_json: unknown;
+    holiday_calendars: unknown;
+    temporary_overrides: unknown;
+  }>> {
     if (ids.length === 0) return new Map();
-    const r = await this.db.query<{ id: string; timezone: string; weekly_rules_json: unknown; holiday_overrides_json: unknown }>(
+    const schedulesR = await this.db.query<{
+      id: string;
+      timezone: string;
+      weekly_rules_json: unknown;
+      holiday_overrides_json: unknown;
+    }>(
       `SELECT id, timezone, weekly_rules_json, holiday_overrides_json
        FROM schedules WHERE tenant_id = $1 AND id = ANY($2) AND status = 'active'`,
       [tenantId, ids],
     );
-    return new Map(r.rows.map((row) => [row.id, row]));
+    if (schedulesR.rows.length === 0) {
+      return new Map();
+    }
+
+    const [calendarsR, overridesR] = await Promise.all([
+      this.db.query<{
+        schedule_id: string;
+        id: string;
+        name: string;
+        description: string | null;
+        status: string;
+        entries_json: unknown;
+        created_at: Date;
+        updated_at: Date;
+      }>(
+        `SELECT schedule_id, id, name, description, status, entries_json, created_at, updated_at
+         FROM holiday_calendars
+         WHERE tenant_id = $1 AND schedule_id = ANY($2)
+         ORDER BY created_at DESC`,
+        [tenantId, ids],
+      ),
+      this.db.query<{
+        schedule_id: string;
+        id: string;
+        name: string;
+        reason: string | null;
+        status: string;
+        starts_at: Date;
+        ends_at: Date;
+        closed: boolean;
+        open_time: string | null;
+        close_time: string | null;
+        cancelled_at: Date | null;
+        cancelled_by: string | null;
+        created_by: string | null;
+        created_at: Date;
+        updated_at: Date;
+      }>(
+        `SELECT
+           schedule_id,
+           id,
+           name,
+           reason,
+           CASE WHEN status = 'active' AND ends_at <= NOW() THEN 'expired' ELSE status END AS status,
+           starts_at,
+           ends_at,
+           closed,
+           open_time,
+           close_time,
+           cancelled_at,
+           cancelled_by,
+           created_by,
+           created_at,
+           updated_at
+         FROM schedule_overrides
+         WHERE tenant_id = $1 AND schedule_id = ANY($2)
+         ORDER BY starts_at DESC, created_at DESC`,
+        [tenantId, ids],
+      ),
+    ]);
+
+    const calendarsBySchedule = new Map<string, unknown[]>();
+    for (const row of calendarsR.rows) {
+      const items = calendarsBySchedule.get(row.schedule_id) ?? [];
+      items.push(row);
+      calendarsBySchedule.set(row.schedule_id, items);
+    }
+
+    const overridesBySchedule = new Map<string, unknown[]>();
+    for (const row of overridesR.rows) {
+      const items = overridesBySchedule.get(row.schedule_id) ?? [];
+      items.push(row);
+      overridesBySchedule.set(row.schedule_id, items);
+    }
+
+    return new Map(schedulesR.rows.map((row) => [row.id, {
+      ...row,
+      holiday_calendars: calendarsBySchedule.get(row.id) ?? [],
+      temporary_overrides: overridesBySchedule.get(row.id) ?? [],
+    }]));
   }
 
   async findActiveQueueRefs(tenantId: string, ids: string[]): Promise<Map<string, QueueTransferReference>> {

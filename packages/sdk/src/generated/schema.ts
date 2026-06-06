@@ -5169,6 +5169,53 @@ export interface components {
             closed: boolean;
             open_time?: string;
             close_time?: string;
+            label?: string;
+        };
+        HolidayCalendar: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            schedule_id: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            entries_json: components["schemas"]["HolidayOverride"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ScheduleOverride: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            schedule_id: string;
+            name: string;
+            reason: string | null;
+            /** @enum {string} */
+            status: "active" | "cancelled" | "expired";
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            closed: boolean;
+            open_time?: string | null;
+            close_time?: string | null;
+            /** Format: date-time */
+            cancelled_at: string | null;
+            /** Format: uuid */
+            cancelled_by: string | null;
+            /** Format: uuid */
+            created_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         Schedule: {
             /** Format: uuid */
@@ -5176,11 +5223,14 @@ export interface components {
             /** Format: uuid */
             tenant_id: string;
             name: string;
+            description: string | null;
             /** @enum {string} */
             status: "active" | "inactive";
             timezone: string;
             weekly_rules_json: components["schemas"]["WeeklyRule"][];
             holiday_overrides_json: components["schemas"]["HolidayOverride"][];
+            holiday_calendars: components["schemas"]["HolidayCalendar"][];
+            temporary_overrides: components["schemas"]["ScheduleOverride"][];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -5188,17 +5238,53 @@ export interface components {
         };
         CreateScheduleBody: {
             name: string;
+            description?: string;
             timezone: string;
             weekly_rules_json?: components["schemas"]["WeeklyRule"][];
             holiday_overrides_json?: components["schemas"]["HolidayOverride"][];
         };
         UpdateScheduleBody: {
             name?: string;
+            description?: string | null;
             timezone?: string;
             weekly_rules_json?: components["schemas"]["WeeklyRule"][];
             holiday_overrides_json?: components["schemas"]["HolidayOverride"][];
             /** @enum {string} */
             status?: "active" | "inactive";
+        };
+        CreateHolidayCalendarBody: {
+            name: string;
+            description?: string;
+            entries_json: components["schemas"]["HolidayOverride"][];
+        };
+        UpdateHolidayCalendarBody: {
+            name?: string;
+            description?: string | null;
+            /** @enum {string} */
+            status?: "active" | "inactive";
+            entries_json?: components["schemas"]["HolidayOverride"][];
+        };
+        CreateScheduleOverrideBody: {
+            name: string;
+            reason?: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            closed: boolean;
+            open_time?: string;
+            close_time?: string;
+        };
+        UpdateScheduleOverrideBody: {
+            name?: string;
+            reason?: string | null;
+            /** Format: date-time */
+            starts_at?: string;
+            /** Format: date-time */
+            ends_at?: string;
+            closed?: boolean;
+            open_time?: string | null;
+            close_time?: string | null;
         };
         OutboundRoute: {
             /** Format: uuid */

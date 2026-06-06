@@ -258,7 +258,8 @@ Planned pre-`v0.7.0` product-model releases:
 - `v0.6.4` site and location core (`#303`, `#304`)
 - `v0.6.5` trunk-group routing (`#305`, `#306`, `#307`)
 - `v0.6.6` people, extensions, and devices (`#308`, `#309`, `#310`)
-- `v0.6.7` enterprise schedules (`#311`, `#312`, `#313`)
+- `v0.6.7` enterprise schedules (`#311`, `#312` shipped; `#313` remains open for
+  deeper timezone-aware route and IVR evaluation)
 - `v0.6.8` line appearance foundation (`#314`, `#315`)
 
 Planned `v0.7.x` stabilization releases:

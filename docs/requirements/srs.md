@@ -195,6 +195,10 @@ This creates steep onboarding cost, unsafe automation surfaces, weak change mana
   separation for enterprise endpoint modeling.
 - FR-44: The system shall support enterprise schedule groups, holiday calendars,
   and temporary overrides with expiry.
+  Current implementation note: `#311` and `#312` deliver this through the
+  `/schedules` aggregate plus holiday-calendar and temporary-override child
+  resources. Deeper per-site timezone-aware route and IVR evaluation remains the
+  later `#313` scope.
 - FR-45: The system shall support line-appearance modeling as groundwork for
   later shared-line and executive workflows.
 

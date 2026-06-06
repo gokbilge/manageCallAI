@@ -1,4 +1,4 @@
-import type { Schedule } from './schedule.types.js';
+import type { HolidayCalendar, Schedule, ScheduleOverride } from './schedule.types.js';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
@@ -29,8 +29,58 @@ function getLocalParts(now: Date, timezone: string): { date: string; dayOfWeek: 
   return { date, dayOfWeek, timeHHMM };
 }
 
+function evaluateClosedOrWindow(input: {
+  closed: boolean;
+  timeHHMM: string;
+  open_time?: string | null;
+  close_time?: string | null;
+}): boolean {
+  if (input.closed) {
+    return false;
+  }
+  if (input.open_time && input.close_time) {
+    return input.timeHHMM >= input.open_time && input.timeHHMM < input.close_time;
+  }
+  return false;
+}
+
+function findHolidayEntry(
+  date: string,
+  legacyEntries: Pick<Schedule, 'holiday_overrides_json'>['holiday_overrides_json'],
+  calendars: Array<Pick<HolidayCalendar, 'status' | 'entries_json'>>,
+) {
+  for (const calendar of calendars) {
+    if (calendar.status !== 'active') {
+      continue;
+    }
+    const entry = calendar.entries_json.find((candidate) => candidate.date === date);
+    if (entry) {
+      return entry;
+    }
+  }
+  return legacyEntries.find((entry) => entry.date === date);
+}
+
+function findActiveOverride(
+  now: Date,
+  overrides: Array<Pick<ScheduleOverride, 'status' | 'starts_at' | 'ends_at' | 'closed' | 'open_time' | 'close_time'>>,
+) {
+  for (const override of overrides) {
+    if (override.status !== 'active') {
+      continue;
+    }
+    if (now >= override.starts_at && now < override.ends_at) {
+      return override;
+    }
+  }
+  return null;
+}
+
 export function isInBusinessHours(
-  schedule: Pick<Schedule, 'timezone' | 'weekly_rules_json' | 'holiday_overrides_json'>,
+  schedule: Pick<
+    Schedule,
+    'timezone' | 'weekly_rules_json' | 'holiday_overrides_json' | 'holiday_calendars' | 'temporary_overrides'
+  >,
   now: Date,
 ): boolean {
   let local: ReturnType<typeof getLocalParts>;
@@ -42,16 +92,31 @@ export function isInBusinessHours(
 
   const { date, dayOfWeek, timeHHMM } = local;
 
-  const holiday = schedule.holiday_overrides_json.find((h) => h.date === date);
-  if (holiday) {
-    if (holiday.closed) return false;
-    if (holiday.open_time && holiday.close_time) {
-      return timeHHMM >= holiday.open_time && timeHHMM < holiday.close_time;
-    }
-    return false;
+  const override = findActiveOverride(now, schedule.temporary_overrides ?? []);
+  if (override) {
+    return evaluateClosedOrWindow({
+      closed: override.closed,
+      timeHHMM,
+      open_time: override.open_time,
+      close_time: override.close_time,
+    });
   }
 
-  const rule = schedule.weekly_rules_json.find((r) => r.day_of_week === dayOfWeek);
+  const holiday = findHolidayEntry(
+    date,
+    schedule.holiday_overrides_json ?? [],
+    schedule.holiday_calendars ?? [],
+  );
+  if (holiday) {
+    return evaluateClosedOrWindow({
+      closed: holiday.closed,
+      timeHHMM,
+      open_time: holiday.open_time,
+      close_time: holiday.close_time,
+    });
+  }
+
+  const rule = schedule.weekly_rules_json.find((candidate) => candidate.day_of_week === dayOfWeek);
   if (!rule) return false;
 
   return timeHHMM >= rule.open_time && timeHHMM < rule.close_time;

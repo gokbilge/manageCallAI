@@ -267,7 +267,9 @@ The current code line is organized around route modules plus service/repository 
 - planned `TrunkGroupService`
 - planned `TrunkGroupService`
 - planned `DeviceService`
-- planned `EnterpriseScheduleService`
+- `EnterpriseScheduleService` behavior currently lives in the schedules module,
+  centered on the existing `/schedules` aggregate with holiday-calendar and
+  temporary-override child resources
 - planned `LineAppearanceService`
 - planned `MigrationSourceService`
 - planned `MigrationSnapshotService`
