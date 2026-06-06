@@ -41,7 +41,18 @@ const TEMPLATE_PRESETS: TemplatePreset[] = [
 
 function normalizeHost(value: string | null | undefined): string | null {
   if (!value) return null;
-  return value.replace(/^[a-z]+:\/\//i, '').replace(/[/,\s]+$/, '').trim() || null;
+  let normalized = value.trim();
+  const schemeIndex = normalized.indexOf('://');
+  if (schemeIndex > 0) normalized = normalized.slice(schemeIndex + 3);
+  while (normalized.length > 0) {
+    const last = normalized.at(-1);
+    if (last === '/' || last === ',' || (last !== undefined && last.trim() === '')) {
+      normalized = normalized.slice(0, -1).trimEnd();
+      continue;
+    }
+    break;
+  }
+  return normalized || null;
 }
 
 function extractHostnames(intent: string): string[] {
