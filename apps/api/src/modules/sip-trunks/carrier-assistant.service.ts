@@ -41,7 +41,7 @@ const TEMPLATE_PRESETS: TemplatePreset[] = [
 
 function normalizeHost(value: string | null | undefined): string | null {
   if (!value) return null;
-  return value.replace(/^[a-z]+:\/\//i, '').replace(/[\/,\s]+$/, '').trim() || null;
+  return value.replace(/^[a-z]+:\/\//i, '').replace(/[/,\s]+$/, '').trim() || null;
 }
 
 function extractHostnames(intent: string): string[] {

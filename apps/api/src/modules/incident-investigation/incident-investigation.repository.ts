@@ -11,6 +11,15 @@ import type {
 
 const columns = `id, tenant_id, question, context_json as context, answer, citations, data_sources, is_advisory, created_by, created_at`;
 
+function hydrateInvestigation(
+  row: Omit<IncidentInvestigation, 'created_at'> & { created_at: string | Date },
+): IncidentInvestigation {
+  return {
+    ...row,
+    created_at: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+  };
+}
+
 export class IncidentInvestigationRepository {
   constructor(private readonly db: Pool) {}
 
@@ -38,7 +47,7 @@ export class IncidentInvestigationRepository {
         createdBy,
       ],
     );
-    return result.rows[0]!;
+    return hydrateInvestigation(result.rows[0]!);
   }
 
   async listByTenant(tenantId: string): Promise<IncidentInvestigation[]> {
@@ -48,7 +57,7 @@ export class IncidentInvestigationRepository {
        ORDER BY created_at DESC LIMIT 100`,
       [tenantId],
     );
-    return result.rows;
+    return result.rows.map((row) => hydrateInvestigation(row));
   }
 
   async findById(id: string, tenantId: string): Promise<IncidentInvestigation | null> {
@@ -56,7 +65,7 @@ export class IncidentInvestigationRepository {
       `SELECT ${columns} FROM incident_investigations WHERE id = $1 AND tenant_id = $2`,
       [id, tenantId],
     );
-    return result.rows[0] ?? null;
+    return result.rows[0] ? hydrateInvestigation(result.rows[0]) : null;
   }
 
   // ── Data gathering for investigation ─────────────────────────────────────
@@ -129,7 +138,7 @@ export class IncidentInvestigationRepository {
               r.recorded_at,
               ar.summary_text,
               ar.transcript_text,
-              ar.source_mode,
+              CASE WHEN COALESCE(ar.provider_hint, 'auto') = 'auto' THEN 'deterministic' ELSE 'provider_backed' END AS source_mode,
               ar.provider_hint
        FROM call_recordings r
        LEFT JOIN recording_analysis_requests ar

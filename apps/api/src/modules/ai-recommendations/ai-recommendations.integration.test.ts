@@ -382,8 +382,8 @@ describe('AI recommendations and incident investigation endpoints', () => {
 
       await db.query(
         `INSERT INTO recording_analysis_requests
-           (tenant_id, recording_id, requested_outputs, status, transcript_status, summary_status, summary_text, provider_metadata, metadata, source_mode, completed_at)
-         VALUES ($1, $2, $3::text[], 'completed', NULL, 'completed', $4, '{}'::jsonb, '{}'::jsonb, 'deterministic', NOW())`,
+           (tenant_id, recording_id, requested_outputs, status, transcript_status, summary_status, summary_text, provider_hint, provider_metadata, metadata, completed_at)
+         VALUES ($1, $2, $3::text[], 'completed', NULL, 'completed', $4, 'auto', '{}'::jsonb, '{}'::jsonb, NOW())`,
         [tenantId, recording.rows[0]!.id, ['summary'], 'Caller hit a failed route because no outbound carrier path matched the destination.'],
       );
 
