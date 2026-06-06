@@ -14,6 +14,37 @@ pre-release suffixes: `0.1.0-alpha.1`, `0.2.0-beta.1`, etc.
 
 ---
 
+## [0.6.2] - 2026-06-06
+
+Release classification: production release — combined v0.6.1 AI-expansion + v0.6.2 end-user comms. v0.6.1 was not cut as a separate release.
+
+Production evidence: `docs/release/release-evidence-v0.6.2.json`
+
+### Added
+
+- **Natural-language IVR generation** (#253): `POST /api/v1/ivr-generation` creates editable draft flows from plain-English intent; ai_lineage metadata ensures human approval before publish.
+- **AI-assisted draft editing with structured diffs** (#254): IVR flow and route draft patches — workers return node-level diffs with risk_level and blast_radius_hint; operators accept or reject.
+- **Provider-backed AI policy framework** (#252): Platform and tenant control over AI provider access, feature-level enable/disable, and deterministic fallback.
+- **Semantic recording and transcript search** (#256): `POST /api/v1/recordings/search` — FTS with ts_rank/ts_headline + ILIKE lexical fallback; results include match_type, match_context, and match_reason.
+- **AI route and fraud-policy recommendation engine** (#258): `POST /api/v1/ai-recommendations` — advisory suggestions with accept (creates draft or updates policy) / reject lifecycle.
+- **Incident investigation assistant** (#259): `POST /api/v1/incidents/investigate` — cited advisory answers from call events, routes, and gateway state; read-only, is_advisory: true.
+- **Carrier configuration assistant** (#260): `POST /api/v1/sip-trunks/assistant/suggest` — pre-filled SIP trunk draft from carrier intent with assumptions, missing_fields, and validation_hints.
+- **Recording analysis provider lifecycle** (#255, #257): Provider-backed recording analysis with policy enforcement and summary review.
+- **Softphone provisioning and onboarding** (#263): End-user softphone setup wizard with credential provisioning.
+- **QR-code SIP client provisioning** (#264): Scan-to-configure flow for mobile and desktop softphones.
+- **Device provisioning UX** (#265): Operator UI for managing provisioned devices.
+- **Mobile-friendly end-user call controls** (#266): Responsive transfer, hold, mute, and DTMF on mobile viewports.
+- **Presence and status model** (#267): Agent presence states with tenant-scoped status feeds.
+- **Contacts directory for end users** (#268): Tenant contacts with search, extension lookup, and click-to-call.
+- **Click-to-call from end-user surfaces** (#269): One-click outbound call initiation from contacts, history, and voicemail.
+- **Push-notification integration** (#270): Push delivery plan and device token management for inbound call alerts.
+
+### DB migrations since v0.6.0
+
+Migrations 0055–0062: AI provider policy, AI audit/approval lineage, presence model, push notification tokens, recording analysis provider policy, IVR AI generation and patches, AI recommendations and investigations, recording search FTS indexes.
+
+---
+
 ## [0.6.0] - 2026-06-05
 
 Release classification: production release — v0.6 AI-native differentiation.

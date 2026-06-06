@@ -35,9 +35,9 @@ Source inspection shows implemented support for:
 
 ## Release posture
 
-**Current release: v0.6.0** (2026-06-05) — v0.6 AI-native differentiation.
+**Current release: v0.6.2** (2026-06-06) — combined AI-expansion + end-user comms release. v0.6.1 scope merged into v0.6.2.
 
-Evidence: [docs/release/release-evidence-v0.6.0.json](docs/release/release-evidence-v0.6.0.json)
+Evidence: [docs/release/release-evidence-v0.6.2.json](docs/release/release-evidence-v0.6.2.json)
 
 Release posture must be derived from release evidence, not from source inspection alone.
 
