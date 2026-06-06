@@ -3,6 +3,8 @@ import type {
   DirectoryContact,
   ExtensionSelfServiceState,
   PresenceStatus,
+  PushNotificationToken,
+  PushPlatform,
   ResetSipCredentialResult,
   RevokeDeviceResult,
   SelfServiceCallEvent,
@@ -303,5 +305,32 @@ export class SelfServiceRepository {
       [tenantId, ...values],
     );
     return r.rows[0]!;
+  }
+
+  async upsertPushToken(
+    userId: string,
+    tenantId: string,
+    platform: PushPlatform,
+    token: string,
+  ): Promise<PushNotificationToken> {
+    const r = await this.db.query<PushNotificationToken>(
+      `INSERT INTO push_notification_tokens (user_id, tenant_id, platform, token, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (user_id, platform) DO UPDATE
+         SET token = $4, updated_at = NOW()
+       RETURNING user_id, tenant_id, platform, updated_at`,
+      [userId, tenantId, platform, token],
+    );
+    return r.rows[0]!;
+  }
+
+  async deletePushToken(userId: string, platform: PushPlatform): Promise<boolean> {
+    const r = await this.db.query<{ user_id: string }>(
+      `DELETE FROM push_notification_tokens
+       WHERE user_id = $1 AND platform = $2
+       RETURNING user_id`,
+      [userId, platform],
+    );
+    return r.rows.length > 0;
   }
 }

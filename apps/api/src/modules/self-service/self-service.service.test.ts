@@ -99,6 +99,13 @@ function makeRepo(overrides: Partial<SelfServiceRepository> = {}): SelfServiceRe
     listDirectoryContacts: vi.fn().mockResolvedValue([
       { extension_id: 'ext-1', extension_number: '101', display_name: 'Alice', presence_status: null },
     ]),
+    upsertPushToken: vi.fn().mockResolvedValue({
+      user_id: 'user-1',
+      tenant_id: 'tenant-1',
+      platform: 'fcm',
+      updated_at: new Date(),
+    }),
+    deletePushToken: vi.fn().mockResolvedValue(true),
     ...overrides,
   } as unknown as SelfServiceRepository;
 }
@@ -388,6 +395,29 @@ describe('SelfServiceService', () => {
       const contacts = await service.listContacts('tenant-1');
       expect(contacts).toHaveLength(1);
       expect(contacts[0]?.display_name).toBe('Alice');
+    });
+  });
+
+  describe('registerPushToken', () => {
+    it('upserts push token via repository', async () => {
+      const result = await service.registerPushToken('user-1', 'tenant-1', 'fcm', 'tok-abc');
+      expect(repo.upsertPushToken).toHaveBeenCalledWith('user-1', 'tenant-1', 'fcm', 'tok-abc');
+      expect(result.platform).toBe('fcm');
+    });
+  });
+
+  describe('revokePushToken', () => {
+    it('returns true when token existed', async () => {
+      const result = await service.revokePushToken('user-1', 'apns');
+      expect(repo.deletePushToken).toHaveBeenCalledWith('user-1', 'apns');
+      expect(result).toBe(true);
+    });
+
+    it('returns false when no token found', async () => {
+      repo = makeRepo({ deletePushToken: vi.fn().mockResolvedValue(false) });
+      service = new SelfServiceService(repo);
+      const result = await service.revokePushToken('user-1', 'apns');
+      expect(result).toBe(false);
     });
   });
 });

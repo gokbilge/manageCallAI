@@ -6,6 +6,8 @@ import type {
   DirectoryContact,
   ExtensionSelfServiceState,
   PresenceStatus,
+  PushNotificationToken,
+  PushPlatform,
   ResetSipCredentialResult,
   RevokeDeviceResult,
   SelfServiceCallEvent,
@@ -251,6 +253,19 @@ export class SelfServiceService {
 
   async listContacts(tenantId: string): Promise<DirectoryContact[]> {
     return this.repo.listDirectoryContacts(tenantId);
+  }
+
+  async registerPushToken(
+    userId: string,
+    tenantId: string,
+    platform: PushPlatform,
+    token: string,
+  ): Promise<PushNotificationToken> {
+    return this.repo.upsertPushToken(userId, tenantId, platform, token);
+  }
+
+  async revokePushToken(userId: string, platform: PushPlatform): Promise<boolean> {
+    return this.repo.deletePushToken(userId, platform);
   }
 
   private async requireOwnedVoicemailBox(userId: string, tenantId: string): Promise<string> {
