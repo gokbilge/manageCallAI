@@ -1,4 +1,4 @@
-import { RefreshCcw, CheckCircle, XCircle, ShieldCheck } from 'lucide-react';
+import { RefreshCcw, CheckCircle, XCircle, ShieldCheck, Bot } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/page-header';
 import { DataCard } from '@/components/data/data-card';
@@ -64,6 +64,7 @@ export function ApprovalsPage() {
                   <tr>
                     <th className="px-3 py-2 font-medium">Flow</th>
                     <th className="px-3 py-2 font-medium">Action</th>
+                    <th className="px-3 py-2 font-medium">Origin</th>
                     <th className="px-3 py-2 font-medium">Requested By</th>
                     <th className="px-3 py-2 font-medium">Requested At</th>
                     <th className="px-3 py-2 font-medium">Decision</th>
@@ -139,13 +140,29 @@ function ApprovalRow({
   isRejectPending: boolean;
 }) {
   const anyPending = isApprovePending || isRejectPending;
+  const aiLineage = readAiLineage(request.metadata);
+  const providerSummary = [aiLineage?.provider, aiLineage?.model].filter(Boolean).join(' / ');
+  const riskSummary = aiLineage?.risk_level
+    ? `${aiLineage.risk_level}${aiLineage.risk_summary ? ` - ${aiLineage.risk_summary}` : ''}`
+    : null;
   return (
     <tr>
       <td className="px-3 py-2 font-medium">
-        {request.flow_name ?? request.object_id}
+        <div className="space-y-1">
+          <p>{request.flow_name ?? request.object_id}</p>
+          {aiLineage ? (
+            <div className="space-y-1 text-xs text-[var(--color-muted-fg)]">
+              {providerSummary ? <p>{providerSummary}</p> : null}
+              {riskSummary ? <p>{riskSummary}</p> : null}
+            </div>
+          ) : null}
+        </div>
       </td>
       <td className="px-3 py-2">
         <ActionBadge action={request.action_type} />
+      </td>
+      <td className="px-3 py-2">
+        <OriginBadge request={request} />
       </td>
       <td className="px-3 py-2 font-mono text-xs text-[var(--color-muted-fg)]">
         {request.requested_by ?? 'unknown'}
@@ -175,6 +192,24 @@ function ApprovalRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+function OriginBadge({ request }: { request: ApprovalRequest }) {
+  const aiLineage = readAiLineage(request.metadata);
+  if (!aiLineage) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs font-medium text-[var(--color-muted-fg)]">
+        Manual
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]">
+      <Bot className="size-3" aria-hidden="true" />
+      AI Suggested
+    </span>
   );
 }
 
@@ -224,4 +259,23 @@ function ErrorState({ title, message }: { title: string; message: string }) {
       <p className="mt-2">{message}</p>
     </div>
   );
+}
+
+function readAiLineage(metadata: Record<string, unknown> | null | undefined) {
+  const lineage = metadata?.ai_lineage;
+  if (!lineage || typeof lineage !== 'object') {
+    return null;
+  }
+
+  const record = lineage as Record<string, unknown>;
+  if (record.ai_assisted !== true) {
+    return null;
+  }
+
+  return {
+    provider: typeof record.provider === 'string' ? record.provider : null,
+    model: typeof record.model === 'string' ? record.model : null,
+    risk_level: typeof record.risk_level === 'string' ? record.risk_level : null,
+    risk_summary: typeof record.risk_summary === 'string' ? record.risk_summary : null,
+  };
 }

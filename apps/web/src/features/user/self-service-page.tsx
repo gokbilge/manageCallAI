@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   BellOff,
+  Circle,
   Download,
   ExternalLink,
   Headset,
@@ -70,6 +71,26 @@ type DndBody = { enabled: boolean };
 type ForwardBody = { enabled: boolean; target?: string | null };
 type ForwardForm = { enabled: boolean; target: string };
 
+type PresenceStatus = 'available' | 'away' | 'busy' | 'dnd' | 'offline';
+type PresenceBody = { status: PresenceStatus };
+type PresenceState = { user_id: string; tenant_id: string; status: PresenceStatus; updated_at: string };
+
+const PRESENCE_OPTIONS: { value: PresenceStatus; label: string }[] = [
+  { value: 'available', label: 'Available' },
+  { value: 'away', label: 'Away' },
+  { value: 'busy', label: 'Busy' },
+  { value: 'dnd', label: 'Do Not Disturb' },
+  { value: 'offline', label: 'Offline' },
+];
+
+const PRESENCE_COLOR: Record<PresenceStatus, string> = {
+  available: 'text-[var(--color-success)]',
+  away: 'text-[var(--color-warning)]',
+  busy: 'text-[var(--color-danger)]',
+  dnd: 'text-[var(--color-danger)]',
+  offline: 'text-[var(--color-muted-fg)]',
+};
+
 function noRetryOnAuthOrPolicyError(failureCount: number, error: unknown): boolean {
   if (error instanceof ApiError && (error.status === 401 || error.status === 403 || error.status === 404)) return false;
   return failureCount < 1;
@@ -103,6 +124,18 @@ export function SelfServicePage() {
   const voicemailQuery = useMeQuery<VoicemailMessage[]>('voicemail', '/me/voicemail-messages');
   const callHistoryQuery = useMeQuery<CallEvent[]>('call-history', '/me/call-history');
   const devicesQuery = useMeQuery<DeviceRegistration[]>('devices', '/me/devices');
+  const presenceQuery = useMeQuery<PresenceState>('presence', '/me/presence');
+
+  const presenceMutation = useMutation({
+    mutationFn: async (body: PresenceBody) => {
+      await apiRequest('/me/presence', {
+        method: 'PUT',
+        body: JSON.stringify(body),
+        accessToken: session?.token,
+      });
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['self-service', 'presence'] }),
+  });
 
   const callSummaries = useMemo(
     () => buildCallSummaries(callHistoryQuery.data ?? []),
@@ -223,6 +256,7 @@ export function SelfServicePage() {
             void voicemailQuery.refetch();
             void callHistoryQuery.refetch();
             void devicesQuery.refetch();
+            void presenceQuery.refetch();
           }}
           >
             <RefreshCcw className="size-4" aria-hidden="true" />
@@ -251,6 +285,44 @@ export function SelfServicePage() {
                   </div>
                 </div>
               </div>
+            </DataCard>
+
+            <DataCard
+              title="My Presence"
+              description="Set your current status so others in the directory can see your availability."
+            >
+              {presenceQuery.isLoading ? (
+                <InlineMuted>Loading presence…</InlineMuted>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {PRESENCE_OPTIONS.map((opt) => {
+                      const current = presenceQuery.data?.status ?? 'available';
+                      const isActive = current === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          disabled={presenceMutation.isPending}
+                          onClick={() => presenceMutation.mutate({ status: opt.value })}
+                          className={`flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm transition-colors disabled:opacity-50 ${
+                            isActive
+                              ? 'border-[var(--color-tenant)] bg-[var(--color-tenant)]/10 font-medium text-[var(--color-tenant)]'
+                              : 'border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-muted-fg)] hover:bg-[var(--color-surface)] hover:text-[var(--color-fg)]'
+                          }`}
+                          aria-pressed={isActive}
+                        >
+                          <Circle className={`size-2.5 fill-current ${isActive ? PRESENCE_COLOR[opt.value] : 'text-[var(--color-border)]'}`} aria-hidden="true" />
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {presenceMutation.isError && (
+                    <p className="text-sm text-[var(--color-error)]">Could not update presence. Please try again.</p>
+                  )}
+                </div>
+              )}
             </DataCard>
 
             <div className="grid gap-6 lg:grid-cols-2">
@@ -402,8 +474,8 @@ export function SelfServicePage() {
               ) : callHistoryQuery.isError ? (
                 <PolicyOrErrorState error={callHistoryQuery.error} disabledMessage="Your organization disabled call-history access." />
               ) : callSummaries.length > 0 ? (
-                <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)]">
-                  <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)]">
+                  <table className="min-w-[40rem] w-full text-left text-sm">
                     <thead className="bg-[var(--color-surface-muted)] text-[var(--color-muted-fg)]">
                       <tr>
                         <th className="px-3 py-2 font-medium">Direction</th>
@@ -450,7 +522,7 @@ export function SelfServicePage() {
                       key={message.id}
                       className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3"
                     >
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <Voicemail className="size-4 text-[var(--color-muted-fg)]" aria-hidden="true" />
@@ -461,7 +533,7 @@ export function SelfServicePage() {
                             {message.duration_secs ?? 0}s - {formatBytes(message.size_bytes)} - {formatTimestamp(message.recorded_at)}
                           </p>
                         </div>
-                        <div className="flex shrink-0 items-center gap-2">
+                        <div className="flex flex-wrap shrink-0 items-center gap-2">
                           <a
                             className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-surface-muted)]"
                             href={`${apiBaseUrl()}/me/voicemail-messages/${message.id}/playback`}

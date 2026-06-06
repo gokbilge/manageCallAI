@@ -15,6 +15,7 @@ function makeDraftVersion(state: FlowVersion['state'] = 'draft'): FlowVersion {
     validated_at: state === 'validated' || state === 'simulated' ? new Date().toISOString() : null,
     simulated_at: state === 'simulated' ? new Date().toISOString() : null,
     published_at: null,
+    metadata: {},
   };
 }
 
@@ -115,5 +116,26 @@ describe('PublishPanel', () => {
     expect(screen.getByText(/graph validation/i)).toBeInTheDocument();
     // When validation passed, no "Run Validate" hint should be shown
     expect(screen.queryByText(/run validate/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the mandatory approval note for AI-suggested drafts', () => {
+    renderWithProviders(
+      <PublishPanel
+        {...defaultProps}
+        validationResult={{ version: makeDraftVersion('validated'), outcome: { status: 'passed', errors: [], warnings: [] } }}
+        simulationResult={{ version: makeDraftVersion('validated'), scenario: {}, outcome: { status: 'passed', path: [], steps: [], final_action: null, errors: [] } }}
+        draftVersion={{
+          ...makeDraftVersion('validated'),
+          metadata: {
+            ai_lineage: {
+              ai_assisted: true,
+              requires_human_approval: true,
+            },
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/human approval required for ai-suggested draft/i)).toBeInTheDocument();
   });
 });

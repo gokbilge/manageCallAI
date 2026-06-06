@@ -1,6 +1,8 @@
 import type { Pool } from 'pg';
 import type {
+  DirectoryContact,
   ExtensionSelfServiceState,
+  PresenceStatus,
   ResetSipCredentialResult,
   RevokeDeviceResult,
   SelfServiceCallEvent,
@@ -8,6 +10,7 @@ import type {
   SelfServicePolicy,
   SelfServiceVoicemailMessage,
   UpdateSelfServicePolicyInput,
+  UserPresence,
 } from './self-service.types.js';
 
 const POLICY_COLS = `
@@ -235,6 +238,43 @@ export class SelfServiceRepository {
       [tenantId],
     );
     return r.rows[0] ?? null;
+  }
+
+  async findPresence(userId: string): Promise<UserPresence | null> {
+    const r = await this.db.query<UserPresence>(
+      `SELECT user_id, tenant_id, status, updated_at FROM user_presence WHERE user_id = $1`,
+      [userId],
+    );
+    return r.rows[0] ?? null;
+  }
+
+  async upsertPresence(userId: string, tenantId: string, status: PresenceStatus): Promise<UserPresence> {
+    const r = await this.db.query<UserPresence>(
+      `INSERT INTO user_presence (user_id, tenant_id, status, updated_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (user_id) DO UPDATE
+         SET status = $3, updated_at = NOW()
+       RETURNING user_id, tenant_id, status, updated_at`,
+      [userId, tenantId, status],
+    );
+    return r.rows[0]!;
+  }
+
+  async listDirectoryContacts(tenantId: string): Promise<DirectoryContact[]> {
+    const r = await this.db.query<DirectoryContact>(
+      `SELECT
+         e.id AS extension_id,
+         e.extension_number,
+         e.display_name,
+         up.status AS presence_status
+       FROM extensions e
+       LEFT JOIN user_presence up ON up.user_id = e.owner_user_id
+       WHERE e.tenant_id = $1
+         AND e.status = 'active'
+       ORDER BY e.display_name, e.extension_number`,
+      [tenantId],
+    );
+    return r.rows;
   }
 
   async upsertPolicy(tenantId: string, input: UpdateSelfServicePolicyInput): Promise<SelfServicePolicy> {

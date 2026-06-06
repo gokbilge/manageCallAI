@@ -42,7 +42,7 @@ export class IvrFlowRepository {
     if (!flowR.rows[0]) return null;
 
     const versionsR = await this.db.query<FlowVersion>(
-      `SELECT id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at
+      `SELECT id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at, metadata
        FROM flow_versions WHERE flow_id = $1 ORDER BY version_number DESC`,
       [id],
     );
@@ -51,7 +51,7 @@ export class IvrFlowRepository {
 
   async findVersionById(versionId: string, flowId: string, tenantId: string): Promise<FlowVersion | null> {
     const r = await this.db.query<FlowVersion>(
-      `SELECT fv.id, fv.tenant_id, fv.flow_id, fv.version_number, fv.state, fv.definition AS graph_json, fv.created_by, fv.created_at, fv.validated_at, fv.simulated_at, fv.published_at
+      `SELECT fv.id, fv.tenant_id, fv.flow_id, fv.version_number, fv.state, fv.definition AS graph_json, fv.created_by, fv.created_at, fv.validated_at, fv.simulated_at, fv.published_at, fv.metadata
        FROM flow_versions fv
        JOIN ivr_flows f ON f.id = fv.flow_id
        WHERE fv.id = $1 AND fv.flow_id = $2 AND f.tenant_id = $3`,
@@ -66,6 +66,7 @@ export class IvrFlowRepository {
     description?: string;
     graph_json: Record<string, unknown>;
     created_by?: string;
+    metadata?: Record<string, unknown>;
   }): Promise<IvrFlowWithVersions> {
     const client = await this.db.connect();
     try {
@@ -80,10 +81,10 @@ export class IvrFlowRepository {
       const flow = flowR.rows[0]!;
 
       const versionR = await client.query<FlowVersion>(
-        `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by)
-         VALUES ($1, $2, 1, 'draft', $3, $4)
-         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
-        [input.tenant_id, flow.id, JSON.stringify(input.graph_json), input.created_by ?? null],
+        `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by, metadata)
+         VALUES ($1, $2, 1, 'draft', $3, $4, $5)
+         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at, metadata`,
+        [input.tenant_id, flow.id, JSON.stringify(input.graph_json), input.created_by ?? null, JSON.stringify(input.metadata ?? {})],
       );
       const version = versionR.rows[0]!;
 
@@ -131,15 +132,16 @@ export class IvrFlowRepository {
     version_number: number;
     definition: Record<string, unknown>;
     created_by?: string;
+    metadata?: Record<string, unknown>;
   }): Promise<FlowVersion> {
     const client = await this.db.connect();
     try {
       await client.query('BEGIN');
       const versionR = await client.query<FlowVersion>(
-        `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by)
-         VALUES ($1, $2, $3, 'draft', $4, $5)
-         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
-        [input.tenant_id, input.flow_id, input.version_number, JSON.stringify(input.definition), input.created_by ?? null],
+        `INSERT INTO flow_versions (tenant_id, flow_id, version_number, state, definition, created_by, metadata)
+         VALUES ($1, $2, $3, 'draft', $4, $5, $6)
+         RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at, metadata`,
+        [input.tenant_id, input.flow_id, input.version_number, JSON.stringify(input.definition), input.created_by ?? null, JSON.stringify(input.metadata ?? {})],
       );
       const version = versionR.rows[0]!;
       await client.query(
@@ -156,13 +158,21 @@ export class IvrFlowRepository {
     }
   }
 
-  async updateVersionDefinition(versionId: string, flowId: string, tenantId: string, definition: Record<string, unknown>): Promise<FlowVersion | null> {
-    const r = await this.db.query<FlowVersion>(
-      `UPDATE flow_versions SET definition = $1
-       WHERE id = $2 AND flow_id = $3 AND state = 'draft'
-         AND tenant_id = (SELECT tenant_id FROM ivr_flows WHERE id = $3 AND tenant_id = $4 LIMIT 1)
-       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
-      [JSON.stringify(definition), versionId, flowId, tenantId],
+  async updateVersionDefinition(
+    versionId: string,
+    flowId: string,
+    tenantId: string,
+    definition: Record<string, unknown>,
+    metadata?: Record<string, unknown>,
+  ): Promise<FlowVersion | null> {
+      const r = await this.db.query<FlowVersion>(
+        `UPDATE flow_versions
+         SET definition = $1,
+             metadata = metadata || $2::jsonb
+         WHERE id = $3 AND flow_id = $4 AND state = 'draft'
+           AND tenant_id = (SELECT tenant_id FROM ivr_flows WHERE id = $4 AND tenant_id = $5 LIMIT 1)
+       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at, metadata`,
+      [JSON.stringify(definition), JSON.stringify(metadata ?? {}), versionId, flowId, tenantId],
     );
     return r.rows[0] ?? null;
   }
@@ -172,7 +182,7 @@ export class IvrFlowRepository {
       `UPDATE flow_versions SET state = 'validated', validated_at = NOW()
        WHERE id = $1 AND flow_id = $2
          AND tenant_id = (SELECT tenant_id FROM ivr_flows WHERE id = $2 AND tenant_id = $3 LIMIT 1)
-       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
+       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at, metadata`,
       [versionId, flowId, tenantId],
     );
     return r.rows[0] ?? null;
@@ -185,7 +195,7 @@ export class IvrFlowRepository {
            simulated_at = NOW()
        WHERE id = $1 AND flow_id = $2
          AND tenant_id = (SELECT tenant_id FROM ivr_flows WHERE id = $2 AND tenant_id = $3 LIMIT 1)
-       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at`,
+       RETURNING id, tenant_id, flow_id, version_number, state, definition AS graph_json, created_by, created_at, validated_at, simulated_at, published_at, metadata`,
       [versionId, flowId, tenantId],
     );
     return r.rows[0] ?? null;
@@ -194,7 +204,7 @@ export class IvrFlowRepository {
   async findVersionsByFlowId(flowId: string, tenantId: string): Promise<FlowVersion[]> {
     const r = await this.db.query<FlowVersion>(
       `SELECT fv.id, fv.tenant_id, fv.flow_id, fv.version_number, fv.state, fv.definition AS graph_json,
-              fv.created_by, fv.created_at, fv.validated_at, fv.simulated_at, fv.published_at
+              fv.created_by, fv.created_at, fv.validated_at, fv.simulated_at, fv.published_at, fv.metadata
        FROM flow_versions fv
        JOIN ivr_flows f ON f.id = fv.flow_id
        WHERE fv.flow_id = $1 AND f.tenant_id = $2
@@ -233,7 +243,8 @@ export class IvrFlowRepository {
            ar.status AS approval_status,
            ar.decision_at,
            pr.result,
-           pr.created_at
+           pr.created_at,
+           pr.metadata
          FROM publish_records pr
          LEFT JOIN approval_requests ar ON ar.id = pr.approval_request_id
          WHERE pr.tenant_id = $1 AND pr.object_type = 'ivr_flow' AND pr.object_id = $2
@@ -318,12 +329,13 @@ export class IvrFlowRepository {
     flow_id: string;
     version_id: string;
     requested_by: string;
+    metadata?: Record<string, unknown>;
   }): Promise<ApprovalRequestRecord> {
     const r = await this.db.query<ApprovalRequestRecord>(
-      `INSERT INTO approval_requests (tenant_id, object_type, object_id, version_id, requested_by, status)
-       VALUES ($1, 'ivr_flow', $2, $3, $4, 'pending')
-       RETURNING id, tenant_id, object_type, object_id, version_id, requested_by, status, created_at`,
-      [input.tenant_id, input.flow_id, input.version_id, input.requested_by],
+      `INSERT INTO approval_requests (tenant_id, object_type, object_id, version_id, requested_by, status, metadata)
+       VALUES ($1, 'ivr_flow', $2, $3, $4, 'pending', $5)
+       RETURNING id, tenant_id, object_type, object_id, version_id, requested_by, status, created_at, metadata`,
+      [input.tenant_id, input.flow_id, input.version_id, input.requested_by, JSON.stringify(input.metadata ?? {})],
     );
     return r.rows[0]!;
   }
@@ -335,17 +347,21 @@ export class IvrFlowRepository {
     triggered_by_id: string;
     approval_request_id: string;
     action_type: 'publish' | 'rollback';
+    triggered_by_type?: 'user' | 'workflow' | 'ai_agent' | 'system';
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     await this.db.query(
-      `INSERT INTO publish_records (tenant_id, object_type, object_id, version_id, action_type, triggered_by_type, triggered_by_id, approval_request_id, result)
-       VALUES ($1, 'ivr_flow', $2, $3, $4, 'user', $5, $6, 'pending_approval')`,
+      `INSERT INTO publish_records (tenant_id, object_type, object_id, version_id, action_type, triggered_by_type, triggered_by_id, approval_request_id, result, metadata)
+       VALUES ($1, 'ivr_flow', $2, $3, $4, $5, $6, $7, 'pending_approval', $8)`,
       [
         input.tenant_id,
         input.flow_id,
         input.version_id,
         input.action_type,
+        input.triggered_by_type ?? 'user',
         input.triggered_by_id,
         input.approval_request_id,
+        JSON.stringify(input.metadata ?? {}),
       ],
     );
   }
@@ -355,6 +371,9 @@ export class IvrFlowRepository {
     flow_id: string;
     version_id: string;
     triggered_by_id: string;
+    triggered_by_type?: 'user' | 'workflow' | 'ai_agent' | 'system';
+    approval_request_id?: string | null;
+    metadata?: Record<string, unknown>;
   }): Promise<IvrFlow> {
     const client = await this.db.connect();
     try {
@@ -385,16 +404,30 @@ export class IvrFlowRepository {
 
       // Publish record
       await client.query(
-        `INSERT INTO publish_records (tenant_id, object_type, object_id, version_id, action_type, triggered_by_type, triggered_by_id, result)
-         VALUES ($1, 'ivr_flow', $2, $3, 'publish', 'user', $4, 'success')`,
-        [input.tenant_id, input.flow_id, input.version_id, input.triggered_by_id],
+        `INSERT INTO publish_records (tenant_id, object_type, object_id, version_id, action_type, triggered_by_type, triggered_by_id, approval_request_id, result, metadata)
+         VALUES ($1, 'ivr_flow', $2, $3, 'publish', $4, $5, $6, 'success', $7)`,
+        [
+          input.tenant_id,
+          input.flow_id,
+          input.version_id,
+          input.triggered_by_type ?? 'user',
+          input.triggered_by_id,
+          input.approval_request_id ?? null,
+          JSON.stringify(input.metadata ?? {}),
+        ],
       );
 
       // Audit event
       await client.query(
-        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
-         VALUES ($1, 'user', $2, 'publish', 'ivr_flow', $3)`,
-        [input.tenant_id, input.triggered_by_id, input.flow_id],
+        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id, metadata)
+         VALUES ($1, $2, $3, 'publish', 'ivr_flow', $4, $5)`,
+        [
+          input.tenant_id,
+          input.triggered_by_type ?? 'user',
+          input.triggered_by_id,
+          input.flow_id,
+          JSON.stringify(input.metadata ?? {}),
+        ],
       );
 
       await client.query('COMMIT');
@@ -411,6 +444,9 @@ export class IvrFlowRepository {
     tenant_id: string;
     flow_id: string;
     triggered_by_id: string;
+    triggered_by_type?: 'user' | 'workflow' | 'ai_agent' | 'system';
+    approval_request_id?: string | null;
+    metadata?: Record<string, unknown>;
   }): Promise<{ flow: IvrFlow; target_version_id: string } | null> {
     const client = await this.db.connect();
     try {
@@ -448,14 +484,28 @@ export class IvrFlowRepository {
 
       // Publish record + audit
       await client.query(
-        `INSERT INTO publish_records (tenant_id, object_type, object_id, version_id, action_type, triggered_by_type, triggered_by_id, result)
-         VALUES ($1, 'ivr_flow', $2, $3, 'rollback', 'user', $4, 'success')`,
-        [input.tenant_id, input.flow_id, target.id, input.triggered_by_id],
+        `INSERT INTO publish_records (tenant_id, object_type, object_id, version_id, action_type, triggered_by_type, triggered_by_id, approval_request_id, result, metadata)
+         VALUES ($1, 'ivr_flow', $2, $3, 'rollback', $4, $5, $6, 'success', $7)`,
+        [
+          input.tenant_id,
+          input.flow_id,
+          target.id,
+          input.triggered_by_type ?? 'user',
+          input.triggered_by_id,
+          input.approval_request_id ?? null,
+          JSON.stringify(input.metadata ?? {}),
+        ],
       );
       await client.query(
-        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
-         VALUES ($1, 'user', $2, 'rollback', 'ivr_flow', $3)`,
-        [input.tenant_id, input.triggered_by_id, input.flow_id],
+        `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id, metadata)
+         VALUES ($1, $2, $3, 'rollback', 'ivr_flow', $4, $5)`,
+        [
+          input.tenant_id,
+          input.triggered_by_type ?? 'user',
+          input.triggered_by_id,
+          input.flow_id,
+          JSON.stringify(input.metadata ?? {}),
+        ],
       );
 
       await client.query('COMMIT');

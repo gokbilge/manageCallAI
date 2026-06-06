@@ -3,7 +3,9 @@ import { resolve, sep } from 'node:path';
 import { encryptSipPassword } from '../../crypto/sip-secret.js';
 import type { SelfServiceRepository } from './self-service.repository.js';
 import type {
+  DirectoryContact,
   ExtensionSelfServiceState,
+  PresenceStatus,
   ResetSipCredentialResult,
   RevokeDeviceResult,
   SelfServiceCallEvent,
@@ -11,6 +13,7 @@ import type {
   SelfServicePolicy,
   SelfServiceVoicemailMessage,
   UpdateSelfServicePolicyInput,
+  UserPresence,
 } from './self-service.types.js';
 
 const CAPABILITY_DISABLED_CODE = 'SELF_SERVICE_CAPABILITY_DISABLED';
@@ -230,6 +233,24 @@ export class SelfServiceService {
     });
     if (!updated) throw new SelfServiceExtensionNotFoundError();
     return { ...updated, sip_password: sipPassword };
+  }
+
+  async getPresence(userId: string, tenantId: string): Promise<UserPresence> {
+    const row = await this.repo.findPresence(userId);
+    return row ?? {
+      user_id: userId,
+      tenant_id: tenantId,
+      status: 'available' as PresenceStatus,
+      updated_at: new Date(),
+    };
+  }
+
+  async setPresence(userId: string, tenantId: string, status: PresenceStatus): Promise<UserPresence> {
+    return this.repo.upsertPresence(userId, tenantId, status);
+  }
+
+  async listContacts(tenantId: string): Promise<DirectoryContact[]> {
+    return this.repo.listDirectoryContacts(tenantId);
   }
 
   private async requireOwnedVoicemailBox(userId: string, tenantId: string): Promise<string> {

@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Asterisk,
+  BookUser,
   Building2,
   CalendarClock,
   ClipboardCheck,
@@ -87,6 +88,7 @@ const tenantNav: NavItem[] = [
 
 const endUserTenantNav: NavItem[] = [
   { to: '/tenant/me', label: 'My Settings', icon: UserCog },
+  { to: '/tenant/contacts', label: 'Contacts', icon: BookUser },
 ];
 
 export function AppSidebar({ workspace }: AppSidebarProps) {

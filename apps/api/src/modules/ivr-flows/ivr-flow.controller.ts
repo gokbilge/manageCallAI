@@ -5,12 +5,14 @@ import {
   UuidParamsSchema,
   UpdateIvrFlowBodySchema,
   SimulationScenarioSchema,
+  AiAssistedContextSchema,
 } from '@managecallai/contracts';
 import { computeReachableBranches } from './ivr-flow.validation.js';
 import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
+import { buildActorMetadata, resolveActorIdentity } from '../auth/resolve-actor-identity.js';
 import { fireWebhooks } from '../automation/webhook-delivery.js';
 import { fireAuditEvent } from '../audit/fire-audit.js';
 import { IvrFlowRepository } from './ivr-flow.repository.js';
@@ -46,7 +48,33 @@ const idVidParams = z.object({ id: z.string().uuid(), vid: z.string().uuid() });
 const graphBodySchema = z.object({
   graph_json: z.record(z.unknown()).optional(),
   definition: z.record(z.unknown()).optional(),
+  ai_context: AiAssistedContextSchema.optional(),
 });
+
+function buildAiLineageMetadata(user: AuthClaims, aiContext?: z.infer<typeof AiAssistedContextSchema>) {
+  const actor = buildActorMetadata(user);
+  if (actor.actor_type !== 'ai_agent' && !aiContext) {
+    return undefined;
+  }
+
+  return {
+    ai_lineage: {
+      ai_assisted: true,
+      actor,
+      source_request_type: aiContext?.source_request_type,
+      source_request_id: aiContext?.source_request_id,
+      prompt_template_id: aiContext?.prompt_template_id,
+      prompt_summary: aiContext?.prompt_summary,
+      normalized_input: aiContext?.normalized_input,
+      output_summary: aiContext?.output_summary,
+      provider: aiContext?.provider,
+      model: aiContext?.model,
+      risk_level: aiContext?.risk_level,
+      risk_summary: aiContext?.risk_summary,
+      requires_human_approval: true,
+    },
+  } satisfies Record<string, unknown>;
+}
 
 export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
   app.get(
@@ -68,10 +96,12 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
           description: z.string().max(1000).optional(),
           graph_json: z.record(z.unknown()).optional(),
           definition: z.record(z.unknown()).optional(),
+          ai_context: AiAssistedContextSchema.optional(),
         }),
       },
     },
     async (req, reply) => {
+      resolveActorIdentity(req);
       const user = req.user as AuthClaims;
       const flow = await service.create({
         tenant_id: user.tenant_id,
@@ -79,6 +109,7 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
         description: req.body.description,
         graph_json: req.body.graph_json ?? req.body.definition ?? defaultIvrGraph(),
         created_by: user.sub,
+        metadata: buildAiLineageMetadata(user, req.body.ai_context),
       });
       return reply.code(201).send({ data: flow });
     },
@@ -163,9 +194,16 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req, reply) => {
+      resolveActorIdentity(req);
       const user = req.user as AuthClaims;
       try {
-        const version = await service.createVersion(req.params.id, user.tenant_id, req.body.graph_json ?? req.body.definition, user.sub);
+        const version = await service.createVersion(
+          req.params.id,
+          user.tenant_id,
+          req.body.graph_json ?? req.body.definition,
+          user.sub,
+          buildAiLineageMetadata(user, req.body.ai_context),
+        );
         return reply.code(201).send({ data: version });
       } catch (err) {
         return replyError(err, reply);
@@ -201,6 +239,7 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req, reply) => {
+      resolveActorIdentity(req);
       const user = req.user as AuthClaims;
       try {
         return {
@@ -209,6 +248,7 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
             req.params.vid,
             user.tenant_id,
             req.body.graph_json ?? req.body.definition ?? defaultIvrGraph(),
+            buildAiLineageMetadata(user, req.body.ai_context),
           ),
         };
       } catch (err) {
@@ -314,12 +354,26 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req, reply) => {
+      resolveActorIdentity(req);
       const user = req.user as AuthClaims;
       try {
-        const result = await service.publish(req.params.id, req.params.vid, user.tenant_id, user.sub, user.role);
+        const actor = buildActorMetadata(user);
+        const result = await service.publish(req.params.id, req.params.vid, user.tenant_id, user.sub, user.role, actor.actor_type);
         const event = result.status === 'pending_approval' ? 'ivr_flow.publish_pending' : 'ivr_flow.published';
         fireWebhooks(user.tenant_id, event, { flow_id: req.params.id, version_id: req.params.vid });
-        fireAuditEvent({ tenant_id: user.tenant_id, actor_id: user.sub, actor_role: user.role, action: event, resource_type: 'ivr_flow', resource_id: req.params.id, metadata: { version_id: req.params.vid } });
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          action: event,
+          resource_type: 'ivr_flow',
+          resource_id: req.params.id,
+          metadata: {
+            version_id: req.params.vid,
+            actor,
+            approval_request_id: result.approval_request_id ?? null,
+          },
+        });
         const statusCode = result.status === 'pending_approval' ? 202 : 200;
         return reply.code(statusCode).send({ data: result });
       } catch (err) {
@@ -448,11 +502,24 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req, reply) => {
+      resolveActorIdentity(req);
       const user = req.user as AuthClaims;
       try {
-        const result = await service.rollback(req.params.id, user.tenant_id, user.sub, user.role);
+        const actor = buildActorMetadata(user);
+        const result = await service.rollback(req.params.id, user.tenant_id, user.sub, user.role, actor.actor_type);
         fireWebhooks(user.tenant_id, 'ivr_flow.rollback_completed', { flow_id: req.params.id });
-        fireAuditEvent({ tenant_id: user.tenant_id, actor_id: user.sub, actor_role: user.role, action: 'ivr_flow.rollback_completed', resource_type: 'ivr_flow', resource_id: req.params.id });
+        fireAuditEvent({
+          tenant_id: user.tenant_id,
+          actor_id: user.sub,
+          actor_role: user.role,
+          action: 'ivr_flow.rollback_completed',
+          resource_type: 'ivr_flow',
+          resource_id: req.params.id,
+          metadata: {
+            actor,
+            approval_request_id: result.approval_request_id ?? null,
+          },
+        });
         const statusCode = result.status === 'pending_approval' ? 202 : 200;
         return reply.code(statusCode).send({ data: result });
       } catch (err) {

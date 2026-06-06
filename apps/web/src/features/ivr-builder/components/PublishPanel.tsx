@@ -35,6 +35,7 @@ export function PublishPanel({
   const isPublishable = draftState === 'validated' || draftState === 'simulated';
   const validationPassed = validationResult?.outcome.status === 'passed';
   const simulationPassed = simulationResult?.outcome.status === 'passed';
+  const aiSuggested = readAiLineage(draftVersion?.metadata);
 
   const publishBlocked = !isPublishable;
   const publishDisabled = !canPublish || publishBlocked || isPublishing;
@@ -66,6 +67,14 @@ export function PublishPanel({
               : undefined
           }
         />
+        {aiSuggested ? (
+          <ChecklistItem
+            done={false}
+            pending={false}
+            label="Human approval required for AI-suggested draft"
+            hint="AI-originated changes always enter the approval queue before they can become active."
+          />
+        ) : null}
       </div>
 
       {publishResult?.status === 'pending_approval' ? (
@@ -142,6 +151,15 @@ export function PublishPanel({
       )}
     </div>
   );
+}
+
+function readAiLineage(metadata: Record<string, unknown> | null | undefined) {
+  const lineage = metadata?.ai_lineage;
+  if (!lineage || typeof lineage !== 'object') {
+    return null;
+  }
+
+  return (lineage as Record<string, unknown>).ai_assisted === true ? lineage : null;
 }
 
 function ChecklistItem({

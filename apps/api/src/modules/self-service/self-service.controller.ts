@@ -3,6 +3,7 @@ import { stat } from 'node:fs/promises';
 import type { FastifyReply } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import type { PresenceStatus } from './self-service.types.js';
 import { db } from '../../db/client.js';
 import { authenticate } from '../auth/authenticate.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
@@ -25,6 +26,8 @@ const service = new SelfServiceService(repo);
 
 const DndBodySchema = z.object({ enabled: z.boolean() });
 const UuidParamsSchema = z.object({ id: z.string().uuid() });
+const PRESENCE_STATUSES = ['available', 'away', 'busy', 'dnd', 'offline'] as const;
+const PresenceBodySchema = z.object({ status: z.enum(PRESENCE_STATUSES) });
 
 const CallForwardBodySchema = z.object({
   enabled: z.boolean(),
@@ -257,6 +260,31 @@ export const selfServiceMeController: FastifyPluginAsyncZod = async (app) => {
     } catch (err) {
       return handleSelfServiceError(err, reply);
     }
+  });
+
+  app.get('/presence', async (req) => {
+    const user = req.user as AuthClaims;
+    return { data: await service.getPresence(user.sub, user.tenant_id) };
+  });
+
+  app.put('/presence', { schema: { body: PresenceBodySchema } }, async (req) => {
+    const user = req.user as AuthClaims;
+    const presence = await service.setPresence(user.sub, user.tenant_id, req.body.status as PresenceStatus);
+    fireAuditEvent({
+      tenant_id: user.tenant_id,
+      actor_id: user.sub,
+      actor_role: user.role,
+      action: 'self_service.presence_updated',
+      resource_type: 'user_presence',
+      resource_id: user.sub,
+      metadata: { status: req.body.status },
+    });
+    return { data: presence };
+  });
+
+  app.get('/contacts', async (req) => {
+    const user = req.user as AuthClaims;
+    return { data: await service.listContacts(user.tenant_id) };
   });
 };
 

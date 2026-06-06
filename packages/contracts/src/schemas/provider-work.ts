@@ -20,6 +20,23 @@ export const IntegrationProviderSchema = z.enum([
 ]);
 export type IntegrationProvider = z.infer<typeof IntegrationProviderSchema>;
 
+export const AiRiskLevelSchema = z.enum(['low', 'medium', 'high']);
+export type AiRiskLevel = z.infer<typeof AiRiskLevelSchema>;
+
+export const AiAssistedContextSchema = z.object({
+  source_request_type: z.enum(['prompt_generation', 'ivr_ai_turn']).optional(),
+  source_request_id: z.string().uuid().optional(),
+  prompt_template_id: z.string().min(1).max(255).optional(),
+  prompt_summary: z.string().min(1).max(1000).optional(),
+  normalized_input: z.string().min(1).max(2000).optional(),
+  output_summary: z.string().min(1).max(2000).optional(),
+  provider: IntegrationProviderSchema.optional(),
+  model: z.string().min(1).max(255).optional(),
+  risk_level: AiRiskLevelSchema.optional(),
+  risk_summary: z.string().min(1).max(1000).optional(),
+}).openapi('AiAssistedContext');
+export type AiAssistedContext = z.infer<typeof AiAssistedContextSchema>;
+
 // ── Resource schemas ──────────────────────────────────────────────────────────
 export const PromptGenerationRequestSchema = z.object({
   id: z.string().uuid(),

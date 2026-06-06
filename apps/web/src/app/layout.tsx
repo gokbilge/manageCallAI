@@ -13,7 +13,7 @@ export function AppLayout() {
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-fg)]">
       <TopBar workspace={workspace} />
       <AlphaBanner />
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-[112rem] grid-cols-[17rem_minmax(0,1fr)_20rem] gap-6 px-6 py-6">
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-[112rem] gap-6 px-4 py-6 sm:px-6 xl:grid-cols-[17rem_minmax(0,1fr)_20rem]">
         <AppSidebar workspace={workspace} pathname={location.pathname} />
         <main className="min-w-0">
           <Outlet />

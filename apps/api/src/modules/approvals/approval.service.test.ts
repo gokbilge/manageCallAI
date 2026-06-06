@@ -30,10 +30,11 @@ function makeApprovalRequest(
     requested_by: 'user-1',
     status: 'pending',
     created_at: now,
+    metadata: {},
     flow_name: 'Test Flow',
     action_type: 'publish',
     ...overrides,
-  };
+  } as ApprovalRequestWithDetails;
 }
 
 function makePublishRecord(overrides: Partial<PendingPublishRecord> = {}): PendingPublishRecord {
@@ -125,8 +126,10 @@ describe('ApprovalService', () => {
         flow_id: FLOW_ID,
         version_id: VERSION_ID,
         triggered_by_id: APPROVER_ID,
+        approval_request_id: APPROVAL_ID,
+        metadata: {},
       });
-      expect(approvalRepo.markApproved).toHaveBeenCalledWith(APPROVAL_ID, TENANT_ID);
+      expect(approvalRepo.markApproved).toHaveBeenCalledWith(APPROVAL_ID, TENANT_ID, APPROVER_ID);
       expect(approvalRepo.writeAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'approve', object_id: APPROVAL_ID }),
       );
@@ -155,6 +158,8 @@ describe('ApprovalService', () => {
         tenant_id: TENANT_ID,
         flow_id: FLOW_ID,
         triggered_by_id: APPROVER_ID,
+        approval_request_id: APPROVAL_ID,
+        metadata: {},
       });
       expect(result.action_type).toBe('rollback');
       expect(result.publish_result).toBe('success');
@@ -199,7 +204,7 @@ describe('ApprovalService', () => {
 
       const result = await service.reject(APPROVAL_ID, TENANT_ID, APPROVER_ID);
 
-      expect(approvalRepo.markRejected).toHaveBeenCalledWith(APPROVAL_ID, TENANT_ID);
+      expect(approvalRepo.markRejected).toHaveBeenCalledWith(APPROVAL_ID, TENANT_ID, APPROVER_ID);
       expect(approvalRepo.updatePublishRecordResult).toHaveBeenCalledWith(APPROVAL_ID, 'failed');
       expect(approvalRepo.writeAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'reject', object_id: APPROVAL_ID }),

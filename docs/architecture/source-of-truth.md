@@ -232,3 +232,6 @@ workflows:
   disabled or rejected by policy
 - provider-backed prompt generation and runtime IVR AI requests remain bounded,
   capability-gated, and auditable
+- AI-originated IVR drafts persist structured lineage in API-owned metadata and
+  always require a human approval record before publish or rollback can affect
+  live call behavior

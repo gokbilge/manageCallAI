@@ -40,6 +40,7 @@ const SipTrunksPage = lazy(() => import('@/features/sip-trunks/sip-trunks-page')
 const ParkingLotsPage = lazy(() => import('@/features/parking-lots/parking-lots-page').then(m => ({ default: m.ParkingLotsPage })));
 const AuditLogPage = lazy(() => import('@/features/audit/audit-log-page').then(m => ({ default: m.AuditLogPage })));
 const SelfServicePage = lazy(() => import('@/features/user/self-service-page').then(m => ({ default: m.SelfServicePage })));
+const ContactsDirectoryPage = lazy(() => import('@/features/user/contacts-directory-page').then(m => ({ default: m.ContactsDirectoryPage })));
 const ExportPage = lazy(() => import('@/features/export/export-page').then(m => ({ default: m.ExportPage })));
 const CarrierHealthPage = lazy(() => import('@/features/integrations/carrier-health-page').then(m => ({ default: m.CarrierHealthPage })));
 const ReportingPage = lazy(() => import('@/features/reporting/reporting-page').then(m => ({ default: m.ReportingPage })));
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
           },
           { path: 'tenant', element: <Navigate to="/tenant/extensions" replace /> },
           { path: 'tenant/me', element: <Suspense fallback={<PageLoader />}><SelfServicePage /></Suspense> },
+          { path: 'tenant/contacts', element: <Suspense fallback={<PageLoader />}><ContactsDirectoryPage /></Suspense> },
           { path: 'tenant/dashboard', element: <TenantDashboardPage /> },
           { path: 'tenant/cockpit', element: <Suspense fallback={<PageLoader />}><ObservabilityCockpitPage /></Suspense> },
           { path: 'tenant/extensions', element: <ExtensionsPage /> },

@@ -20,6 +20,7 @@ export type FlowVersion = {
   validated_at: string | null;
   simulated_at: string | null;
   published_at: string | null;
+  metadata: Record<string, unknown>;
 };
 
 export type IvrFlow = {
@@ -133,6 +134,7 @@ export type FlowHistory = {
     decision_at: string | null;
     result: 'success' | 'failed' | 'pending_approval';
     created_at: string;
+    metadata: Record<string, unknown>;
   }>;
   audits: Array<{
     id: string;

@@ -3582,6 +3582,9 @@ components:
             - string
             - "null"
           format: date-time
+        metadata:
+          type: object
+          additionalProperties: {}
       required:
         - id
         - tenant_id
@@ -3594,6 +3597,7 @@ components:
         - validated_at
         - simulated_at
         - published_at
+        - metadata
     IvrFlow:
       type: object
       properties:
@@ -3982,6 +3986,9 @@ components:
         created_at:
           type: string
           format: date-time
+        metadata:
+          type: object
+          additionalProperties: {}
       required:
         - id
         - version_id
@@ -3993,6 +4000,7 @@ components:
         - decision_at
         - result
         - created_at
+        - metadata
     FlowAuditHistoryEntry:
       type: object
       properties:
@@ -4050,6 +4058,56 @@ components:
         - simulations
         - publishes
         - audits
+    AiAssistedContext:
+      type: object
+      properties:
+        source_request_type:
+          type: string
+          enum:
+            - prompt_generation
+            - ivr_ai_turn
+        source_request_id:
+          type: string
+          format: uuid
+        prompt_template_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        prompt_summary:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        normalized_input:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        output_summary:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        provider:
+          type: string
+          enum: &a29
+            - auto
+            - openai
+            - elevenlabs
+            - whisper
+            - external
+            - custom
+        model:
+          type: string
+          minLength: 1
+          maxLength: 255
+        risk_level:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+        risk_summary:
+          type: string
+          minLength: 1
+          maxLength: 1000
     CreateIvrFlowBody:
       type: object
       properties:
@@ -4061,6 +4119,8 @@ components:
         graph_json:
           type: object
           additionalProperties: {}
+        ai_context:
+          $ref: "#/components/schemas/AiAssistedContext"
       required:
         - name
         - graph_json
@@ -4086,6 +4146,8 @@ components:
         definition:
           type: object
           additionalProperties: {}
+        ai_context:
+          $ref: "#/components/schemas/AiAssistedContext"
     ApprovalRequest:
       type: object
       properties:
@@ -4120,6 +4182,9 @@ components:
         created_at:
           type: string
           format: date-time
+        metadata:
+          type: object
+          additionalProperties: {}
       required:
         - id
         - tenant_id
@@ -4129,6 +4194,7 @@ components:
         - requested_by
         - status
         - created_at
+        - metadata
     ApprovalRequestWithDetails:
       allOf:
         - $ref: "#/components/schemas/ApprovalRequest"
@@ -6501,13 +6567,7 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: &a29
-            - auto
-            - openai
-            - elevenlabs
-            - whisper
-            - external
-            - custom
+          enum: *a29
         status:
           type: string
           enum: &a30

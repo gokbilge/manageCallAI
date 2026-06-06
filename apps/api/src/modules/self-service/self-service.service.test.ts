@@ -89,6 +89,16 @@ function makeRepo(overrides: Partial<SelfServiceRepository> = {}): SelfServiceRe
     updateSipCredential: vi.fn().mockResolvedValue(makeResetResult()),
     findPolicy: vi.fn().mockResolvedValue(makePolicy()),
     upsertPolicy: vi.fn().mockResolvedValue(makePolicy()),
+    findPresence: vi.fn().mockResolvedValue(null),
+    upsertPresence: vi.fn().mockResolvedValue({
+      user_id: 'user-1',
+      tenant_id: 'tenant-1',
+      status: 'available',
+      updated_at: new Date(),
+    }),
+    listDirectoryContacts: vi.fn().mockResolvedValue([
+      { extension_id: 'ext-1', extension_number: '101', display_name: 'Alice', presence_status: null },
+    ]),
     ...overrides,
   } as unknown as SelfServiceRepository;
 }
@@ -344,6 +354,40 @@ describe('SelfServiceService', () => {
       repo = makeRepo({ findPolicy: vi.fn().mockResolvedValue(makePolicy({ device_view: false })) });
       service = new SelfServiceService(repo);
       await expect(service.revokeDevice('user-1', 'tenant-1', 'dev-1')).rejects.toThrow(SelfServiceCapabilityError);
+    });
+  });
+
+  describe('getPresence', () => {
+    it('returns stored presence when it exists', async () => {
+      repo = makeRepo({
+        findPresence: vi.fn().mockResolvedValue({
+          user_id: 'user-1', tenant_id: 'tenant-1', status: 'busy', updated_at: new Date(),
+        }),
+      });
+      service = new SelfServiceService(repo);
+      const result = await service.getPresence('user-1', 'tenant-1');
+      expect(result.status).toBe('busy');
+    });
+
+    it('returns default available status when no row exists', async () => {
+      const result = await service.getPresence('user-1', 'tenant-1');
+      expect(result.status).toBe('available');
+    });
+  });
+
+  describe('setPresence', () => {
+    it('upserts presence via repository', async () => {
+      const result = await service.setPresence('user-1', 'tenant-1', 'away');
+      expect(repo.upsertPresence).toHaveBeenCalledWith('user-1', 'tenant-1', 'away');
+      expect(result.status).toBe('available');
+    });
+  });
+
+  describe('listContacts', () => {
+    it('returns directory contacts from repository', async () => {
+      const contacts = await service.listContacts('tenant-1');
+      expect(contacts).toHaveLength(1);
+      expect(contacts[0]?.display_name).toBe('Alice');
     });
   });
 });

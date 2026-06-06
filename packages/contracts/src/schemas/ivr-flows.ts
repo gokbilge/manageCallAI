@@ -1,4 +1,5 @@
 import { z } from '../registry.js';
+import { AiAssistedContextSchema } from './provider-work.js';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 export const FlowVersionStateSchema = z.enum([
@@ -27,6 +28,7 @@ export const FlowVersionSchema = z.object({
   validated_at: z.string().datetime().nullable(),
   simulated_at: z.string().datetime().nullable(),
   published_at: z.string().datetime().nullable(),
+  metadata: z.record(z.unknown()),
 }).openapi('FlowVersion');
 export type FlowVersion = z.infer<typeof FlowVersionSchema>;
 
@@ -164,6 +166,7 @@ export const FlowPublishHistoryEntrySchema = z.object({
   decision_at: z.string().datetime().nullable(),
   result: z.enum(['success', 'failed', 'pending_approval']),
   created_at: z.string().datetime(),
+  metadata: z.record(z.unknown()),
 }).openapi('FlowPublishHistoryEntry');
 export type FlowPublishHistoryEntry = z.infer<typeof FlowPublishHistoryEntrySchema>;
 
@@ -190,6 +193,7 @@ export const CreateIvrFlowBodySchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   graph_json: z.record(z.unknown()),
+  ai_context: AiAssistedContextSchema.optional(),
 }).openapi('CreateIvrFlowBody');
 export type CreateIvrFlowBody = z.infer<typeof CreateIvrFlowBodySchema>;
 
@@ -203,6 +207,7 @@ export type UpdateIvrFlowBody = z.infer<typeof UpdateIvrFlowBodySchema>;
 export const CreateFlowVersionBodySchema = z.object({
   graph_json: z.record(z.unknown()).optional(),
   definition: z.record(z.unknown()).optional(),
+  ai_context: AiAssistedContextSchema.optional(),
 }).openapi('CreateFlowVersionBody');
 export type CreateFlowVersionBody = z.infer<typeof CreateFlowVersionBodySchema>;
 

@@ -7,6 +7,7 @@ export interface ApprovalRequest {
   requested_by: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'expired';
   created_at: Date;
+  metadata: Record<string, unknown>;
 }
 
 export interface ApprovalRequestWithDetails extends ApprovalRequest {

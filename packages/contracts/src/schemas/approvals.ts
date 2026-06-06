@@ -14,6 +14,7 @@ export const ApprovalRequestSchema = z.object({
   requested_by: z.string().uuid().nullable(),
   status: ApprovalStatusSchema,
   created_at: z.string().datetime(),
+  metadata: z.record(z.unknown()),
 }).openapi('ApprovalRequest');
 export type ApprovalRequest = z.infer<typeof ApprovalRequestSchema>;
 

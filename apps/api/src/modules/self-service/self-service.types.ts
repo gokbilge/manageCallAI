@@ -83,3 +83,19 @@ export interface RevokeDeviceResult {
   id: string;
   revoked: true;
 }
+
+export type PresenceStatus = 'available' | 'away' | 'busy' | 'dnd' | 'offline';
+
+export interface UserPresence {
+  user_id: string;
+  tenant_id: string;
+  status: PresenceStatus;
+  updated_at: Date;
+}
+
+export interface DirectoryContact {
+  extension_id: string;
+  extension_number: string;
+  display_name: string;
+  presence_status: PresenceStatus | null;
+}

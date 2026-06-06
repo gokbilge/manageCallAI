@@ -595,10 +595,10 @@ describe('Repository coverage', () => {
     await expect(approvals.findById('approval-1', 'tenant-1')).resolves.toMatchObject({ id: 'approval-1' });
     await expect(approvals.findById('missing', 'tenant-1')).resolves.toBeNull();
     await expect(approvals.findAssociatedPublishRecord('approval-1')).resolves.toMatchObject({ id: 'publish-1' });
-    await expect(approvals.markApproved('approval-1', 'tenant-1')).resolves.toBe(true);
-    await expect(approvals.markApproved('missing', 'tenant-1')).resolves.toBe(false);
-    await expect(approvals.markRejected('approval-1', 'tenant-1')).resolves.toBe(true);
-    await expect(approvals.markRejected('missing', 'tenant-1')).resolves.toBe(false);
+    await expect(approvals.markApproved('approval-1', 'tenant-1', 'user-1')).resolves.toBe(true);
+    await expect(approvals.markApproved('missing', 'tenant-1', 'user-1')).resolves.toBe(false);
+    await expect(approvals.markRejected('approval-1', 'tenant-1', 'user-1')).resolves.toBe(true);
+    await expect(approvals.markRejected('missing', 'tenant-1', 'user-1')).resolves.toBe(false);
     await expect(approvals.updatePublishRecordResult('approval-1', 'success')).resolves.toBeUndefined();
     await expect(approvals.writeAuditEvent({
       tenant_id: 'tenant-1',

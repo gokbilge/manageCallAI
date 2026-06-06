@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { RefreshCcw, ShieldCheck, Workflow } from 'lucide-react';
+import { RefreshCcw, ShieldCheck, Workflow, Bot } from 'lucide-react';
 import { ValidationPanel } from '@/features/ivr-builder/components/ValidationPanel';
 import { SimulationPanel } from '@/features/ivr-builder/components/SimulationPanel';
 import type { SimulationScenario } from '@/features/ivr-builder/components/SimulationPanel';
@@ -126,7 +126,15 @@ export function IvrFlowDetailPage() {
                         <p className="text-sm font-medium">Version {version.version_number}</p>
                         <p className="mt-1 font-mono text-xs text-[var(--color-muted-fg)]">{version.id}</p>
                       </div>
-                      <StatusBadge status={version.state === 'published' ? 'published' : version.state} />
+                      <div className="flex items-center gap-2">
+                        {readAiLineage(version.metadata) ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]">
+                            <Bot className="size-3" aria-hidden="true" />
+                            AI
+                          </span>
+                        ) : null}
+                        <StatusBadge status={version.state === 'published' ? 'published' : version.state} />
+                      </div>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--color-muted-fg)]">
                       <span>Validated: {version.validated_at ? 'yes' : 'no'}</span>
@@ -201,7 +209,11 @@ export function IvrFlowDetailPage() {
                 <HistorySection title="Publish Activity" items={historyQuery.data.publishes.map((item) => ({
                   id: item.id,
                   label: `${item.action_type} • ${item.result} • ${new Date(item.created_at).toLocaleString()}`,
-                  meta: item.approval_status ? `approval: ${item.approval_status}` : item.version_id ?? 'no version',
+                  meta: [
+                    item.approval_status ? `approval: ${item.approval_status}` : null,
+                    item.version_id ?? 'no version',
+                    readAiLineage(item.metadata) ? 'AI suggested' : null,
+                  ].filter(Boolean).join(' • '),
                 }))} />
                 <HistorySection title="Audit Events" items={historyQuery.data.audits.map((item) => ({
                   id: item.id,
@@ -323,4 +335,14 @@ function ErrorState({ message }: { message: string }) {
       {message}
     </div>
   );
+}
+
+function readAiLineage(metadata: Record<string, unknown> | null | undefined) {
+  const lineage = metadata?.ai_lineage;
+  if (!lineage || typeof lineage !== 'object') {
+    return null;
+  }
+
+  const record = lineage as Record<string, unknown>;
+  return record.ai_assisted === true ? record : null;
 }
