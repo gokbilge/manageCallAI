@@ -46,3 +46,6 @@ export * from './schemas/campaigns.js';
 export * from './schemas/supervisor-controls.js';
 export * from './schemas/queue-callbacks.js';
 export * from './schemas/supervisor-dashboard.js';
+export * from './schemas/dispositions.js';
+export * from './schemas/qa-scoring.js';
+export * from './schemas/supervisor-artifact-search.js';

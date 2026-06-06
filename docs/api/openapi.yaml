@@ -4473,6 +4473,15 @@ components:
               - tenant.supervisor.controls.manage
               - tenant.queue_callbacks.view
               - tenant.queue_callbacks.manage
+              - tenant.dispositions.view
+              - tenant.dispositions.manage
+              - tenant.call_notes.view
+              - tenant.call_notes.manage
+              - tenant.qa.scorecards.view
+              - tenant.qa.scorecards.manage
+              - tenant.qa.reviews.view
+              - tenant.qa.reviews.manage
+              - tenant.supervisor.artifact_search
               - "*"
         created_by:
           type:
