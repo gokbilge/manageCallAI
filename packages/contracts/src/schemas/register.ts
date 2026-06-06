@@ -33,6 +33,8 @@ import * as responses from './responses.js';
 import * as featureCodes from './feature-codes.js';
 import * as runtimeApply from './runtime-apply.js';
 import * as carrierAssistant from './carrier-assistant.js';
+import * as crmIntegrations from './crm-integrations.js';
+import * as campaigns from './campaigns.js';
 
 // common
 registry.register('ErrorResponse', common.ErrorResponseSchema);
@@ -327,6 +329,22 @@ registry.register('FailureFact', callFailureExplanation.FailureFactSchema);
 registry.register('ExplainEventSummary', callFailureExplanation.ExplainEventSummarySchema);
 registry.register('CallFailureExplanation', callFailureExplanation.CallFailureExplanationSchema);
 registry.register('CallFailureExplainRequest', callFailureExplanation.CallFailureExplainRequestSchema);
+
+// crm-integrations
+registry.register('CrmIntegration', crmIntegrations.CrmIntegrationSchema);
+registry.register('CrmLookupLog', crmIntegrations.CrmLookupLogSchema);
+registry.register('CreateCrmIntegrationBody', crmIntegrations.CreateCrmIntegrationBodySchema);
+registry.register('UpdateCrmIntegrationBody', crmIntegrations.UpdateCrmIntegrationBodySchema);
+registry.register('CrmLookupBody', crmIntegrations.CrmLookupBodySchema);
+
+// campaigns
+registry.register('Campaign', campaigns.CampaignSchema);
+registry.register('CampaignContact', campaigns.CampaignContactSchema);
+registry.register('CampaignAssignment', campaigns.CampaignAssignmentSchema);
+registry.register('CreateCampaignBody', campaigns.CreateCampaignBodySchema);
+registry.register('UpdateCampaignBody', campaigns.UpdateCampaignBodySchema);
+registry.register('AddCampaignContactBody', campaigns.AddCampaignContactBodySchema);
+registry.register('AssignCampaignAgentBody', campaigns.AssignCampaignAgentBodySchema);
 
 // contact-center
 import * as contactCenter from './contact-center.js';

@@ -4839,6 +4839,12 @@ components:
               - tenant.contact_center.wallboard.view
               - tenant.contact_center.dispositions.manage
               - tenant.contact_center.qa.manage
+              - tenant.crm.integrations.view
+              - tenant.crm.integrations.manage
+              - tenant.crm.lookup
+              - tenant.campaigns.view
+              - tenant.campaigns.manage
+              - tenant.campaigns.contacts.manage
               - "*"
         created_by:
           type:
@@ -8831,6 +8837,378 @@ components:
           maxLength: 256
       required:
         - call_id
+    CrmIntegration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        provider:
+          type: string
+          enum: &a34
+            - salesforce
+            - hubspot
+            - zoho
+            - dynamics365
+            - generic_webhook
+        lookup_url_template:
+          type: string
+        payload_template:
+          type: object
+          additionalProperties: {}
+        status:
+          type: string
+          enum: &a35
+            - active
+            - inactive
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - provider
+        - lookup_url_template
+        - payload_template
+        - status
+        - created_at
+        - updated_at
+    CrmLookupLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        crm_integration_id:
+          type: string
+          format: uuid
+        call_uuid:
+          type: string
+        caller_id:
+          type: string
+        outcome:
+          type: string
+          enum:
+            - found
+            - not_found
+            - error
+        response_summary:
+          type:
+            - string
+            - "null"
+        error_detail:
+          type:
+            - string
+            - "null"
+        looked_up_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - crm_integration_id
+        - call_uuid
+        - caller_id
+        - outcome
+        - response_summary
+        - error_detail
+        - looked_up_at
+    CreateCrmIntegrationBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        provider:
+          type: string
+          enum: *a34
+        lookup_url_template:
+          type: string
+          minLength: 1
+        payload_template:
+          type: object
+          additionalProperties: {}
+      required:
+        - name
+        - provider
+        - lookup_url_template
+    UpdateCrmIntegrationBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        lookup_url_template:
+          type: string
+          minLength: 1
+        payload_template:
+          type: object
+          additionalProperties: {}
+        status:
+          type: string
+          enum: *a35
+    CrmLookupBody:
+      type: object
+      properties:
+        call_uuid:
+          type: string
+          minLength: 1
+        caller_id:
+          type: string
+          minLength: 1
+      required:
+        - call_uuid
+        - caller_id
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        campaign_type:
+          type: string
+          enum: &a36
+            - outbound_preview
+            - outbound_progressive
+        status:
+          type: string
+          enum:
+            - draft
+            - active
+            - paused
+            - completed
+            - cancelled
+        outbound_route_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        max_concurrent_calls:
+          type: integer
+        schedule_start_time:
+          type:
+            - string
+            - "null"
+        schedule_end_time:
+          type:
+            - string
+            - "null"
+        schedule_timezone:
+          type: string
+        started_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - description
+        - campaign_type
+        - status
+        - outbound_route_id
+        - max_concurrent_calls
+        - schedule_start_time
+        - schedule_end_time
+        - schedule_timezone
+        - started_at
+        - completed_at
+        - created_at
+        - updated_at
+    CampaignContact:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        campaign_id:
+          type: string
+          format: uuid
+        phone_number:
+          type: string
+        display_name:
+          type:
+            - string
+            - "null"
+        context:
+          type: object
+          additionalProperties: {}
+        dial_state:
+          type: string
+          enum:
+            - pending
+            - dialing
+            - reached
+            - no_answer
+            - failed
+            - skipped
+        attempt_count:
+          type: integer
+        last_attempted_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - campaign_id
+        - phone_number
+        - display_name
+        - context
+        - dial_state
+        - attempt_count
+        - last_attempted_at
+        - created_at
+    CampaignAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        campaign_id:
+          type: string
+          format: uuid
+        agent_profile_id:
+          type: string
+          format: uuid
+        assigned_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - campaign_id
+        - agent_profile_id
+        - assigned_at
+    CreateCampaignBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        campaign_type:
+          type: string
+          enum: *a36
+        outbound_route_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        max_concurrent_calls:
+          type: integer
+          minimum: 1
+          maximum: 50
+        schedule_start_time:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{2}:\d{2}$
+        schedule_end_time:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{2}:\d{2}$
+        schedule_timezone:
+          type: string
+      required:
+        - name
+    UpdateCampaignBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type:
+            - string
+            - "null"
+        outbound_route_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        max_concurrent_calls:
+          type: integer
+          minimum: 1
+          maximum: 50
+        schedule_start_time:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{2}:\d{2}$
+        schedule_end_time:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{2}:\d{2}$
+        schedule_timezone:
+          type: string
+    AddCampaignContactBody:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+        display_name:
+          type: string
+        context:
+          type: object
+          additionalProperties: {}
+      required:
+        - phone_number
+    AssignCampaignAgentBody:
+      type: object
+      properties:
+        agent_profile_id:
+          type: string
+          format: uuid
+      required:
+        - agent_profile_id
     QueueSlaPolicy:
       type: object
       properties:
@@ -8910,7 +9288,7 @@ components:
           type: integer
         status:
           type: string
-          enum: &a34
+          enum: &a37
             - active
             - inactive
         created_at:
@@ -8957,7 +9335,7 @@ components:
           maximum: 10000
         status:
           type: string
-          enum: *a34
+          enum: *a37
       required:
         - code
         - label
@@ -8988,7 +9366,7 @@ components:
           maximum: 10000
         status:
           type: string
-          enum: *a34
+          enum: *a37
     CallDisposition:
       type: object
       properties:
@@ -9137,7 +9515,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a35
+          enum: &a38
             - active
             - inactive
         criteria_json:
@@ -9201,7 +9579,7 @@ components:
           maxLength: 1000
         status:
           type: string
-          enum: *a35
+          enum: *a38
         criteria_json:
           type: array
           items:
@@ -9246,7 +9624,7 @@ components:
           maxLength: 1000
         status:
           type: string
-          enum: *a35
+          enum: *a38
         criteria_json:
           type: array
           items:
@@ -9315,7 +9693,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: &a36
+          enum: &a39
             - draft
             - completed
             - acknowledged
@@ -9461,7 +9839,7 @@ components:
           maxLength: 4000
         status:
           type: string
-          enum: *a36
+          enum: *a39
       required:
         - call_id
         - scorecard_id
@@ -9528,7 +9906,7 @@ components:
           maxLength: 4000
         status:
           type: string
-          enum: *a36
+          enum: *a39
     QaSummary:
       type: object
       properties:

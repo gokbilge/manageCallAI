@@ -65,6 +65,8 @@ import { incidentInvestigationController } from './modules/incident-investigatio
 import { agentProfileController, agentWorkspaceMeController, queueAgentAvailabilityController } from './modules/agent-workspace/agent-workspace.controller.js';
 import { skillController, agentProfileSkillController, queueSkillController } from './modules/skills/skills.controller.js';
 import { contactCenterController } from './modules/contact-center/contact-center.controller.js';
+import { crmIntegrationController } from './modules/crm-integrations/crm-integrations.controller.js';
+import { campaignController } from './modules/campaigns/campaigns.controller.js';
 import { setupController } from './modules/setup/setup.controller.js';
 import { db } from './db/client.js';
 import { registerErrorHandler } from './errors/index.js';
@@ -129,6 +131,9 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(skillController, { prefix: '/api/v1/skills' });
   app.register(queueSkillController, { prefix: '/api/v1/queues' });
   app.register(contactCenterController, { prefix: '/api/v1/contact-center' });
+  // Contact-center: CRM screen-pop (#281), campaign management (#282)
+  app.register(crmIntegrationController, { prefix: '/api/v1/crm-integrations' });
+  app.register(campaignController, { prefix: '/api/v1/campaigns' });
 }
 
 /**
