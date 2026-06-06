@@ -125,8 +125,8 @@ export class AiRecommendationRepository {
 
   async findPhoneNumbersForRoute(routeId: string, tenantId: string): Promise<PhoneNumberRow[]> {
     const result = await this.db.query<PhoneNumberRow>(
-      `SELECT id, number, status FROM phone_numbers
-       WHERE inbound_route_id = $1 AND tenant_id = $2 LIMIT 50`,
+      `SELECT id, e164_number AS number, status FROM phone_numbers
+       WHERE assigned_target_id = $1 AND assigned_target_type = 'inbound_route' AND tenant_id = $2 LIMIT 50`,
       [routeId, tenantId],
     );
     return result.rows;
@@ -158,27 +158,27 @@ export class AiRecommendationRepository {
     tenantId: string,
     definition: Record<string, unknown>,
     createdBy: string,
-    metadata: Record<string, unknown>,
+    _metadata: Record<string, unknown>,
   ): Promise<string> {
     const numResult = await this.db.query<{ max: string | null }>(
       `SELECT MAX(version_number) as max FROM route_versions
-       WHERE route_id = $1 AND tenant_id = $2`,
+       WHERE route_id = $1 AND tenant_id = $2 AND route_type = 'inbound'`,
       [routeId, tenantId],
     );
     const nextNum = (parseInt(numResult.rows[0]?.max ?? '0', 10) || 0) + 1;
 
     const result = await this.db.query<{ id: string }>(
       `INSERT INTO route_versions
-         (tenant_id, route_type, route_id, version_number, definition, created_by, metadata)
-       VALUES ($1, 'inbound', $2, $3, $4::jsonb, $5, $6::jsonb)
+         (tenant_id, route_type, route_id, version_number, definition, created_by)
+       VALUES ($1, 'inbound', $2, $3, $4::jsonb, $5)
        RETURNING id`,
-      [tenantId, routeId, nextNum, JSON.stringify(definition), createdBy, JSON.stringify(metadata)],
+      [tenantId, routeId, nextNum, JSON.stringify(definition), createdBy],
     );
     const versionId = result.rows[0]!.id;
 
     await this.db.query(
-      `UPDATE inbound_routes SET draft_version_id = $2 WHERE id = $1`,
-      [routeId, versionId],
+      `UPDATE inbound_routes SET draft_version_id = $2 WHERE id = $1 AND tenant_id = $3`,
+      [routeId, versionId, tenantId],
     );
 
     return versionId;

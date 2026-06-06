@@ -105,13 +105,16 @@ export class IncidentInvestigationRepository {
     return result.rows;
   }
 
-  async findGatewayStatus(tenantId: string): Promise<GatewayStatusRow[]> {
+  async findGatewayStatus(_tenantId: string): Promise<GatewayStatusRow[]> {
     const result = await this.db.query<GatewayStatusRow>(
-      `SELECT gateway_name, state, ping_time_ms, updated_at
-       FROM freeswitch_node_status_snapshots
-       WHERE tenant_id = $1
-       ORDER BY updated_at DESC LIMIT 20`,
-      [tenantId],
+      `SELECT n.display_name AS gateway_name,
+              CASE WHEN s.missing_required_modules = '{}' THEN 'up' ELSE 'degraded' END AS state,
+              NULL::int AS ping_time_ms,
+              s.queried_at AS updated_at
+       FROM freeswitch_node_status_snapshots s
+       JOIN freeswitch_nodes n ON n.id = s.node_id
+       WHERE n.status = 'active'
+       ORDER BY s.queried_at DESC LIMIT 20`,
     );
     return result.rows;
   }
