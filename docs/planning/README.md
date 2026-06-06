@@ -27,9 +27,13 @@ If a planning document conflicts with the architecture docs, architecture wins.
 - [competitive-gap-analysis.md](competitive-gap-analysis.md)
   Competitive audit of PBX completeness, operator UX, runtime operations, integrations, enterprise posture, and AI gaps versus mature PBX products.
 
-- [pbx-migration-gap-analysis.md](pbx-migration-gap-analysis.md)
+- [../migration/pbx-capability-gap-analysis.md](../migration/pbx-capability-gap-analysis.md)
   Strategic PBX migration gap analysis covering target-model requirements,
   migration safety, and source-system mapping scope.
+
+- [migration-readiness-roadmap.md](migration-readiness-roadmap.md)
+  Two-epic migration/adoption roadmap covering readiness analysis first and the
+  draft-only migration assistant later.
 
 Planning baseline for the next feature releases:
 
@@ -59,9 +63,25 @@ Current queue state:
   Release and slice plan for enterprise PBX model expansion, later migration
   analysis, and later importer workflows.
 
-- [pbx-migration-gap-analysis.md](pbx-migration-gap-analysis.md)
+- [../migration/pbx-capability-gap-analysis.md](../migration/pbx-capability-gap-analysis.md)
   Strategic migration gap analysis that feeds the release train and later
   migration-readiness planning.
+
+- [../migration/source-system-capability-matrix.md](../migration/source-system-capability-matrix.md)
+  Conservative matrix of source PBX capabilities against manageCallAI's target
+  model.
+
+- [../migration/managecallai-target-capability-model.md](../migration/managecallai-target-capability-model.md)
+  Migration-oriented inventory of implemented, open, and deferred target
+  capabilities with issue references.
+
+- [../migration/import-support-levels.md](../migration/import-support-levels.md)
+  Shared taxonomy for exact, equivalent, approximate, manual-review,
+  unsupported, and unknown import classifications.
+
+- [migration-readiness-roadmap.md](migration-readiness-roadmap.md)
+  Release placement and workload split for the Migration Readiness Gap Analysis
+  and PBX Migration Assistant MVP epics.
 
 - [verification/slice-07-live-proof.md](verification/slice-07-live-proof.md)
   Live close-out checklist for the inbound IVR and call-group runtime proof.

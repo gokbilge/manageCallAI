@@ -52,6 +52,15 @@ Planned enterprise-model additions tracked in `#300` through `#315`:
 - ScheduleGroup
 - HolidayCalendar
 
+Planned migration/adoption entities:
+
+- MigrationSource
+- CanonicalMigrationSnapshot
+- CompatibilityReport
+- ManualReviewItem
+- MigrationDraftImport
+- MigrationEvidenceBundle
+
 ### 3.3 Lifecycle and governance
 
 - FlowVersion
@@ -215,6 +224,31 @@ presentation from the flat extension-centric baseline.
 
 Planned in `#311` through `#313` to represent enterprise business-hours,
 closure, and override behavior.
+
+### MigrationSource and CanonicalMigrationSnapshot
+
+Planned for the post-`v0.8.x` migration-assistant lane to represent source
+metadata, normalized imported inventory, source references, hashes, confidence
+scores, and unsupported-item inventories.
+
+### CompatibilityReport and ManualReviewItem
+
+Planned to capture exact/equivalent/approximate/manual/unsupported/unknown
+classification for source objects, plus operator-visible rationale.
+
+### MigrationEvidenceBundle
+
+Planned to capture source snapshot hash, compatibility output, draft object
+references, validation/simulation results, manual review decisions, cutover
+checklist state, runtime smoke evidence, and rollback guidance.
+
+## 8. Migration and Adoption Toolkit
+
+manageCallAI will support migration through a staged, evidence-based process:
+source discovery, compatibility analysis, draft import, validation, simulation,
+operator approval, cutover checklist, runtime smoke, and rollback evidence.
+
+The importer must not auto-publish live objects or execute source custom logic.
 
 ## 6. Lifecycle and operational entities
 

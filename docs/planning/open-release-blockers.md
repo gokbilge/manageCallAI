@@ -97,6 +97,14 @@ All production gates closed for v0.3.0.
 
 No open release blockers. New issues will be tracked in GitHub.
 
+## Migration and Adoption Toolkit
+
+manageCallAI will support migration through a staged, evidence-based process:
+source discovery, compatibility analysis, draft import, validation, simulation,
+operator approval, cutover checklist, runtime smoke, and rollback evidence.
+
+The importer must not auto-publish live objects or execute source custom logic.
+
 ## PBX Completeness Layer ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Implemented in v0.3.0
 
 All six PBX completeness features were implemented in PRs #179 and #180 (issues
