@@ -4478,6 +4478,9 @@ export interface components {
             simulated_at: string | null;
             /** Format: date-time */
             published_at: string | null;
+            metadata: {
+                [key: string]: unknown;
+            };
         };
         IvrFlow: {
             /** Format: uuid */
@@ -4626,6 +4629,9 @@ export interface components {
             result: "success" | "failed" | "pending_approval";
             /** Format: date-time */
             created_at: string;
+            metadata: {
+                [key: string]: unknown;
+            };
         };
         FlowAuditHistoryEntry: {
             /** Format: uuid */
@@ -4647,12 +4653,29 @@ export interface components {
             publishes: components["schemas"]["FlowPublishHistoryEntry"][];
             audits: components["schemas"]["FlowAuditHistoryEntry"][];
         };
+        AiAssistedContext: {
+            /** @enum {string} */
+            source_request_type?: "prompt_generation" | "ivr_ai_turn";
+            /** Format: uuid */
+            source_request_id?: string;
+            prompt_template_id?: string;
+            prompt_summary?: string;
+            normalized_input?: string;
+            output_summary?: string;
+            /** @enum {string} */
+            provider?: "auto" | "openai" | "elevenlabs" | "whisper" | "external" | "custom";
+            model?: string;
+            /** @enum {string} */
+            risk_level?: "low" | "medium" | "high";
+            risk_summary?: string;
+        };
         CreateIvrFlowBody: {
             name: string;
             description?: string;
             graph_json: {
                 [key: string]: unknown;
             };
+            ai_context?: components["schemas"]["AiAssistedContext"];
         };
         UpdateIvrFlowBody: {
             name?: string;
@@ -4667,6 +4690,7 @@ export interface components {
             definition?: {
                 [key: string]: unknown;
             };
+            ai_context?: components["schemas"]["AiAssistedContext"];
         };
         ApprovalRequest: {
             /** Format: uuid */
@@ -4684,6 +4708,9 @@ export interface components {
             status: "pending" | "approved" | "rejected" | "expired";
             /** Format: date-time */
             created_at: string;
+            metadata: {
+                [key: string]: unknown;
+            };
         };
         ApprovalRequestWithDetails: components["schemas"]["ApprovalRequest"] & {
             flow_name: string | null;

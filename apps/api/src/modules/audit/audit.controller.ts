@@ -12,6 +12,8 @@ const service = new AuditService(new AuditRepository(db));
 const AuditQuerySchema = z.object({
   action: z.string().max(100).optional(),
   resource_type: z.string().max(100).optional(),
+  actor_id: z.string().max(255).optional(),
+  actor_role: z.string().max(100).optional(),
   since: z.string().datetime().optional(),
   limit: z.string().optional(),
 });
@@ -25,11 +27,13 @@ export const auditController: FastifyPluginAsyncZod = async (app) => {
     },
     async (req) => {
       const user = req.user as AuthClaims;
-      const { action, resource_type, since, limit } = req.query;
+      const { action, resource_type, actor_id, actor_role, since, limit } = req.query;
       const parsedLimit = limit ? parseInt(limit, 10) : undefined;
       const entries = await service.getAuditLog(user.tenant_id, {
         action,
         resource_type,
+        actor_id,
+        actor_role,
         since,
         limit: parsedLimit && !isNaN(parsedLimit) ? parsedLimit : undefined,
       });

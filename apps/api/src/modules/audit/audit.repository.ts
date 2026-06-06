@@ -25,6 +25,8 @@ export interface LogAuditEventInput {
 export interface AuditLogFilter {
   action?: string;
   resource_type?: string;
+  actor_id?: string;
+  actor_role?: string;
   since?: string;
   limit?: number;
 }
@@ -61,6 +63,14 @@ export class AuditRepository {
     if (filter.resource_type) {
       conditions.push(`resource_type = $${idx++}`);
       values.push(filter.resource_type);
+    }
+    if (filter.actor_id) {
+      conditions.push(`actor_id = $${idx++}`);
+      values.push(filter.actor_id);
+    }
+    if (filter.actor_role) {
+      conditions.push(`actor_role = $${idx++}`);
+      values.push(filter.actor_role);
     }
     if (filter.since) {
       conditions.push(`created_at >= $${idx++}`);

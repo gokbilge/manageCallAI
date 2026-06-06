@@ -36,7 +36,7 @@ export class ApprovalService {
     const publishRecord = await this.approvalRepo.findAssociatedPublishRecord(id);
     if (!publishRecord) throw new ApprovalPublishRecordMissingError(id);
 
-    await this.approvalRepo.markApproved(id, tenantId);
+    await this.approvalRepo.markApproved(id, tenantId, approverId);
 
     if (publishRecord.action_type === 'publish') {
       await this.ivrFlowRepo.publish({
@@ -44,12 +44,16 @@ export class ApprovalService {
         flow_id: publishRecord.object_id,
         version_id: publishRecord.version_id,
         triggered_by_id: approverId,
+        approval_request_id: id,
+        metadata: request.metadata,
       });
     } else {
       await this.ivrFlowRepo.rollback({
         tenant_id: tenantId,
         flow_id: publishRecord.object_id,
         triggered_by_id: approverId,
+        approval_request_id: id,
+        metadata: request.metadata,
       });
     }
 
@@ -60,6 +64,7 @@ export class ApprovalService {
       action: 'approve',
       object_type: 'approval_request',
       object_id: id,
+      metadata: request.metadata,
     });
 
     const updated = await this.approvalRepo.findById(id, tenantId);
@@ -77,7 +82,7 @@ export class ApprovalService {
 
     const publishRecord = await this.approvalRepo.findAssociatedPublishRecord(id);
 
-    const updated = await this.approvalRepo.markRejected(id, tenantId);
+    const updated = await this.approvalRepo.markRejected(id, tenantId, rejecterId);
     if (!updated) throw new ApprovalAlreadyDecidedError('decided');
 
     if (publishRecord) {
@@ -90,6 +95,7 @@ export class ApprovalService {
       action: 'reject',
       object_type: 'approval_request',
       object_id: id,
+      metadata: request.metadata,
     });
 
     const refreshed = await this.approvalRepo.findById(id, tenantId);

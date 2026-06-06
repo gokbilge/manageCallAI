@@ -13,6 +13,7 @@ export type ApprovalRequest = {
   requested_by: string | null;
   status: ApprovalStatus;
   created_at: string;
+  metadata: Record<string, unknown>;
   flow_name: string | null;
   action_type: 'publish' | 'rollback' | null;
 };

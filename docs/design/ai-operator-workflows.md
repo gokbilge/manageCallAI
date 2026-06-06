@@ -190,6 +190,32 @@ This foundation currently governs:
 
 It does not relax any publish, approval, or runtime-mutation boundary.
 
+## 8.2 Implemented `v0.6.1` AI audit trail and approval gate
+
+Current implementation also adds the first persisted AI-change lineage model for
+live-impacting IVR drafts:
+
+- `flow_versions.metadata` can carry structured `ai_lineage`
+- `approval_requests.metadata` preserves prompt, model, provider, and risk
+  context for approvers
+- `publish_records.metadata` preserves the same lineage for publish and rollback
+  history
+- IVR drafts marked with `ai_lineage` always require human approval before they
+  can publish, even when the publishing actor would otherwise bypass tenant
+  policy
+- AI-agent initiated publish and rollback requests always enter the approval
+  queue
+- audit-log queries can now be filtered by `actor_id` and `actor_role` for
+  operator-context review
+
+Sensitive-handling rule for this slice:
+
+- the stored lineage is bounded context, not a raw full prompt transcript
+- callers may persist prompt summary, normalized input summary, output summary,
+  provider, model, and risk summary
+- raw provider secrets, raw shell/runtime handles, and unrestricted provider
+  payloads remain out of scope
+
 ## 9. Acceptance bar for a `v0.6.x` feature
 
 Each AI-assisted feature should be considered complete only when:

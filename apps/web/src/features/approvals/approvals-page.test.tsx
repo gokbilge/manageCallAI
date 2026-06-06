@@ -34,6 +34,7 @@ const pendingApproval = {
   requested_by: 'user-abc',
   status: 'pending',
   created_at: '2026-05-28T10:00:00.000Z',
+  metadata: {},
   flow_name: 'Main IVR',
   action_type: 'publish',
 };
@@ -111,6 +112,29 @@ describe('ApprovalsPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+    });
+  });
+
+  it('shows AI origin and provider context for AI-suggested approvals', async () => {
+    mockBothQueries([{
+      ...pendingApproval,
+      metadata: {
+        ai_lineage: {
+          ai_assisted: true,
+          provider: 'openai',
+          model: 'gpt-5',
+          risk_level: 'high',
+          risk_summary: 'affects main DID',
+        },
+      },
+    }]);
+
+    renderWithProviders(<ApprovalsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('AI Suggested')).toBeInTheDocument();
+      expect(screen.getByText('openai / gpt-5')).toBeInTheDocument();
+      expect(screen.getByText('high - affects main DID')).toBeInTheDocument();
     });
   });
 

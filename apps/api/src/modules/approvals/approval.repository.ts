@@ -12,7 +12,7 @@ export class ApprovalRepository {
     const r = await this.db.query<ApprovalRequestWithDetails>(
       `SELECT
          ar.id, ar.tenant_id, ar.object_type, ar.object_id, ar.version_id,
-         ar.requested_by, ar.status, ar.created_at,
+         ar.requested_by, ar.status, ar.created_at, ar.metadata,
          f.name AS flow_name,
          pr.action_type
        FROM approval_requests ar
@@ -29,7 +29,7 @@ export class ApprovalRepository {
     const r = await this.db.query<ApprovalRequestWithDetails>(
       `SELECT
          ar.id, ar.tenant_id, ar.object_type, ar.object_id, ar.version_id,
-         ar.requested_by, ar.status, ar.created_at,
+         ar.requested_by, ar.status, ar.created_at, ar.metadata,
          f.name AS flow_name,
          pr.action_type
        FROM approval_requests ar
@@ -52,22 +52,26 @@ export class ApprovalRepository {
     return r.rows[0] ?? null;
   }
 
-  async markApproved(id: string, tenantId: string): Promise<boolean> {
+  async markApproved(id: string, tenantId: string, decisionBy: string): Promise<boolean> {
     const r = await this.db.query(
       `UPDATE approval_requests
-       SET status = 'approved'
+       SET status = 'approved',
+           decision_by = $3,
+           decision_at = NOW()
        WHERE id = $1 AND tenant_id = $2 AND status = 'pending'`,
-      [id, tenantId],
+      [id, tenantId, decisionBy],
     );
     return (r.rowCount ?? 0) > 0;
   }
 
-  async markRejected(id: string, tenantId: string): Promise<boolean> {
+  async markRejected(id: string, tenantId: string, decisionBy: string): Promise<boolean> {
     const r = await this.db.query(
       `UPDATE approval_requests
-       SET status = 'rejected'
+       SET status = 'rejected',
+           decision_by = $3,
+           decision_at = NOW()
        WHERE id = $1 AND tenant_id = $2 AND status = 'pending'`,
-      [id, tenantId],
+      [id, tenantId, decisionBy],
     );
     return (r.rowCount ?? 0) > 0;
   }
@@ -85,11 +89,12 @@ export class ApprovalRepository {
     action: string;
     object_type: string;
     object_id: string;
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     await this.db.query(
-      `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id)
-       VALUES ($1, 'user', $2, $3, $4, $5)`,
-      [input.tenant_id, input.actor_id, input.action, input.object_type, input.object_id],
+      `INSERT INTO audit_events (tenant_id, actor_type, actor_id, action, object_type, object_id, metadata)
+       VALUES ($1, 'user', $2, $3, $4, $5, $6)`,
+      [input.tenant_id, input.actor_id, input.action, input.object_type, input.object_id, JSON.stringify(input.metadata ?? {})],
     );
   }
 

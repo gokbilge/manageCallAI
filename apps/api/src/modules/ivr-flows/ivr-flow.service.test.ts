@@ -37,6 +37,7 @@ function makeVersion(
     validated_at: null,
     simulated_at: null,
     published_at: null,
+    metadata: {},
     ...extra,
   };
 }
@@ -67,6 +68,7 @@ function makeApproval(): ApprovalRequestRecord {
     requested_by: USER_ID,
     status: 'pending',
     created_at: now,
+    metadata: {},
   };
 }
 
@@ -318,6 +320,46 @@ describe('IvrFlowService.publish', () => {
     expect(mockRepo.createApprovalRequest).not.toHaveBeenCalled();
   });
 
+  it('still requires approval for AI-originated drafts even when actor is platform_admin', async () => {
+    const version = makeVersion('v1', 'validated', {
+      metadata: {
+        ai_lineage: {
+          ai_assisted: true,
+          actor: { actor_type: 'ai_agent', tool_name: 'generate_ivr' },
+          provider: 'openai',
+          model: 'gpt-5',
+          requires_human_approval: true,
+        },
+      },
+    });
+    const approval = makeApproval();
+    const flowWithVersions = makeFlow({ versions: [version] });
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
+    vi.mocked(mockRepo.getActivePublishPolicy).mockResolvedValue(null);
+    vi.mocked(mockRepo.createApprovalRequest).mockResolvedValue(approval);
+    vi.mocked(mockRepo.storePendingPublishRecord).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.findById).mockResolvedValue(flowWithVersions);
+
+    const result = await service.publish(FLOW_ID, 'v1', TENANT_ID, USER_ID, 'platform_admin', 'user');
+    expect(result.status).toBe('pending_approval');
+    expect(mockRepo.publish).not.toHaveBeenCalled();
+  });
+
+  it('requires approval when the publishing actor is an AI agent', async () => {
+    const version = makeVersion('v1', 'validated');
+    const approval = makeApproval();
+    const flowWithVersions = makeFlow({ versions: [version] });
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(version);
+    vi.mocked(mockRepo.getActivePublishPolicy).mockResolvedValue(null);
+    vi.mocked(mockRepo.createApprovalRequest).mockResolvedValue(approval);
+    vi.mocked(mockRepo.storePendingPublishRecord).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.findById).mockResolvedValue(flowWithVersions);
+
+    const result = await service.publish(FLOW_ID, 'v1', TENANT_ID, USER_ID, 'platform_admin', 'ai_agent');
+    expect(result.status).toBe('pending_approval');
+    expect(mockRepo.publish).not.toHaveBeenCalled();
+  });
+
   it('creates approval request when policy requires approval and actor is tenant_admin', async () => {
     const version = makeVersion('v1', 'validated');
     const approval = makeApproval();
@@ -378,6 +420,23 @@ describe('IvrFlowService.dryRunPublish', () => {
     // No side effects — approval not created, publish not called.
     expect(mockRepo.createApprovalRequest).not.toHaveBeenCalled();
     expect(mockRepo.publish).not.toHaveBeenCalled();
+  });
+
+  it('returns pending_approval for AI-originated versions even without publish policy', async () => {
+    vi.mocked(mockRepo.findVersionById).mockResolvedValue(makeVersion('v1', 'validated', {
+      metadata: {
+        ai_lineage: {
+          ai_assisted: true,
+          actor: { actor_type: 'ai_agent' },
+          requires_human_approval: true,
+        },
+      },
+    }));
+    vi.mocked(mockRepo.getActivePublishPolicy).mockResolvedValue(null);
+
+    const result = await service.dryRunPublish(FLOW_ID, 'v1', TENANT_ID, 'user', 'platform_admin');
+    expect(result.would_become).toBe('pending_approval');
+    expect(result.require_approval).toBe(true);
   });
 
   it('returns version_state_valid=false when version is not in a publishable state', async () => {
@@ -464,6 +523,21 @@ describe('IvrFlowService.rollback', () => {
     const result = await service.rollback(FLOW_ID, TENANT_ID, USER_ID, 'platform_admin');
     expect(result.status).toBe('published');
     expect(mockRepo.createApprovalRequest).not.toHaveBeenCalled();
+  });
+
+  it('requires approval when an AI actor requests rollback', async () => {
+    const published = makeVersion('v2', 'published');
+    const superseded = makeVersion('v1', 'superseded');
+    const flow = makeFlow({ versions: [published, superseded] });
+    const approval = makeApproval();
+    vi.mocked(mockRepo.findById).mockResolvedValue(flow);
+    vi.mocked(mockRepo.getActivePublishPolicy).mockResolvedValue(null);
+    vi.mocked(mockRepo.createApprovalRequest).mockResolvedValue(approval);
+    vi.mocked(mockRepo.storePendingPublishRecord).mockResolvedValue(undefined);
+
+    const result = await service.rollback(FLOW_ID, TENANT_ID, USER_ID, 'platform_admin', 'ai_agent');
+    expect(result.status).toBe('pending_approval');
+    expect(mockRepo.rollback).not.toHaveBeenCalled();
   });
 
   it('creates approval request when policy requires approval and actor is tenant_admin', async () => {

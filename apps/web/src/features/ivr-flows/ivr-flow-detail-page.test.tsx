@@ -243,7 +243,7 @@ describe('IvrFlowDetailPage', () => {
 
     expect(await screen.findByText('Validation Runs')).toBeInTheDocument();
     expect(screen.getByText(/publish .* success/i)).toBeInTheDocument();
-    expect(screen.getByText('approval: approved')).toBeInTheDocument();
+    expect(screen.getByText(/approval: approved/i)).toBeInTheDocument();
     expect(screen.getByText(/ivr.publish/)).toBeInTheDocument();
     expect(screen.getByText('system')).toBeInTheDocument();
   });

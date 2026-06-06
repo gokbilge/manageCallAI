@@ -19,6 +19,7 @@ import { defaultIvrGraph, validateIvrGraph } from './ivr-flow.validation.js';
 import { buildPlannerGraph, resolveNextNode } from './ivr-graph-planner.js';
 import type { Role } from '../auth/capabilities.js';
 import { isInBusinessHours } from '../schedules/schedule.util.js';
+import { readAiLineage } from '../ai/ai-change-lineage.js';
 
 interface ScheduleRef {
   id: string;
@@ -248,6 +249,23 @@ function simulateGraph(
 export class IvrFlowService {
   constructor(private readonly repo: IvrFlowRepository) {}
 
+  private shouldRequireApproval(input: {
+    policyRequiresApproval: boolean;
+    actorRole?: Role;
+    actorType?: 'user' | 'workflow' | 'ai_agent' | 'system';
+    versionMetadata?: Record<string, unknown>;
+  }): boolean {
+    if (readAiLineage(input.versionMetadata)) {
+      return true;
+    }
+
+    if (input.actorType === 'ai_agent') {
+      return true;
+    }
+
+    return !!(input.policyRequiresApproval && input.actorRole !== 'platform_admin');
+  }
+
   listByTenant(tenantId: string): Promise<IvrFlow[]> {
     return this.repo.findAllByTenant(tenantId);
   }
@@ -258,7 +276,7 @@ export class IvrFlowService {
     return flow;
   }
 
-  create(input: CreateIvrFlowInput): Promise<IvrFlowWithVersions> {
+  create(input: CreateIvrFlowInput & { metadata?: Record<string, unknown> }): Promise<IvrFlowWithVersions> {
     return this.repo.create(input);
   }
 
@@ -286,16 +304,35 @@ export class IvrFlowService {
     return this.repo.getHistory(flowId, tenantId);
   }
 
-  async createVersion(flowId: string, tenantId: string, graphJson: Record<string, unknown> | undefined, createdBy?: string): Promise<FlowVersion> {
+  async createVersion(
+    flowId: string,
+    tenantId: string,
+    graphJson: Record<string, unknown> | undefined,
+    createdBy?: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<FlowVersion> {
     const flow = await this.repo.findById(flowId, tenantId);
     if (!flow) throw new IvrFlowNotFoundError(flowId);
     const nextNum = await this.repo.nextVersionNumber(flowId);
     const sourceGraph = graphJson ?? flow.versions[0]?.graph_json ?? defaultIvrGraph();
-    return this.repo.createVersion({ tenant_id: tenantId, flow_id: flowId, version_number: nextNum, definition: sourceGraph, created_by: createdBy });
+    return this.repo.createVersion({
+      tenant_id: tenantId,
+      flow_id: flowId,
+      version_number: nextNum,
+      definition: sourceGraph,
+      created_by: createdBy,
+      metadata,
+    });
   }
 
-  async updateVersionDefinition(flowId: string, versionId: string, tenantId: string, graphJson: Record<string, unknown>): Promise<FlowVersion> {
-    const version = await this.repo.updateVersionDefinition(versionId, flowId, tenantId, graphJson);
+  async updateVersionDefinition(
+    flowId: string,
+    versionId: string,
+    tenantId: string,
+    graphJson: Record<string, unknown>,
+    metadata?: Record<string, unknown>,
+  ): Promise<FlowVersion> {
+    const version = await this.repo.updateVersionDefinition(versionId, flowId, tenantId, graphJson, metadata);
     if (!version) throw new FlowVersionNotFoundError(versionId);
     return version;
   }
@@ -493,7 +530,12 @@ export class IvrFlowService {
     const version = await this.repo.findVersionById(versionId, flowId, tenantId);
     const versionStateValid = !!version && ['validated', 'simulated'].includes(version.state);
     const policy = await this.repo.getActivePublishPolicy(tenantId);
-    const requireApproval = !!(policy?.require_approval && actorRole !== 'platform_admin');
+    const requireApproval = this.shouldRequireApproval({
+      policyRequiresApproval: policy?.require_approval === true,
+      actorRole,
+      actorType,
+      versionMetadata: version?.metadata,
+    });
     return {
       dry_run: true,
       would_become: requireApproval ? 'pending_approval' : 'published',
@@ -503,7 +545,14 @@ export class IvrFlowService {
     };
   }
 
-  async publish(flowId: string, versionId: string, tenantId: string, triggeredById: string, actorRole?: Role): Promise<PublishAttemptResult> {
+  async publish(
+    flowId: string,
+    versionId: string,
+    tenantId: string,
+    triggeredById: string,
+    actorRole?: Role,
+    actorType: 'user' | 'workflow' | 'ai_agent' | 'system' = 'user',
+  ): Promise<PublishAttemptResult> {
     const version = await this.repo.findVersionById(versionId, flowId, tenantId);
     if (!version) throw new FlowVersionNotFoundError(versionId);
     try {
@@ -516,12 +565,26 @@ export class IvrFlowService {
     }
 
     const policy = await this.repo.getActivePublishPolicy(tenantId);
-    if (policy?.require_approval && actorRole !== 'platform_admin') {
+    const aiLineage = readAiLineage(version.metadata);
+    const requireApproval = this.shouldRequireApproval({
+      policyRequiresApproval: policy?.require_approval === true,
+      actorRole,
+      actorType,
+      versionMetadata: version.metadata,
+    });
+    const approvalMetadata = {
+      action_type: 'publish',
+      requested_actor_type: actorType,
+      approval_reason: aiLineage ? 'ai_origin' : 'policy',
+      ai_lineage: aiLineage,
+    };
+    if (requireApproval) {
       const approvalRequest = await this.repo.createApprovalRequest({
         tenant_id: tenantId,
         flow_id: flowId,
         version_id: versionId,
         requested_by: triggeredById,
+        metadata: approvalMetadata,
       });
       await this.repo.storePendingPublishRecord({
         tenant_id: tenantId,
@@ -530,16 +593,31 @@ export class IvrFlowService {
         triggered_by_id: triggeredById,
         approval_request_id: approvalRequest.id,
         action_type: 'publish',
+        triggered_by_type: actorType,
+        metadata: approvalMetadata,
       });
       const flow = await this.getById(flowId, tenantId);
       return { status: 'pending_approval', flow, approval_request_id: approvalRequest.id };
     }
 
-    const flow = await this.repo.publish({ tenant_id: tenantId, flow_id: flowId, version_id: versionId, triggered_by_id: triggeredById });
+    const flow = await this.repo.publish({
+      tenant_id: tenantId,
+      flow_id: flowId,
+      version_id: versionId,
+      triggered_by_id: triggeredById,
+      triggered_by_type: actorType,
+      metadata: approvalMetadata,
+    });
     return { status: 'published', flow };
   }
 
-  async rollback(flowId: string, tenantId: string, triggeredById: string, actorRole?: Role): Promise<PublishAttemptResult> {
+  async rollback(
+    flowId: string,
+    tenantId: string,
+    triggeredById: string,
+    actorRole?: Role,
+    actorType: 'user' | 'workflow' | 'ai_agent' | 'system' = 'user',
+  ): Promise<PublishAttemptResult> {
     const flow = await this.repo.findById(flowId, tenantId);
     if (!flow) throw new IvrFlowNotFoundError(flowId);
     const rollbackTargetId = flow.versions.find((version) => version.state === 'superseded')?.id;
@@ -547,13 +625,28 @@ export class IvrFlowService {
       throw new RollbackNotAvailableError();
     }
 
+    const rollbackTarget = flow.versions.find((version) => version.id === rollbackTargetId) ?? null;
+    const aiLineage = readAiLineage(rollbackTarget?.metadata);
     const policy = await this.repo.getActivePublishPolicy(tenantId);
-    if (policy?.require_approval && actorRole !== 'platform_admin') {
+    const requireApproval = this.shouldRequireApproval({
+      policyRequiresApproval: policy?.require_approval === true,
+      actorRole,
+      actorType,
+      versionMetadata: rollbackTarget?.metadata,
+    });
+    const approvalMetadata = {
+      action_type: 'rollback',
+      requested_actor_type: actorType,
+      approval_reason: aiLineage ? 'ai_origin' : 'policy',
+      ai_lineage: aiLineage,
+    };
+    if (requireApproval) {
       const approvalRequest = await this.repo.createApprovalRequest({
         tenant_id: tenantId,
         flow_id: flowId,
         version_id: rollbackTargetId,
         requested_by: triggeredById,
+        metadata: approvalMetadata,
       });
       await this.repo.storePendingPublishRecord({
         tenant_id: tenantId,
@@ -562,11 +655,19 @@ export class IvrFlowService {
         triggered_by_id: triggeredById,
         approval_request_id: approvalRequest.id,
         action_type: 'rollback',
+        triggered_by_type: actorType,
+        metadata: approvalMetadata,
       });
       return { status: 'pending_approval', flow, approval_request_id: approvalRequest.id };
     }
 
-    const result = await this.repo.rollback({ tenant_id: tenantId, flow_id: flowId, triggered_by_id: triggeredById });
+    const result = await this.repo.rollback({
+      tenant_id: tenantId,
+      flow_id: flowId,
+      triggered_by_id: triggeredById,
+      triggered_by_type: actorType,
+      metadata: approvalMetadata,
+    });
     if (!result) throw new RollbackNotAvailableError();
     return { status: 'published', flow: result.flow };
   }

@@ -18,6 +18,7 @@ export interface FlowVersion {
   validated_at: Date | null;
   simulated_at: Date | null;
   published_at: Date | null;
+  metadata: Record<string, unknown>;
 }
 
 export interface IvrFlow {
@@ -42,6 +43,7 @@ export interface CreateIvrFlowInput {
   description?: string;
   graph_json: Record<string, unknown>;
   created_by?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateIvrFlowInput {
@@ -153,6 +155,7 @@ export interface ApprovalRequestRecord {
   requested_by: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'expired';
   created_at: Date;
+  metadata: Record<string, unknown>;
 }
 
 export interface PublishAttemptResult {
@@ -199,6 +202,7 @@ export interface FlowPublishHistoryEntry {
   decision_at: Date | null;
   result: 'success' | 'failed' | 'pending_approval';
   created_at: Date;
+  metadata: Record<string, unknown>;
 }
 
 export interface FlowAuditHistoryEntry {
