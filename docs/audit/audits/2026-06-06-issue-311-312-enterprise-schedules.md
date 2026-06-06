@@ -39,3 +39,4 @@ PASS
 
 - The existing warning in `apps/web/src/features/ai/incident-investigation-page.tsx` remains present during `pnpm lint`; it predates this change and did not block the new schedule work.
 - Local repository-coverage execution required standard test env vars (`DATABASE_URL`, `JWT_SECRET`, `RUNTIME_API_TOKEN`, `SIP_SECRET_MASTER_KEY`, `SIP_SECRET_KEY_ID`) to be set before running the API test file.
+- DB-backed schedule integration coverage was added for CI, but could not be executed locally in this environment because Docker Desktop / local PostgreSQL was unavailable.
