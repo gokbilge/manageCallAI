@@ -145,6 +145,14 @@ Packages to make public: `managecallai-api`, `managecallai-web`,
 | Full soak/SLO re-run | v0.7.0 (age limit) | Maintainer |
 | Live rotation rehearsal | v0.7.0 (minor boundary) | Maintainer |
 
+## Migration and Adoption Toolkit
+
+manageCallAI will support migration through a staged, evidence-based process:
+source discovery, compatibility analysis, draft import, validation, simulation,
+operator approval, cutover checklist, runtime smoke, and rollback evidence.
+
+The importer must not auto-publish live objects or execute source custom logic.
+
 ---
 
 ## Operator signoff
