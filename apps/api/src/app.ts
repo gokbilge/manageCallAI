@@ -52,6 +52,8 @@ import { riskAnalysisController } from './modules/risk-analysis/risk-analysis.co
 import { reportingController } from './modules/reporting/reporting.controller.js';
 import { callFailureExplanationController } from './modules/call-failure-explanation/call-failure-explanation.controller.js';
 import { platformAiPolicyController, tenantAiPolicyController } from './modules/ai-policy/ai-policy.controller.js';
+import { aiRecommendationsController } from './modules/ai-recommendations/ai-recommendations.controller.js';
+import { incidentInvestigationController } from './modules/incident-investigation/incident-investigation.controller.js';
 import { setupController } from './modules/setup/setup.controller.js';
 import { db } from './db/client.js';
 import { registerErrorHandler } from './errors/index.js';
@@ -90,6 +92,8 @@ function registerCoreDomainModules(app: FastifyInstance): void {
   app.register(inboundRouteAiPatchController, { prefix: '/api/v1/inbound-routes' });
   app.register(outboundRouteController, { prefix: '/api/v1/outbound-routes' });
   app.register(riskAnalysisController, { prefix: '/api/v1/risk-analysis' });
+  app.register(aiRecommendationsController, { prefix: '/api/v1/ai-recommendations' });
+  app.register(incidentInvestigationController, { prefix: '/api/v1/incidents/investigate' });
   app.register(reportingController, { prefix: '/api/v1/reporting' });
   app.register(callFailureExplanationController, { prefix: '/api/v1/calls' });
   app.register(approvalController, { prefix: '/api/v1/approvals' });
