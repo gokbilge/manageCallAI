@@ -46,6 +46,9 @@ const CarrierHealthPage = lazy(() => import('@/features/integrations/carrier-hea
 const CarrierAssistantPage = lazy(() => import('@/features/integrations/carrier-assistant-page').then(m => ({ default: m.CarrierAssistantPage })));
 const IncidentInvestigationPage = lazy(() => import('@/features/ai/incident-investigation-page').then(m => ({ default: m.IncidentInvestigationPage })));
 const ReportingPage = lazy(() => import('@/features/reporting/reporting-page').then(m => ({ default: m.ReportingPage })));
+const SupervisorDashboardPage = lazy(() => import('@/features/contact-center/supervisor-dashboard-page').then(m => ({ default: m.SupervisorDashboardPage })));
+const QueueWallboardPage = lazy(() => import('@/features/contact-center/queue-wallboard-page').then(m => ({ default: m.QueueWallboardPage })));
+const QaWorkflowsPage = lazy(() => import('@/features/contact-center/qa-workflows-page').then(m => ({ default: m.QaWorkflowsPage })));
 
 function PageLoader() {
   return <div className="flex items-center justify-center p-8 text-[var(--color-muted)]" aria-label="Loading" />;
@@ -219,6 +222,19 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_NL_REPORTING} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/reporting', element: <Suspense fallback={<PageLoader />}><ReportingPage /></Suspense> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_CONTACT_CENTER_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/contact-center/supervisor', element: <Suspense fallback={<PageLoader />}><SupervisorDashboardPage /></Suspense> },
+              { path: 'tenant/contact-center/qa', element: <Suspense fallback={<PageLoader />}><QaWorkflowsPage /></Suspense> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_CONTACT_CENTER_WALLBOARD_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/contact-center/wallboard', element: <Suspense fallback={<PageLoader />}><QueueWallboardPage /></Suspense> },
             ],
           },
         ],

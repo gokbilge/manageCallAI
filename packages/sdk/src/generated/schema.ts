@@ -2846,6 +2846,567 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/contact-center/supervisor/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the contact-center supervisor snapshot */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Supervisor snapshot */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SupervisorSnapshot"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contact-center/wallboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the queue wallboard snapshot */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Wallboard snapshot */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SupervisorSnapshot"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contact-center/queues/{queueId}/sla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                queueId: string;
+            };
+            cookie?: never;
+        };
+        /** Get the SLA policy for a queue */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    queueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queue SLA policy */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["QueueSlaPolicy"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        /** Upsert the SLA policy for a queue */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    queueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpsertQueueSlaPolicyBody"];
+                };
+            };
+            responses: {
+                /** @description Queue SLA policy updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["QueueSlaPolicy"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contact-center/disposition-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List contact-center disposition codes */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Disposition code list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["DispositionCode"][];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /** Create a disposition code */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateDispositionCodeBody"];
+                };
+            };
+            responses: {
+                /** @description Disposition code created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["DispositionCode"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contact-center/disposition-codes/{dispositionCodeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dispositionCodeId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a disposition code */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dispositionCodeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateDispositionCodeBody"];
+                };
+            };
+            responses: {
+                /** @description Disposition code updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["DispositionCode"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        trace?: never;
+    };
+    "/contact-center/calls/{callId}/disposition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                callId: string;
+            };
+            cookie?: never;
+        };
+        /** Get the saved disposition for a call */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    callId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Call disposition */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["CallDisposition"] | null;
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        /** Upsert the saved disposition for a call */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    callId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpsertCallDispositionBody"];
+                };
+            };
+            responses: {
+                /** @description Call disposition saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["CallDisposition"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contact-center/qa-scorecards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List QA scorecards */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description QA scorecard list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["QaScorecard"][];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /** Create a QA scorecard */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateQaScorecardBody"];
+                };
+            };
+            responses: {
+                /** @description QA scorecard created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["QaScorecard"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contact-center/qa-scorecards/{scorecardId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scorecardId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a QA scorecard */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    scorecardId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateQaScorecardBody"];
+                };
+            };
+            responses: {
+                /** @description QA scorecard updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["QaScorecard"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        trace?: never;
+    };
+    "/contact-center/qa-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List QA reviews */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description QA review list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["QaReview"][];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        put?: never;
+        /** Create a QA review */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateQaReviewBody"];
+                };
+            };
+            responses: {
+                /** @description QA review created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["QaReview"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contact-center/qa-reviews/{reviewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a QA review */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reviewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateQaReviewBody"];
+                };
+            };
+            responses: {
+                /** @description QA review updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["QaReview"];
+                        };
+                    };
+                };
+                default: components["responses"]["ErrorResponse"];
+            };
+        };
+        trace?: never;
+    };
     "/webhooks/{webhookId}/delivery-queue": {
         parameters: {
             query?: never;
@@ -4892,7 +5453,7 @@ export interface components {
             tenant_id: string;
             name: string;
             key_prefix: string;
-            capabilities: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "tenant.reporting.nl_query" | "tenant.calls.explain_failure" | "tenant.ai.policy.view" | "tenant.ai.policy.manage" | "tenant.ai.provider_backed.use" | "*")[];
+            capabilities: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "tenant.reporting.nl_query" | "tenant.calls.explain_failure" | "tenant.ai.policy.view" | "tenant.ai.policy.manage" | "tenant.ai.provider_backed.use" | "tenant.agents.profiles.view" | "tenant.agents.profiles.manage" | "tenant.agents.availability.view" | "tenant.agents.availability.set" | "tenant.agents.workspace.view" | "tenant.skills.view" | "tenant.skills.manage" | "tenant.routing.evaluate" | "tenant.contact_center.view" | "tenant.contact_center.wallboard.view" | "tenant.contact_center.dispositions.manage" | "tenant.contact_center.qa.manage" | "*")[];
             /** Format: uuid */
             created_by: string | null;
             /** Format: date-time */
@@ -5125,7 +5686,7 @@ export interface components {
         };
         CreateApiKeyBody: {
             name: string;
-            capabilities?: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "tenant.reporting.nl_query" | "tenant.calls.explain_failure" | "tenant.ai.policy.view" | "tenant.ai.policy.manage" | "tenant.ai.provider_backed.use" | "*")[];
+            capabilities?: ("platform.tenants.view" | "platform.runtime.view" | "platform.audit.view" | "tenant.dashboard.view" | "tenant.calls.view" | "tenant.extensions.view" | "tenant.extensions.create" | "tenant.extensions.update" | "tenant.extensions.deactivate" | "tenant.directory_smoke_test.run" | "tenant.phone_numbers.view" | "tenant.phone_numbers.create" | "tenant.phone_numbers.update" | "tenant.phone_numbers.deactivate" | "tenant.inbound_routes.view" | "tenant.inbound_routes.create" | "tenant.inbound_routes.update" | "tenant.inbound_routes.activate" | "tenant.inbound_routes.deactivate" | "tenant.inbound_routes.test" | "tenant.prompts.view" | "tenant.prompts.create" | "tenant.prompts.update" | "tenant.prompts.deactivate" | "tenant.ivr_flows.view" | "tenant.ivr_flows.create" | "tenant.ivr_flows.update" | "tenant.ivr_flows.validate" | "tenant.ivr_flows.simulate" | "tenant.ivr_flows.publish" | "tenant.ivr_flows.rollback" | "tenant.approvals.view" | "tenant.approvals.decide" | "tenant.call_groups.view" | "tenant.call_groups.create" | "tenant.call_groups.update" | "tenant.call_groups.deactivate" | "tenant.queues.view" | "tenant.queues.create" | "tenant.queues.update" | "tenant.queues.deactivate" | "tenant.voicemail_boxes.view" | "tenant.voicemail_boxes.create" | "tenant.voicemail_boxes.update" | "tenant.voicemail_boxes.deactivate" | "tenant.automation.keys.view" | "tenant.automation.keys.manage" | "tenant.automation.webhooks.view" | "tenant.automation.webhooks.manage" | "tenant.schedules.view" | "tenant.schedules.create" | "tenant.schedules.update" | "tenant.conference_rooms.view" | "tenant.conference_rooms.create" | "tenant.conference_rooms.update" | "tenant.conference_rooms.deactivate" | "tenant.feature_codes.view" | "tenant.feature_codes.create" | "tenant.feature_codes.update" | "tenant.feature_codes.validate" | "tenant.feature_codes.publish" | "tenant.feature_codes.deactivate" | "tenant.outbound_routes.view" | "tenant.outbound_routes.create" | "tenant.outbound_routes.update" | "tenant.outbound_calls.create" | "tenant.outbound_calls.view" | "tenant.channel_accounts.view" | "tenant.channel_accounts.manage" | "tenant.channel_messages.view" | "tenant.channel_messages.send" | "tenant.meeting_sessions.view" | "tenant.meeting_sessions.manage" | "tenant.audit_log.view" | "tenant.recordings.view" | "tenant.export.run" | "tenant.users.view" | "tenant.users.manage" | "tenant.compliance.admin" | "tenant.security.alerts.view" | "tenant.security.alerts.manage" | "tenant.fraud_policy.view" | "tenant.fraud_policy.manage" | "tenant.risk_analysis.run" | "tenant.reporting.nl_query" | "tenant.calls.explain_failure" | "tenant.ai.policy.view" | "tenant.ai.policy.manage" | "tenant.ai.provider_backed.use" | "tenant.agents.profiles.view" | "tenant.agents.profiles.manage" | "tenant.agents.availability.view" | "tenant.agents.availability.set" | "tenant.agents.workspace.view" | "tenant.skills.view" | "tenant.skills.manage" | "tenant.routing.evaluate" | "tenant.contact_center.view" | "tenant.contact_center.wallboard.view" | "tenant.contact_center.dispositions.manage" | "tenant.contact_center.qa.manage" | "*")[];
         };
         CreateAutomationWebhookBody: {
             name: string;
@@ -6365,6 +6926,282 @@ export interface components {
         };
         CallFailureExplainRequest: {
             call_id: string;
+        };
+        QueueSlaPolicy: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            queue_id: string;
+            answer_target_seconds: number;
+            answer_rate_target_percent: number;
+            abandonment_threshold_percent: number;
+            wallboard_enabled: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        UpsertQueueSlaPolicyBody: {
+            answer_target_seconds?: number;
+            answer_rate_target_percent?: number;
+            abandonment_threshold_percent?: number;
+            wallboard_enabled?: boolean;
+        };
+        DispositionCode: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: uuid */
+            queue_id: string | null;
+            code: string;
+            label: string;
+            description: string | null;
+            sort_order: number;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateDispositionCodeBody: {
+            /** Format: uuid */
+            queue_id?: string | null;
+            code: string;
+            label: string;
+            description?: string | null;
+            sort_order?: number;
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        UpdateDispositionCodeBody: {
+            /** Format: uuid */
+            queue_id?: string | null;
+            code?: string;
+            label?: string;
+            description?: string | null;
+            sort_order?: number;
+            /** @enum {string} */
+            status?: "active" | "inactive";
+        };
+        CallDisposition: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            call_id: string;
+            /** Format: uuid */
+            queue_id: string | null;
+            /** Format: uuid */
+            agent_profile_id: string | null;
+            /** Format: uuid */
+            disposition_code_id: string | null;
+            disposition_code: string | null;
+            disposition_label: string | null;
+            note_text: string | null;
+            /** Format: uuid */
+            created_by: string | null;
+            /** Format: uuid */
+            updated_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        UpsertCallDispositionBody: {
+            /** Format: uuid */
+            queue_id?: string | null;
+            /** Format: uuid */
+            agent_profile_id?: string | null;
+            /** Format: uuid */
+            disposition_code_id?: string | null;
+            note_text?: string | null;
+        };
+        DispositionUsageRow: {
+            /** Format: uuid */
+            disposition_code_id: string | null;
+            disposition_code: string | null;
+            disposition_label: string | null;
+            /** Format: uuid */
+            queue_id: string | null;
+            queue_name: string | null;
+            usage_count: number;
+            /** Format: date-time */
+            last_used_at: string | null;
+        };
+        QaScorecard: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            criteria_json: {
+                key: string;
+                label: string;
+                description?: string | null;
+                max_score: number;
+            }[];
+            /** Format: uuid */
+            created_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateQaScorecardBody: {
+            name: string;
+            description?: string | null;
+            /** @enum {string} */
+            status?: "active" | "inactive";
+            criteria_json: {
+                key: string;
+                label: string;
+                description?: string | null;
+                max_score: number;
+            }[];
+        };
+        UpdateQaScorecardBody: {
+            name?: string;
+            description?: string | null;
+            /** @enum {string} */
+            status?: "active" | "inactive";
+            criteria_json?: {
+                key: string;
+                label: string;
+                description?: string | null;
+                max_score: number;
+            }[];
+        };
+        QaReview: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            call_id: string;
+            /** Format: uuid */
+            queue_id: string | null;
+            /** Format: uuid */
+            agent_profile_id: string | null;
+            /** Format: uuid */
+            recording_id: string | null;
+            /** Format: uuid */
+            disposition_id: string | null;
+            /** Format: uuid */
+            scorecard_id: string;
+            /** Format: uuid */
+            reviewer_user_id: string | null;
+            /** @enum {string} */
+            status: "draft" | "completed" | "acknowledged";
+            scores_json: {
+                key: string;
+                label: string;
+                score: number;
+                max_score: number;
+                note?: string | null;
+            }[];
+            note_text: string | null;
+            total_score: number;
+            max_score: number;
+            /** Format: date-time */
+            completed_at: string | null;
+            /** Format: date-time */
+            acknowledged_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateQaReviewBody: {
+            call_id: string;
+            /** Format: uuid */
+            queue_id?: string | null;
+            /** Format: uuid */
+            agent_profile_id?: string | null;
+            /** Format: uuid */
+            recording_id?: string | null;
+            /** Format: uuid */
+            disposition_id?: string | null;
+            /** Format: uuid */
+            scorecard_id: string;
+            scores_json: {
+                key: string;
+                label: string;
+                score: number;
+                max_score: number;
+                note?: string | null;
+            }[];
+            note_text?: string | null;
+            /** @enum {string} */
+            status?: "draft" | "completed" | "acknowledged";
+        };
+        UpdateQaReviewBody: {
+            /** Format: uuid */
+            queue_id?: string | null;
+            /** Format: uuid */
+            agent_profile_id?: string | null;
+            /** Format: uuid */
+            recording_id?: string | null;
+            /** Format: uuid */
+            disposition_id?: string | null;
+            scores_json?: {
+                key: string;
+                label: string;
+                score: number;
+                max_score: number;
+                note?: string | null;
+            }[];
+            note_text?: string | null;
+            /** @enum {string} */
+            status?: "draft" | "completed" | "acknowledged";
+        };
+        QaSummary: {
+            open_reviews: number;
+            completed_reviews_7d: number;
+            average_score_percent_7d: number | null;
+        };
+        AgentAvailabilityBucket: {
+            /** @enum {string} */
+            state: "available" | "busy" | "away" | "wrap_up" | "offline";
+            count: number;
+        };
+        QueueWallboardMetric: {
+            /** Format: uuid */
+            queue_id: string;
+            queue_name: string;
+            member_count: number;
+            available_agents: number;
+            busy_agents: number;
+            away_agents: number;
+            wrap_up_agents: number;
+            offline_agents: number;
+            offered_calls_24h: number;
+            answered_calls_24h: number;
+            abandoned_calls_24h: number;
+            active_calls: number;
+            average_wait_seconds: number | null;
+            max_wait_seconds: number | null;
+            answer_target_seconds: number;
+            answer_rate_target_percent: number;
+            abandonment_threshold_percent: number;
+            within_sla_calls_24h: number;
+            sla_percent_24h: number | null;
+            wallboard_enabled: boolean;
+            /** @enum {string} */
+            alert_state: "healthy" | "warning" | "critical";
+        };
+        SupervisorSnapshot: {
+            /** Format: date-time */
+            generated_at: string;
+            queue_metrics: components["schemas"]["QueueWallboardMetric"][];
+            agent_availability: components["schemas"]["AgentAvailabilityBucket"][];
+            disposition_usage_24h: components["schemas"]["DispositionUsageRow"][];
+            qa_summary: components["schemas"]["QaSummary"];
         };
     };
     responses: {

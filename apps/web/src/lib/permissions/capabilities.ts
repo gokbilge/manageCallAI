@@ -1,4 +1,4 @@
-export type Role = 'platform_admin' | 'tenant_admin' | 'tenant_operator' | 'tenant_viewer' | 'end_user';
+export type Role = 'platform_admin' | 'tenant_admin' | 'tenant_operator' | 'tenant_viewer' | 'end_user' | 'agent';
 
 export const CAPABILITIES = {
   PLATFORM_TENANTS_VIEW: 'platform.tenants.view',
@@ -115,6 +115,10 @@ export const CAPABILITIES = {
   TENANT_AI_POLICY_VIEW: 'tenant.ai.policy.view',
   TENANT_AI_POLICY_MANAGE: 'tenant.ai.policy.manage',
   TENANT_AI_PROVIDER_BACKED_USE: 'tenant.ai.provider_backed.use',
+  TENANT_CONTACT_CENTER_VIEW: 'tenant.contact_center.view',
+  TENANT_CONTACT_CENTER_WALLBOARD_VIEW: 'tenant.contact_center.wallboard.view',
+  TENANT_CONTACT_CENTER_DISPOSITIONS_MANAGE: 'tenant.contact_center.dispositions.manage',
+  TENANT_CONTACT_CENTER_QA_MANAGE: 'tenant.contact_center.qa.manage',
 } as const;
 
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -142,6 +146,8 @@ const TENANT_VIEW_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_CHANNEL_ACCOUNTS_VIEW,
   CAPABILITIES.TENANT_CHANNEL_MESSAGES_VIEW,
   CAPABILITIES.TENANT_MEETING_SESSIONS_VIEW,
+  CAPABILITIES.TENANT_CONTACT_CENTER_VIEW,
+  CAPABILITIES.TENANT_CONTACT_CENTER_WALLBOARD_VIEW,
 ];
 
 const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
@@ -188,6 +194,8 @@ const TENANT_OPERATOR_CAPABILITIES: readonly Capability[] = [
   CAPABILITIES.TENANT_RISK_ANALYSIS,
   CAPABILITIES.TENANT_NL_REPORTING,
   CAPABILITIES.TENANT_CALL_FAILURE_EXPLAIN,
+  CAPABILITIES.TENANT_CONTACT_CENTER_DISPOSITIONS_MANAGE,
+  CAPABILITIES.TENANT_CONTACT_CENTER_QA_MANAGE,
 ];
 
 const TENANT_CAPABILITIES: readonly Capability[] = [
@@ -223,6 +231,12 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   tenant_operator: TENANT_OPERATOR_CAPABILITIES,
   tenant_viewer: TENANT_VIEW_CAPABILITIES,
   end_user: [],
+  agent: [
+    CAPABILITIES.TENANT_CALLS_VIEW,
+    CAPABILITIES.TENANT_RECORDINGS_VIEW,
+    CAPABILITIES.TENANT_QUEUES_VIEW,
+    CAPABILITIES.TENANT_CONTACT_CENTER_DISPOSITIONS_MANAGE,
+  ],
 };
 
 export function hasCapability(role: Role | string | undefined, capability: Capability): boolean {

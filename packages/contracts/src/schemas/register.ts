@@ -327,3 +327,24 @@ registry.register('FailureFact', callFailureExplanation.FailureFactSchema);
 registry.register('ExplainEventSummary', callFailureExplanation.ExplainEventSummarySchema);
 registry.register('CallFailureExplanation', callFailureExplanation.CallFailureExplanationSchema);
 registry.register('CallFailureExplainRequest', callFailureExplanation.CallFailureExplainRequestSchema);
+
+// contact-center
+import * as contactCenter from './contact-center.js';
+registry.register('QueueSlaPolicy', contactCenter.QueueSlaPolicySchema);
+registry.register('UpsertQueueSlaPolicyBody', contactCenter.UpsertQueueSlaPolicyBodySchema);
+registry.register('DispositionCode', contactCenter.DispositionCodeSchema);
+registry.register('CreateDispositionCodeBody', contactCenter.CreateDispositionCodeBodySchema);
+registry.register('UpdateDispositionCodeBody', contactCenter.UpdateDispositionCodeBodySchema);
+registry.register('CallDisposition', contactCenter.CallDispositionSchema);
+registry.register('UpsertCallDispositionBody', contactCenter.UpsertCallDispositionBodySchema);
+registry.register('DispositionUsageRow', contactCenter.DispositionUsageRowSchema);
+registry.register('QaScorecard', contactCenter.QaScorecardSchema);
+registry.register('CreateQaScorecardBody', contactCenter.CreateQaScorecardBodySchema);
+registry.register('UpdateQaScorecardBody', contactCenter.UpdateQaScorecardBodySchema);
+registry.register('QaReview', contactCenter.QaReviewSchema);
+registry.register('CreateQaReviewBody', contactCenter.CreateQaReviewBodySchema);
+registry.register('UpdateQaReviewBody', contactCenter.UpdateQaReviewBodySchema);
+registry.register('QaSummary', contactCenter.QaSummarySchema);
+registry.register('AgentAvailabilityBucket', contactCenter.AgentAvailabilityBucketSchema);
+registry.register('QueueWallboardMetric', contactCenter.QueueWallboardMetricSchema);
+registry.register('SupervisorSnapshot', contactCenter.SupervisorSnapshotSchema);

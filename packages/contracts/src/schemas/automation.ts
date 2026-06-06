@@ -184,6 +184,11 @@ export const API_KEY_CAPABILITIES = [
   'tenant.skills.view',
   'tenant.skills.manage',
   'tenant.routing.evaluate',
+  // tenant — contact-center supervisor and QA operations (v0.7.0)
+  'tenant.contact_center.view',
+  'tenant.contact_center.wallboard.view',
+  'tenant.contact_center.dispositions.manage',
+  'tenant.contact_center.qa.manage',
   // legacy sentinel — grants full tenant_admin set
   '*',
 ] as const;

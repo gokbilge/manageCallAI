@@ -65,6 +65,8 @@ tags:
     description: Call event query (tenant-facing) and ingestion (runtime-internal)
   - name: Recordings
     description: Recorded call and voicemail media metadata plus analysis request contract
+  - name: ContactCenter
+    description: Supervisor, wallboard, disposition, and QA workflows for contact-center operations
   - name: Webhooks
     description: Webhook subscription delivery history and durable queue status
   - name: Platform
@@ -1500,6 +1502,377 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RecordingListResponse"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/supervisor/snapshot:
+    get:
+      tags:
+        - ContactCenter
+      summary: Get the contact-center supervisor snapshot
+      responses:
+        "200":
+          description: Supervisor snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/SupervisorSnapshot"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/wallboard:
+    get:
+      tags:
+        - ContactCenter
+      summary: Get the queue wallboard snapshot
+      responses:
+        "200":
+          description: Wallboard snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/SupervisorSnapshot"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/queues/{queueId}/sla:
+    parameters:
+      - name: queueId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - ContactCenter
+      summary: Get the SLA policy for a queue
+      responses:
+        "200":
+          description: Queue SLA policy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/QueueSlaPolicy"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    put:
+      tags:
+        - ContactCenter
+      summary: Upsert the SLA policy for a queue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertQueueSlaPolicyBody"
+      responses:
+        "200":
+          description: Queue SLA policy updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/QueueSlaPolicy"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/disposition-codes:
+    get:
+      tags:
+        - ContactCenter
+      summary: List contact-center disposition codes
+      responses:
+        "200":
+          description: Disposition code list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DispositionCode"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags:
+        - ContactCenter
+      summary: Create a disposition code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDispositionCodeBody"
+      responses:
+        "201":
+          description: Disposition code created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DispositionCode"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/disposition-codes/{dispositionCodeId}:
+    parameters:
+      - name: dispositionCodeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags:
+        - ContactCenter
+      summary: Update a disposition code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDispositionCodeBody"
+      responses:
+        "200":
+          description: Disposition code updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DispositionCode"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/calls/{callId}/disposition:
+    parameters:
+      - name: callId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+    get:
+      tags:
+        - ContactCenter
+      summary: Get the saved disposition for a call
+      responses:
+        "200":
+          description: Call disposition
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    anyOf:
+                      - $ref: "#/components/schemas/CallDisposition"
+                      - type: "null"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    put:
+      tags:
+        - ContactCenter
+      summary: Upsert the saved disposition for a call
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertCallDispositionBody"
+      responses:
+        "200":
+          description: Call disposition saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CallDisposition"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/qa-scorecards:
+    get:
+      tags:
+        - ContactCenter
+      summary: List QA scorecards
+      responses:
+        "200":
+          description: QA scorecard list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/QaScorecard"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags:
+        - ContactCenter
+      summary: Create a QA scorecard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQaScorecardBody"
+      responses:
+        "201":
+          description: QA scorecard created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/QaScorecard"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/qa-scorecards/{scorecardId}:
+    parameters:
+      - name: scorecardId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags:
+        - ContactCenter
+      summary: Update a QA scorecard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQaScorecardBody"
+      responses:
+        "200":
+          description: QA scorecard updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/QaScorecard"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/qa-reviews:
+    get:
+      tags:
+        - ContactCenter
+      summary: List QA reviews
+      responses:
+        "200":
+          description: QA review list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/QaReview"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags:
+        - ContactCenter
+      summary: Create a QA review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQaReviewBody"
+      responses:
+        "201":
+          description: QA review created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/QaReview"
+                required:
+                  - data
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /contact-center/qa-reviews/{reviewId}:
+    parameters:
+      - name: reviewId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags:
+        - ContactCenter
+      summary: Update a QA review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQaReviewBody"
+      responses:
+        "200":
+          description: QA review updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/QaReview"
+                required:
+                  - data
         default:
           $ref: "#/components/responses/ErrorResponse"
   /webhooks/{webhookId}/delivery-queue:
@@ -4462,6 +4835,10 @@ components:
               - tenant.skills.view
               - tenant.skills.manage
               - tenant.routing.evaluate
+              - tenant.contact_center.view
+              - tenant.contact_center.wallboard.view
+              - tenant.contact_center.dispositions.manage
+              - tenant.contact_center.qa.manage
               - "*"
         created_by:
           type:
@@ -8454,3 +8831,836 @@ components:
           maxLength: 256
       required:
         - call_id
+    QueueSlaPolicy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        queue_id:
+          type: string
+          format: uuid
+        answer_target_seconds:
+          type: integer
+        answer_rate_target_percent:
+          type: integer
+        abandonment_threshold_percent:
+          type: integer
+        wallboard_enabled:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - queue_id
+        - answer_target_seconds
+        - answer_rate_target_percent
+        - abandonment_threshold_percent
+        - wallboard_enabled
+        - created_at
+        - updated_at
+    UpsertQueueSlaPolicyBody:
+      type: object
+      properties:
+        answer_target_seconds:
+          type: integer
+          minimum: 1
+          maximum: 3600
+        answer_rate_target_percent:
+          type: integer
+          minimum: 1
+          maximum: 100
+        abandonment_threshold_percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        wallboard_enabled:
+          type: boolean
+    DispositionCode:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        queue_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        code:
+          type: string
+        label:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        sort_order:
+          type: integer
+        status:
+          type: string
+          enum: &a34
+            - active
+            - inactive
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - queue_id
+        - code
+        - label
+        - description
+        - sort_order
+        - status
+        - created_at
+        - updated_at
+    CreateDispositionCodeBody:
+      type: object
+      properties:
+        queue_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        label:
+          type: string
+          minLength: 1
+          maxLength: 128
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        sort_order:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        status:
+          type: string
+          enum: *a34
+      required:
+        - code
+        - label
+    UpdateDispositionCodeBody:
+      type: object
+      properties:
+        queue_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        label:
+          type: string
+          minLength: 1
+          maxLength: 128
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        sort_order:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        status:
+          type: string
+          enum: *a34
+    CallDisposition:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        call_id:
+          type: string
+        queue_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        agent_profile_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        disposition_code_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        disposition_code:
+          type:
+            - string
+            - "null"
+        disposition_label:
+          type:
+            - string
+            - "null"
+        note_text:
+          type:
+            - string
+            - "null"
+        created_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+        updated_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - call_id
+        - queue_id
+        - agent_profile_id
+        - disposition_code_id
+        - disposition_code
+        - disposition_label
+        - note_text
+        - created_by
+        - updated_by
+        - created_at
+        - updated_at
+    UpsertCallDispositionBody:
+      type: object
+      properties:
+        queue_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        agent_profile_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        disposition_code_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        note_text:
+          type:
+            - string
+            - "null"
+          maxLength: 4000
+    DispositionUsageRow:
+      type: object
+      properties:
+        disposition_code_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        disposition_code:
+          type:
+            - string
+            - "null"
+        disposition_label:
+          type:
+            - string
+            - "null"
+        queue_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        queue_name:
+          type:
+            - string
+            - "null"
+        usage_count:
+          type: integer
+        last_used_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+      required:
+        - disposition_code_id
+        - disposition_code
+        - disposition_label
+        - queue_id
+        - queue_name
+        - usage_count
+        - last_used_at
+    QaScorecard:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum: &a35
+            - active
+            - inactive
+        criteria_json:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                minLength: 1
+                maxLength: 64
+              label:
+                type: string
+                minLength: 1
+                maxLength: 128
+              description:
+                type:
+                  - string
+                  - "null"
+                maxLength: 1000
+              max_score:
+                type: integer
+                minimum: 1
+                maximum: 100
+            required:
+              - key
+              - label
+              - max_score
+        created_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - description
+        - status
+        - criteria_json
+        - created_by
+        - created_at
+        - updated_at
+    CreateQaScorecardBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        status:
+          type: string
+          enum: *a35
+        criteria_json:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                minLength: 1
+                maxLength: 64
+              label:
+                type: string
+                minLength: 1
+                maxLength: 128
+              description:
+                type:
+                  - string
+                  - "null"
+                maxLength: 1000
+              max_score:
+                type: integer
+                minimum: 1
+                maximum: 100
+            required:
+              - key
+              - label
+              - max_score
+          minItems: 1
+      required:
+        - name
+        - criteria_json
+    UpdateQaScorecardBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        status:
+          type: string
+          enum: *a35
+        criteria_json:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                minLength: 1
+                maxLength: 64
+              label:
+                type: string
+                minLength: 1
+                maxLength: 128
+              description:
+                type:
+                  - string
+                  - "null"
+                maxLength: 1000
+              max_score:
+                type: integer
+                minimum: 1
+                maximum: 100
+            required:
+              - key
+              - label
+              - max_score
+          minItems: 1
+    QaReview:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        call_id:
+          type: string
+        queue_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        agent_profile_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        recording_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        disposition_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        scorecard_id:
+          type: string
+          format: uuid
+        reviewer_user_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        status:
+          type: string
+          enum: &a36
+            - draft
+            - completed
+            - acknowledged
+        scores_json:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                minLength: 1
+                maxLength: 64
+              label:
+                type: string
+                minLength: 1
+                maxLength: 128
+              score:
+                type: integer
+                minimum: 0
+                maximum: 100
+              max_score:
+                type: integer
+                minimum: 1
+                maximum: 100
+              note:
+                type:
+                  - string
+                  - "null"
+                maxLength: 1000
+            required:
+              - key
+              - label
+              - score
+              - max_score
+        note_text:
+          type:
+            - string
+            - "null"
+        total_score:
+          type: integer
+        max_score:
+          type: integer
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        acknowledged_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - call_id
+        - queue_id
+        - agent_profile_id
+        - recording_id
+        - disposition_id
+        - scorecard_id
+        - reviewer_user_id
+        - status
+        - scores_json
+        - note_text
+        - total_score
+        - max_score
+        - completed_at
+        - acknowledged_at
+        - created_at
+        - updated_at
+    CreateQaReviewBody:
+      type: object
+      properties:
+        call_id:
+          type: string
+          minLength: 1
+        queue_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        agent_profile_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        recording_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        disposition_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        scorecard_id:
+          type: string
+          format: uuid
+        scores_json:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                minLength: 1
+                maxLength: 64
+              label:
+                type: string
+                minLength: 1
+                maxLength: 128
+              score:
+                type: integer
+                minimum: 0
+                maximum: 100
+              max_score:
+                type: integer
+                minimum: 1
+                maximum: 100
+              note:
+                type:
+                  - string
+                  - "null"
+                maxLength: 1000
+            required:
+              - key
+              - label
+              - score
+              - max_score
+          minItems: 1
+        note_text:
+          type:
+            - string
+            - "null"
+          maxLength: 4000
+        status:
+          type: string
+          enum: *a36
+      required:
+        - call_id
+        - scorecard_id
+        - scores_json
+    UpdateQaReviewBody:
+      type: object
+      properties:
+        queue_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        agent_profile_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        recording_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        disposition_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        scores_json:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                minLength: 1
+                maxLength: 64
+              label:
+                type: string
+                minLength: 1
+                maxLength: 128
+              score:
+                type: integer
+                minimum: 0
+                maximum: 100
+              max_score:
+                type: integer
+                minimum: 1
+                maximum: 100
+              note:
+                type:
+                  - string
+                  - "null"
+                maxLength: 1000
+            required:
+              - key
+              - label
+              - score
+              - max_score
+          minItems: 1
+        note_text:
+          type:
+            - string
+            - "null"
+          maxLength: 4000
+        status:
+          type: string
+          enum: *a36
+    QaSummary:
+      type: object
+      properties:
+        open_reviews:
+          type: integer
+        completed_reviews_7d:
+          type: integer
+        average_score_percent_7d:
+          type:
+            - number
+            - "null"
+      required:
+        - open_reviews
+        - completed_reviews_7d
+        - average_score_percent_7d
+    AgentAvailabilityBucket:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+            - available
+            - busy
+            - away
+            - wrap_up
+            - offline
+        count:
+          type: integer
+      required:
+        - state
+        - count
+    QueueWallboardMetric:
+      type: object
+      properties:
+        queue_id:
+          type: string
+          format: uuid
+        queue_name:
+          type: string
+        member_count:
+          type: integer
+        available_agents:
+          type: integer
+        busy_agents:
+          type: integer
+        away_agents:
+          type: integer
+        wrap_up_agents:
+          type: integer
+        offline_agents:
+          type: integer
+        offered_calls_24h:
+          type: integer
+        answered_calls_24h:
+          type: integer
+        abandoned_calls_24h:
+          type: integer
+        active_calls:
+          type: integer
+        average_wait_seconds:
+          type:
+            - number
+            - "null"
+        max_wait_seconds:
+          type:
+            - number
+            - "null"
+        answer_target_seconds:
+          type: integer
+        answer_rate_target_percent:
+          type: integer
+        abandonment_threshold_percent:
+          type: integer
+        within_sla_calls_24h:
+          type: integer
+        sla_percent_24h:
+          type:
+            - number
+            - "null"
+        wallboard_enabled:
+          type: boolean
+        alert_state:
+          type: string
+          enum:
+            - healthy
+            - warning
+            - critical
+      required:
+        - queue_id
+        - queue_name
+        - member_count
+        - available_agents
+        - busy_agents
+        - away_agents
+        - wrap_up_agents
+        - offline_agents
+        - offered_calls_24h
+        - answered_calls_24h
+        - abandoned_calls_24h
+        - active_calls
+        - average_wait_seconds
+        - max_wait_seconds
+        - answer_target_seconds
+        - answer_rate_target_percent
+        - abandonment_threshold_percent
+        - within_sla_calls_24h
+        - sla_percent_24h
+        - wallboard_enabled
+        - alert_state
+    SupervisorSnapshot:
+      type: object
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        queue_metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueWallboardMetric"
+        agent_availability:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentAvailabilityBucket"
+        disposition_usage_24h:
+          type: array
+          items:
+            $ref: "#/components/schemas/DispositionUsageRow"
+        qa_summary:
+          $ref: "#/components/schemas/QaSummary"
+      required:
+        - generated_at
+        - queue_metrics
+        - agent_availability
+        - disposition_usage_24h
+        - qa_summary

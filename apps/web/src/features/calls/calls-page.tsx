@@ -20,6 +20,13 @@ import { useCallSummaryReview } from '@/lib/ai/summary-review-api';
 import { type CallFailureExplanation, useCallFailureExplanation } from '@/lib/ai/failure-explain-api';
 import { useAuth } from '@/lib/auth/use-auth';
 import { CAPABILITIES, hasCapability } from '@/lib/permissions/capabilities';
+import {
+  useAgentProfiles,
+  useCallDisposition,
+  useDispositionCodes,
+  useUpsertCallDisposition,
+} from '@/lib/contact-center/contact-center-api';
+import { useQueueOptions } from '@/lib/ivr-flows/ivr-flows-api';
 
 export function CallsPage() {
   const { session } = useAuth();
@@ -65,6 +72,7 @@ export function CallsPage() {
   const selectedCall = summaries.find(summary => summary.call_id === selectedCallId) ?? null;
   const canReviewSummaries = hasCapability(session?.claims.role, CAPABILITIES.TENANT_RECORDINGS_VIEW);
   const canExplainFailures = hasCapability(session?.claims.role, CAPABILITIES.TENANT_CALL_FAILURE_EXPLAIN);
+  const canManageDispositions = hasCapability(session?.claims.role, CAPABILITIES.TENANT_CONTACT_CENTER_DISPOSITIONS_MANAGE);
   const summaryReviewQuery = useCallSummaryReview(selectedCall?.call_id ?? null, canReviewSummaries);
   const failureExplainMutation = useCallFailureExplanation();
 
@@ -186,6 +194,7 @@ export function CallsPage() {
                     ? (failureExplainMutation.error instanceof Error ? failureExplainMutation.error.message : 'Could not load explanation.')
                     : null}
                   onExplainFailure={() => failureExplainMutation.mutate(selectedCall.call_id)}
+                  canManageDispositions={canManageDispositions}
                 />
               ) : <p className="text-sm text-[var(--color-muted-fg)]">No call selected.</p>}
             </DataCard>
@@ -253,6 +262,7 @@ function CallDetailPanel({
   failureExplainLoading,
   failureExplainError,
   onExplainFailure,
+  canManageDispositions,
 }: {
   summary: CallSummary;
   canReviewSummaries: boolean;
@@ -264,7 +274,14 @@ function CallDetailPanel({
   failureExplainLoading: boolean;
   failureExplainError: string | null;
   onExplainFailure: () => void;
+  canManageDispositions: boolean;
 }) {
+  const dispositionQuery = useCallDisposition(summary.call_id);
+  const dispositionCodesQuery = useDispositionCodes();
+  const queueOptionsQuery = useQueueOptions();
+  const agentProfilesQuery = useAgentProfiles();
+  const upsertDisposition = useUpsertCallDisposition();
+
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -332,6 +349,18 @@ function CallDetailPanel({
         </div>
       </div>
 
+      <DispositionPanel
+        callId={summary.call_id}
+        canManage={canManageDispositions}
+        disposition={dispositionQuery.data}
+        isLoading={dispositionQuery.isLoading || dispositionCodesQuery.isLoading || queueOptionsQuery.isLoading || agentProfilesQuery.isLoading}
+        codes={dispositionCodesQuery.data ?? []}
+        queues={queueOptionsQuery.data ?? []}
+        agents={(agentProfilesQuery.data ?? []).filter((profile) => profile.status === 'active')}
+        isSaving={upsertDisposition.isPending}
+        onSave={(input) => upsertDisposition.mutate({ callId: summary.call_id, input })}
+      />
+
       <div className="space-y-3">
         {summary.events.map((event) => (
           <div
@@ -351,6 +380,140 @@ function CallDetailPanel({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function DispositionPanel({
+  callId,
+  canManage,
+  disposition,
+  isLoading,
+  codes,
+  queues,
+  agents,
+  isSaving,
+  onSave,
+}: {
+  callId: string;
+  canManage: boolean;
+  disposition: {
+    queue_id: string | null;
+    agent_profile_id: string | null;
+    disposition_code_id: string | null;
+    note_text: string | null;
+  } | null | undefined;
+  isLoading: boolean;
+  codes: Array<{ id: string; queue_id: string | null; label: string; code: string; status: 'active' | 'inactive' }>;
+  queues: Array<{ id: string; name: string }>;
+  agents: Array<{ id: string; display_name: string }>;
+  isSaving: boolean;
+  onSave: (input: {
+    queue_id?: string | null;
+    agent_profile_id?: string | null;
+    disposition_code_id?: string | null;
+    note_text?: string | null;
+  }) => void;
+}) {
+  const [queueId, setQueueId] = useState('');
+  const [agentId, setAgentId] = useState('');
+  const [codeId, setCodeId] = useState('');
+  const [noteText, setNoteText] = useState('');
+
+  useEffect(() => {
+    setQueueId(disposition?.queue_id ?? '');
+    setAgentId(disposition?.agent_profile_id ?? '');
+    setCodeId(disposition?.disposition_code_id ?? '');
+    setNoteText(disposition?.note_text ?? '');
+  }, [disposition?.agent_profile_id, disposition?.disposition_code_id, disposition?.note_text, disposition?.queue_id]);
+
+  const availableCodes = codes.filter((code) => code.status === 'active' && (!code.queue_id || code.queue_id === queueId));
+
+  return (
+    <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium">Disposition and Post-Call Notes</p>
+          <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+            Capture the handled outcome directly against call {callId} so supervisors can review queue usage later.
+          </p>
+        </div>
+      </div>
+      {!canManage ? (
+        <p className="mt-3 text-sm text-[var(--color-muted-fg)]">
+          Disposition editing requires the contact-center disposition capability.
+        </p>
+      ) : isLoading ? (
+        <p className="mt-3 text-sm text-[var(--color-muted-fg)]">Loading disposition form...</p>
+      ) : (
+        <div className="mt-4 space-y-3">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="block text-xs font-medium text-[var(--color-muted-fg)]">
+              Queue
+              <select
+                className="mt-1 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
+                value={queueId}
+                onChange={(event) => {
+                  setQueueId(event.target.value);
+                  setCodeId('');
+                }}
+              >
+                <option value="">Unspecified</option>
+                {queues.map((queue) => (
+                  <option key={queue.id} value={queue.id}>{queue.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-xs font-medium text-[var(--color-muted-fg)]">
+              Agent
+              <select
+                className="mt-1 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
+                value={agentId}
+                onChange={(event) => setAgentId(event.target.value)}
+              >
+                <option value="">Unspecified</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>{agent.display_name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-xs font-medium text-[var(--color-muted-fg)]">
+              Disposition
+              <select
+                className="mt-1 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
+                value={codeId}
+                onChange={(event) => setCodeId(event.target.value)}
+              >
+                <option value="">None</option>
+                {availableCodes.map((code) => (
+                  <option key={code.id} value={code.id}>{code.label} ({code.code})</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="block text-xs font-medium text-[var(--color-muted-fg)]">
+            Notes
+            <textarea
+              className="mt-1 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
+              rows={4}
+              value={noteText}
+              onChange={(event) => setNoteText(event.target.value)}
+              placeholder="Capture what happened, the follow-up promised, or why the outcome was chosen."
+            />
+          </label>
+          <Button
+            onClick={() => onSave({
+              queue_id: queueId || null,
+              agent_profile_id: agentId || null,
+              disposition_code_id: codeId || null,
+              note_text: noteText.trim() || null,
+            })}
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving...' : 'Save disposition'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
