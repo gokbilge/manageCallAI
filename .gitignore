@@ -29,6 +29,7 @@ runtime-token*
 !docs/ops/runtime-token-rotation.md
 !docs/security/runtime-token-hardening.md
 
+# Keep release-train planning docs tracked under docs/planning/.
 # Local AI context files - not for version control
 CLAUDE.md
 AGENTS.md
