@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS schedule_overrides (
     open_time text,
     close_time text,
     cancelled_at timestamptz,
-    cancelled_by uuid REFERENCES tenant_users(id) ON DELETE SET NULL,
-    created_by uuid REFERENCES tenant_users(id) ON DELETE SET NULL,
+    cancelled_by uuid REFERENCES users(id) ON DELETE SET NULL,
+    created_by uuid REFERENCES users(id) ON DELETE SET NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     CHECK (ends_at > starts_at)
