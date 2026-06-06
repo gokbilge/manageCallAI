@@ -126,18 +126,6 @@ export class AiRecommendationService {
         tenantId,
         definition,
         createdBy,
-        {
-          ai_lineage: {
-            ai_assisted: true,
-            actor: { actor_type: 'user' },
-            source_request_type: 'ai_recommendation',
-            source_request_id: id,
-            normalized_input: rec.intent,
-            risk_level: rec.risk_level,
-            risk_summary: rec.rationale,
-            requires_human_approval: true,
-          },
-        },
       );
     } else if (rec.target_type === 'fraud_policy') {
       const detail = rec.recommendation as FraudPolicyRecommendationDetail;

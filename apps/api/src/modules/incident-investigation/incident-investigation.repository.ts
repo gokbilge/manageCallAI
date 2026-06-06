@@ -105,7 +105,7 @@ export class IncidentInvestigationRepository {
     return result.rows;
   }
 
-  async findGatewayStatus(_tenantId: string): Promise<GatewayStatusRow[]> {
+  async findGatewayStatus(): Promise<GatewayStatusRow[]> {
     const result = await this.db.query<GatewayStatusRow>(
       `SELECT n.display_name AS gateway_name,
               CASE WHEN s.missing_required_modules = '{}' THEN 'up' ELSE 'degraded' END AS state,

@@ -186,7 +186,7 @@ export class IncidentInvestigationService {
 
     // Gather gateway state
     if (category === 'gateway' || category === 'general') {
-      const gateways = await this.repo.findGatewayStatus(tenantId);
+      const gateways = await this.repo.findGatewayStatus();
       citations.push(...buildGatewayCitations(gateways));
       if (gateways.length) dataSources.push('gateway_status');
     }

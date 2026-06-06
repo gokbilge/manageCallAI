@@ -158,7 +158,7 @@ export class AiRecommendationRepository {
     tenantId: string,
     definition: Record<string, unknown>,
     createdBy: string,
-    _metadata: Record<string, unknown>,
+    // metadata intentionally not persisted (route_versions table has no metadata column)
   ): Promise<string> {
     const numResult = await this.db.query<{ max: string | null }>(
       `SELECT MAX(version_number) as max FROM route_versions

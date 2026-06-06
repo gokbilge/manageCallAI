@@ -45,7 +45,7 @@ function makeRepo(overrides: Partial<IncidentInvestigationRepository> = {}): Inc
       { id: 'route-1', name: 'Main Route', status: 'active', match_type: 'did', match_value: '+14155551234', target_type: 'flow' },
     ]),
     findGatewayStatus: vi.fn().mockResolvedValue([
-      { gateway_name: 'gw-1', state: 'up', ping_time_ms: 12, updated_at: new Date() },
+      { gateway_name: 'Main Node', state: 'up', ping_time_ms: 12, updated_at: new Date() },
     ]),
     findRecentFailedCalls: vi.fn().mockResolvedValue([]),
     ...overrides,
@@ -102,7 +102,7 @@ describe('IncidentInvestigationService', () => {
       false,
     );
 
-    expect(repo.findGatewayStatus).toHaveBeenCalledWith(TENANT);
+    expect(repo.findGatewayStatus).toHaveBeenCalled();
     // Verify create was called with gateway_status in data_sources
     expect(repo.create).toHaveBeenCalledWith(
       TENANT,
