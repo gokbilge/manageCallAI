@@ -7,6 +7,7 @@ import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { buildActorMetadata, resolveActorIdentity } from '../auth/resolve-actor-identity.js';
 import { IvrFlowRepository } from '../ivr-flows/ivr-flow.repository.js';
+import { EnterpriseLifecycleRepository } from '../shared/enterprise-lifecycle.repository.js';
 import { fireWebhooks } from '../automation/webhook-delivery.js';
 import { fireAuditEvent } from '../audit/fire-audit.js';
 import { ApprovalRepository } from './approval.repository.js';
@@ -21,6 +22,7 @@ import { sendNotFound, sendFailedPrecondition } from '../../errors/index.js';
 const service = new ApprovalService(
   new ApprovalRepository(db),
   new IvrFlowRepository(db),
+  new EnterpriseLifecycleRepository(db),
 );
 
 function replyError(err: unknown, reply: FastifyReply): void {
