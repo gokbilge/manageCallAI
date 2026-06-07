@@ -3,6 +3,21 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'pg';
 
+async function truncateTenantsWithRetry(db: Pool): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await db.query('TRUNCATE TABLE tenants CASCADE');
+      return;
+    } catch (error) {
+      const maybePgError = error as { code?: string };
+      if (maybePgError.code !== '40P01' || attempt === 2) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+    }
+  }
+}
+
 describe('AI recommendations and incident investigation endpoints', () => {
   let app: FastifyInstance;
   let db: Pool;
@@ -26,7 +41,7 @@ describe('AI recommendations and incident investigation endpoints', () => {
   });
 
   beforeEach(async () => {
-    await db.query('TRUNCATE TABLE tenants CASCADE');
+    await truncateTenantsWithRetry(db);
   });
 
   async function register(suf: string): Promise<string> {

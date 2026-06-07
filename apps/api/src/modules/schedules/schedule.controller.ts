@@ -11,7 +11,10 @@ import {
   ScheduleService,
   ScheduleValidationError,
 } from './schedule.service.js';
-import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
+import { sendNotFound, sendInvalidArgument, sendFailedPrecondition } from '../../errors/index.js';
+import { resolveActorIdentity } from '../auth/resolve-actor-identity.js';
+import { EnterpriseLifecycleRepository } from '../shared/enterprise-lifecycle.repository.js';
+import { EnterpriseLifecycleService, EnterpriseVersionNotFoundError, EnterpriseVersionStateError, EnterpriseRollbackNotAvailableError } from '../shared/enterprise-lifecycle.service.js';
 import {
   z,
   UuidParamsSchema,
@@ -25,12 +28,13 @@ const ScheduleOverrideParamsSchema = z.object({
   overrideId: z.string().uuid(),
 });
 
-const service = new ScheduleService(new ScheduleRepository(db));
+const lifecycleSvc = new EnterpriseLifecycleService(new EnterpriseLifecycleRepository(db));
+const service = new ScheduleService(new ScheduleRepository(db), lifecycleSvc);
 
 function replyError(err: unknown, reply: FastifyReply): void {
-  if (err instanceof ScheduleNotFoundError) return sendNotFound(reply, err.message);
-  if (err instanceof ScheduleOverrideNotFoundError) return sendNotFound(reply, err.message);
+  if (err instanceof ScheduleNotFoundError || err instanceof ScheduleOverrideNotFoundError || err instanceof EnterpriseVersionNotFoundError) return sendNotFound(reply, err.message);
   if (err instanceof ScheduleValidationError) return sendInvalidArgument(reply, err.message);
+  if (err instanceof EnterpriseVersionStateError || err instanceof EnterpriseRollbackNotAvailableError) return sendFailedPrecondition(reply, err.message);
   throw err;
 }
 
@@ -152,4 +156,64 @@ export const scheduleController: FastifyPluginAsyncZod = async (app) => {
       }
     },
   );
+
+  // ── Publish lifecycle (#319, #321) ────────────────────────────────────────
+
+  const idVidParams = z.object({ id: z.string().uuid(), vid: z.string().uuid() });
+
+  app.get('/:id/versions', { preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_VIEW), schema: { params: UuidParamsSchema } }, async (req, reply) => {
+    try { return { data: await service.listVersions(req.params.id, (req.user as AuthClaims).tenant_id) }; } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/versions', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
+    schema: { params: UuidParamsSchema, body: z.object({ definition: z.record(z.unknown()).optional() }) },
+  }, async (req, reply) => {
+    const user = req.user as AuthClaims;
+    try { return reply.code(201).send({ data: await service.createVersion(req.params.id, user.tenant_id, req.body.definition ?? {}, user.sub) }); } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/versions/:vid/validate', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
+    schema: { params: idVidParams },
+  }, async (req, reply) => {
+    try {
+      const result = await service.validate(req.params.id, req.params.vid, (req.user as AuthClaims).tenant_id);
+      return reply.code(result.outcome.status === 'passed' ? 200 : 422).send({ data: result });
+    } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/versions/:vid/simulate', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_VIEW),
+    schema: { params: idVidParams, body: z.object({ check_at: z.string().datetime().optional() }) },
+  }, async (req, reply) => {
+    try {
+      const result = await service.simulate(req.params.id, req.params.vid, (req.user as AuthClaims).tenant_id, req.body.check_at ?? new Date().toISOString());
+      return reply.code((result.outcome.status as string) === 'passed' ? 200 : 422).send({ data: result });
+    } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/versions/:vid/publish', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
+    schema: { params: idVidParams },
+  }, async (req, reply) => {
+    resolveActorIdentity(req);
+    const user = req.user as AuthClaims;
+    try {
+      const result = await service.publish(req.params.id, req.params.vid, user.tenant_id, user.sub);
+      return reply.code(result.status === 'published' ? 200 : 202).send({ data: result });
+    } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/rollback', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
+    schema: { params: UuidParamsSchema },
+  }, async (req, reply) => {
+    resolveActorIdentity(req);
+    const user = req.user as AuthClaims;
+    try {
+      const result = await service.rollback(req.params.id, user.tenant_id, user.sub);
+      return reply.code(result.status === 'published' ? 200 : 202).send({ data: result });
+    } catch (err) { return replyError(err, reply); }
+  });
 };

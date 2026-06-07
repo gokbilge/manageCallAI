@@ -229,6 +229,12 @@ Planned in `#305` through `#307` to model failover-aware carrier selection.
 Planned in `#308` through `#315` to separate endpoint ownership and device
 presentation from the flat extension-centric baseline.
 
+`v0.7.3` productization adds operator-facing views that make the relationships
+between `Site`, `NumberingPlan`, `CallingPolicy`, `TrunkGroup`, `RouteList`,
+`Device`, and `LineAppearance` inspectable together instead of only through API
+responses. Those views remain read/advisory unless the underlying API mutation
+path is explicitly used.
+
 ### ScheduleGroup and HolidayCalendar
 
 Implemented in `#311` and `#312`, with site-aware and timezone-aware

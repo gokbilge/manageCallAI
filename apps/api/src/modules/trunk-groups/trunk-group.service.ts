@@ -16,6 +16,15 @@ import type {
   UpdateRouteListInput,
   UpdateTrunkGroupInput,
 } from './trunk-group.types.js';
+import type { EnterpriseLifecycleService } from '../shared/enterprise-lifecycle.service.js';
+import type {
+  EnterpriseVersion,
+  EnterpriseValidationResult,
+  EnterpriseSimulationResult,
+  EnterpriseDryRunResult,
+  EnterprisePublishAttemptResult,
+} from '../shared/enterprise-lifecycle.types.js';
+import type { Role } from '../auth/capabilities.js';
 
 export class TrunkGroupNotFoundError extends Error {
   constructor(id: string) { super(`Trunk group not found: ${id}`); this.name = 'TrunkGroupNotFoundError'; }
@@ -30,7 +39,10 @@ export class TrunkGroupMemberNotFoundError extends Error {
 }
 
 export class TrunkGroupService {
-  constructor(private readonly repo: TrunkGroupRepository) {}
+  constructor(
+    private readonly repo: TrunkGroupRepository,
+    private readonly lifecycleSvc?: EnterpriseLifecycleService,
+  ) {}
 
   // ── Trunk groups ──────────────────────────────────────────────────────────
 
@@ -217,5 +229,54 @@ export class TrunkGroupService {
       is_advisory: true,
       resolved_at: new Date().toISOString(),
     };
+  }
+
+  // ── Publish lifecycle (#319, #321) ────────────────────────────────────────
+
+  private get lifecycle(): EnterpriseLifecycleService {
+    if (!this.lifecycleSvc) throw new Error('EnterpriseLifecycleService not provided');
+    return this.lifecycleSvc;
+  }
+
+  createVersion(groupId: string, tenantId: string, definition: Record<string, unknown>, createdBy?: string, metadata?: Record<string, unknown>): Promise<EnterpriseVersion> {
+    return this.lifecycle.createVersion('trunk_group', groupId, tenantId, definition, createdBy, metadata);
+  }
+
+  listVersions(groupId: string, tenantId: string): Promise<EnterpriseVersion[]> {
+    return this.lifecycle.listVersions('trunk_group', groupId, tenantId);
+  }
+
+  async validate(groupId: string, versionId: string, tenantId: string): Promise<EnterpriseValidationResult> {
+    const group = await this.repo.findGroupById(groupId, tenantId);
+    if (!group) throw new TrunkGroupNotFoundError(groupId);
+    return this.lifecycle.validate('trunk_group', groupId, versionId, tenantId, async () => {
+      const errors: { field: string; message: string }[] = [];
+      const members = group.members;
+      if (members.length === 0) {
+        errors.push({ field: 'members', message: 'Trunk group has no members; at least one trunk member is required before publish.' });
+      }
+      return { status: errors.length === 0 ? 'passed' : 'failed', errors, warnings: [] };
+    });
+  }
+
+  async simulate(groupId: string, versionId: string, tenantId: string, dialString: string): Promise<EnterpriseSimulationResult> {
+    const simulation = await this.simulateTrunkGroup(groupId, tenantId, dialString);
+    const outcome = {
+      status: simulation.outcome === 'routed' ? 'passed' : 'failed',
+      ...simulation,
+    };
+    return this.lifecycle.simulate('trunk_group', groupId, versionId, tenantId, { dial_string: dialString }, async () => outcome);
+  }
+
+  dryRunPublish(groupId: string, versionId: string, tenantId: string, actorType: 'user' | 'workflow' | 'ai_agent' | 'system' = 'user', actorRole?: Role): Promise<EnterpriseDryRunResult> {
+    return this.lifecycle.dryRunPublish('trunk_group', groupId, versionId, tenantId, actorType, actorRole);
+  }
+
+  publish(groupId: string, versionId: string, tenantId: string, triggeredById: string, actorRole?: Role, actorType: 'user' | 'workflow' | 'ai_agent' | 'system' = 'user'): Promise<EnterprisePublishAttemptResult> {
+    return this.lifecycle.publish('trunk_group', groupId, versionId, tenantId, triggeredById, actorRole, actorType);
+  }
+
+  rollback(groupId: string, tenantId: string, triggeredById: string, actorRole?: Role, actorType: 'user' | 'workflow' | 'ai_agent' | 'system' = 'user'): Promise<EnterprisePublishAttemptResult> {
+    return this.lifecycle.rollback('trunk_group', groupId, tenantId, triggeredById, actorRole, actorType);
   }
 }
