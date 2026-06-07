@@ -75,6 +75,135 @@ describe('outboundRouteController', () => {
     vi.resetModules();
   });
 
+  async function createApp() {
+    const { outboundRouteController } = await import('./outbound-route.controller.js');
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    await app.register(outboundRouteController, { prefix: '/outbound-routes' });
+    return app;
+  }
+
+  it('lists routes for the tenant', async () => {
+    mockService.listByTenant.mockResolvedValue([{ id: 'route-1', name: 'Route 1' }]);
+    const app = await createApp();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/outbound-routes',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mockService.listByTenant).toHaveBeenCalledWith('tenant-1');
+    await app.close();
+  });
+
+  it('creates a route', async () => {
+    mockService.create.mockResolvedValue({ id: 'route-1', name: 'Route 1' });
+    const app = await createApp();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/outbound-routes',
+      payload: {
+        name: 'Route 1',
+        match_prefix: '+1',
+        sip_trunk_id: '00000000-0000-0000-0000-000000000001',
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mockService.create).toHaveBeenCalledWith(expect.objectContaining({
+      tenant_id: 'tenant-1',
+      name: 'Route 1',
+    }));
+    await app.close();
+  });
+
+  it('maps route not found errors to 404 on get by id', async () => {
+    const { OutboundRouteNotFoundError } = await import('./outbound-route.service.js');
+    mockService.getById.mockRejectedValue(new OutboundRouteNotFoundError('missing'));
+    const app = await createApp();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/outbound-routes/00000000-0000-0000-0000-000000000010',
+    });
+
+    expect(response.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('updates a route', async () => {
+    mockService.update.mockResolvedValue({ id: 'route-1', name: 'Updated' });
+    const app = await createApp();
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/outbound-routes/00000000-0000-0000-0000-000000000010',
+      payload: { name: 'Updated' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mockService.update).toHaveBeenCalledWith(
+      '00000000-0000-0000-0000-000000000010',
+      'tenant-1',
+      { name: 'Updated' },
+    );
+    await app.close();
+  });
+
+  it('maps route validation errors to 400 on publish', async () => {
+    const { OutboundRouteValidationError } = await import('./outbound-route.service.js');
+    mockService.publish.mockRejectedValue(new OutboundRouteValidationError('blocked'));
+    const app = await createApp();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/outbound-routes/00000000-0000-0000-0000-000000000010/publish',
+    });
+
+    expect(response.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('deactivates a route', async () => {
+    mockService.deactivate.mockResolvedValue({ id: 'route-1', status: 'inactive' });
+    const app = await createApp();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/outbound-routes/00000000-0000-0000-0000-000000000010/deactivate',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mockService.deactivate).toHaveBeenCalledWith('00000000-0000-0000-0000-000000000010', 'tenant-1');
+    await app.close();
+  });
+
+  it('returns route resolution results for runtime callers', async () => {
+    mockService.resolveRouteForNumber.mockResolvedValue({
+      route_id: 'route-1',
+      sip_trunk_id: '00000000-0000-0000-0000-000000000001',
+      fallback_sip_trunk_id: null,
+      match_prefix: '+1',
+      priority: 100,
+      allowed_destination_prefixes_json: null,
+      blocked_destination_prefixes_json: null,
+    });
+    const app = await createApp();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/outbound-routes/resolve',
+      payload: { tenant_id: 'tenant-1', dial_number: '+14155551234' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mockService.resolveRouteForNumber).toHaveBeenCalledWith('tenant-1', '+14155551234');
+    await app.close();
+  });
+
   it('returns enterprise check results for a route', async () => {
     mockEnterpriseRoutingService.runOutboundRouteCheck.mockResolvedValue({
       validation: {
@@ -109,11 +238,7 @@ describe('outboundRouteController', () => {
       },
     });
 
-    const { outboundRouteController } = await import('./outbound-route.controller.js');
-    const app = Fastify();
-    app.setValidatorCompiler(validatorCompiler);
-    app.setSerializerCompiler(serializerCompiler);
-    await app.register(outboundRouteController, { prefix: '/outbound-routes' });
+    const app = await createApp();
 
     const response = await app.inject({
       method: 'POST',
@@ -137,11 +262,7 @@ describe('outboundRouteController', () => {
       new EnterpriseRoutingTargetNotFoundError('missing-route'),
     );
 
-    const { outboundRouteController } = await import('./outbound-route.controller.js');
-    const app = Fastify();
-    app.setValidatorCompiler(validatorCompiler);
-    app.setSerializerCompiler(serializerCompiler);
-    await app.register(outboundRouteController, { prefix: '/outbound-routes' });
+    const app = await createApp();
 
     const response = await app.inject({
       method: 'POST',
