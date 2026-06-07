@@ -20,9 +20,12 @@ const mockSchedules = [
     id: 'sched-1',
     name: 'Business Hours',
     status: 'active',
+    description: 'Weekday support line',
     timezone: 'America/New_York',
     weekly_rules_json: [{ day_of_week: 1, open_time: '09:00', close_time: '17:00' }],
-    holiday_overrides_json: [],
+    holiday_calendar_name: 'US Holidays',
+    holiday_calendar_json: [],
+    override_windows_json: [{ status: 'active' }],
     created_at: '2026-01-01T00:00:00Z',
   },
 ];
@@ -43,6 +46,8 @@ describe('SchedulesPage', () => {
       expect(screen.getByText('Business Hours')).toBeInTheDocument();
     });
     expect(screen.getByText('America/New_York')).toBeInTheDocument();
+    expect(screen.getByText(/US Holidays/)).toBeInTheDocument();
+    expect(screen.getByText('1 active')).toBeInTheDocument();
   });
 
   it('shows empty state when no schedules', async () => {

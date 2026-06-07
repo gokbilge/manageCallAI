@@ -5,18 +5,31 @@ import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { ScheduleRepository } from './schedule.repository.js';
-import { ScheduleNotFoundError, ScheduleService, ScheduleValidationError } from './schedule.service.js';
+import {
+  ScheduleNotFoundError,
+  ScheduleOverrideNotFoundError,
+  ScheduleService,
+  ScheduleValidationError,
+} from './schedule.service.js';
 import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
 import {
+  z,
   UuidParamsSchema,
   CreateScheduleBodySchema,
+  CreateScheduleOverrideBodySchema,
   UpdateScheduleBodySchema,
 } from '@managecallai/contracts';
+
+const ScheduleOverrideParamsSchema = z.object({
+  id: z.string().uuid(),
+  overrideId: z.string().uuid(),
+});
 
 const service = new ScheduleService(new ScheduleRepository(db));
 
 function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof ScheduleNotFoundError) return sendNotFound(reply, err.message);
+  if (err instanceof ScheduleOverrideNotFoundError) return sendNotFound(reply, err.message);
   if (err instanceof ScheduleValidationError) return sendInvalidArgument(reply, err.message);
   throw err;
 }
@@ -79,6 +92,45 @@ export const scheduleController: FastifyPluginAsyncZod = async (app) => {
       const user = req.user as AuthClaims;
       try {
         return { data: await service.update(req.params.id, user.tenant_id, req.body) };
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post(
+    '/:id/overrides',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
+      schema: {
+        params: UuidParamsSchema,
+        body: CreateScheduleOverrideBodySchema,
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const schedule = await service.addOverride(req.params.id, user.tenant_id, {
+          ...req.body,
+          actor_user_id: user.sub ?? null,
+        });
+        return reply.code(201).send({ data: schedule });
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post(
+    '/:id/overrides/:overrideId/revoke',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
+      schema: { params: ScheduleOverrideParamsSchema },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.revokeOverride(req.params.id, user.tenant_id, req.params.overrideId, user.sub ?? null) };
       } catch (err) {
         return replyError(err, reply);
       }

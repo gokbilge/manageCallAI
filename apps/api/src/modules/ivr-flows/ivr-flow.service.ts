@@ -25,7 +25,8 @@ interface ScheduleRef {
   id: string;
   timezone: string;
   weekly_rules_json: unknown;
-  holiday_overrides_json: unknown;
+  holiday_calendar_json: unknown;
+  override_windows_json: unknown;
 }
 
 export class IvrFlowNotFoundError extends Error {
@@ -198,14 +199,15 @@ function simulateGraph(
         };
       }
       const evalAt = scenario.now ? new Date(scenario.now) : new Date();
-      const inHours = isInBusinessHours(
-        {
-          timezone: schedule.timezone,
-          weekly_rules_json: Array.isArray(schedule.weekly_rules_json) ? schedule.weekly_rules_json as never : [],
-          holiday_overrides_json: Array.isArray(schedule.holiday_overrides_json) ? schedule.holiday_overrides_json as never : [],
-        },
-        evalAt,
-      );
+        const inHours = isInBusinessHours(
+          {
+            timezone: schedule.timezone,
+            weekly_rules_json: Array.isArray(schedule.weekly_rules_json) ? schedule.weekly_rules_json as never : [],
+            holiday_calendar_json: Array.isArray((schedule as { holiday_calendar_json?: unknown }).holiday_calendar_json) ? (schedule as { holiday_calendar_json: unknown[] }).holiday_calendar_json as never : [],
+            override_windows_json: Array.isArray((schedule as { override_windows_json?: unknown }).override_windows_json) ? (schedule as { override_windows_json: unknown[] }).override_windows_json as never : [],
+          },
+          evalAt,
+        );
       const ctx = { lastDigits, callerNumber, scenarioHour, variables, resolveBusinessHours: () => inHours };
       const { nextNodeId, edgeId } = resolveNextNode(plannerNode, ctx);
       prevEdgeId = edgeId;

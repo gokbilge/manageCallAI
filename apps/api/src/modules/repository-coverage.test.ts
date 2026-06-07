@@ -49,7 +49,7 @@ describe('Repository coverage', () => {
       rows([{ id: 'event-1', call_id: 'call-1', event_type: 'dtmf' }]),
       rows([{ id: 'prompt-1', name: 'Greeting', storage_uri: 'prompt.wav' }]),
       rows([{ id: 'ext-1', extension_number: '1001', display_name: 'Desk', directory_domain: 'pbx.test' }]),
-      row({ id: 'schedule-1', timezone: 'UTC', weekly_rules_json: {}, holiday_overrides_json: {} }),
+      row({ id: 'schedule-1', timezone: 'UTC', weekly_rules_json: {}, holiday_calendar_json: {}, override_windows_json: {} }),
       rows([{ id: 'queue-1', name: 'Sales', strategy: 'sequential', ring_timeout_seconds: 10, retry_delay_seconds: 1, max_wait_seconds: 60, music_on_hold: null, overflow_target_type: null, overflow_target_id: null }]),
       rows([{ queue_id: 'queue-1', extension_number: '1001', directory_domain: 'pbx.test', position: 1 }]),
       rows([{ id: 'vm-1', name: 'Mailbox', mailbox_number: '9001', directory_domain: 'pbx.test', greeting_prompt_uri: 'greeting.wav' }]),

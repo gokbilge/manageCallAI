@@ -1,4 +1,4 @@
-import type { Schedule } from './schedule.types.js';
+import type { Schedule, ScheduleOverride } from './schedule.types.js';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
@@ -30,7 +30,7 @@ function getLocalParts(now: Date, timezone: string): { date: string; dayOfWeek: 
 }
 
 export function isInBusinessHours(
-  schedule: Pick<Schedule, 'timezone' | 'weekly_rules_json' | 'holiday_overrides_json'>,
+  schedule: Pick<Schedule, 'timezone' | 'weekly_rules_json' | 'holiday_calendar_json' | 'override_windows_json'>,
   now: Date,
 ): boolean {
   let local: ReturnType<typeof getLocalParts>;
@@ -42,7 +42,16 @@ export function isInBusinessHours(
 
   const { date, dayOfWeek, timeHHMM } = local;
 
-  const holiday = schedule.holiday_overrides_json.find((h) => h.date === date);
+  const activeOverride = resolveActiveOverride(schedule.override_windows_json, now);
+  if (activeOverride) {
+    if (activeOverride.mode === 'closed') return false;
+    if (activeOverride.open_time && activeOverride.close_time) {
+      return timeHHMM >= activeOverride.open_time && timeHHMM < activeOverride.close_time;
+    }
+    return false;
+  }
+
+  const holiday = schedule.holiday_calendar_json.find((h) => h.date === date);
   if (holiday) {
     if (holiday.closed) return false;
     if (holiday.open_time && holiday.close_time) {
@@ -55,4 +64,17 @@ export function isInBusinessHours(
   if (!rule) return false;
 
   return timeHHMM >= rule.open_time && timeHHMM < rule.close_time;
+}
+
+function resolveActiveOverride(overrides: ScheduleOverride[], now: Date): ScheduleOverride | null {
+  const active = overrides
+    .filter((override) => {
+      if (override.status !== 'active') return false;
+      const startsAt = Date.parse(override.starts_at);
+      const endsAt = Date.parse(override.ends_at);
+      const time = now.getTime();
+      return !Number.isNaN(startsAt) && !Number.isNaN(endsAt) && time >= startsAt && time < endsAt;
+    })
+    .sort((a, b) => Date.parse(b.starts_at) - Date.parse(a.starts_at));
+  return active[0] ?? null;
 }

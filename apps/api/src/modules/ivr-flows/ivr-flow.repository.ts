@@ -558,10 +558,10 @@ export class IvrFlowRepository {
     return new Map(r.rows.map((row) => [row.id, row]));
   }
 
-  async findActiveScheduleRefs(tenantId: string, ids: string[]): Promise<Map<string, { id: string; timezone: string; weekly_rules_json: unknown; holiday_overrides_json: unknown }>> {
+  async findActiveScheduleRefs(tenantId: string, ids: string[]): Promise<Map<string, { id: string; timezone: string; weekly_rules_json: unknown; holiday_calendar_json: unknown; override_windows_json: unknown }>> {
     if (ids.length === 0) return new Map();
-    const r = await this.db.query<{ id: string; timezone: string; weekly_rules_json: unknown; holiday_overrides_json: unknown }>(
-      `SELECT id, timezone, weekly_rules_json, holiday_overrides_json
+    const r = await this.db.query<{ id: string; timezone: string; weekly_rules_json: unknown; holiday_calendar_json: unknown; override_windows_json: unknown }>(
+      `SELECT id, timezone, weekly_rules_json, holiday_calendar_json, override_windows_json
        FROM schedules WHERE tenant_id = $1 AND id = ANY($2) AND status = 'active'`,
       [tenantId, ids],
     );

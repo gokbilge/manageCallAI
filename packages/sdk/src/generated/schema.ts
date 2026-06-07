@@ -5164,11 +5164,34 @@ export interface components {
             open_time: string;
             close_time: string;
         };
-        HolidayOverride: {
+        HolidayCalendarEntry: {
             date: string;
+            name: string;
             closed: boolean;
             open_time?: string;
             close_time?: string;
+        };
+        ScheduleOverride: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            reason: string | null;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            /** @enum {string} */
+            mode: "closed" | "custom_hours";
+            open_time?: string;
+            close_time?: string;
+            /** @enum {string} */
+            status: "active" | "revoked";
+            created_by_user_id: string | null;
+            /** Format: date-time */
+            created_at: string;
+            revoked_by_user_id: string | null;
+            /** Format: date-time */
+            revoked_at: string | null;
         };
         Schedule: {
             /** Format: uuid */
@@ -5178,9 +5201,12 @@ export interface components {
             name: string;
             /** @enum {string} */
             status: "active" | "inactive";
+            description: string | null;
             timezone: string;
             weekly_rules_json: components["schemas"]["WeeklyRule"][];
-            holiday_overrides_json: components["schemas"]["HolidayOverride"][];
+            holiday_calendar_name: string | null;
+            holiday_calendar_json: components["schemas"]["HolidayCalendarEntry"][];
+            override_windows_json: components["schemas"]["ScheduleOverride"][];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -5188,17 +5214,33 @@ export interface components {
         };
         CreateScheduleBody: {
             name: string;
+            description?: string | null;
             timezone: string;
             weekly_rules_json?: components["schemas"]["WeeklyRule"][];
-            holiday_overrides_json?: components["schemas"]["HolidayOverride"][];
+            holiday_calendar_name?: string | null;
+            holiday_calendar_json?: components["schemas"]["HolidayCalendarEntry"][];
         };
         UpdateScheduleBody: {
             name?: string;
+            description?: string | null;
             timezone?: string;
             weekly_rules_json?: components["schemas"]["WeeklyRule"][];
-            holiday_overrides_json?: components["schemas"]["HolidayOverride"][];
+            holiday_calendar_name?: string | null;
+            holiday_calendar_json?: components["schemas"]["HolidayCalendarEntry"][];
             /** @enum {string} */
             status?: "active" | "inactive";
+        };
+        CreateScheduleOverrideBody: {
+            name: string;
+            reason?: string | null;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            /** @enum {string} */
+            mode: "closed" | "custom_hours";
+            open_time?: string;
+            close_time?: string;
         };
         OutboundRoute: {
             /** Format: uuid */

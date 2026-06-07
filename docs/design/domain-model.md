@@ -231,8 +231,17 @@ presentation from the flat extension-centric baseline.
 
 ### ScheduleGroup and HolidayCalendar
 
-Planned in `#311` through `#313` to represent enterprise business-hours,
-closure, and override behavior.
+Implemented in `#311` and `#312`, with site-aware and timezone-aware
+evaluation completed in `#313`.
+
+Current model notes:
+
+- `Schedule` remains the tenant-facing resource and now acts as the explicit
+  schedule-group aggregate.
+- `holiday_calendar_name` and `holiday_calendar_json` model named closure and
+  reduced-hours dates separately from recurring weekly rules.
+- `override_windows_json` models temporary emergency or closure overrides with
+  expiry, actor attribution, and revocation metadata.
 
 ## 5.13 Contact-center entities (v0.7.0)
 

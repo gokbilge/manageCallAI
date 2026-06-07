@@ -13,22 +13,27 @@ type Schedule = {
   id: string;
   name: string;
   status: 'active' | 'inactive';
+  description: string | null;
   timezone: string;
   weekly_rules_json: unknown[];
-  holiday_overrides_json: unknown[];
+  holiday_calendar_name: string | null;
+  holiday_calendar_json: unknown[];
+  override_windows_json: Array<{ status: 'active' | 'revoked' }>;
   created_at: string;
 };
 
 type CreateScheduleForm = {
   name: string;
+  description: string;
   timezone: string;
+  holiday_calendar_name: string;
 };
 
 export function SchedulesPage() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const form = useForm<CreateScheduleForm>({
-    defaultValues: { name: '', timezone: 'UTC' },
+    defaultValues: { name: '', description: '', timezone: 'UTC', holiday_calendar_name: '' },
   });
 
   const schedulesQuery = useQuery({
@@ -47,7 +52,12 @@ export function SchedulesPage() {
       apiRequest<{ data: Schedule }>('/schedules', {
         method: 'POST',
         accessToken: session!.token,
-        body: JSON.stringify({ name: values.name, timezone: values.timezone }),
+        body: JSON.stringify({
+          name: values.name,
+          description: values.description || null,
+          timezone: values.timezone,
+          holiday_calendar_name: values.holiday_calendar_name || null,
+        }),
       }),
     onSuccess: async () => {
       form.reset();
@@ -71,7 +81,7 @@ export function SchedulesPage() {
       <PageHeader
         eyebrow="Tenant Workspace"
         title="Schedules"
-        description="Business-hours schedules referenced by IVR flows. Define weekly windows and holiday overrides to route calls based on time."
+        description="Business-hours schedules referenced by IVR flows. Define weekly windows, named holiday calendars, and temporary override windows to route calls based on time."
         actions={
           <Button onClick={() => schedulesQuery.refetch()} variant="secondary">
             <RefreshCcw className="size-4" aria-hidden="true" />
@@ -97,7 +107,8 @@ export function SchedulesPage() {
                     <th className="px-3 py-2 font-medium">Name</th>
                     <th className="px-3 py-2 font-medium">Timezone</th>
                     <th className="px-3 py-2 font-medium">Weekly rules</th>
-                    <th className="px-3 py-2 font-medium">Holiday overrides</th>
+                    <th className="px-3 py-2 font-medium">Holiday calendar</th>
+                    <th className="px-3 py-2 font-medium">Overrides</th>
                     <th className="px-3 py-2 font-medium">Status</th>
                     <th className="px-3 py-2 font-medium"></th>
                   </tr>
@@ -113,7 +124,12 @@ export function SchedulesPage() {
                       </td>
                       <td className="px-3 py-2 font-mono text-xs text-[var(--color-muted-fg)]">{s.timezone}</td>
                       <td className="px-3 py-2 text-[var(--color-muted-fg)]">{s.weekly_rules_json.length} rule(s)</td>
-                      <td className="px-3 py-2 text-[var(--color-muted-fg)]">{s.holiday_overrides_json.length} override(s)</td>
+                      <td className="px-3 py-2 text-[var(--color-muted-fg)]">
+                        {(s.holiday_calendar_name ?? 'Default calendar')} ({s.holiday_calendar_json.length} day(s))
+                      </td>
+                      <td className="px-3 py-2 text-[var(--color-muted-fg)]">
+                        {s.override_windows_json.filter((override) => override.status === 'active').length} active
+                      </td>
                       <td className="px-3 py-2">
                         <StatusBadge status={s.status} />
                       </td>
@@ -141,13 +157,19 @@ export function SchedulesPage() {
           )}
         </DataCard>
 
-        <DataCard title="Create Schedule" description="Define a named schedule with a timezone. Add weekly rules and holiday overrides via PATCH after creation.">
+        <DataCard title="Create Schedule" description="Define a named schedule group with a timezone and optional holiday calendar name. Weekly rules, holiday entries, and temporary overrides can be managed after creation.">
           <form className="space-y-4" onSubmit={form.handleSubmit((v) => createMutation.mutate(v))}>
             <Field label="Name">
               <input className={inputClass} {...form.register('name', { required: true })} />
             </Field>
+            <Field label="Description">
+              <textarea className={inputClass} rows={3} {...form.register('description')} />
+            </Field>
             <Field label="Timezone (IANA)">
               <input className={inputClass} placeholder="America/New_York" {...form.register('timezone', { required: true })} />
+            </Field>
+            <Field label="Holiday calendar name">
+              <input className={inputClass} placeholder="Corporate Holidays" {...form.register('holiday_calendar_name')} />
             </Field>
 
             {createMutation.isError ? (

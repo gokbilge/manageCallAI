@@ -275,15 +275,17 @@ export class IvrRuntimeRepository {
     id: string;
     timezone: string;
     weekly_rules_json: unknown;
-    holiday_overrides_json: unknown;
+    holiday_calendar_json: unknown;
+    override_windows_json: unknown;
   } | null> {
     const result = await this.db.query<{
       id: string;
       timezone: string;
       weekly_rules_json: unknown;
-      holiday_overrides_json: unknown;
+      holiday_calendar_json: unknown;
+      override_windows_json: unknown;
     }>(
-      `SELECT id, timezone, weekly_rules_json, holiday_overrides_json
+      `SELECT id, timezone, weekly_rules_json, holiday_calendar_json, override_windows_json
        FROM schedules WHERE tenant_id = $1 AND id = $2 AND status = 'active'`,
       [tenantId, scheduleId],
     );
