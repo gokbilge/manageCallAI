@@ -315,6 +315,10 @@ scores, and unsupported-item inventories.
 Planned to capture exact/equivalent/approximate/manual/unsupported/unknown
 classification for source objects, plus operator-visible rationale.
 
+The migration documentation lane standardizes those classifications as support
+levels `A`, `B`, `C`, `D`, `E`, and `U`. Compatibility and review entities
+should preserve both the human-readable rationale and the normalized level.
+
 ### MigrationEvidenceBundle
 
 Planned to capture source snapshot hash, compatibility output, draft object

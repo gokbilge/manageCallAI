@@ -102,11 +102,11 @@ These capabilities are required before import tooling can be trusted.
 | Calling policy and outbound permissions | Covered by closed issues [#301](https://github.com/gokbilge/manageCallAI/issues/301) and [#302](https://github.com/gokbilge/manageCallAI/issues/302) |
 | Site and location model | Covered by closed issues [#303](https://github.com/gokbilge/manageCallAI/issues/303) and [#304](https://github.com/gokbilge/manageCallAI/issues/304) |
 | Trunk groups and route lists | Covered by closed issues [#305](https://github.com/gokbilge/manageCallAI/issues/305), [#306](https://github.com/gokbilge/manageCallAI/issues/306), and [#307](https://github.com/gokbilge/manageCallAI/issues/307) |
-| User, extension, device, credential separation | Partly covered by closed [#308](https://github.com/gokbilge/manageCallAI/issues/308), [#309](https://github.com/gokbilge/manageCallAI/issues/309), and [#310](https://github.com/gokbilge/manageCallAI/issues/310) |
-| Advanced schedules and overrides | Open in [#311](https://github.com/gokbilge/manageCallAI/issues/311), [#312](https://github.com/gokbilge/manageCallAI/issues/312), and [#313](https://github.com/gokbilge/manageCallAI/issues/313) |
-| Line appearances | Open in [#314](https://github.com/gokbilge/manageCallAI/issues/314) and [#315](https://github.com/gokbilge/manageCallAI/issues/315) |
-| Lifecycle parity for enterprise objects | Planned in [#319](https://github.com/gokbilge/manageCallAI/issues/319), [#320](https://github.com/gokbilge/manageCallAI/issues/320), and [#321](https://github.com/gokbilge/manageCallAI/issues/321) |
-| Cross-object validation and simulation depth | Planned in [#322](https://github.com/gokbilge/manageCallAI/issues/322), [#323](https://github.com/gokbilge/manageCallAI/issues/323), and [#324](https://github.com/gokbilge/manageCallAI/issues/324) |
+| User, extension, device, credential separation | Covered by closed [#308](https://github.com/gokbilge/manageCallAI/issues/308), [#309](https://github.com/gokbilge/manageCallAI/issues/309), and [#310](https://github.com/gokbilge/manageCallAI/issues/310) |
+| Advanced schedules and overrides | Covered by closed [#311](https://github.com/gokbilge/manageCallAI/issues/311), [#312](https://github.com/gokbilge/manageCallAI/issues/312), and [#313](https://github.com/gokbilge/manageCallAI/issues/313) |
+| Line appearances | Covered by closed [#314](https://github.com/gokbilge/manageCallAI/issues/314) and [#315](https://github.com/gokbilge/manageCallAI/issues/315) |
+| Lifecycle parity for enterprise objects | Covered by closed [#319](https://github.com/gokbilge/manageCallAI/issues/319), [#320](https://github.com/gokbilge/manageCallAI/issues/320), and [#321](https://github.com/gokbilge/manageCallAI/issues/321) |
+| Cross-object validation and simulation depth | Covered by closed [#322](https://github.com/gokbilge/manageCallAI/issues/322), [#323](https://github.com/gokbilge/manageCallAI/issues/323), and [#324](https://github.com/gokbilge/manageCallAI/issues/324) |
 
 ## P1 Target Capabilities
 
@@ -184,6 +184,15 @@ Release placement:
 - `v0.7.x`: finish enterprise model stabilization and productization
 - `v0.8.x`: migration readiness analysis and source mapping docs
 - post-`v0.8.x`: draft-only importer and cutover evidence workflows
+
+Issue-alignment notes:
+
+- `#350`, `#351`, and `#352` define the `v0.8.0` documentation baseline under
+  umbrella issue `#331`.
+- `Generic CSV` remains part of the open-source documentation lane, but it
+  should stay inventory-oriented until parser and snapshot contracts exist.
+- `Mitel` remains matrix-only until a separate mapping issue is justified by
+  source research or buyer pull.
 
 `v0.7.0` contact-center scope is already broad. Migration readiness should run
 as a parallel planning lane or after the `v0.7` enterprise-model foundation,
