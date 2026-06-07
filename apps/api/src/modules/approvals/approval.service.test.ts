@@ -9,6 +9,7 @@ import type { ApprovalRepository } from './approval.repository.js';
 import type { IvrFlowRepository } from '../ivr-flows/ivr-flow.repository.js';
 import type { ApprovalRequestWithDetails, PendingPublishRecord } from './approval.types.js';
 import type { IvrFlow } from '../ivr-flows/ivr-flow.types.js';
+import type { EnterpriseLifecycleRepository } from '../shared/enterprise-lifecycle.repository.js';
 
 const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const APPROVAL_ID = '00000000-0000-0000-0000-000000000020';
@@ -225,5 +226,99 @@ describe('ApprovalService', () => {
       await expect(service.reject(APPROVAL_ID, TENANT_ID, APPROVER_ID))
         .rejects.toThrow(ApprovalAlreadyDecidedError);
     });
+  });
+});
+
+const TRUNK_GROUP_ID = '00000000-0000-0000-0000-000000000050';
+
+function makeEnterpriseApprovalRequest(overrides: Partial<ApprovalRequestWithDetails> = {}): ApprovalRequestWithDetails {
+  return {
+    id: APPROVAL_ID,
+    tenant_id: TENANT_ID,
+    object_type: 'trunk_group',
+    object_id: TRUNK_GROUP_ID,
+    version_id: VERSION_ID,
+    requested_by: 'user-1',
+    status: 'pending',
+    created_at: new Date(),
+    metadata: {},
+    flow_name: null,
+    action_type: 'publish',
+    ...overrides,
+  } as ApprovalRequestWithDetails;
+}
+
+function makeEnterpriseLifecycleRepo(): EnterpriseLifecycleRepository {
+  return {
+    publish: vi.fn().mockResolvedValue({ id: 'ver-1', state: 'published' }),
+    rollback: vi.fn().mockResolvedValue({ id: 'ver-1', state: 'published' }),
+  } as unknown as EnterpriseLifecycleRepository;
+}
+
+describe('ApprovalService — enterprise object approvals', () => {
+  let approvalRepo: ApprovalRepository;
+  let ivrFlowRepo: IvrFlowRepository;
+  let enterpriseLifecycleRepo: EnterpriseLifecycleRepository;
+
+  beforeEach(() => {
+    approvalRepo = {
+      findPendingByTenant: vi.fn(),
+      findById: vi.fn(),
+      findAssociatedPublishRecord: vi.fn(),
+      markApproved: vi.fn().mockResolvedValue(true),
+      markRejected: vi.fn(),
+      updatePublishRecordResult: vi.fn().mockResolvedValue(undefined),
+      writeAuditEvent: vi.fn().mockResolvedValue(undefined),
+      listPolicies: vi.fn(),
+    } as unknown as ApprovalRepository;
+    ivrFlowRepo = { publish: vi.fn(), rollback: vi.fn() } as unknown as IvrFlowRepository;
+    enterpriseLifecycleRepo = makeEnterpriseLifecycleRepo();
+  });
+
+  it('dispatches publish to enterprise lifecycle repo for trunk_group', async () => {
+    const request = makeEnterpriseApprovalRequest();
+    const publishRecord: PendingPublishRecord = { id: 'pr-1', object_id: TRUNK_GROUP_ID, version_id: VERSION_ID, action_type: 'publish' };
+    vi.mocked(approvalRepo.findById).mockResolvedValueOnce(request).mockResolvedValueOnce({ ...request, status: 'approved' });
+    vi.mocked(approvalRepo.findAssociatedPublishRecord).mockResolvedValue(publishRecord);
+
+    const svc = new ApprovalService(approvalRepo, ivrFlowRepo, enterpriseLifecycleRepo);
+    const result = await svc.approve(APPROVAL_ID, TENANT_ID, APPROVER_ID);
+
+    expect(enterpriseLifecycleRepo.publish).toHaveBeenCalledWith(expect.objectContaining({
+      objectType: 'trunk_group',
+      objectId: TRUNK_GROUP_ID,
+      versionId: VERSION_ID,
+      tenantId: TENANT_ID,
+      approvalRequestId: APPROVAL_ID,
+    }));
+    expect(ivrFlowRepo.publish).not.toHaveBeenCalled();
+    expect(result.action_type).toBe('publish');
+  });
+
+  it('dispatches rollback to enterprise lifecycle repo for calling_policy', async () => {
+    const request = makeEnterpriseApprovalRequest({ object_type: 'calling_policy', action_type: 'rollback' });
+    const publishRecord: PendingPublishRecord = { id: 'pr-1', object_id: TRUNK_GROUP_ID, version_id: VERSION_ID, action_type: 'rollback' };
+    vi.mocked(approvalRepo.findById).mockResolvedValueOnce(request).mockResolvedValueOnce({ ...request, status: 'approved' });
+    vi.mocked(approvalRepo.findAssociatedPublishRecord).mockResolvedValue(publishRecord);
+
+    const svc = new ApprovalService(approvalRepo, ivrFlowRepo, enterpriseLifecycleRepo);
+    await svc.approve(APPROVAL_ID, TENANT_ID, APPROVER_ID);
+
+    expect(enterpriseLifecycleRepo.rollback).toHaveBeenCalledWith(expect.objectContaining({
+      objectType: 'calling_policy',
+      tenantId: TENANT_ID,
+      approvalRequestId: APPROVAL_ID,
+    }));
+    expect(ivrFlowRepo.rollback).not.toHaveBeenCalled();
+  });
+
+  it('throws when enterprise approval is attempted without enterpriseLifecycleRepo', async () => {
+    const request = makeEnterpriseApprovalRequest();
+    const publishRecord: PendingPublishRecord = { id: 'pr-1', object_id: TRUNK_GROUP_ID, version_id: VERSION_ID, action_type: 'publish' };
+    vi.mocked(approvalRepo.findById).mockResolvedValue(request);
+    vi.mocked(approvalRepo.findAssociatedPublishRecord).mockResolvedValue(publishRecord);
+
+    const svc = new ApprovalService(approvalRepo, ivrFlowRepo);
+    await expect(svc.approve(APPROVAL_ID, TENANT_ID, APPROVER_ID)).rejects.toThrow('EnterpriseLifecycleRepository not provided');
   });
 });

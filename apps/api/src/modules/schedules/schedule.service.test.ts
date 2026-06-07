@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ScheduleService, ScheduleNotFoundError, ScheduleValidationError } from './schedule.service.js';
 import type { ScheduleRepository } from './schedule.repository.js';
 import type { Schedule } from './schedule.types.js';
+import type { EnterpriseLifecycleService } from '../shared/enterprise-lifecycle.service.js';
+import type { EnterpriseVersion, EnterprisePublishAttemptResult, EnterpriseDryRunResult } from '../shared/enterprise-lifecycle.types.js';
 
 const baseSchedule: Schedule = {
   id: 'sched-1',
@@ -167,5 +169,117 @@ describe('ScheduleService', () => {
         holiday_overrides_json: [{ date: '2026-12-26', closed: false, close_time: '14:00' }],
       }),
     ).rejects.toThrow(ScheduleValidationError);
+  });
+});
+
+const TENANT = 'tenant-1';
+const SCHED_ID = 'sched-1';
+
+function makeVersion(overrides: Partial<EnterpriseVersion> = {}): EnterpriseVersion {
+  return { id: 'ver-1', tenant_id: TENANT, object_id: SCHED_ID, version_number: 1, state: 'draft', definition: {}, created_by: null, created_at: new Date(), validated_at: null, simulated_at: null, published_at: null, metadata: {}, ...overrides };
+}
+
+function makeLifecycle(overrides: Partial<EnterpriseLifecycleService> = {}): EnterpriseLifecycleService {
+  const v = makeVersion();
+  const publishResult: EnterprisePublishAttemptResult = { status: 'published', version: makeVersion({ state: 'published' }) };
+  const dryRun: EnterpriseDryRunResult = { dry_run: true, would_become: 'published', require_approval: false, version_state_valid: true, actor_type: 'user' };
+  return {
+    createVersion: vi.fn().mockResolvedValue(v),
+    listVersions: vi.fn().mockResolvedValue([v]),
+    validate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, validatorFn) => { const outcome = await validatorFn(v); return { version: v, outcome }; }),
+    simulate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, _sc, simFn) => { const outcome = await simFn(v, {}); return { version: v, outcome }; }),
+    dryRunPublish: vi.fn().mockResolvedValue(dryRun),
+    publish: vi.fn().mockResolvedValue(publishResult),
+    rollback: vi.fn().mockResolvedValue(publishResult),
+    ...overrides,
+  } as unknown as EnterpriseLifecycleService;
+}
+
+function makeScheduleRepo(overrides: Partial<ScheduleRepository> = {}): ScheduleRepository {
+  return {
+    findAllByTenant: vi.fn().mockResolvedValue([baseSchedule]),
+    findById: vi.fn().mockResolvedValue(baseSchedule),
+    create: vi.fn().mockResolvedValue(baseSchedule),
+    update: vi.fn().mockResolvedValue(baseSchedule),
+    deactivate: vi.fn().mockResolvedValue({ ...baseSchedule, status: 'inactive' }),
+    findActiveByIds: vi.fn().mockResolvedValue(new Map()),
+    ...overrides,
+  } as unknown as ScheduleRepository;
+}
+
+describe('ScheduleService — lifecycle', () => {
+  it('createVersion delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new ScheduleService(makeScheduleRepo(), lc);
+    await svc.createVersion(SCHED_ID, TENANT, { x: 1 }, 'user-1');
+    expect(lc.createVersion).toHaveBeenCalledWith('schedule', SCHED_ID, TENANT, { x: 1 }, 'user-1', undefined);
+  });
+
+  it('listVersions delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new ScheduleService(makeScheduleRepo(), lc);
+    const result = await svc.listVersions(SCHED_ID, TENANT);
+    expect(result).toHaveLength(1);
+  });
+
+  it('validate passes when schedule has valid timezone and rules', async () => {
+    const lc = makeLifecycle();
+    const svc = new ScheduleService(makeScheduleRepo(), lc);
+    const result = await svc.validate(SCHED_ID, 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('passed');
+  });
+
+  it('validate fails when schedule has invalid timezone', async () => {
+    const lc = makeLifecycle();
+    const invalidSched = { ...baseSchedule, timezone: 'Invalid/Zone' };
+    const svc = new ScheduleService(makeScheduleRepo({ findById: vi.fn().mockResolvedValue(invalidSched) }), lc);
+    const result = await svc.validate(SCHED_ID, 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors.some(e => e.field === 'timezone')).toBe(true);
+  });
+
+  it('validate throws ScheduleNotFoundError when schedule missing', async () => {
+    const lc = makeLifecycle();
+    const svc = new ScheduleService(makeScheduleRepo({ findById: vi.fn().mockResolvedValue(null) }), lc);
+    await expect(svc.validate('missing', 'ver-1', TENANT)).rejects.toBeInstanceOf(ScheduleNotFoundError);
+  });
+
+  it('simulate delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new ScheduleService(makeScheduleRepo(), lc);
+    const result = await svc.simulate(SCHED_ID, 'ver-1', TENANT, '2026-06-07T09:00:00Z');
+    expect(result.outcome).toMatchObject({ status: 'passed' });
+  });
+
+  it('simulate throws ScheduleNotFoundError when schedule missing', async () => {
+    const lc = makeLifecycle();
+    const svc = new ScheduleService(makeScheduleRepo({ findById: vi.fn().mockResolvedValue(null) }), lc);
+    await expect(svc.simulate('missing', 'ver-1', TENANT, '2026-06-07T09:00:00Z')).rejects.toBeInstanceOf(ScheduleNotFoundError);
+  });
+
+  it('dryRunPublish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new ScheduleService(makeScheduleRepo(), lc);
+    const result = await svc.dryRunPublish(SCHED_ID, 'ver-1', TENANT);
+    expect(result.would_become).toBe('published');
+  });
+
+  it('publish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new ScheduleService(makeScheduleRepo(), lc);
+    const result = await svc.publish(SCHED_ID, 'ver-1', TENANT, 'user-1');
+    expect(result.status).toBe('published');
+  });
+
+  it('rollback delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new ScheduleService(makeScheduleRepo(), lc);
+    const result = await svc.rollback(SCHED_ID, TENANT, 'user-1');
+    expect(result.status).toBe('published');
+  });
+
+  it('lifecycle getter throws when lifecycleSvc not provided', async () => {
+    const svc = new ScheduleService(makeScheduleRepo());
+    expect(() => svc.createVersion(SCHED_ID, TENANT, {})).toThrow('EnterpriseLifecycleService not provided');
   });
 });

@@ -6,11 +6,15 @@ import { db } from '../../db/client.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
-import { sendNotFound } from '../../errors/index.js';
+import { sendNotFound, sendFailedPrecondition } from '../../errors/index.js';
+import { resolveActorIdentity } from '../auth/resolve-actor-identity.js';
 import { CallingPolicyRepository } from './calling-policy.repository.js';
 import { CallingPolicyService, CallingPolicyNotFoundError } from './calling-policy.service.js';
+import { EnterpriseLifecycleRepository } from '../shared/enterprise-lifecycle.repository.js';
+import { EnterpriseLifecycleService, EnterpriseVersionNotFoundError, EnterpriseVersionStateError, EnterpriseRollbackNotAvailableError } from '../shared/enterprise-lifecycle.service.js';
 
-const service = new CallingPolicyService(new CallingPolicyRepository(db));
+const lifecycleSvc = new EnterpriseLifecycleService(new EnterpriseLifecycleRepository(db));
+const service = new CallingPolicyService(new CallingPolicyRepository(db), lifecycleSvc);
 
 const PolicyAssignableTypeSchema = z.enum(['extension','call_group','tenant']);
 const CallTypeSchema = z.enum(['local','national','mobile','international','premium_rate','emergency','toll_free','special']);
@@ -32,7 +36,8 @@ const CreateBodySchema = z.object({
 });
 
 function replyError(err: unknown, reply: FastifyReply): void {
-  if (err instanceof CallingPolicyNotFoundError) return sendNotFound(reply, (err as Error).message);
+  if (err instanceof CallingPolicyNotFoundError || err instanceof EnterpriseVersionNotFoundError) return sendNotFound(reply, (err as Error).message);
+  if (err instanceof EnterpriseVersionStateError || err instanceof EnterpriseRollbackNotAvailableError) return sendFailedPrecondition(reply, (err as Error).message);
   throw err;
 }
 
@@ -80,5 +85,65 @@ export const callingPolicyController: FastifyPluginAsyncZod = async (app) => {
   }, async (req) => {
     const user = req.user as AuthClaims;
     return { data: await service.checkCallType(user.tenant_id, req.body.call_type) };
+  });
+
+  // ── Publish lifecycle (#319, #320, #321) ──────────────────────────────────
+
+  const idVidParams = z.object({ id: z.string().uuid(), vid: z.string().uuid() });
+
+  app.get('/:id/versions', { preHandler: requireCapability(CAPABILITIES.TENANT_FRAUD_POLICY_VIEW), schema: { params: UuidParamsSchema } }, async (req, reply) => {
+    try { return { data: await service.listVersions(req.params.id, (req.user as AuthClaims).tenant_id) }; } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/versions', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_FRAUD_POLICY_MANAGE),
+    schema: { params: UuidParamsSchema, body: z.object({ definition: z.record(z.unknown()).optional() }) },
+  }, async (req, reply) => {
+    const user = req.user as AuthClaims;
+    try { return reply.code(201).send({ data: await service.createVersion(req.params.id, user.tenant_id, req.body.definition ?? {}, user.sub) }); } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/versions/:vid/validate', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_FRAUD_POLICY_MANAGE),
+    schema: { params: idVidParams },
+  }, async (req, reply) => {
+    try {
+      const result = await service.validate(req.params.id, req.params.vid, (req.user as AuthClaims).tenant_id);
+      return reply.code(result.outcome.status === 'passed' ? 200 : 422).send({ data: result });
+    } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/versions/:vid/simulate', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_FRAUD_POLICY_VIEW),
+    schema: { params: idVidParams, body: z.object({ call_type: CallTypeSchema }) },
+  }, async (req, reply) => {
+    try {
+      const result = await service.simulate(req.params.id, req.params.vid, (req.user as AuthClaims).tenant_id, req.body.call_type);
+      return reply.code((result.outcome.status as string) === 'passed' ? 200 : 422).send({ data: result });
+    } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/versions/:vid/publish', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_FRAUD_POLICY_MANAGE),
+    schema: { params: idVidParams },
+  }, async (req, reply) => {
+    resolveActorIdentity(req);
+    const user = req.user as AuthClaims;
+    try {
+      const result = await service.publish(req.params.id, req.params.vid, user.tenant_id, user.sub);
+      return reply.code(result.status === 'published' ? 200 : 202).send({ data: result });
+    } catch (err) { return replyError(err, reply); }
+  });
+
+  app.post('/:id/rollback', {
+    preHandler: requireCapability(CAPABILITIES.TENANT_FRAUD_POLICY_MANAGE),
+    schema: { params: UuidParamsSchema },
+  }, async (req, reply) => {
+    resolveActorIdentity(req);
+    const user = req.user as AuthClaims;
+    try {
+      const result = await service.rollback(req.params.id, user.tenant_id, user.sub);
+      return reply.code(result.status === 'published' ? 200 : 202).send({ data: result });
+    } catch (err) { return replyError(err, reply); }
   });
 };

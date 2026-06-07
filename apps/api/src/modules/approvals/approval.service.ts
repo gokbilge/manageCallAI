@@ -1,6 +1,12 @@
 import type { IvrFlowRepository } from '../ivr-flows/ivr-flow.repository.js';
+import type { EnterpriseLifecycleRepository } from '../shared/enterprise-lifecycle.repository.js';
+import type { EnterpriseObjectType } from '../shared/enterprise-lifecycle.types.js';
 import type { ApprovalRepository } from './approval.repository.js';
 import type { ApprovalDecisionResult, ApprovalRequestWithDetails, Policy } from './approval.types.js';
+
+const ENTERPRISE_OBJECT_TYPES = new Set<string>([
+  'trunk_group', 'numbering_plan', 'calling_policy', 'site', 'schedule', 'line_appearance',
+]);
 
 export class ApprovalNotFoundError extends Error {
   constructor(id: string) { super(`Approval request not found: ${id}`); this.name = 'ApprovalNotFoundError'; }
@@ -18,6 +24,7 @@ export class ApprovalService {
   constructor(
     private readonly approvalRepo: ApprovalRepository,
     private readonly ivrFlowRepo: IvrFlowRepository,
+    private readonly enterpriseLifecycleRepo?: EnterpriseLifecycleRepository,
   ) {}
 
   listPending(tenantId: string): Promise<ApprovalRequestWithDetails[]> {
@@ -38,7 +45,32 @@ export class ApprovalService {
 
     await this.approvalRepo.markApproved(id, tenantId, approverId);
 
-    if (publishRecord.action_type === 'publish') {
+    const isEnterprise = ENTERPRISE_OBJECT_TYPES.has(request.object_type);
+    if (isEnterprise) {
+      if (!this.enterpriseLifecycleRepo) throw new Error('EnterpriseLifecycleRepository not provided for enterprise approval');
+      if (publishRecord.action_type === 'publish') {
+        await this.enterpriseLifecycleRepo.publish({
+          objectType: request.object_type as EnterpriseObjectType,
+          objectId: publishRecord.object_id,
+          versionId: publishRecord.version_id,
+          tenantId,
+          triggeredById: approverId,
+          triggeredByType: 'user',
+          approvalRequestId: id,
+          metadata: request.metadata,
+        });
+      } else {
+        await this.enterpriseLifecycleRepo.rollback({
+          objectType: request.object_type as EnterpriseObjectType,
+          objectId: publishRecord.object_id,
+          tenantId,
+          triggeredById: approverId,
+          triggeredByType: 'user',
+          approvalRequestId: id,
+          metadata: request.metadata,
+        });
+      }
+    } else if (publishRecord.action_type === 'publish') {
       await this.ivrFlowRepo.publish({
         tenant_id: tenantId,
         flow_id: publishRecord.object_id,

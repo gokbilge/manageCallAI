@@ -7,6 +7,8 @@ import {
   TrunkGroupMemberNotFoundError,
 } from './trunk-group.service.js';
 import type { TrunkGroupMember, TrunkGroupWithMembers, RouteListWithEntries } from './trunk-group.types.js';
+import type { EnterpriseLifecycleService } from '../shared/enterprise-lifecycle.service.js';
+import type { EnterpriseVersion, EnterprisePublishAttemptResult, EnterpriseDryRunResult } from '../shared/enterprise-lifecycle.types.js';
 
 const TENANT = 'tenant-1';
 const GROUP_ID = 'group-1';
@@ -178,5 +180,98 @@ describe('TrunkGroupService', () => {
   it('throws RouteListNotFoundError when list missing', async () => {
     const svc = new TrunkGroupService(makeRepo({ findRouteListById: vi.fn().mockResolvedValue(null) }));
     await expect(svc.getRouteListById('missing', TENANT)).rejects.toBeInstanceOf(RouteListNotFoundError);
+  });
+});
+
+function makeVersion(overrides: Partial<EnterpriseVersion> = {}): EnterpriseVersion {
+  return { id: 'ver-1', tenant_id: TENANT, object_id: GROUP_ID, version_number: 1, state: 'draft', definition: {}, created_by: null, created_at: new Date(), validated_at: null, simulated_at: null, published_at: null, metadata: {}, ...overrides };
+}
+
+function makeLifecycle(overrides: Partial<EnterpriseLifecycleService> = {}): EnterpriseLifecycleService {
+  const v = makeVersion();
+  const publishResult: EnterprisePublishAttemptResult = { status: 'published', version: makeVersion({ state: 'published' }) };
+  const dryRun: EnterpriseDryRunResult = { dry_run: true, would_become: 'published', require_approval: false, version_state_valid: true, actor_type: 'user' };
+  return {
+    createVersion: vi.fn().mockResolvedValue(v),
+    listVersions: vi.fn().mockResolvedValue([v]),
+    validate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, validatorFn) => { const outcome = await validatorFn(v); return { version: v, outcome }; }),
+    simulate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, _sc, simFn) => { const outcome = await simFn(v, {}); return { version: v, outcome }; }),
+    dryRunPublish: vi.fn().mockResolvedValue(dryRun),
+    publish: vi.fn().mockResolvedValue(publishResult),
+    rollback: vi.fn().mockResolvedValue(publishResult),
+    ...overrides,
+  } as unknown as EnterpriseLifecycleService;
+}
+
+const groupWithMembers: TrunkGroupWithMembers = { ...group, members: [member] };
+
+describe('TrunkGroupService — lifecycle', () => {
+  it('createVersion delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new TrunkGroupService(makeRepo(), lc);
+    await svc.createVersion(GROUP_ID, TENANT, { x: 1 }, 'user-1');
+    expect(lc.createVersion).toHaveBeenCalledWith('trunk_group', GROUP_ID, TENANT, { x: 1 }, 'user-1', undefined);
+  });
+
+  it('listVersions delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new TrunkGroupService(makeRepo(), lc);
+    const result = await svc.listVersions(GROUP_ID, TENANT);
+    expect(result).toHaveLength(1);
+  });
+
+  it('validate passes when trunk group has members', async () => {
+    const lc = makeLifecycle();
+    const svc = new TrunkGroupService(makeRepo({ findGroupById: vi.fn().mockResolvedValue(groupWithMembers) }), lc);
+    const result = await svc.validate(GROUP_ID, 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('passed');
+    expect(result.outcome.errors).toHaveLength(0);
+  });
+
+  it('validate fails when trunk group has no members', async () => {
+    const lc = makeLifecycle();
+    const svc = new TrunkGroupService(makeRepo({ findGroupById: vi.fn().mockResolvedValue({ ...group, members: [] }) }), lc);
+    const result = await svc.validate(GROUP_ID, 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors[0]!.field).toBe('members');
+  });
+
+  it('validate throws TrunkGroupNotFoundError when group missing', async () => {
+    const lc = makeLifecycle();
+    const svc = new TrunkGroupService(makeRepo({ findGroupById: vi.fn().mockResolvedValue(null) }), lc);
+    await expect(svc.validate('missing', 'ver-1', TENANT)).rejects.toBeInstanceOf(TrunkGroupNotFoundError);
+  });
+
+  it('simulate delegates to lifecycle with simulateTrunkGroup result', async () => {
+    const lc = makeLifecycle();
+    const svc = new TrunkGroupService(makeRepo({ findTrunkNamesForGroup: vi.fn().mockResolvedValue([{ id: 'trunk-1', name: 'T1', priority: 10, weight: 1, status: 'active' }]) }), lc);
+    const result = await svc.simulate(GROUP_ID, 'ver-1', TENANT, '+14155551234');
+    expect(result.outcome).toMatchObject({ outcome: 'routed' });
+  });
+
+  it('dryRunPublish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new TrunkGroupService(makeRepo(), lc);
+    const result = await svc.dryRunPublish(GROUP_ID, 'ver-1', TENANT);
+    expect(result.would_become).toBe('published');
+  });
+
+  it('publish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new TrunkGroupService(makeRepo(), lc);
+    const result = await svc.publish(GROUP_ID, 'ver-1', TENANT, 'user-1');
+    expect(result.status).toBe('published');
+  });
+
+  it('rollback delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new TrunkGroupService(makeRepo(), lc);
+    const result = await svc.rollback(GROUP_ID, TENANT, 'user-1');
+    expect(result.status).toBe('published');
+  });
+
+  it('lifecycle getter throws when lifecycleSvc not provided', async () => {
+    const svc = new TrunkGroupService(makeRepo());
+    expect(() => svc.createVersion(GROUP_ID, TENANT, {})).toThrow('EnterpriseLifecycleService not provided');
   });
 });
