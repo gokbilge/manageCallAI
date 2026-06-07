@@ -104,3 +104,24 @@ For full details see:
 - [`LICENSING.md`](LICENSING.md) — current status and options under consideration
 - [`docs/commercial/license-options.md`](docs/commercial/license-options.md) — license model comparison
 - [`docs/commercial/open-source-and-commercial-boundary.md`](docs/commercial/open-source-and-commercial-boundary.md) — Free / Pro / Enterprise scope
+
+## Repository split and public core publishing
+
+This repository is the **public Free/Core edition**. Future Pro and Enterprise
+work happens in private repositories. Public releases are produced through an
+allowlist-based export process so that no private implementation, signing keys,
+or commercial contracts can accidentally reach the public history.
+
+The five-repository model:
+
+| Repo | Purpose |
+|------|---------|
+| `gokbilge/manageCallAI` (this repo) | Public Free/Core — Apache-2.0 |
+| `gokbilge/manageCallAI-internal` | Full internal monorepo (private) |
+| `gokbilge/manageCallAI-commercial` | Pro/commercial modules (private) |
+| `gokbilge/manageCallAI-enterprise` | Enterprise modules (private) |
+| `gokbilge/manageCallAI-license-service` | License generation and activation (private) |
+
+For architecture, export process, and allowlist/denylist definitions see:
+
+- [`docs/repo-split/`](docs/repo-split/) — repository split docs

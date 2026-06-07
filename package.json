@@ -67,6 +67,12 @@
     "check:runtime-token-rotation": "node scripts/check-runtime-token-rotation.mjs",
     "check:production-readiness": "node scripts/check-production-readiness.mjs",
     "beta:mcp-smoke": "node scripts/mcp-smoke.mjs",
-    "beta:n8n-smoke": "node scripts/n8n-webhook-smoke.mjs"
+    "beta:n8n-smoke": "node scripts/n8n-webhook-smoke.mjs",
+    "export:public-core": "node scripts/export-public-core.mjs",
+    "check:public-export": "node scripts/check-public-export.mjs",
+    "check:public-export:repo": "node scripts/check-public-export.mjs --repo",
+    "check:public-export:self-check": "node scripts/check-public-export.mjs --self-check",
+    "check:schema-boundary": "node scripts/check-public-schema-boundary.mjs",
+    "release:public-core:dry-run": "node scripts/export-public-core.mjs --dry-run && node scripts/check-public-export.mjs --repo"
   }
 }

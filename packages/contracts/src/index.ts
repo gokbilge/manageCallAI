@@ -49,3 +49,12 @@ export * from './schemas/supervisor-dashboard.js';
 export * from './schemas/dispositions.js';
 export * from './schemas/qa-scoring.js';
 export * from './schemas/supervisor-artifact-search.js';
+
+export type {
+  CommercialSchemaName,
+  CommercialEdition,
+  PrivateMigrationDescriptor,
+  PrivateSchemaModuleDescriptor,
+  MigrationRunnerHooks,
+  MigrationContext,
+} from './commercial/private-schema-boundary.js';

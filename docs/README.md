@@ -137,6 +137,53 @@ This directory contains the primary project documentation for `manageCallAI`.
 - [archive/core-architecture-sketch.md](archive/core-architecture-sketch.md)
   Superseded architecture sketch retained only as a placeholder for the earlier draft.
 
+## Repository Split and Commercial Docs
+
+- [repo-split/repository-model.md](repo-split/repository-model.md)
+  Five-repository architecture: internal monorepo, public core, commercial, enterprise, license-service.
+
+- [repo-split/public-core-allowlist.md](repo-split/public-core-allowlist.md)
+  Authoritative list of files and directories permitted in the public release.
+
+- [repo-split/public-core-denylist.md](repo-split/public-core-denylist.md)
+  Paths and content patterns that must never appear in the public export.
+
+- [repo-split/private-repo-map.md](repo-split/private-repo-map.md)
+  Mapping of future modules to their private repository targets.
+
+- [repo-split/publish-core-process.md](repo-split/publish-core-process.md)
+  Step-by-step allowlist-export process for publishing to the public repo.
+
+- [repo-split/public-release-checklist.md](repo-split/public-release-checklist.md)
+  Pre-publication checklist gate.
+
+- [repo-split/release-staging-plan.md](repo-split/release-staging-plan.md)
+  Staged release plan from v0.7.5 through v0.9.x.
+
+- [repo-split/commercial-repo-skeleton.md](repo-split/commercial-repo-skeleton.md)
+  Directory skeleton for the future private commercial repo.
+
+- [repo-split/enterprise-repo-skeleton.md](repo-split/enterprise-repo-skeleton.md)
+  Directory skeleton for the future private enterprise repo.
+
+- [repo-split/license-service-repo-skeleton.md](repo-split/license-service-repo-skeleton.md)
+  Directory skeleton for the future private license-service repo.
+
+- [commercial/open-core-architecture.md](commercial/open-core-architecture.md)
+  Open-core architecture: public core boundaries and commercial delivery posture.
+
+- [commercial/edition-entitlement-license-alignment.md](commercial/edition-entitlement-license-alignment.md)
+  License vs entitlement vs metering layer separation.
+
+- [commercial/public-vs-private-schema-boundary.md](commercial/public-vs-private-schema-boundary.md)
+  Which database schema belongs in public vs private repos.
+
+- [commercial/private-schema-extension-policy.md](commercial/private-schema-extension-policy.md)
+  Exhaustive allow/deny list for public migration table categories.
+
+- [commercial/private-migration-contract.md](commercial/private-migration-contract.md)
+  Interface contract for private module migration descriptors.
+
 ## Documentation Rules
 
 - `architecture/source-of-truth.md` remains the canonical direction-setting document.

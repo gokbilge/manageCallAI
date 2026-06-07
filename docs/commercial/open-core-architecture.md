@@ -106,6 +106,29 @@ consumes API-owned artifacts and runtime credentials.
 - Entitlement failures must degrade safely and must not interrupt existing live
   call routing abruptly.
 
+## Repository split
+
+As of 2026-06-07, the project uses a five-repository model for controlled
+public/private separation:
+
+```
+gokbilge/manageCallAI           ← this repo (public, Apache-2.0)
+gokbilge/manageCallAI-internal  ← full internal monorepo (private)
+gokbilge/manageCallAI-commercial ← Pro/commercial modules (private)
+gokbilge/manageCallAI-enterprise ← Enterprise modules (private)
+gokbilge/manageCallAI-license-service ← License generation (private)
+```
+
+The public repo contains only the public core. Internal and private repos
+contain the paid implementation. The public repo receives code via an
+allowlist-based export from the internal monorepo, ensuring no private
+implementation, signing keys, or commercial contracts can reach public history.
+
+See [`../repo-split/repository-model.md`](../repo-split/repository-model.md)
+for the full architecture and
+[`../repo-split/publish-core-process.md`](../repo-split/publish-core-process.md)
+for the export and publication process.
+
 ## Maintainer decisions still required
 
 - Whether future versions remain Apache-2.0 core plus private modules, or move

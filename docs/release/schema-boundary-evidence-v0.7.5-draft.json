@@ -1,0 +1,95 @@
+{
+  "release": "v0.7.5",
+  "feature": "schema_boundary_and_repo_split",
+  "status": "draft",
+  "date": "2026-06-07",
+
+  "public_tables_allowed": [
+    "tenants", "users", "tenant_users", "roles",
+    "api_keys", "api_key_capabilities", "refresh_tokens",
+    "extensions", "devices", "sip_trunks", "phone_numbers",
+    "inbound_routes", "outbound_routes",
+    "ivr_flows", "ivr_flow_versions", "ivr_approvals",
+    "call_groups", "call_group_members",
+    "queues", "queue_members", "queue_callbacks",
+    "voicemail_boxes", "voicemail_messages",
+    "conference_rooms", "parking_lots",
+    "schedules", "holiday_calendars",
+    "feature_codes",
+    "automation_api_keys", "automation_webhooks",
+    "call_events", "recordings", "transcripts",
+    "audit_log",
+    "commercial_plans", "commercial_plan_entitlements",
+    "tenant_subscriptions", "tenant_entitlement_overrides",
+    "tenant_usage_counters", "usage_events",
+    "legal_hold_requests"
+  ],
+
+  "private_schema_areas_reserved": {
+    "managecallai_commercial": [
+      "Pro add-on module tables",
+      "Commercial usage reporting tables",
+      "Migration preview tables",
+      "Billing export tables",
+      "AI gateway usage tables"
+    ],
+    "managecallai_enterprise": [
+      "SSO/SAML/OIDC configuration tables",
+      "Enterprise migration project tables",
+      "CUCM/Avaya/Alcatel importer tables",
+      "Legal hold automation tables (beyond public legal_hold_requests)",
+      "Compliance export tables",
+      "Reseller/operator billing tables",
+      "HA cluster registry tables",
+      "Carrier certification private evidence tables"
+    ],
+    "not_in_any_repo": [
+      "License activation records (license-service DB only)",
+      "Customer contract tables (commercial agreement DB only)",
+      "Invoice/billing tables (billing system only)",
+      "Signing key records (HSM only — never in any git repo)"
+    ]
+  },
+
+  "check_script": "pnpm check:schema-boundary",
+  "export_script": "pnpm export:public-core",
+  "validation_script": "pnpm check:public-export",
+  "dry_run_command": "pnpm release:public-core:dry-run",
+
+  "existing_public_entitlement_foundation": {
+    "migration": "0077_commercial_entitlement_foundation.sql",
+    "tables": [
+      "commercial_plans",
+      "commercial_plan_entitlements",
+      "tenant_subscriptions",
+      "tenant_entitlement_overrides",
+      "tenant_usage_counters",
+      "usage_events"
+    ],
+    "note": "Already public under Apache-2.0. Cannot be clawed back."
+  },
+
+  "repo_split_docs": [
+    "docs/repo-split/repository-model.md",
+    "docs/repo-split/public-core-allowlist.md",
+    "docs/repo-split/public-core-denylist.md",
+    "docs/repo-split/private-repo-map.md",
+    "docs/repo-split/publish-core-process.md",
+    "docs/repo-split/public-release-checklist.md",
+    "docs/repo-split/release-staging-plan.md",
+    "docs/repo-split/commercial-repo-skeleton.md",
+    "docs/repo-split/enterprise-repo-skeleton.md",
+    "docs/repo-split/license-service-repo-skeleton.md"
+  ],
+
+  "maintainer_note": "Future commercial and enterprise schema must be created exclusively in private repos (managecallai_commercial or managecallai_enterprise PostgreSQL schemas). The public migration runner must not apply private migrations. Private migrations must use PrivateMigrationDescriptor from @managecallai/contracts and follow the private-migration-contract.md interface. The check:schema-boundary script enforces the public boundary on every CI run.",
+
+  "pending": [
+    "Internal monorepo (manageCallAI-internal) not yet created",
+    "Commercial private repo (manageCallAI-commercial) not yet created",
+    "Enterprise private repo (manageCallAI-enterprise) not yet created",
+    "License-service repo (manageCallAI-license-service) not yet created",
+    "Public export publish script (push to public repo) not yet implemented",
+    "check:schema-boundary not yet added to CI workflow"
+  ]
+}
