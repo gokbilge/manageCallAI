@@ -69,6 +69,16 @@ const NOOP_SHIM_PAIRS = [
       'Original 0016 outbound-call-requests DDL renumbered to 0022. ' +
       'Shim retained to preserve schema_migrations history.',
   },
+  {
+    prefix: '0076',
+    shim: '0076_schedule_groups_holiday_calendars_and_overrides.sql',
+    real: '0076_enterprise_object_versions.sql',
+    reason:
+      'Branch feat/issue-311-312-schedules and main independently incremented to 0076; ' +
+      'schedule DDL (holiday calendars, override_windows) was applied first as 0076, then ' +
+      'enterprise-object-versions DDL was renumbered to also use 0076 on main. ' +
+      'Shim retained to preserve schema_migrations history.',
+  },
 ];
 
 // Build lookup structures for documented shim pairs

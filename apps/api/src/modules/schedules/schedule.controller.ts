@@ -5,23 +5,34 @@ import type { AuthClaims } from '../auth/auth-claims.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { ScheduleRepository } from './schedule.repository.js';
-import { ScheduleNotFoundError, ScheduleService, ScheduleValidationError } from './schedule.service.js';
+import {
+  ScheduleNotFoundError,
+  ScheduleOverrideNotFoundError,
+  ScheduleService,
+  ScheduleValidationError,
+} from './schedule.service.js';
 import { sendNotFound, sendInvalidArgument, sendFailedPrecondition } from '../../errors/index.js';
 import { resolveActorIdentity } from '../auth/resolve-actor-identity.js';
 import { EnterpriseLifecycleRepository } from '../shared/enterprise-lifecycle.repository.js';
 import { EnterpriseLifecycleService, EnterpriseVersionNotFoundError, EnterpriseVersionStateError, EnterpriseRollbackNotAvailableError } from '../shared/enterprise-lifecycle.service.js';
-import { z } from 'zod';
 import {
+  z,
   UuidParamsSchema,
   CreateScheduleBodySchema,
+  CreateScheduleOverrideBodySchema,
   UpdateScheduleBodySchema,
 } from '@managecallai/contracts';
+
+const ScheduleOverrideParamsSchema = z.object({
+  id: z.string().uuid(),
+  overrideId: z.string().uuid(),
+});
 
 const lifecycleSvc = new EnterpriseLifecycleService(new EnterpriseLifecycleRepository(db));
 const service = new ScheduleService(new ScheduleRepository(db), lifecycleSvc);
 
 function replyError(err: unknown, reply: FastifyReply): void {
-  if (err instanceof ScheduleNotFoundError || err instanceof EnterpriseVersionNotFoundError) return sendNotFound(reply, err.message);
+  if (err instanceof ScheduleNotFoundError || err instanceof ScheduleOverrideNotFoundError || err instanceof EnterpriseVersionNotFoundError) return sendNotFound(reply, err.message);
   if (err instanceof ScheduleValidationError) return sendInvalidArgument(reply, err.message);
   if (err instanceof EnterpriseVersionStateError || err instanceof EnterpriseRollbackNotAvailableError) return sendFailedPrecondition(reply, err.message);
   throw err;
@@ -85,6 +96,45 @@ export const scheduleController: FastifyPluginAsyncZod = async (app) => {
       const user = req.user as AuthClaims;
       try {
         return { data: await service.update(req.params.id, user.tenant_id, req.body) };
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post(
+    '/:id/overrides',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
+      schema: {
+        params: UuidParamsSchema,
+        body: CreateScheduleOverrideBodySchema,
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        const schedule = await service.addOverride(req.params.id, user.tenant_id, {
+          ...req.body,
+          actor_user_id: user.sub ?? null,
+        });
+        return reply.code(201).send({ data: schedule });
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post(
+    '/:id/overrides/:overrideId/revoke',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_SCHEDULES_UPDATE),
+      schema: { params: ScheduleOverrideParamsSchema },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return { data: await service.revokeOverride(req.params.id, user.tenant_id, req.params.overrideId, user.sub ?? null) };
       } catch (err) {
         return replyError(err, reply);
       }

@@ -4167,7 +4167,7 @@ components:
           maxLength: 2000
         provider:
           type: string
-          enum: &a24
+          enum: &a25
             - auto
             - openai
             - elevenlabs
@@ -5204,11 +5204,14 @@ components:
         - day_of_week
         - open_time
         - close_time
-    HolidayOverride:
+    HolidayCalendarEntry:
       type: object
       properties:
         date:
           type: string
+        name:
+          type: string
+          minLength: 1
         closed:
           type: boolean
         open_time:
@@ -5217,7 +5220,69 @@ components:
           type: string
       required:
         - date
+        - name
         - closed
+    ScheduleOverride:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        reason:
+          type:
+            - string
+            - "null"
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        mode:
+          type: string
+          enum: &a22
+            - closed
+            - custom_hours
+        open_time:
+          type: string
+        close_time:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - revoked
+        created_by_user_id:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+          format: date-time
+        revoked_by_user_id:
+          type:
+            - string
+            - "null"
+        revoked_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+      required:
+        - id
+        - name
+        - reason
+        - starts_at
+        - ends_at
+        - mode
+        - status
+        - created_by_user_id
+        - created_at
+        - revoked_by_user_id
+        - revoked_at
     Schedule:
       type: object
       properties:
@@ -5234,16 +5299,28 @@ components:
           enum: &a21
             - active
             - inactive
+        description:
+          type:
+            - string
+            - "null"
         timezone:
           type: string
         weekly_rules_json:
           type: array
           items:
             $ref: "#/components/schemas/WeeklyRule"
-        holiday_overrides_json:
+        holiday_calendar_name:
+          type:
+            - string
+            - "null"
+        holiday_calendar_json:
           type: array
           items:
-            $ref: "#/components/schemas/HolidayOverride"
+            $ref: "#/components/schemas/HolidayCalendarEntry"
+        override_windows_json:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScheduleOverride"
         created_at:
           type: string
           format: date-time
@@ -5255,9 +5332,12 @@ components:
         - tenant_id
         - name
         - status
+        - description
         - timezone
         - weekly_rules_json
-        - holiday_overrides_json
+        - holiday_calendar_name
+        - holiday_calendar_json
+        - override_windows_json
         - created_at
         - updated_at
     CreateScheduleBody:
@@ -5266,6 +5346,10 @@ components:
         name:
           type: string
           minLength: 1
+        description:
+          type:
+            - string
+            - "null"
         timezone:
           type: string
           minLength: 1
@@ -5273,10 +5357,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WeeklyRule"
-        holiday_overrides_json:
+        holiday_calendar_name:
+          type:
+            - string
+            - "null"
+        holiday_calendar_json:
           type: array
           items:
-            $ref: "#/components/schemas/HolidayOverride"
+            $ref: "#/components/schemas/HolidayCalendarEntry"
       required:
         - name
         - timezone
@@ -5286,6 +5374,10 @@ components:
         name:
           type: string
           minLength: 1
+        description:
+          type:
+            - string
+            - "null"
         timezone:
           type: string
           minLength: 1
@@ -5293,13 +5385,45 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WeeklyRule"
-        holiday_overrides_json:
+        holiday_calendar_name:
+          type:
+            - string
+            - "null"
+        holiday_calendar_json:
           type: array
           items:
-            $ref: "#/components/schemas/HolidayOverride"
+            $ref: "#/components/schemas/HolidayCalendarEntry"
         status:
           type: string
           enum: *a21
+    CreateScheduleOverrideBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        reason:
+          type:
+            - string
+            - "null"
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        mode:
+          type: string
+          enum: *a22
+        open_time:
+          type: string
+        close_time:
+          type: string
+      required:
+        - name
+        - starts_at
+        - ends_at
+        - mode
     OutboundRoute:
       type: object
       properties:
@@ -5313,7 +5437,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a22
+          enum: &a23
             - draft
             - active
             - inactive
@@ -5500,7 +5624,7 @@ components:
             type: string
         status:
           type: string
-          enum: *a22
+          enum: *a23
     ResolveOutboundRouteBody:
       type: object
       properties:
@@ -5761,7 +5885,7 @@ components:
           type: string
         role:
           type: string
-          enum: &a23
+          enum: &a24
             - tenant_admin
             - tenant_operator
             - tenant_viewer
@@ -5802,7 +5926,7 @@ components:
           maxLength: 255
         role:
           type: string
-          enum: *a23
+          enum: *a24
         password:
           type: string
           minLength: 8
@@ -5821,7 +5945,7 @@ components:
           maxLength: 255
         role:
           type: string
-          enum: *a23
+          enum: *a24
     ChangePasswordBody:
       type: object
       properties:
@@ -5900,7 +6024,7 @@ components:
           type: array
           items:
             type: string
-            enum: &a26
+            enum: &a27
               - transcript
               - summary
         language_hint:
@@ -5909,10 +6033,10 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         status:
           type: string
-          enum: &a25
+          enum: &a26
             - queued
             - processing
             - completed
@@ -5922,12 +6046,12 @@ components:
           type:
             - string
             - "null"
-          enum: *a25
+          enum: *a26
         summary_status:
           type:
             - string
             - "null"
-          enum: *a25
+          enum: *a26
         processor_id:
           type:
             - string
@@ -6028,7 +6152,7 @@ components:
           type: array
           items:
             type: string
-            enum: *a26
+            enum: *a27
           minItems: 1
         language_hint:
           type:
@@ -6036,7 +6160,7 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         metadata:
           type: object
           additionalProperties: {}
@@ -6207,7 +6331,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a27
+          enum: &a28
             - running
             - completed
             - failed
@@ -6309,7 +6433,7 @@ components:
             - "null"
         resulting_status:
           type: string
-          enum: *a27
+          enum: *a28
         variables_json:
           type: object
           additionalProperties:
@@ -6608,7 +6732,7 @@ components:
           format: uuid
         provider_type:
           type: string
-          enum: &a28
+          enum: &a29
             - whatsapp
             - telegram
             - google_meet
@@ -6648,7 +6772,7 @@ components:
       properties:
         provider_type:
           type: string
-          enum: *a28
+          enum: *a29
         name:
           type: string
           minLength: 1
@@ -6694,7 +6818,7 @@ components:
             - outbound
         message_type:
           type: string
-          enum: &a29
+          enum: &a30
             - text
             - voice_message
             - meeting
@@ -6759,7 +6883,7 @@ components:
           type: string
         message_type:
           type: string
-          enum: *a29
+          enum: *a30
         body:
           type:
             - string
@@ -6834,7 +6958,7 @@ components:
           format: uuid
         message_type:
           type: string
-          enum: *a29
+          enum: *a30
         external_id:
           type: string
         sender_id:
@@ -6866,7 +6990,7 @@ components:
           minLength: 1
         message_type:
           type: string
-          enum: *a29
+          enum: *a30
         body:
           type: string
         media_reference:
@@ -6933,7 +7057,7 @@ components:
             - "null"
         status:
           type: string
-          enum: &a30
+          enum: &a31
             - scheduled
             - active
             - completed
@@ -7002,7 +7126,7 @@ components:
       properties:
         status:
           type: string
-          enum: *a30
+          enum: *a31
         meeting_url:
           type: string
         participant_count:
@@ -7050,10 +7174,10 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         status:
           type: string
-          enum: &a31
+          enum: &a32
             - queued
             - processing
             - completed
@@ -7154,10 +7278,10 @@ components:
             type: string
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         status:
           type: string
-          enum: *a31
+          enum: *a32
         processor_id:
           type:
             - string
@@ -7246,7 +7370,7 @@ components:
             - "null"
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         metadata:
           type: object
           additionalProperties: {}
@@ -7316,7 +7440,7 @@ components:
           minItems: 1
         provider_hint:
           type: string
-          enum: *a24
+          enum: *a25
         metadata:
           type: object
           additionalProperties: {}
@@ -8261,7 +8385,7 @@ components:
             - "null"
         action_type:
           type: string
-          enum: &a32
+          enum: &a33
             - voicemail_access
             - call_forward_enable
             - call_forward_disable
@@ -8330,7 +8454,7 @@ components:
           maxLength: 500
         action_type:
           type: string
-          enum: *a32
+          enum: *a33
         action_config:
           type: object
           additionalProperties: {}
@@ -8354,7 +8478,7 @@ components:
           maxLength: 500
         action_type:
           type: string
-          enum: *a32
+          enum: *a33
         action_config:
           type: object
           additionalProperties: {}
@@ -8477,7 +8601,7 @@ components:
           format: uuid
         control_type:
           type: string
-          enum: &a33
+          enum: &a34
             - monitor
             - whisper
             - barge
@@ -8485,7 +8609,7 @@ components:
           type: string
         status:
           type: string
-          enum: &a34
+          enum: &a35
             - pending
             - active
             - ended
@@ -8520,7 +8644,7 @@ components:
       properties:
         control_type:
           type: string
-          enum: *a33
+          enum: *a34
         target_call_id:
           type: string
           minLength: 1
@@ -8536,7 +8660,7 @@ components:
       properties:
         status:
           type: string
-          enum: *a34
+          enum: *a35
         audit_note:
           type:
             - string
@@ -8570,7 +8694,7 @@ components:
           type: integer
         status:
           type: string
-          enum: &a35
+          enum: &a36
             - pending
             - scheduled
             - calling
@@ -8621,7 +8745,7 @@ components:
       properties:
         status:
           type: string
-          enum: *a35
+          enum: *a36
         scheduled_at:
           type:
             - string
@@ -8794,7 +8918,7 @@ components:
       properties:
         target_type:
           type: string
-          enum: &a36
+          enum: &a37
             - outbound_route
             - inbound_route
             - sip_trunk
@@ -8844,7 +8968,7 @@ components:
       properties:
         target_type:
           type: string
-          enum: *a36
+          enum: *a37
         target_id:
           type: string
           format: uuid

@@ -453,7 +453,8 @@ export class IvrRuntimeService {
           {
             timezone: schedule.timezone,
             weekly_rules_json: Array.isArray(schedule.weekly_rules_json) ? schedule.weekly_rules_json as never : [],
-            holiday_overrides_json: Array.isArray(schedule.holiday_overrides_json) ? schedule.holiday_overrides_json as never : [],
+            holiday_calendar_json: Array.isArray((schedule as { holiday_calendar_json?: unknown }).holiday_calendar_json) ? (schedule as { holiday_calendar_json: unknown[] }).holiday_calendar_json as never : [],
+            override_windows_json: Array.isArray((schedule as { override_windows_json?: unknown }).override_windows_json) ? (schedule as { override_windows_json: unknown[] }).override_windows_json as never : [],
           },
           new Date(),
         );

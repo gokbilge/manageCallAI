@@ -118,7 +118,8 @@ export type EnterpriseRoutingScheduleRow = Pick<Schedule,
   | 'status'
   | 'timezone'
   | 'weekly_rules_json'
-  | 'holiday_overrides_json'
+  | 'holiday_calendar_json'
+  | 'override_windows_json'
 >;
 
 export interface EnterpriseRoutingTrunkRow {

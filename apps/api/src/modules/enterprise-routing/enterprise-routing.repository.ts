@@ -19,7 +19,7 @@ const planCols = `id, name, status`;
 const ruleCols = `id, tenant_id, plan_id, name, pattern, call_type, priority, description, created_at`;
 const policyCols = `id, name, allow_local, allow_national, allow_mobile, allow_international,
   allow_premium_rate, allow_toll_free, allow_special, emergency_always_allowed, exceptions, status`;
-const scheduleCols = `id, name, status, timezone, weekly_rules_json, holiday_overrides_json`;
+const scheduleCols = `id, name, status, timezone, weekly_rules_json, holiday_calendar_json, override_windows_json`;
 
 export class EnterpriseRoutingRepository {
   constructor(private readonly db: Pool) {}
