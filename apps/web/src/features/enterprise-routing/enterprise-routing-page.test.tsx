@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderWithProviders } from '@/test/render';
 import { EnterpriseRoutingPage } from './enterprise-routing-page';
 import { apiRequest } from '@/lib/api/client';
@@ -111,21 +111,36 @@ const fixtures = {
 
 function mockEnterpriseApi() {
   vi.mocked(apiRequest).mockImplementation(async (path, options) => {
+    if (path === '/numbering-plans' && options?.method === 'POST') return { data: { id: 'plan-2' } };
     if (path === '/numbering-plans') return { data: fixtures.numberingPlans };
+    if (path === '/calling-policies' && options?.method === 'POST') return { data: { id: 'policy-2' } };
     if (path === '/calling-policies') return { data: fixtures.callingPolicies };
+    if (path === '/sites' && options?.method === 'POST') return { data: { id: 'site-2' } };
     if (path === '/sites') return { data: fixtures.sites };
+    if (path === '/trunk-groups' && options?.method === 'POST') return { data: { id: 'tg-2' } };
     if (path === '/trunk-groups') return { data: fixtures.trunkGroups };
+    if (path === '/route-lists' && options?.method === 'POST') return { data: { id: 'rl-2' } };
     if (path === '/route-lists') return { data: fixtures.routeLists };
+    if (path === '/devices' && options?.method === 'POST') return { data: { id: 'device-2' } };
     if (path === '/devices') return { data: fixtures.devices };
+    if (path === '/line-appearances' && options?.method === 'POST') return { data: { id: 'appearance-2' } };
     if (path === '/line-appearances') return { data: fixtures.appearances };
     if (path === '/numbering-plans/plan-1') return { data: fixtures.numberingPlanDetail };
+    if (path === '/numbering-plans/plan-1/rules' && options?.method === 'POST') return { data: { id: 'rule-2' } };
+    if (path === '/numbering-plans/plan-1/assignment' && options?.method === 'PUT') return { data: { id: 'assignment-2' } };
     if (path === '/calling-policies/policy-1') return { data: fixtures.callingPolicyDetail };
+    if (path === '/calling-policies/policy-1/assignment' && options?.method === 'PUT') return { data: { id: 'policy-assignment-2' } };
     if (path === '/sites/site-1') return { data: fixtures.siteDetail };
+    if (path === '/sites/site-1/locations' && options?.method === 'POST') return { data: { id: 'loc-2' } };
     if (path === '/trunk-groups/tg-1') return { data: fixtures.trunkGroupDetail };
+    if (path === '/trunk-groups/tg-1/members' && options?.method === 'POST') return { data: { id: 'member-2' } };
     if (path === '/route-lists/rl-1') return { data: fixtures.routeListDetail };
+    if (path === '/route-lists/rl-1/entries' && options?.method === 'POST') return { data: { id: 'entry-2' } };
     if (path === '/devices/device-1/registrations') return { data: fixtures.deviceRegistrations };
     if (path === '/devices/device-1/assignments') return { data: fixtures.deviceAssignments };
+    if (path === '/extensions/ext-2/assignments' && options?.method === 'POST') return { data: { id: 'assignment-2' } };
     if (path === '/line-appearances/appearance-1/device-assignments') return { data: fixtures.appearanceAssignments };
+    if (path === '/line-appearances/appearance-1/device-assignments' && options?.method === 'POST') return { data: { id: 'appearance-assignment-2' } };
     if (path === '/numbering-plans/check' && options?.method === 'POST') return { data: fixtures.numberingPlanCheck };
     if (path === '/trunk-groups/tg-1/simulate' && options?.method === 'POST') return { data: fixtures.trunkSimulation };
     if (path === '/outbound-routing/resolve' && options?.method === 'POST') return { data: fixtures.carrierResolution };
@@ -200,5 +215,103 @@ describe('EnterpriseRoutingPage', () => {
         expect.objectContaining({ accessToken: 'test-token' }),
       );
     });
+  });
+
+  it('submits enterprise admin and assignment forms', async () => {
+    renderWithProviders(<EnterpriseRoutingPage />);
+    await waitFor(() => expect(screen.getByText('Create numbering plan')).toBeInTheDocument());
+
+    const createPlanForm = screen.getByText('Create numbering plan').closest('form');
+    fireEvent.change(within(createPlanForm!).getByLabelText('Plan name'), { target: { value: 'EMEA Plan' } });
+    fireEvent.change(within(createPlanForm!).getByLabelText('Country code'), { target: { value: 'GB' } });
+    fireEvent.click(within(createPlanForm!).getByRole('button', { name: 'Create plan' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'North America' }));
+    await waitFor(() => expect(screen.getByLabelText('Rule name')).toBeInTheDocument());
+    const addRuleForm = screen.getByLabelText('Rule name').closest('form');
+    fireEvent.change(within(addRuleForm!).getByLabelText('Rule name'), { target: { value: 'UK' } });
+    fireEvent.change(within(addRuleForm!).getByLabelText('Pattern'), { target: { value: '+44' } });
+    fireEvent.click(within(addRuleForm!).getByRole('button', { name: 'Add rule' }));
+
+    const assignPlanForm = screen.getByLabelText('Assignable type').closest('form');
+    fireEvent.change(within(assignPlanForm!).getByLabelText('Assignable type'), { target: { value: 'extension' } });
+    fireEvent.change(within(assignPlanForm!).getByLabelText('Assignable ID'), { target: { value: 'ext-1' } });
+    fireEvent.click(within(assignPlanForm!).getByRole('button', { name: 'Save assignment' }));
+
+    const createPolicyForm = screen.getByText('Create calling policy').closest('form');
+    fireEvent.change(within(createPolicyForm!).getByLabelText('Policy name'), { target: { value: 'International block' } });
+    fireEvent.click(within(createPolicyForm!).getByRole('button', { name: 'Create policy' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Default policy' }));
+    await waitFor(() => expect(screen.getAllByLabelText('Assignable type').length).toBeGreaterThan(1));
+    const assignPolicyForm = screen.getAllByLabelText('Assignable type')[1].closest('form');
+    fireEvent.change(within(assignPolicyForm!).getByLabelText('Assignable type'), { target: { value: 'call_group' } });
+    fireEvent.change(within(assignPolicyForm!).getByLabelText('Assignable ID'), { target: { value: 'group-1' } });
+    fireEvent.click(within(assignPolicyForm!).getByRole('button', { name: 'Save assignment' }));
+
+    const createSiteForm = screen.getByLabelText('Site name').closest('form');
+    fireEvent.change(within(createSiteForm!).getByLabelText('Site name'), { target: { value: 'London' } });
+    fireEvent.click(within(createSiteForm!).getByRole('button', { name: 'Create site' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'HQ' }));
+    await waitFor(() => expect(screen.getByLabelText('Location name')).toBeInTheDocument());
+    const addLocationForm = screen.getByLabelText('Location name').closest('form');
+    fireEvent.change(within(addLocationForm!).getByLabelText('Location name'), { target: { value: '3rd floor' } });
+    fireEvent.click(within(addLocationForm!).getByRole('button', { name: 'Add location' }));
+
+    const createTrunkGroupForm = screen.getByText('Create trunk group').closest('form');
+    fireEvent.change(within(createTrunkGroupForm!).getByLabelText('Group name'), { target: { value: 'Backup carriers' } });
+    fireEvent.click(within(createTrunkGroupForm!).getByRole('button', { name: 'Create group' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Primary carriers' }));
+    await waitFor(() => expect(screen.getByLabelText('SIP trunk ID')).toBeInTheDocument());
+    const addMemberForm = screen.getByLabelText('SIP trunk ID').closest('form');
+    fireEvent.change(within(addMemberForm!).getByLabelText('SIP trunk ID'), { target: { value: 'trunk-2' } });
+    fireEvent.click(within(addMemberForm!).getByRole('button', { name: 'Add member' }));
+
+    const createRouteListForm = screen.getByLabelText('Route list name').closest('form');
+    fireEvent.change(within(createRouteListForm!).getByLabelText('Route list name'), { target: { value: 'Backup route list' } });
+    fireEvent.click(within(createRouteListForm!).getByRole('button', { name: 'Create route list' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'EMEA route list' }));
+    await waitFor(() => expect(screen.getByLabelText('Entry ID')).toBeInTheDocument());
+    const addEntryForm = screen.getByLabelText('Entry ID').closest('form');
+    fireEvent.change(within(addEntryForm!).getByLabelText('Entry ID'), { target: { value: 'route-2' } });
+    fireEvent.click(within(addEntryForm!).getByRole('button', { name: 'Add entry' }));
+
+    const createDeviceForm = screen.getByLabelText('Device name').closest('form');
+    fireEvent.change(within(createDeviceForm!).getByLabelText('Device name'), { target: { value: 'Lobby phone' } });
+    fireEvent.change(within(createDeviceForm!).getByLabelText('SIP password'), { target: { value: 'password-123' } });
+    fireEvent.click(within(createDeviceForm!).getByRole('button', { name: 'Create device' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Front desk phone' }));
+    await waitFor(() => expect(screen.getByText('Assign extension to selected device')).toBeInTheDocument());
+    const assignExtensionForm = screen.getByText('Assign extension to selected device').closest('form');
+    fireEvent.change(within(assignExtensionForm!).getByLabelText('Extension ID'), { target: { value: 'ext-2' } });
+    fireEvent.click(within(assignExtensionForm!).getByRole('button', { name: 'Assign extension' }));
+
+    const createAppearanceForm = screen.getByText('Create line appearance').closest('form');
+    fireEvent.change(within(createAppearanceForm!).getByLabelText('Extension ID'), { target: { value: 'ext-2' } });
+    fireEvent.change(within(createAppearanceForm!).getByLabelText('Label'), { target: { value: 'Support line' } });
+    fireEvent.click(within(createAppearanceForm!).getByRole('button', { name: 'Create appearance' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Main line' }));
+    await waitFor(() => expect(screen.getByLabelText('Device ID')).toBeInTheDocument());
+    const assignAppearanceForm = screen.getByLabelText('Device ID').closest('form');
+    fireEvent.change(within(assignAppearanceForm!).getByLabelText('Device ID'), { target: { value: 'device-1' } });
+    fireEvent.click(within(assignAppearanceForm!).getByRole('button', { name: 'Assign appearance' }));
+
+    expect(vi.mocked(apiRequest)).toHaveBeenCalledWith(
+      '/numbering-plans',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(vi.mocked(apiRequest)).toHaveBeenCalledWith(
+      '/calling-policies',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(vi.mocked(apiRequest)).toHaveBeenCalledWith(
+      '/extensions/ext-2/assignments',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 });
