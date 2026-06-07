@@ -42,6 +42,23 @@ describe('AppSidebar', () => {
     expect(screen.getByText('Runtime')).toBeInTheDocument();
   });
 
+  it('shows the self-service workspace for end users', () => {
+    vi.mocked(useAuth).mockReturnValue({ session: makeSession('end_user') } as never);
+    renderWithProviders(<AppSidebar workspace="tenant" pathname="/tenant/me" />);
+    expect(screen.getByText('Self-Service Workspace')).toBeInTheDocument();
+    expect(screen.getByText('My Settings')).toBeInTheDocument();
+    expect(screen.getByText('Contacts')).toBeInTheDocument();
+    expect(screen.queryByText('Extensions')).not.toBeInTheDocument();
+  });
+
+  it('hides platform navigation when the role lacks platform capability', () => {
+    vi.mocked(useAuth).mockReturnValue({ session: makeSession('tenant_admin') } as never);
+    renderWithProviders(<AppSidebar workspace="platform" pathname="/platform" />);
+    expect(screen.getByText('Platform Workspace')).toBeInTheDocument();
+    expect(screen.queryByText('Overview')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tenants')).not.toBeInTheDocument();
+  });
+
   it('hides capability-gated items from tenant_viewer', () => {
     vi.mocked(useAuth).mockReturnValue({ session: makeSession('tenant_viewer') } as never);
     renderWithProviders(<AppSidebar workspace="tenant" pathname="/tenant/extensions" />);
@@ -53,6 +70,18 @@ describe('AppSidebar', () => {
     vi.mocked(useAuth).mockReturnValue({ session: makeSession('tenant_operator') } as never);
     renderWithProviders(<AppSidebar workspace="tenant" pathname="/tenant/extensions" />);
     expect(screen.getByText('Security Alerts')).toBeInTheDocument();
+  });
+
+  it('uses tenant active styling for the selected tenant route', () => {
+    vi.mocked(useAuth).mockReturnValue({ session: makeSession('tenant_admin') } as never);
+    renderWithProviders(<AppSidebar workspace="tenant" pathname="/tenant/extensions" />, { route: '/tenant/extensions' });
+    expect(screen.getByText('Extensions').closest('a')).toHaveClass('bg-[var(--color-tenant)]/10');
+  });
+
+  it('uses platform active styling for the selected platform route', () => {
+    vi.mocked(useAuth).mockReturnValue({ session: makeSession('platform_admin') } as never);
+    renderWithProviders(<AppSidebar workspace="platform" pathname="/platform" />, { route: '/platform' });
+    expect(screen.getByText('Overview').closest('a')).toHaveClass('bg-[var(--color-platform)]/10');
   });
 
   it('renders runtime posture callout', () => {
