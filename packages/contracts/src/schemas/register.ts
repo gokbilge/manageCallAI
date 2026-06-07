@@ -169,6 +169,12 @@ registry.register('ResolvedOutboundRoute', outboundRoutes.ResolvedOutboundRouteS
 registry.register('CreateOutboundRouteBody', outboundRoutes.CreateOutboundRouteBodySchema);
 registry.register('UpdateOutboundRouteBody', outboundRoutes.UpdateOutboundRouteBodySchema);
 registry.register('ResolveOutboundRouteBody', outboundRoutes.ResolveOutboundRouteBodySchema);
+registry.register('EnterpriseConflict', outboundRoutes.EnterpriseConflictSchema);
+registry.register('EnterpriseValidationReport', outboundRoutes.EnterpriseValidationReportSchema);
+registry.register('EnterpriseSimulationStep', outboundRoutes.EnterpriseSimulationStepSchema);
+registry.register('EnterpriseSimulationReport', outboundRoutes.EnterpriseSimulationReportSchema);
+registry.register('OutboundRouteEnterpriseCheck', outboundRoutes.OutboundRouteEnterpriseCheckSchema);
+registry.register('OutboundRouteEnterpriseCheckBody', outboundRoutes.OutboundRouteEnterpriseCheckBodySchema);
 
 // users
 registry.register('TenantUser', users.TenantUserSchema);

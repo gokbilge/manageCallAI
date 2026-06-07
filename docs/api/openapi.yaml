@@ -5637,6 +5637,239 @@ components:
       required:
         - tenant_id
         - dial_number
+    EnterpriseConflict:
+      type: object
+      properties:
+        code:
+          type: string
+        severity:
+          type: string
+          enum:
+            - info
+            - warning
+            - error
+        scope:
+          type: string
+          enum:
+            - route
+            - site
+            - numbering_plan
+            - calling_policy
+            - schedule
+            - trunk_group
+            - failover
+        message:
+          type: string
+      required:
+        - code
+        - severity
+        - scope
+        - message
+    EnterpriseValidationReport:
+      type: object
+      properties:
+        target_type:
+          type: string
+          enum:
+            - outbound_route
+        target_id:
+          type: string
+          format: uuid
+        target_name:
+          type: string
+        validation_status:
+          type: string
+          enum:
+            - passed
+            - failed
+        blocking_issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnterpriseConflict"
+        advisory_issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnterpriseConflict"
+        checked_at:
+          type: string
+          format: date-time
+        summary:
+          type: string
+      required:
+        - target_type
+        - target_id
+        - target_name
+        - validation_status
+        - blocking_issues
+        - advisory_issues
+        - checked_at
+        - summary
+    EnterpriseSimulationStep:
+      type: object
+      properties:
+        category:
+          type: string
+          enum:
+            - site
+            - schedule
+            - numbering
+            - policy
+            - route
+            - failover
+        status:
+          type: string
+          enum:
+            - ok
+            - warning
+            - blocked
+        title:
+          type: string
+        detail:
+          type: string
+      required:
+        - category
+        - status
+        - title
+        - detail
+    EnterpriseSimulationReport:
+      type: object
+      properties:
+        target_type:
+          type: string
+          enum:
+            - outbound_route
+        target_id:
+          type: string
+          format: uuid
+        dial_string:
+          type: string
+        site_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        site_name:
+          type:
+            - string
+            - "null"
+        schedule_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        schedule_name:
+          type:
+            - string
+            - "null"
+        call_type:
+          type:
+            - string
+            - "null"
+          enum:
+            - local
+            - national
+            - mobile
+            - international
+            - premium_rate
+            - emergency
+            - toll_free
+            - special
+        matched_rule_name:
+          type:
+            - string
+            - "null"
+        policy_name:
+          type:
+            - string
+            - "null"
+        schedule_state:
+          type: string
+          enum:
+            - in_hours
+            - out_of_hours
+            - not_checked
+            - missing
+        outcome:
+          type: string
+          enum:
+            - routed_primary
+            - routed_fallback
+            - blocked_by_policy
+            - out_of_hours
+            - no_available_trunks
+            - schedule_missing
+        selected_trunk_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        selected_trunk_name:
+          type:
+            - string
+            - "null"
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnterpriseSimulationStep"
+        summary:
+          type: string
+        is_advisory:
+          type: boolean
+          enum:
+            - true
+        simulated_at:
+          type: string
+          format: date-time
+      required:
+        - target_type
+        - target_id
+        - dial_string
+        - site_id
+        - site_name
+        - schedule_id
+        - schedule_name
+        - call_type
+        - matched_rule_name
+        - policy_name
+        - schedule_state
+        - outcome
+        - selected_trunk_id
+        - selected_trunk_name
+        - steps
+        - summary
+        - is_advisory
+        - simulated_at
+    OutboundRouteEnterpriseCheck:
+      type: object
+      properties:
+        validation:
+          $ref: "#/components/schemas/EnterpriseValidationReport"
+        simulation:
+          $ref: "#/components/schemas/EnterpriseSimulationReport"
+      required:
+        - validation
+        - simulation
+    OutboundRouteEnterpriseCheckBody:
+      type: object
+      properties:
+        dial_string:
+          type: string
+          minLength: 1
+        site_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        schedule_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        at:
+          type:
+            - string
+            - "null"
+          format: date-time
     TenantUser:
       type: object
       properties:
