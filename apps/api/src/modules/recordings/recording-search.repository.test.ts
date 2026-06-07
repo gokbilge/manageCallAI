@@ -30,12 +30,10 @@ describe('RecordingSearchRepository', () => {
 
   it('searchFts with all filters builds extended WHERE clause', async () => {
     const pool = makePool([baseSearchRow]);
-    const from = new Date('2026-01-01');
-    const to = new Date('2026-12-31');
-    await new RecordingSearchRepository(pool).searchFts(TENANT, 'hello', { from_date: from, to_date: to, call_id: 'call-1' }, 5);
-    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[1]).toContain(from);
-    expect(call[1]).toContain(to);
+    await new RecordingSearchRepository(pool).searchFts(TENANT, 'hello', { from_date: '2026-01-01', to_date: '2026-12-31', call_id: 'call-1' }, 5);
+    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(call[1]).toContain('2026-01-01');
+    expect(call[1]).toContain('2026-12-31');
     expect(call[1]).toContain('call-1');
   });
 
@@ -54,20 +52,18 @@ describe('RecordingSearchRepository', () => {
 
   it('searchLexical with all filters builds extended WHERE clause', async () => {
     const pool = makePool([baseLexicalRow]);
-    const from = new Date('2026-01-01');
-    const to = new Date('2026-12-31');
-    await new RecordingSearchRepository(pool).searchLexical(TENANT, 'hello', { from_date: from, to_date: to, call_id: 'call-1' }, 5);
-    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[1]).toContain(from);
+    await new RecordingSearchRepository(pool).searchLexical(TENANT, 'hello', { from_date: '2026-01-01', to_date: '2026-12-31', call_id: 'call-1' }, 5);
+    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(call[1]).toContain('2026-01-01');
     expect(call[1]).toContain('call-1');
   });
 
   it('searchLexical escapes special LIKE characters in query', async () => {
     const pool = makePool([]);
     await new RecordingSearchRepository(pool).searchLexical(TENANT, 'he%llo_world', {}, 10);
-    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[1][1]).toContain('\\%');
-    expect(call[1][1]).toContain('\\_');
+    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(call[1][1] as string).toContain('\\%');
+    expect(call[1][1] as string).toContain('\\_');
   });
 
   it('searchLexical returns empty array when no matches', async () => {

@@ -32,19 +32,18 @@ describe('SupervisorArtifactSearchRepository', () => {
 
   it('searchRecordings with all filters adds conditions', async () => {
     const pool = makePool([]);
-    const from = new Date('2026-01-01');
-    const to = new Date('2026-12-31');
-    await new SupervisorArtifactSearchRepository(pool).searchRecordings(TENANT, 'hello', { from_date: from, to_date: to, call_id: 'call-1' }, 5);
-    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[1]).toContain(from);
+    await new SupervisorArtifactSearchRepository(pool).searchRecordings(TENANT, 'hello', { from_date: '2026-01-01', to_date: '2026-12-31', call_id: 'call-1' }, 5);
+    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(call[1]).toContain('2026-01-01');
     expect(call[1]).toContain('call-1');
   });
 
   it('searchRecordings escapes special LIKE characters', async () => {
     const pool = makePool([]);
     await new SupervisorArtifactSearchRepository(pool).searchRecordings(TENANT, 'he%llo_world', {}, 10);
-    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0];
-    const likeParam = call[1][call[1].length - 1] as string;
+    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    const params = call[1] as unknown[];
+    const likeParam = params[params.length - 1] as string;
     expect(likeParam).toContain('\\%');
     expect(likeParam).toContain('\\_');
   });
@@ -58,11 +57,10 @@ describe('SupervisorArtifactSearchRepository', () => {
 
   it('searchNotes with all filters adds conditions', async () => {
     const pool = makePool([]);
-    const from = new Date('2026-01-01');
-    await new SupervisorArtifactSearchRepository(pool).searchNotes(TENANT, 'hello', { call_id: 'call-1', from_date: from }, 5);
-    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0];
+    await new SupervisorArtifactSearchRepository(pool).searchNotes(TENANT, 'hello', { call_id: 'call-1', from_date: '2026-01-01' }, 5);
+    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[1]).toContain('call-1');
-    expect(call[1]).toContain(from);
+    expect(call[1]).toContain('2026-01-01');
   });
 
   it('searchNotes returns empty array when no matches', async () => {
@@ -79,13 +77,11 @@ describe('SupervisorArtifactSearchRepository', () => {
 
   it('searchDispositions with all filters adds conditions', async () => {
     const pool = makePool([]);
-    const from = new Date('2026-01-01');
-    const to = new Date('2026-12-31');
-    await new SupervisorArtifactSearchRepository(pool).searchDispositions(TENANT, 'RESOLVED', { call_id: 'call-1', from_date: from, to_date: to }, 5);
-    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0];
+    await new SupervisorArtifactSearchRepository(pool).searchDispositions(TENANT, 'RESOLVED', { call_id: 'call-1', from_date: '2026-01-01', to_date: '2026-12-31' }, 5);
+    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[1]).toContain('call-1');
-    expect(call[1]).toContain(from);
-    expect(call[1]).toContain(to);
+    expect(call[1]).toContain('2026-01-01');
+    expect(call[1]).toContain('2026-12-31');
   });
 
   it('searchDispositions returns empty array when no matches', async () => {

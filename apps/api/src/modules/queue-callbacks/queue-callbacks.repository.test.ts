@@ -53,7 +53,7 @@ describe('QueueCallbacksRepository', () => {
     const pool = makePool([updated]);
     const result = await new QueueCallbacksRepository(pool).update(CB_ID, TENANT, { status: 'pending' });
     expect(result?.retry_count).toBe(1);
-    const query = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const query = ((pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!)[0] as string;
     expect(query).toContain('retry_count = retry_count + 1');
   });
 
@@ -62,12 +62,12 @@ describe('QueueCallbacksRepository', () => {
     const pool = makePool([updated]);
     const result = await new QueueCallbacksRepository(pool).update(CB_ID, TENANT, { status: 'reached' });
     expect(result?.status).toBe('reached');
-    const query = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const query = ((pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!)[0] as string;
     expect(query).not.toContain('retry_count = retry_count + 1');
   });
 
   it('update with scheduled_at sets new schedule', async () => {
-    const scheduled = new Date('2026-06-10');
+    const scheduled = '2026-06-10T00:00:00.000Z';
     const updated = { ...base, scheduled_at: scheduled };
     const pool = makePool([updated]);
     const result = await new QueueCallbacksRepository(pool).update(CB_ID, TENANT, { scheduled_at: scheduled });

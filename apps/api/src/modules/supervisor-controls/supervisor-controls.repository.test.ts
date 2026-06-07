@@ -8,7 +8,7 @@ const CTRL_ID = 'ctrl-1';
 
 const base: SupervisorControl = {
   id: CTRL_ID, tenant_id: TENANT, supervisor_user_id: 'user-1',
-  control_type: 'listen', target_call_id: 'call-1', status: 'active',
+  control_type: 'monitor', target_call_id: 'call-1', status: 'active',
   audit_note: null, created_at: new Date(), updated_at: new Date(), ended_at: null,
 };
 
@@ -35,10 +35,10 @@ describe('SupervisorControlsRepository', () => {
   it('create inserts control and returns it', async () => {
     const pool = makePool([base]);
     const result = await new SupervisorControlsRepository(pool).create({
-      tenant_id: TENANT, supervisor_user_id: 'user-1', control_type: 'listen',
+      tenant_id: TENANT, supervisor_user_id: 'user-1', control_type: 'monitor',
       target_call_id: 'call-1', audit_note: 'testing',
     });
-    expect(result.control_type).toBe('listen');
+    expect(result.control_type).toBe('monitor');
   });
 
   it('update with status active returns updated control', async () => {
@@ -73,7 +73,7 @@ describe('SupervisorControlsRepository', () => {
     const pool = makePool([base]);
     const result = await new SupervisorControlsRepository(pool).setStatus(CTRL_ID, TENANT, 'active');
     expect(result?.status).toBe('active');
-    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0];
+    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[0]).not.toContain('ended_at = NOW()');
   });
 
@@ -82,7 +82,7 @@ describe('SupervisorControlsRepository', () => {
     const pool = makePool([ended]);
     const result = await new SupervisorControlsRepository(pool).setStatus(CTRL_ID, TENANT, 'ended');
     expect(result?.status).toBe('ended');
-    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0];
+    const call = (pool.query as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[0]).toContain('ended_at = NOW()');
   });
 });
