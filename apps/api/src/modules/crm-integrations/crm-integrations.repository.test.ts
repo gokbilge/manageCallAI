@@ -7,7 +7,7 @@ const TENANT = 'tenant-1';
 const CRM_ID = 'crm-1';
 
 const base: CrmIntegration = {
-  id: CRM_ID, tenant_id: TENANT, name: 'Salesforce', provider: 'generic',
+  id: CRM_ID, tenant_id: TENANT, name: 'Salesforce', provider: 'generic_webhook',
   lookup_url_template: 'https://example.com/lookup/{caller_id}',
   payload_template: {}, status: 'active', created_at: new Date(), updated_at: new Date(),
 };
@@ -46,7 +46,7 @@ describe('CrmIntegrationsRepository', () => {
   it('create inserts integration and returns it', async () => {
     const pool = makePool([base]);
     const result = await new CrmIntegrationsRepository(pool).create({
-      tenant_id: TENANT, name: 'Salesforce', provider: 'generic',
+      tenant_id: TENANT, name: 'Salesforce', provider: 'generic_webhook',
       lookup_url_template: 'https://example.com/{caller_id}',
     });
     expect(result.provider).toBe('generic');
