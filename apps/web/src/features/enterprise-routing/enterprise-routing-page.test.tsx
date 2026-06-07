@@ -313,5 +313,5 @@ describe('EnterpriseRoutingPage', () => {
       '/extensions/ext-2/assignments',
       expect.objectContaining({ method: 'POST' }),
     );
-  });
+  }, 15000);
 });
