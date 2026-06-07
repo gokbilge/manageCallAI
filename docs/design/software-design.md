@@ -19,6 +19,8 @@ This document describes the logical software design of `manageCallAI`, including
 - React + TypeScript
 - presents operator workflows for extension, route, prompt, PBX, and IVR management
 - displays validation, simulation, publish, rollback, and observability state
+- now includes a consolidated enterprise routing workspace for numbering plans,
+  calling policies, sites, carrier topology, devices, and line appearances
 
 ### 3.2 Control plane API
 
@@ -147,6 +149,17 @@ routing check for outbound routes. That service composes site defaults,
 numbering plans, calling policy, schedule context, and failover state before a
 draft route is published, and it returns operator-facing explanation steps for
 the same decision path.
+
+Current productization status:
+
+- `v0.7.3` exposes the enterprise APIs through a tenant-facing workspace in
+  `apps/web`
+- that workspace keeps object inventory, assignment workflows, topology views,
+  and evidence panels in one operator surface instead of leaving those features
+  API-only
+- dial checks, policy checks, carrier resolution, and trunk-group simulation
+  remain advisory views and do not bypass the existing publish or runtime
+  lifecycle controls
 
 ### 3.11 Migration and adoption toolkit layer
 

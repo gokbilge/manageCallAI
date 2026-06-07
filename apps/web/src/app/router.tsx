@@ -32,6 +32,7 @@ const SchedulesPage = lazy(() => import('@/features/schedules/schedules-page').t
 const ConferenceRoomsPage = lazy(() => import('@/features/conference-rooms/conference-rooms-page').then(m => ({ default: m.ConferenceRoomsPage })));
 const FeatureCodesPage = lazy(() => import('@/features/feature-codes/feature-codes-page').then(m => ({ default: m.FeatureCodesPage })));
 const OutboundRoutesPage = lazy(() => import('@/features/outbound-routes/outbound-routes-page').then(m => ({ default: m.OutboundRoutesPage })));
+const EnterpriseRoutingPage = lazy(() => import('@/features/enterprise-routing/enterprise-routing-page').then(m => ({ default: m.EnterpriseRoutingPage })));
 const OutboundCallsPage = lazy(() => import('@/features/outbound-calls/outbound-calls-page').then(m => ({ default: m.OutboundCallsPage })));
 const RecordingsPage = lazy(() => import('@/features/recordings/recordings-page').then(m => ({ default: m.RecordingsPage })));
 const SecurityAlertsPage = lazy(() => import('@/features/security-alerts/security-alerts-page').then(m => ({ default: m.SecurityAlertsPage })));
@@ -158,6 +159,12 @@ const router = createBrowserRouter([
             element: <RequireCapability capability={CAPABILITIES.TENANT_OUTBOUND_ROUTES_VIEW} redirectTo="/tenant/extensions" />,
             children: [
               { path: 'tenant/routes/outbound', element: <Suspense fallback={<PageLoader />}><OutboundRoutesPage /></Suspense> },
+            ],
+          },
+          {
+            element: <RequireCapability capability={CAPABILITIES.TENANT_INBOUND_ROUTES_VIEW} redirectTo="/tenant/extensions" />,
+            children: [
+              { path: 'tenant/enterprise-routing', element: <Suspense fallback={<PageLoader />}><EnterpriseRoutingPage /></Suspense> },
             ],
           },
           {
