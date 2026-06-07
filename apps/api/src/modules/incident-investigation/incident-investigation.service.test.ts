@@ -241,6 +241,27 @@ describe('IncidentInvestigationService', () => {
     expect(result.citations.some((citation) => citation.fact.includes('Recording transcript excerpt'))).toBe(true);
   });
 
+  it('falls back to capture metadata when recording text evidence is unavailable', async () => {
+    const repo = makeRepo({
+      findRecordingEvidence: vi.fn().mockResolvedValue([
+        {
+          recording_id: 'rec-3',
+          call_id: 'call-1',
+          recorded_at: new Date('2026-06-06T09:58:00Z'),
+          summary_text: null,
+          transcript_text: null,
+          source_mode: null,
+          provider_hint: null,
+        },
+      ]),
+    });
+    const service = new IncidentInvestigationService(repo);
+
+    const result = await service.investigate(TENANT, 'What happened on this call?', { call_ids: ['call-1'] }, 'user-1', true);
+
+    expect(result.citations.some((citation) => citation.fact.includes('no stored transcript or summary'))).toBe(true);
+  });
+
   it('summarizes policy questions as general advisory findings', async () => {
     const repo = makeRepo({
       findCallEvents: vi.fn().mockResolvedValue([]),

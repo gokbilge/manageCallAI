@@ -231,6 +231,34 @@ describe('AiRecommendationService', () => {
     });
   });
 
+  it('returns a manual-review fraud recommendation when no specific changes are inferred', async () => {
+    const fraudRec = makeRec({
+      target_type: 'fraud_policy',
+      target_id: null,
+      recommendation: {
+        type: 'fraud_policy',
+        suggested_changes: {},
+      },
+      risk_level: 'medium',
+      blast_radius: 'No specific changes inferred from intent. Review and edit manually.',
+    });
+    const repo = makeRepo({
+      create: vi.fn().mockResolvedValue({ ...makeRec(), target_type: 'fraud_policy', target_id: null }),
+      update: vi.fn().mockResolvedValue(fraudRec),
+      findById: vi.fn().mockResolvedValue(fraudRec),
+      findTenantOutboundPolicy: vi.fn().mockResolvedValue(null),
+    });
+    const service = new AiRecommendationService(repo);
+
+    const rec = await service.create(TENANT, {
+      target_type: 'fraud_policy',
+      intent: 'Please review the fraud policy',
+    });
+
+    expect(rec.blast_radius).toContain('Review and edit manually');
+    expect(repo.findTenantOutboundPolicy).toHaveBeenCalledWith(TENANT);
+  });
+
   it('accepts a route recommendation and creates a draft version', async () => {
     const repo = makeRepo();
     const service = new AiRecommendationService(repo);
