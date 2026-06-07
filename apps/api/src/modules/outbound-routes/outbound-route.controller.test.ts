@@ -20,6 +20,14 @@ vi.mock('../../db/client.js', () => ({
   db: {},
 }));
 
+vi.mock('../entitlement/index.js', () => ({
+  EntitlementLimitExceededError: class EntitlementLimitExceededError extends Error {},
+  entitlementSvc: {
+    assertWithinLimit: vi.fn().mockResolvedValue(undefined),
+    recordUsage: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 vi.mock('../auth/require-capability.js', () => ({
   requireCapability: () => async (request: { user?: unknown }) => {
     request.user = { tenant_id: 'tenant-1' };
