@@ -9,7 +9,8 @@ import { SipTrunkRepository } from './sip-trunk.repository.js';
 import { SipTrunkNotFoundError, SipTrunkService } from './sip-trunk.service.js';
 import { RuntimeApplyRepository } from './runtime-apply.repository.js';
 import { RuntimeApplyService } from './runtime-apply.service.js';
-import { sendNotFound } from '../../errors/index.js';
+import { sendNotFound, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 
 const applyService = new RuntimeApplyService(new RuntimeApplyRepository(db));
 const service = new SipTrunkService(new SipTrunkRepository(db), applyService);
@@ -34,6 +35,12 @@ export const sipTrunkController: FastifyPluginAsyncZod = async (app) => {
     { schema: { body: CreateSipTrunkBodySchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'sip_trunk.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       const { trunk, applyRequests } = await service.create({
         ...req.body,
         tenant_id: user.tenant_id,

@@ -11,7 +11,8 @@ import {
   ScheduleService,
   ScheduleValidationError,
 } from './schedule.service.js';
-import { sendNotFound, sendInvalidArgument, sendFailedPrecondition } from '../../errors/index.js';
+import { sendNotFound, sendInvalidArgument, sendFailedPrecondition, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 import { resolveActorIdentity } from '../auth/resolve-actor-identity.js';
 import { EnterpriseLifecycleRepository } from '../shared/enterprise-lifecycle.repository.js';
 import { EnterpriseLifecycleService, EnterpriseVersionNotFoundError, EnterpriseVersionStateError, EnterpriseRollbackNotAvailableError } from '../shared/enterprise-lifecycle.service.js';
@@ -58,6 +59,12 @@ export const scheduleController: FastifyPluginAsyncZod = async (app) => {
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'schedule.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       try {
         const schedule = await service.create({ ...req.body, tenant_id: user.tenant_id });
         return reply.code(201).send({ data: schedule });

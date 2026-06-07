@@ -6,7 +6,8 @@ import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { fireAuditEvent } from '../audit/fire-audit.js';
-import { sendNotFound } from '../../errors/index.js';
+import { sendNotFound, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { ConferenceRoomRepository } from './conference-room.repository.js';
 import { ConferenceRoomNotFoundError, ConferenceService } from './conference-room.service.js';
@@ -56,6 +57,12 @@ export const conferenceRoomController: FastifyPluginAsyncZod = async (app) => {
     { preHandler: requireCapability(CAPABILITIES.TENANT_CONFERENCE_ROOMS_CREATE), schema: { body: CreateBodySchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'conference_room.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       const room = await service.create({ ...req.body, tenant_id: user.tenant_id, created_by: user.sub });
       fireAuditEvent({
         tenant_id: user.tenant_id,

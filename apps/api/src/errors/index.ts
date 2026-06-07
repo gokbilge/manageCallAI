@@ -8,6 +8,7 @@ export {
   sendConflict,
   sendFailedPrecondition,
   sendResourceExhausted,
+  sendEntitlementLimitExceeded,
   sendInternal,
   sendUnavailable,
 } from './error-reply.js';

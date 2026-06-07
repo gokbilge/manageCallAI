@@ -7,7 +7,8 @@ import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { PhoneNumberRepository } from './phone-number.repository.js';
 import { PhoneNumberNotFoundError, PhoneNumberService } from './phone-number.service.js';
-import { sendNotFound } from '../../errors/index.js';
+import { sendNotFound, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 
 const service = new PhoneNumberService(new PhoneNumberRepository(db));
 
@@ -36,6 +37,12 @@ export const phoneNumberController: FastifyPluginAsyncZod = async (app) => {
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'did.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       const number = await service.create({ ...req.body, tenant_id: user.tenant_id });
       return reply.code(201).send({ data: number });
     },

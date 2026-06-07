@@ -8,7 +8,8 @@ import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { AutomationRepository } from './automation.repository.js';
 import { ApiKeyNotFoundError, AutomationService, WebhookNotFoundError } from './automation.service.js';
-import { sendNotFound } from '../../errors/index.js';
+import { sendNotFound, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 
 const service = new AutomationService(new AutomationRepository(db));
 
@@ -32,6 +33,12 @@ export const automationController: FastifyPluginAsyncZod = async (app) => {
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'api_key.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       const key = await service.createApiKey(
         user.tenant_id,
         req.body.name,
@@ -80,6 +87,12 @@ export const automationController: FastifyPluginAsyncZod = async (app) => {
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'webhook.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       const webhook = await service.createWebhook(
         user.tenant_id,
         req.body.name,

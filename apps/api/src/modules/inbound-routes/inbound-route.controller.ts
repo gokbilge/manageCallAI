@@ -19,7 +19,8 @@ import {
   RouteVersionNotFoundError,
   RouteVersionStateError,
 } from './inbound-route.service.js';
-import { sendNotFound, sendInvalidArgument, sendFailedPrecondition } from '../../errors/index.js';
+import { sendNotFound, sendInvalidArgument, sendFailedPrecondition, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 
 const service = new InboundRouteService(new InboundRouteRepository(db));
 
@@ -60,6 +61,12 @@ export const inboundRouteController: FastifyPluginAsyncZod = async (app) => {
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'route.inbound.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       try {
         const route = await service.create({ ...req.body, tenant_id: user.tenant_id, created_by: user.sub });
         return reply.code(201).send({ data: route });

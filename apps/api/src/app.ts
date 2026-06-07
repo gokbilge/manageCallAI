@@ -73,6 +73,7 @@ import { dispositionCodeController, callDispositionController } from './modules/
 import { qaTemplateController, qaReviewController } from './modules/qa-scoring/qa-scoring.controller.js';
 import { supervisorArtifactSearchController } from './modules/supervisor-controls/supervisor-artifact-search.controller.js';
 import { setupController } from './modules/setup/setup.controller.js';
+import { commercialController } from './modules/entitlement/entitlement.controller.js';
 import { db } from './db/client.js';
 import { registerErrorHandler } from './errors/index.js';
 import { redactSensitiveUrl, registerLoggingHooks } from './logging/logger.js';
@@ -221,6 +222,8 @@ function registerPlatformModules(app: FastifyInstance): void {
   app.register(retentionController, { prefix: '/api/v1/tenant' });
   app.register(selfServicePolicyController, { prefix: '/api/v1/tenant' });
   app.register(tenantAiPolicyController, { prefix: '/api/v1/tenant' });
+  // v0.7.5: commercial entitlement foundation
+  app.register(commercialController, { prefix: '/api/v1/commercial' });
 }
 
 // ── App factory ───────────────────────────────────────────────────────────────

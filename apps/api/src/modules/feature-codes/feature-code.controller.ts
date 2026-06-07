@@ -6,7 +6,8 @@ import { requireCapability } from '../auth/require-capability.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { fireAuditEvent } from '../audit/fire-audit.js';
-import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
+import { sendNotFound, sendInvalidArgument, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { FeatureCodeRepository } from './feature-code.repository.js';
 import {
@@ -74,6 +75,12 @@ export const featureCodeController: FastifyPluginAsyncZod = async (app) => {
     { preHandler: requireCapability(CAPABILITIES.TENANT_FEATURE_CODES_CREATE), schema: { body: CreateBodySchema } },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'feature_code.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       try {
         const fc = await service.create({
           ...req.body,
