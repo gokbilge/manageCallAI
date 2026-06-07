@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CallingPolicyRepository } from './calling-policy.repository.js';
 import { CallingPolicyService, CallingPolicyNotFoundError } from './calling-policy.service.js';
+import type { EnterpriseLifecycleService } from '../shared/enterprise-lifecycle.service.js';
+import type { EnterpriseVersion, EnterpriseDryRunResult, EnterprisePublishAttemptResult } from '../shared/enterprise-lifecycle.types.js';
 import type { CallingPolicy } from './calling-policy.types.js';
 
 const TENANT = 'tenant-1';
@@ -81,5 +83,100 @@ describe('CallingPolicyService', () => {
     const svc = new CallingPolicyService(makeRepo());
     const r = await svc.assign(TENANT, 'policy-1', 'tenant', null);
     expect(r.assignable_type).toBe('tenant');
+  });
+});
+
+function makeVersion(overrides: Partial<EnterpriseVersion> = {}): EnterpriseVersion {
+  return { id: 'ver-1', tenant_id: TENANT, object_id: 'policy-1', version_number: 1, state: 'draft', definition: {}, created_by: null, created_at: new Date(), validated_at: null, simulated_at: null, published_at: null, metadata: {}, ...overrides };
+}
+
+function makeLifecycle(overrides: Partial<EnterpriseLifecycleService> = {}): EnterpriseLifecycleService {
+  const v = makeVersion();
+  const dryRun: EnterpriseDryRunResult = { dry_run: true, would_become: 'published', require_approval: false, version_state_valid: true, actor_type: 'user' };
+  const publishResult: EnterprisePublishAttemptResult = { status: 'published', version: makeVersion({ state: 'published' }) };
+  return {
+    createVersion: vi.fn().mockResolvedValue(v),
+    listVersions: vi.fn().mockResolvedValue([v]),
+    validate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, validatorFn) => { const outcome = await validatorFn(v); return { version: v, outcome }; }),
+    simulate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, _sc, simFn) => { const outcome = await simFn(v, {}); return { version: v, outcome }; }),
+    dryRunPublish: vi.fn().mockResolvedValue(dryRun),
+    publish: vi.fn().mockResolvedValue(publishResult),
+    rollback: vi.fn().mockResolvedValue(publishResult),
+    ...overrides,
+  } as unknown as EnterpriseLifecycleService;
+}
+
+describe('CallingPolicyService — lifecycle', () => {
+  it('createVersion delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new CallingPolicyService(makeRepo(), lc);
+    await svc.createVersion('policy-1', TENANT, { x: 1 }, 'user-1');
+    expect(lc.createVersion).toHaveBeenCalledWith('calling_policy', 'policy-1', TENANT, { x: 1 }, 'user-1', undefined);
+  });
+
+  it('listVersions delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new CallingPolicyService(makeRepo(), lc);
+    const result = await svc.listVersions('policy-1', TENANT);
+    expect(result).toHaveLength(1);
+    expect(lc.listVersions).toHaveBeenCalledWith('calling_policy', 'policy-1', TENANT);
+  });
+
+  it('validate passes when policy has a name', async () => {
+    const lc = makeLifecycle();
+    const svc = new CallingPolicyService(makeRepo(), lc);
+    const result = await svc.validate('policy-1', 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('passed');
+    expect(result.outcome.errors).toHaveLength(0);
+  });
+
+  it('validate fails when policy name is empty', async () => {
+    const lc = makeLifecycle();
+    const svc = new CallingPolicyService(makeRepo({ findById: vi.fn().mockResolvedValue({ ...policy, name: '  ' }) }), lc);
+    const result = await svc.validate('policy-1', 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors[0]!.field).toBe('name');
+  });
+
+  it('validate throws CallingPolicyNotFoundError when policy missing', async () => {
+    const lc = makeLifecycle();
+    const svc = new CallingPolicyService(makeRepo({ findById: vi.fn().mockResolvedValue(null) }), lc);
+    await expect(svc.validate('missing', 'ver-1', TENANT)).rejects.toBeInstanceOf(CallingPolicyNotFoundError);
+  });
+
+  it('simulate delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new CallingPolicyService(makeRepo(), lc);
+    const result = await svc.simulate('policy-1', 'ver-1', TENANT, 'international');
+    expect(result.outcome).toMatchObject({ allowed: false });
+  });
+
+  it('dryRunPublish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new CallingPolicyService(makeRepo(), lc);
+    const result = await svc.dryRunPublish('policy-1', 'ver-1', TENANT);
+    expect(result.would_become).toBe('published');
+    expect(lc.dryRunPublish).toHaveBeenCalledWith('calling_policy', 'policy-1', 'ver-1', TENANT, 'user', undefined);
+  });
+
+  it('publish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new CallingPolicyService(makeRepo(), lc);
+    const result = await svc.publish('policy-1', 'ver-1', TENANT, 'user-1');
+    expect(result.status).toBe('published');
+    expect(lc.publish).toHaveBeenCalled();
+  });
+
+  it('rollback delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new CallingPolicyService(makeRepo(), lc);
+    const result = await svc.rollback('policy-1', TENANT, 'user-1');
+    expect(result.status).toBe('published');
+    expect(lc.rollback).toHaveBeenCalled();
+  });
+
+  it('lifecycle getter throws when lifecycleSvc not provided', async () => {
+    const svc = new CallingPolicyService(makeRepo());
+    expect(() => svc.createVersion('policy-1', TENANT, {})).toThrow('EnterpriseLifecycleService not provided');
   });
 });

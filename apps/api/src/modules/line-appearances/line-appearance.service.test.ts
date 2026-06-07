@@ -6,6 +6,8 @@ import {
   AppearanceAssignmentNotFoundError,
 } from './line-appearance.service.js';
 import type { LineAppearance, DeviceAppearanceAssignment } from './line-appearance.types.js';
+import type { EnterpriseLifecycleService } from '../shared/enterprise-lifecycle.service.js';
+import type { EnterpriseVersion, EnterprisePublishAttemptResult, EnterpriseDryRunResult } from '../shared/enterprise-lifecycle.types.js';
 
 const TENANT = 'tenant-1';
 const LA_ID = 'la-1';
@@ -124,5 +126,109 @@ describe('LineAppearanceService — device appearance assignments (#315)', () =>
   it('lists assignments by appearance', async () => {
     const svc = new LineAppearanceService(makeRepo());
     expect(await svc.listByAppearance(TENANT, LA_ID)).toHaveLength(1);
+  });
+});
+
+function makeVersion(overrides: Partial<EnterpriseVersion> = {}): EnterpriseVersion {
+  return { id: 'ver-1', tenant_id: TENANT, object_id: LA_ID, version_number: 1, state: 'draft', definition: {}, created_by: null, created_at: new Date(), validated_at: null, simulated_at: null, published_at: null, metadata: {}, ...overrides };
+}
+
+function makeLifecycle(overrides: Partial<EnterpriseLifecycleService> = {}): EnterpriseLifecycleService {
+  const v = makeVersion();
+  const publishResult: EnterprisePublishAttemptResult = { status: 'published', version: makeVersion({ state: 'published' }) };
+  const dryRun: EnterpriseDryRunResult = { dry_run: true, would_become: 'published', require_approval: false, version_state_valid: true, actor_type: 'user' };
+  return {
+    createVersion: vi.fn().mockResolvedValue(v),
+    listVersions: vi.fn().mockResolvedValue([v]),
+    validate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, validatorFn) => { const outcome = await validatorFn(v); return { version: v, outcome }; }),
+    simulate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, _sc, simFn) => { const outcome = await simFn(v, {}); return { version: v, outcome }; }),
+    dryRunPublish: vi.fn().mockResolvedValue(dryRun),
+    publish: vi.fn().mockResolvedValue(publishResult),
+    rollback: vi.fn().mockResolvedValue(publishResult),
+    ...overrides,
+  } as unknown as EnterpriseLifecycleService;
+}
+
+describe('LineAppearanceService — lifecycle', () => {
+  it('createVersion delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo(), lc);
+    await svc.createVersion(LA_ID, TENANT, { x: 1 }, 'user-1');
+    expect(lc.createVersion).toHaveBeenCalledWith('line_appearance', LA_ID, TENANT, { x: 1 }, 'user-1', undefined);
+  });
+
+  it('listVersions delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo(), lc);
+    const result = await svc.listVersions(LA_ID, TENANT);
+    expect(result).toHaveLength(1);
+  });
+
+  it('validate passes when label is set and appearance_index >= 0', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo(), lc);
+    const result = await svc.validate(LA_ID, 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('passed');
+  });
+
+  it('validate fails when label is empty', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo({ findById: vi.fn().mockResolvedValue({ ...appearance, label: '' }) }), lc);
+    const result = await svc.validate(LA_ID, 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors.some(e => e.field === 'label')).toBe(true);
+  });
+
+  it('validate fails when appearance_index is negative', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo({ findById: vi.fn().mockResolvedValue({ ...appearance, appearance_index: -1 }) }), lc);
+    const result = await svc.validate(LA_ID, 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors.some(e => e.field === 'appearance_index')).toBe(true);
+  });
+
+  it('validate throws LineAppearanceNotFoundError when appearance missing', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo({ findById: vi.fn().mockResolvedValue(null) }), lc);
+    await expect(svc.validate('missing', 'ver-1', TENANT)).rejects.toBeInstanceOf(LineAppearanceNotFoundError);
+  });
+
+  it('simulate delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo(), lc);
+    const result = await svc.simulate(LA_ID, 'ver-1', TENANT, { device_id: DEV_ID });
+    expect(result.outcome).toMatchObject({ status: 'passed' });
+  });
+
+  it('simulate throws LineAppearanceNotFoundError when appearance missing', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo({ findById: vi.fn().mockResolvedValue(null) }), lc);
+    await expect(svc.simulate('missing', 'ver-1', TENANT, {})).rejects.toBeInstanceOf(LineAppearanceNotFoundError);
+  });
+
+  it('dryRunPublish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo(), lc);
+    const result = await svc.dryRunPublish(LA_ID, 'ver-1', TENANT);
+    expect(result.would_become).toBe('published');
+  });
+
+  it('publish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo(), lc);
+    const result = await svc.publish(LA_ID, 'ver-1', TENANT, 'user-1');
+    expect(result.status).toBe('published');
+  });
+
+  it('rollback delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new LineAppearanceService(makeRepo(), lc);
+    const result = await svc.rollback(LA_ID, TENANT, 'user-1');
+    expect(result.status).toBe('published');
+  });
+
+  it('lifecycle getter throws when lifecycleSvc not provided', async () => {
+    const svc = new LineAppearanceService(makeRepo());
+    expect(() => svc.createVersion(LA_ID, TENANT, {})).toThrow('EnterpriseLifecycleService not provided');
   });
 });

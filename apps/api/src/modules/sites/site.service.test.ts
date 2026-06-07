@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SiteRepository } from './site.repository.js';
 import { SiteService, SiteNotFoundError, SiteLocationNotFoundError } from './site.service.js';
 import type { Site, SiteLocation, SiteWithLocations } from './site.types.js';
+import type { EnterpriseLifecycleService } from '../shared/enterprise-lifecycle.service.js';
+import type { EnterpriseVersion, EnterprisePublishAttemptResult, EnterpriseDryRunResult } from '../shared/enterprise-lifecycle.types.js';
 
 const TENANT = 'tenant-1';
 const SITE_ID = 'site-1';
@@ -100,5 +102,95 @@ describe('SiteService', () => {
   it('throws SiteLocationNotFoundError when removing missing location', async () => {
     const svc = new SiteService(makeRepo({ deleteLocation: vi.fn().mockResolvedValue(false) }));
     await expect(svc.removeLocation('missing', SITE_ID, TENANT)).rejects.toBeInstanceOf(SiteLocationNotFoundError);
+  });
+});
+
+function makeVersion(overrides: Partial<EnterpriseVersion> = {}): EnterpriseVersion {
+  return { id: 'ver-1', tenant_id: TENANT, object_id: SITE_ID, version_number: 1, state: 'draft', definition: {}, created_by: null, created_at: new Date(), validated_at: null, simulated_at: null, published_at: null, metadata: {}, ...overrides };
+}
+
+function makeLifecycle(overrides: Partial<EnterpriseLifecycleService> = {}): EnterpriseLifecycleService {
+  const v = makeVersion();
+  const publishResult: EnterprisePublishAttemptResult = { status: 'published', version: makeVersion({ state: 'published' }) };
+  const dryRun: EnterpriseDryRunResult = { dry_run: true, would_become: 'published', require_approval: false, version_state_valid: true, actor_type: 'user' };
+  return {
+    createVersion: vi.fn().mockResolvedValue(v),
+    listVersions: vi.fn().mockResolvedValue([v]),
+    validate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, validatorFn) => { const outcome = await validatorFn(v); return { version: v, outcome }; }),
+    simulate: vi.fn().mockImplementation(async (_ot, _oid, _vid, _tid, _sc, simFn) => { const outcome = await simFn(v, {}); return { version: v, outcome }; }),
+    dryRunPublish: vi.fn().mockResolvedValue(dryRun),
+    publish: vi.fn().mockResolvedValue(publishResult),
+    rollback: vi.fn().mockResolvedValue(publishResult),
+    ...overrides,
+  } as unknown as EnterpriseLifecycleService;
+}
+
+describe('SiteService — lifecycle', () => {
+  it('createVersion delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new SiteService(makeRepo(), lc);
+    await svc.createVersion(SITE_ID, TENANT, { x: 1 }, 'user-1');
+    expect(lc.createVersion).toHaveBeenCalledWith('site', SITE_ID, TENANT, { x: 1 }, 'user-1', undefined);
+  });
+
+  it('listVersions delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new SiteService(makeRepo(), lc);
+    const result = await svc.listVersions(SITE_ID, TENANT);
+    expect(result).toHaveLength(1);
+  });
+
+  it('validate passes when site has name and emergency_number', async () => {
+    const lc = makeLifecycle();
+    const svc = new SiteService(makeRepo(), lc);
+    const result = await svc.validate(SITE_ID, 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('passed');
+  });
+
+  it('validate fails when site name is empty', async () => {
+    const lc = makeLifecycle();
+    const svc = new SiteService(makeRepo({ findById: vi.fn().mockResolvedValue({ ...site, name: '' }) }), lc);
+    const result = await svc.validate(SITE_ID, 'ver-1', TENANT);
+    expect(result.outcome.status).toBe('failed');
+    expect(result.outcome.errors.some(e => e.field === 'name')).toBe(true);
+  });
+
+  it('validate throws SiteNotFoundError when site missing', async () => {
+    const lc = makeLifecycle();
+    const svc = new SiteService(makeRepo({ findById: vi.fn().mockResolvedValue(null) }), lc);
+    await expect(svc.validate('missing', 'ver-1', TENANT)).rejects.toBeInstanceOf(SiteNotFoundError);
+  });
+
+  it('simulate delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new SiteService(makeRepo(), lc);
+    const result = await svc.simulate(SITE_ID, 'ver-1', TENANT, { test: true });
+    expect(result.outcome).toMatchObject({ status: 'passed' });
+  });
+
+  it('dryRunPublish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new SiteService(makeRepo(), lc);
+    const result = await svc.dryRunPublish(SITE_ID, 'ver-1', TENANT);
+    expect(result.would_become).toBe('published');
+  });
+
+  it('publish delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new SiteService(makeRepo(), lc);
+    const result = await svc.publish(SITE_ID, 'ver-1', TENANT, 'user-1');
+    expect(result.status).toBe('published');
+  });
+
+  it('rollback delegates to lifecycle service', async () => {
+    const lc = makeLifecycle();
+    const svc = new SiteService(makeRepo(), lc);
+    const result = await svc.rollback(SITE_ID, TENANT, 'user-1');
+    expect(result.status).toBe('published');
+  });
+
+  it('lifecycle getter throws when lifecycleSvc not provided', async () => {
+    const svc = new SiteService(makeRepo());
+    expect(() => svc.createVersion(SITE_ID, TENANT, {})).toThrow('EnterpriseLifecycleService not provided');
   });
 });
