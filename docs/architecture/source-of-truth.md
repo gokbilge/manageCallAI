@@ -276,6 +276,12 @@ Planned `v0.8.x` migration-analysis lane:
 - `v0.8.2` enterprise PBX mapping set (`#333`)
 - `v0.8.3` migration readiness roadmap and compatibility report design (`#334`)
 
+`v0.8.0` specifically produces:
+
+- source-system capability matrix
+- target capability inventory for migration
+- support taxonomy covering `A`, `B`, `C`, `D`, `E`, and `U`
+
 Post-`v0.8.x` importer work remains a later implementation lane:
 
 - canonical snapshot and parser contracts (`#335`)

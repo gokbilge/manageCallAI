@@ -1,6 +1,6 @@
 # Migration Readiness Roadmap
 
-Last updated: 2026-06-06.
+Last updated: 2026-06-07.
 
 ## Purpose
 
@@ -42,11 +42,12 @@ Primary releases:
 
 Depends on:
 
-- enterprise model stabilization in `#316` through `#330`
+- closed enterprise model stabilization coverage in `#316` through `#330`
 
 Issue linkage:
 
 - Epic [#348](https://github.com/gokbilge/manageCallAI/issues/348)
+- Umbrella [#331](https://github.com/gokbilge/manageCallAI/issues/331) capability matrix and support taxonomy
 - [#350](https://github.com/gokbilge/manageCallAI/issues/350) source PBX capability matrix
 - [#351](https://github.com/gokbilge/manageCallAI/issues/351) manageCallAI target capability model
 - [#352](https://github.com/gokbilge/manageCallAI/issues/352) import support-level taxonomy
@@ -56,6 +57,15 @@ Issue linkage:
 - [#356](https://github.com/gokbilge/manageCallAI/issues/356) Avaya Aura migration map
 - [#357](https://github.com/gokbilge/manageCallAI/issues/357) Alcatel OmniPCX migration map
 - [#358](https://github.com/gokbilge/manageCallAI/issues/358) migration readiness roadmap
+
+Issue-alignment notes:
+
+- `#351` should reference closed coverage across `#300` through `#330`, not an
+  outdated open-issue range from the earlier planning draft.
+- `Generic CSV` and manual inventory guidance belong in the `v0.8.1` umbrella,
+  even without a dedicated child issue yet.
+- `Mitel` remains matrix-only in `v0.8.x` unless later source research warrants
+  a dedicated mapping issue.
 
 ## Epic B - PBX Migration Assistant MVP
 

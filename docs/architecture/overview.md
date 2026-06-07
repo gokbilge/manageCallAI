@@ -99,6 +99,13 @@ The planned enterprise and migration lane after `v0.6.x` is also phased:
 - `v0.8.x` produces migration-analysis and mapping documents (`#331`-`#334`)
 - importer execution follows only after those phases (`#335`-`#339`)
 
+The `v0.8.0` documentation baseline is:
+
+- source-system capability matrix
+- target capability inventory
+- support taxonomy for exact, equivalent, approximate, manual-review,
+  unsupported, and unknown migration outcomes
+
 The migration/adoption toolkit must remain evidence-driven:
 
 - source discovery

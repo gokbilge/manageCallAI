@@ -168,6 +168,10 @@ draft-only.
 
 Responsibilities:
 
+- source-system capability matrix and target-model inventory documentation before
+  importer implementation
+- support-level taxonomy that drives importer eligibility, UI blocking, and
+  evidence burden
 - source discovery and upload intake
 - canonical migration snapshot normalization
 - compatibility classification and confidence scoring
