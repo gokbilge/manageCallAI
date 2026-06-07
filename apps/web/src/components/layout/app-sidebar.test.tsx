@@ -27,6 +27,7 @@ describe('AppSidebar', () => {
     vi.mocked(useAuth).mockReturnValue({ session: makeSession('tenant_admin') } as never);
     renderWithProviders(<AppSidebar workspace="tenant" pathname="/tenant/extensions" />);
     expect(screen.getByText('Extensions')).toBeInTheDocument();
+    expect(screen.getByText('Enterprise Routing')).toBeInTheDocument();
     expect(screen.getByText('IVR Flows')).toBeInTheDocument();
     expect(screen.getByText('Approvals')).toBeInTheDocument();
     expect(screen.getByText('Conference Rooms')).toBeInTheDocument();
