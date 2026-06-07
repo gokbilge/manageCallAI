@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CallingPolicyRepository } from './calling-policy.repository.js';
 import { CallingPolicyService, CallingPolicyNotFoundError } from './calling-policy.service.js';
 import type { EnterpriseLifecycleService } from '../shared/enterprise-lifecycle.service.js';
-import type { EnterpriseVersion, EnterpriseValidationResult, EnterpriseSimulationResult, EnterpriseDryRunResult, EnterprisePublishAttemptResult } from '../shared/enterprise-lifecycle.types.js';
+import type { EnterpriseVersion, EnterpriseDryRunResult, EnterprisePublishAttemptResult } from '../shared/enterprise-lifecycle.types.js';
 import type { CallingPolicy } from './calling-policy.types.js';
 
 const TENANT = 'tenant-1';
@@ -92,8 +92,6 @@ function makeVersion(overrides: Partial<EnterpriseVersion> = {}): EnterpriseVers
 
 function makeLifecycle(overrides: Partial<EnterpriseLifecycleService> = {}): EnterpriseLifecycleService {
   const v = makeVersion();
-  const validResult: EnterpriseValidationResult = { version: v, outcome: { status: 'passed', errors: [], warnings: [] } };
-  const simResult: EnterpriseSimulationResult = { version: v, outcome: { status: 'passed' } };
   const dryRun: EnterpriseDryRunResult = { dry_run: true, would_become: 'published', require_approval: false, version_state_valid: true, actor_type: 'user' };
   const publishResult: EnterprisePublishAttemptResult = { status: 'published', version: makeVersion({ state: 'published' }) };
   return {
