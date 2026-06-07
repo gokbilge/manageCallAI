@@ -86,3 +86,21 @@ For packaging and first boot:
 - [install.sh](install.sh)
 
 manageCallAI is not production-ready unless all production evidence gates pass with real artifacts tied to the release candidate commit.
+
+## Licensing and editions
+
+manageCallAI is currently licensed under the **Apache License, Version 2.0**.
+
+Existing Apache-2.0 releases remain available under that license and are not
+retroactively changed by any future decision.
+
+The project is preparing a **Free / Pro / Enterprise** packaging model. Future
+versions may use Apache-2.0 core with commercial modules, AGPL/commercial dual
+licensing, or another maintainer-approved model. The licensing model will be
+documented and decided before any change is made.
+
+For full details see:
+
+- [`LICENSING.md`](LICENSING.md) — current status and options under consideration
+- [`docs/commercial/license-options.md`](docs/commercial/license-options.md) — license model comparison
+- [`docs/commercial/open-source-and-commercial-boundary.md`](docs/commercial/open-source-and-commercial-boundary.md) — Free / Pro / Enterprise scope
