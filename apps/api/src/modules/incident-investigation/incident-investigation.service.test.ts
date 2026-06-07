@@ -181,6 +181,110 @@ describe('IncidentInvestigationService', () => {
     );
   });
 
+  it('uses recent failed calls when the question is call-related and no explicit context is provided', async () => {
+    const repo = makeRepo({
+      findRecentFailedCalls: vi.fn().mockResolvedValue([
+        {
+          call_id: 'call-recent-1',
+          event_type: 'call.rejected',
+          event_time: new Date('2026-06-06T10:15:00Z'),
+          source: 'runtime',
+        },
+      ]),
+      findAllActiveInboundRoutes: vi.fn().mockResolvedValue([]),
+      findGatewayStatus: vi.fn().mockResolvedValue([]),
+    });
+    const service = new IncidentInvestigationService(repo);
+
+    const result = await service.investigate(TENANT, 'Why did this call fail?', {}, 'user-1', false);
+
+    expect(repo.findRecentFailedCalls).toHaveBeenCalledWith(TENANT);
+    expect(result.citations[0]?.fact).toContain('rejected');
+  });
+
+  it('investigates explicit route ids without loading all active routes', async () => {
+    const repo = makeRepo({
+      findCallEvents: vi.fn().mockResolvedValue([]),
+      findInboundRoutes: vi.fn().mockResolvedValue([
+        { id: 'route-2', name: 'After Hours', status: 'inactive', match_type: 'did', match_value: '+441234', target_type: null },
+      ]),
+      findAllActiveInboundRoutes: vi.fn(),
+      findGatewayStatus: vi.fn().mockResolvedValue([]),
+    });
+    const service = new IncidentInvestigationService(repo);
+
+    const result = await service.investigate(TENANT, 'Check this inbound route', { route_ids: ['route-2'] }, 'user-1', false);
+
+    expect(repo.findInboundRoutes).toHaveBeenCalledWith(['route-2'], TENANT);
+    expect(repo.findAllActiveInboundRoutes).not.toHaveBeenCalled();
+    expect(result.answer).toContain('non-active state');
+  });
+
+  it('includes transcript excerpts when summaries are unavailable', async () => {
+    const repo = makeRepo({
+      findRecordingEvidence: vi.fn().mockResolvedValue([
+        {
+          recording_id: 'rec-2',
+          call_id: 'call-1',
+          recorded_at: new Date('2026-06-06T09:58:00Z'),
+          summary_text: null,
+          transcript_text: 'This is a long transcript excerpt describing the route failure and retry attempts.',
+          source_mode: 'provider',
+          provider_hint: 'openai',
+        },
+      ]),
+    });
+    const service = new IncidentInvestigationService(repo);
+
+    const result = await service.investigate(TENANT, 'What happened on this call?', { call_ids: ['call-1'] }, 'user-1', true);
+
+    expect(result.citations.some((citation) => citation.fact.includes('Recording transcript excerpt'))).toBe(true);
+  });
+
+  it('falls back to capture metadata when recording text evidence is unavailable', async () => {
+    const repo = makeRepo({
+      findRecordingEvidence: vi.fn().mockResolvedValue([
+        {
+          recording_id: 'rec-3',
+          call_id: 'call-1',
+          recorded_at: new Date('2026-06-06T09:58:00Z'),
+          summary_text: null,
+          transcript_text: null,
+          source_mode: null,
+          provider_hint: null,
+        },
+      ]),
+    });
+    const service = new IncidentInvestigationService(repo);
+
+    const result = await service.investigate(TENANT, 'What happened on this call?', { call_ids: ['call-1'] }, 'user-1', true);
+
+    expect(result.citations.some((citation) => citation.fact.includes('no stored transcript or summary'))).toBe(true);
+  });
+
+  it('summarizes policy questions as general advisory findings', async () => {
+    const repo = makeRepo({
+      findCallEvents: vi.fn().mockResolvedValue([]),
+      findAllActiveInboundRoutes: vi.fn().mockResolvedValue([]),
+      findGatewayStatus: vi.fn().mockResolvedValue([]),
+      findRecentFailedCalls: vi.fn().mockResolvedValue([]),
+    });
+    const service = new IncidentInvestigationService(repo);
+
+    const result = await service.investigate(TENANT, 'Is our fraud policy too permissive?', {}, 'user-1', false);
+
+    expect(result.answer).toContain('No data found');
+    expect(repo.create).toHaveBeenCalledWith(
+      TENANT,
+      'Is our fraud policy too permissive?',
+      {},
+      expect.any(String),
+      expect.any(Array),
+      expect.any(Array),
+      'user-1',
+    );
+  });
+
   it('lists past investigations', async () => {
     const repo = makeRepo();
     const service = new IncidentInvestigationService(repo);
