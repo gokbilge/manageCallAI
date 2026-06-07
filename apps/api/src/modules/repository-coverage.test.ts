@@ -927,7 +927,8 @@ describe('Repository coverage', () => {
       status: 'active',
       timezone: 'UTC',
       weekly_rules_json: [],
-      holiday_overrides_json: [],
+      holiday_calendar_json: [],
+      override_windows_json: [],
     };
     const pool = makePool([
       row(route),

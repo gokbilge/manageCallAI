@@ -324,7 +324,7 @@ export class ScheduleService {
       const rulesErr = validateRules(schedule.weekly_rules_json);
       if (rulesErr) errors.push({ field: 'weekly_rules_json', message: rulesErr });
       const overridesErr = validatePersistedOverrides(schedule.override_windows_json ?? []);
-      if (overridesErr) errors.push({ field: 'holiday_overrides_json', message: overridesErr });
+      if (overridesErr) errors.push({ field: 'override_windows_json', message: overridesErr });
       return { status: errors.length === 0 ? 'passed' : 'failed', errors, warnings: [] };
     });
   }

@@ -84,7 +84,8 @@ function makeRepository(overrides: Partial<EnterpriseRoutingRepository> = {}): E
       status: 'active',
       timezone: 'UTC',
       weekly_rules_json: [{ day_of_week: 1, open_time: '00:00', close_time: '23:59' }],
-      holiday_overrides_json: [],
+      holiday_calendar_json: [],
+      override_windows_json: [],
     }),
     findTrunkGroupMemberships: vi.fn().mockResolvedValue([]),
     ...overrides,
@@ -282,7 +283,8 @@ describe('EnterpriseRoutingService', () => {
       status: 'active',
       timezone: 'UTC',
       weekly_rules_json: [],
-      holiday_overrides_json: [],
+      holiday_calendar_json: [],
+      override_windows_json: [],
     });
 
     const report = await service.simulateOutboundRoute(ROUTE_ID, TENANT, {
