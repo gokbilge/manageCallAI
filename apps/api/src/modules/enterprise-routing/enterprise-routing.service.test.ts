@@ -111,6 +111,17 @@ describe('EnterpriseRoutingService', () => {
     expect(report.blocking_issues).toHaveLength(0);
   });
 
+  it('fails validation when the primary trunk is missing and a live prefix conflict exists', async () => {
+    vi.mocked(repo.findTrunksByIds).mockResolvedValue(new Map());
+    vi.mocked(repo.countActivePrefixConflicts).mockResolvedValue(2);
+
+    const report = await service.validateOutboundRoute(ROUTE_ID, TENANT);
+    expect(report.validation_status).toBe('failed');
+    expect(report.blocking_issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining(['PRIMARY_TRUNK_MISSING', 'ACTIVE_PREFIX_CONFLICT']),
+    );
+  });
+
   it('fails validation when site policy blocks the matched call type', async () => {
     vi.mocked(repo.findCallingPolicyById).mockResolvedValue({
       id: 'policy-1',
@@ -130,6 +141,35 @@ describe('EnterpriseRoutingService', () => {
     const report = await service.validateOutboundRoute(ROUTE_ID, TENANT);
     expect(report.validation_status).toBe('failed');
     expect(report.blocking_issues[0]?.code).toBe('SITE_POLICY_BLOCKS_ROUTE');
+  });
+
+  it('adds advisory issues when a dependent site has no active numbering plan or calling policy context', async () => {
+    vi.mocked(repo.findSiteById).mockResolvedValue({
+      id: SITE_ID,
+      name: 'London',
+      status: 'active',
+      timezone: 'Europe/London',
+      default_calling_policy_id: null,
+      default_numbering_plan_id: null,
+      default_outbound_route_id: ROUTE_ID,
+    });
+    vi.mocked(repo.findSitesReferencingRoute).mockResolvedValue([{
+      id: SITE_ID,
+      name: 'London',
+      status: 'active',
+      timezone: 'Europe/London',
+      default_calling_policy_id: null,
+      default_numbering_plan_id: null,
+      default_outbound_route_id: ROUTE_ID,
+    }]);
+    vi.mocked(repo.findTenantAssignedNumberingPlan).mockResolvedValue(null);
+    vi.mocked(repo.findTenantAssignedCallingPolicy).mockResolvedValue(null);
+
+    const report = await service.validateOutboundRoute(ROUTE_ID, TENANT);
+    expect(report.validation_status).toBe('passed');
+    expect(report.advisory_issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining(['SITE_NO_NUMBERING_PLAN', 'SITE_NO_CALLING_POLICY']),
+    );
   });
 
   it('adds a failover advisory when both trunks are in the same active trunk group', async () => {
@@ -167,6 +207,18 @@ describe('EnterpriseRoutingService', () => {
     expect(report.steps.some((step) => step.category === 'policy' && step.status === 'blocked')).toBe(true);
   });
 
+  it('returns a missing-schedule outcome when the requested schedule does not exist', async () => {
+    vi.mocked(repo.findScheduleById).mockResolvedValue(null);
+
+    const report = await service.simulateOutboundRoute(ROUTE_ID, TENANT, {
+      dial_string: '+442079460123',
+      schedule_id: SCHEDULE_ID,
+    });
+
+    expect(report.outcome).toBe('schedule_missing');
+    expect(report.schedule_state).toBe('missing');
+  });
+
   it('simulates fallback routing when the primary trunk is inactive', async () => {
     vi.mocked(repo.findTrunksByIds).mockResolvedValue(new Map([
       [PRIMARY_TRUNK, { id: PRIMARY_TRUNK, name: 'Primary Carrier', status: 'inactive' }],
@@ -180,6 +232,47 @@ describe('EnterpriseRoutingService', () => {
 
     expect(report.outcome).toBe('routed_fallback');
     expect(report.selected_trunk_id).toBe(FALLBACK_TRUNK);
+  });
+
+  it('simulates primary routing with tenant defaults when no site is provided', async () => {
+    vi.mocked(repo.findSiteById).mockResolvedValue(null);
+    vi.mocked(repo.findTenantAssignedNumberingPlan).mockResolvedValue({ id: 'plan-1', name: 'UK Plan', status: 'active' });
+    vi.mocked(repo.findTenantAssignedCallingPolicy).mockResolvedValue({
+      id: 'policy-1',
+      name: 'International Allowed',
+      allow_local: true,
+      allow_national: true,
+      allow_mobile: true,
+      allow_international: true,
+      allow_premium_rate: false,
+      allow_toll_free: true,
+      allow_special: false,
+      emergency_always_allowed: true,
+      exceptions: [],
+      status: 'active',
+    });
+
+    const report = await service.simulateOutboundRoute(ROUTE_ID, TENANT, {
+      dial_string: '+442079460123',
+    });
+
+    expect(report.outcome).toBe('routed_primary');
+    expect(report.steps[0]?.detail).toContain('No site selected');
+  });
+
+  it('simulates no available trunks when both primary and fallback are unavailable', async () => {
+    vi.mocked(repo.findTrunksByIds).mockResolvedValue(new Map([
+      [PRIMARY_TRUNK, { id: PRIMARY_TRUNK, name: 'Primary Carrier', status: 'inactive' }],
+      [FALLBACK_TRUNK, { id: FALLBACK_TRUNK, name: 'Backup Carrier', status: 'inactive' }],
+    ]));
+
+    const report = await service.simulateOutboundRoute(ROUTE_ID, TENANT, {
+      dial_string: '+442079460123',
+      site_id: SITE_ID,
+    });
+
+    expect(report.outcome).toBe('no_available_trunks');
+    expect(report.steps.some((step) => step.category === 'failover' && step.status === 'blocked')).toBe(true);
   });
 
   it('returns out_of_hours when the provided schedule is closed', async () => {
@@ -201,5 +294,15 @@ describe('EnterpriseRoutingService', () => {
 
     expect(report.outcome).toBe('out_of_hours');
     expect(report.schedule_state).toBe('out_of_hours');
+  });
+
+  it('returns a combined enterprise check payload', async () => {
+    const report = await service.runOutboundRouteCheck(ROUTE_ID, TENANT, {
+      dial_string: '+442079460123',
+      site_id: SITE_ID,
+    });
+
+    expect(report.validation.target_id).toBe(ROUTE_ID);
+    expect(report.simulation.target_id).toBe(ROUTE_ID);
   });
 });
