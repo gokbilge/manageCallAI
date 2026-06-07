@@ -4,8 +4,9 @@ import {
   AiRecommendationService,
   AiRecommendationNotFoundError,
   AiRecommendationStateError,
+  AiRecommendationTargetNotFoundError,
 } from './ai-recommendations.service.js';
-import type { AiRecommendation, InboundRouteRow, TenantPolicyRow } from './ai-recommendations.types.js';
+import type { AiRecommendation, InboundRouteRow, OutboundRouteRow, TenantPolicyRow } from './ai-recommendations.types.js';
 
 const TENANT = 'tenant-1';
 const ROUTE_ID = 'route-1';
@@ -22,6 +23,17 @@ const routeRow: InboundRouteRow = {
   target_id: 'ext-1',
   draft_version_id: null,
   active_version_id: 'ver-1',
+};
+
+const outboundRouteRow: OutboundRouteRow = {
+  id: 'outbound-route-1',
+  name: 'International Route',
+  status: 'active',
+  match_prefix: '+44',
+  priority: 20,
+  sip_trunk_id: 'trunk-1',
+  fallback_sip_trunk_id: 'trunk-2',
+  max_calls_per_minute: 10,
 };
 
 const policyRow: TenantPolicyRow = {
@@ -150,6 +162,75 @@ describe('AiRecommendationService', () => {
     await expect(service.getById('missing', TENANT)).rejects.toBeInstanceOf(AiRecommendationNotFoundError);
   });
 
+  it('creates an outbound route recommendation summary', async () => {
+    const outboundRec = makeRec({
+      target_type: 'outbound_route',
+      target_id: outboundRouteRow.id,
+      recommendation: {
+        type: 'outbound_route',
+        suggested_changes: {},
+        affected_numbers: [],
+        affected_routes: [{ id: routeRow.id, name: routeRow.name, status: routeRow.status, role: 'active_route' }],
+      },
+      rationale: 'outbound rationale',
+      blast_radius: 'outbound blast radius',
+    });
+    const repo = makeRepo({
+      create: vi.fn().mockResolvedValue({ ...makeRec(), target_type: 'outbound_route', target_id: outboundRouteRow.id }),
+      update: vi.fn().mockResolvedValue(outboundRec),
+      findById: vi.fn().mockResolvedValue(outboundRec),
+      findOutboundRoute: vi.fn().mockResolvedValue(outboundRouteRow),
+      findActiveInboundRoutes: vi.fn().mockResolvedValue([routeRow]),
+    });
+    const service = new AiRecommendationService(repo);
+
+    const rec = await service.create(TENANT, {
+      target_type: 'outbound_route',
+      target_id: outboundRouteRow.id,
+      intent: 'Review outbound route behavior',
+    });
+
+    expect(rec.target_type).toBe('outbound_route');
+    expect(repo.findOutboundRoute).toHaveBeenCalledWith(outboundRouteRow.id, TENANT);
+    expect(repo.findActiveInboundRoutes).toHaveBeenCalledWith(TENANT);
+  });
+
+  it('parses fraud intent details for daily limits, duration, and international access', async () => {
+    const fraudRec = makeRec({
+      target_type: 'fraud_policy',
+      target_id: null,
+      recommendation: {
+        type: 'fraud_policy',
+        suggested_changes: {
+          max_calls_per_day: 20,
+          max_call_duration_secs: 120,
+          deny_international_default: false,
+        },
+      },
+      risk_level: 'medium',
+    });
+    const repo = makeRepo({
+      create: vi.fn().mockResolvedValue({ ...makeRec(), target_type: 'fraud_policy', target_id: null }),
+      update: vi.fn().mockResolvedValue(fraudRec),
+      findById: vi.fn().mockResolvedValue(fraudRec),
+    });
+    const service = new AiRecommendationService(repo);
+
+    const rec = await service.create(TENANT, {
+      target_type: 'fraud_policy',
+      intent: 'Allow international and limit to 20 calls per day and 2 minutes',
+    });
+
+    expect(rec.recommendation).toMatchObject({
+      type: 'fraud_policy',
+      suggested_changes: {
+        max_calls_per_day: 20,
+        max_call_duration_secs: 120,
+        deny_international_default: false,
+      },
+    });
+  });
+
   it('accepts a route recommendation and creates a draft version', async () => {
     const repo = makeRepo();
     const service = new AiRecommendationService(repo);
@@ -193,6 +274,28 @@ describe('AiRecommendationService', () => {
     await expect(service.accept(REC_ID, TENANT, 'user-1', 'user-1')).rejects.toBeInstanceOf(AiRecommendationStateError);
   });
 
+  it('throws when accepting a pending recommendation without suggested changes', async () => {
+    const repo = makeRepo({
+      findById: vi.fn().mockResolvedValue(makeRec({ recommendation: null })),
+    });
+    const service = new AiRecommendationService(repo);
+
+    await expect(service.accept(REC_ID, TENANT, 'user-1', 'user-1')).rejects.toThrow(
+      'Recommendation has no suggested changes to apply',
+    );
+  });
+
+  it('throws when accepting a recommendation whose target route no longer exists', async () => {
+    const repo = makeRepo({
+      findInboundRoute: vi.fn().mockResolvedValue(null),
+    });
+    const service = new AiRecommendationService(repo);
+
+    await expect(service.accept(REC_ID, TENANT, 'user-1', 'user-1')).rejects.toBeInstanceOf(
+      AiRecommendationTargetNotFoundError,
+    );
+  });
+
   it('rejects a recommendation without applying changes', async () => {
     const repo = makeRepo();
     const service = new AiRecommendationService(repo);
@@ -208,5 +311,32 @@ describe('AiRecommendationService', () => {
     });
     const service = new AiRecommendationService(repo);
     await expect(service.reject(REC_ID, TENANT, 'user-1')).rejects.toBeInstanceOf(AiRecommendationStateError);
+  });
+
+  it('throws target-not-found when creating a recommendation for a missing inbound route', async () => {
+    const repo = makeRepo({
+      findInboundRoute: vi.fn().mockResolvedValue(null),
+    });
+    const service = new AiRecommendationService(repo);
+
+    await expect(service.create(TENANT, {
+      target_type: 'inbound_route',
+      target_id: ROUTE_ID,
+      intent: 'Route to queue',
+    })).rejects.toBeInstanceOf(AiRecommendationTargetNotFoundError);
+  });
+
+  it('throws target-not-found when creating a recommendation for a missing outbound route', async () => {
+    const repo = makeRepo({
+      create: vi.fn().mockResolvedValue({ ...makeRec(), target_type: 'outbound_route', target_id: outboundRouteRow.id }),
+      findOutboundRoute: vi.fn().mockResolvedValue(null),
+    });
+    const service = new AiRecommendationService(repo);
+
+    await expect(service.create(TENANT, {
+      target_type: 'outbound_route',
+      target_id: outboundRouteRow.id,
+      intent: 'Audit outbound route',
+    })).rejects.toBeInstanceOf(AiRecommendationTargetNotFoundError);
   });
 });
