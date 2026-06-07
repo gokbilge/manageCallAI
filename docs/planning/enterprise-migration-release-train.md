@@ -1,6 +1,6 @@
 # Enterprise And Migration Release Train
 
-Last updated: 2026-06-06.
+Last updated: 2026-06-07.
 
 This document turns the enterprise PBX gap analysis into a phased release and
 slice plan.
@@ -408,6 +408,9 @@ lane closes.
 Focus:
 
 - [#331](https://github.com/gokbilge/manageCallAI/issues/331) `v0.8.0: capability matrix and support taxonomy`
+- [#350](https://github.com/gokbilge/manageCallAI/issues/350) source PBX capability matrix
+- [#351](https://github.com/gokbilge/manageCallAI/issues/351) manageCallAI target capability model
+- [#352](https://github.com/gokbilge/manageCallAI/issues/352) import support-level taxonomy
 - `docs/migration/pbx-capability-gap-analysis.md`
 - `docs/migration/source-system-capability-matrix.md`
 - `docs/migration/import-support-levels.md`
@@ -421,7 +424,8 @@ Focus:
 - [#332](https://github.com/gokbilge/manageCallAI/issues/332) `v0.8.1: open-source PBX mapping set`
 - `docs/migration/freepbx-asterisk-migration-map.md`
 - `docs/migration/fusionpbx-migration-map.md`
-- generic CSV/manual inventory mapping
+- generic CSV/manual inventory mapping inside the `#332` umbrella unless a
+  separate child issue becomes necessary
 
 ### `v0.8.2` - Enterprise PBX Mapping Set
 

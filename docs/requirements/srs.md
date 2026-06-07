@@ -23,7 +23,8 @@ The current product scope includes:
   audit, and approval-aware flows
 - runtime visibility, reporting, self-service, and compliance-oriented
   operational surfaces
-- bounded AI assistance and a phased enterprise-model expansion roadmap
+- bounded AI assistance, a phased enterprise-model expansion roadmap, and a
+  documentation-first migration-readiness lane before any importer workflow
 
 ### 1.3 Intended Audience
 
@@ -204,6 +205,20 @@ Planned release mapping:
 - `v0.7.0` through `v0.7.4` stabilize and productize that model (`#316`-`#330`)
 - `v0.8.x` documents migration-analysis and source mappings before any importer
   lane (`#331`-`#334`)
+
+### 4.15 Migration Readiness And Adoption Safety
+
+- FR-46: The system shall maintain a conservative source-system capability
+  matrix covering core PBX, enterprise, end-user, contact-center, emergency,
+  and migration-risk capabilities for the supported source families.
+- FR-47: The system shall maintain a migration-facing target capability
+  inventory that distinguishes implemented coverage, closed-issue coverage, open
+  issue coverage, missing issue gaps, and explicit future deferrals.
+- FR-48: The system shall classify discovered source objects with support levels
+  `A`, `B`, `C`, `D`, `E`, and `U`, and shall define importer, UI, and evidence
+  expectations for each classification.
+- FR-49: Migration workflows shall remain draft-only and shall not convert
+  unknown, unsupported, or manual-review source behavior into live routing.
 
 ## 5. Non-Functional Requirements
 

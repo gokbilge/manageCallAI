@@ -68,16 +68,17 @@ Current queue state:
   migration-readiness planning.
 
 - [../migration/source-system-capability-matrix.md](../migration/source-system-capability-matrix.md)
-  Conservative matrix of source PBX capabilities against manageCallAI's target
-  model.
+  Conservative matrix of source PBX capabilities grouped by core PBX,
+  enterprise, end-user, contact-center, emergency, and migration-risk areas.
 
 - [../migration/managecallai-target-capability-model.md](../migration/managecallai-target-capability-model.md)
-  Migration-oriented inventory of implemented, open, and deferred target
-  capabilities with issue references.
+  Migration-oriented inventory of implemented, closed-issue-covered, open, and
+  deferred target capabilities with issue references.
 
 - [../migration/import-support-levels.md](../migration/import-support-levels.md)
   Shared taxonomy for exact, equivalent, approximate, manual-review,
-  unsupported, and unknown import classifications.
+  unsupported, and unknown import classifications, including importer, UI, and
+  evidence expectations.
 
 - [migration-readiness-roadmap.md](migration-readiness-roadmap.md)
   Release placement and workload split for the Migration Readiness Gap Analysis

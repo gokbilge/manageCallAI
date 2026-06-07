@@ -42,6 +42,15 @@ PRs should include:
 Documentation-only changes still use PRs because branch protection and CI prove
 that generated contracts, checks, and security gates remain coherent.
 
+## Planning And Documentation Issue Hygiene
+
+When architecture, planning, or migration docs change issue scope materially:
+
+- update umbrella and child issue bodies so they match the current design
+- correct stale issue-range references instead of letting docs and issues drift
+- record intentional matrix-only or roadmap-only items explicitly so later
+  slices do not imply missing implementation work
+
 ## Audit Findings
 
 Open audit findings must be mirrored into GitHub Issues. The audit file is the
