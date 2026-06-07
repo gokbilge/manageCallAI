@@ -1,0 +1,53 @@
+{
+  "release": "v0.7.5",
+  "feature": "entitlement_foundation",
+  "status": "draft",
+  "migrations": ["0077_commercial_entitlement_foundation.sql"],
+  "plans_seeded": ["free", "pro", "enterprise"],
+  "service": "EntitlementService",
+  "api_endpoints": [
+    "/api/v1/commercial/plan",
+    "/api/v1/commercial/entitlements",
+    "/api/v1/commercial/usage"
+  ],
+  "limits_enforced": [
+    "extension.max_count",
+    "device.max_count",
+    "sip_trunk.max_count",
+    "did.max_count",
+    "route.inbound.max_count",
+    "route.outbound.max_count",
+    "ivr.flow.max_count",
+    "queue.max_count",
+    "ring_group.max_count",
+    "voicemail_box.max_count",
+    "conference_room.max_count",
+    "parking_lot.max_count",
+    "schedule.max_count",
+    "feature_code.max_count",
+    "api_key.max_count",
+    "webhook.max_count"
+  ],
+  "tests": "apps/api/src/modules/entitlement/entitlement.service.test.ts",
+  "pending": [
+    "user.admin.max_count",
+    "user.end_user.max_count",
+    "tenant.max_count",
+    "n8n.connection.max_count",
+    "holiday_calendar.max_count",
+    "ivr.version.max_per_flow",
+    "call_events.monthly_limit",
+    "ai.failure_explanation.monthly_limit",
+    "ai.route_risk.monthly_limit",
+    "ai.summary.monthly_limit",
+    "ai.nl_report.monthly_limit",
+    "migration.analysis.monthly_limit",
+    "migration.draft_import.monthly_limit",
+    "recording.storage_mb",
+    "voicemail.storage_mb",
+    "transcript.storage_mb",
+    "recording.retention_days",
+    "call_events.retention_days",
+    "audit.retention_days"
+  ]
+}

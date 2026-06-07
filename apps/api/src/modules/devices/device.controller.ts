@@ -8,7 +8,8 @@ import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { fireAuditEvent } from '../audit/fire-audit.js';
-import { sendNotFound } from '../../errors/index.js';
+import { sendNotFound, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 import { DeviceRepository } from './device.repository.js';
 import { DeviceService, DeviceNotFoundError, DeviceAssignmentNotFoundError } from './device.service.js';
 
@@ -45,6 +46,12 @@ export const deviceController: FastifyPluginAsyncZod = async (app) => {
     schema: { body: CreateDeviceSchema },
   }, async (req, reply) => {
     const user = req.user as AuthClaims;
+    try {
+      await entitlementSvc.assertWithinLimit(user.tenant_id, 'device.max_count');
+    } catch (err) {
+      if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+      throw err;
+    }
     const device = await service.create(user.tenant_id, req.body);
     fireAuditEvent({
       tenant_id: user.tenant_id, actor_id: user.sub, actor_role: user.role ?? null,

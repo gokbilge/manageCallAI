@@ -13,7 +13,8 @@ import {
   QueueService,
   QueueValidationError,
 } from './queue.service.js';
-import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
+import { sendNotFound, sendInvalidArgument, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 import {
   UuidParamsSchema,
   CreateQueueBodySchema,
@@ -53,6 +54,12 @@ export const queueController: FastifyPluginAsyncZod = async (app) => {
     },
     async (req, reply) => {
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'queue.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       try {
         const queue = await service.create({ ...req.body, tenant_id: user.tenant_id });
         return reply.code(201).send({ data: queue });

@@ -1,0 +1,17 @@
+{
+  "documentation_only": true,
+  "invalid_example": true,
+  "license_id": "lic_example_invalid_pro",
+  "customer_name": "Example Widgets Ltd",
+  "edition": "pro",
+  "issued_at": "2026-01-01T00:00:00Z",
+  "expires_at": "2027-01-01T00:00:00Z",
+  "deployment_mode": "self_hosted",
+  "max_instances": 2,
+  "max_nodes": 2,
+  "entitlements": [
+    "pro.analytics",
+    "pro.reporting"
+  ],
+  "signature": "INVALID-EXAMPLE-SIGNATURE-DO-NOT-USE"
+}

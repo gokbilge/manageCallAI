@@ -24,7 +24,8 @@ import {
   RollbackNotAvailableError,
 } from './ivr-flow.service.js';
 import { defaultIvrGraph } from './ivr-flow.validation.js';
-import { sendNotFound, sendFailedPrecondition } from '../../errors/index.js';
+import { sendNotFound, sendFailedPrecondition, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 
 const service = new IvrFlowService(new IvrFlowRepository(db));
 
@@ -103,6 +104,12 @@ export const ivrFlowController: FastifyPluginAsyncZod = async (app) => {
     async (req, reply) => {
       resolveActorIdentity(req);
       const user = req.user as AuthClaims;
+      try {
+        await entitlementSvc.assertWithinLimit(user.tenant_id, 'ivr.flow.max_count');
+      } catch (err) {
+        if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+        throw err;
+      }
       const flow = await service.create({
         tenant_id: user.tenant_id,
         name: req.body.name,

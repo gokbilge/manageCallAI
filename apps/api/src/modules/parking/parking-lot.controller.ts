@@ -5,7 +5,8 @@ import { db } from '../../db/client.js';
 import { authenticate } from '../auth/authenticate.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { fireAuditEvent } from '../audit/fire-audit.js';
-import { sendNotFound, sendInvalidArgument } from '../../errors/index.js';
+import { sendNotFound, sendInvalidArgument, sendEntitlementLimitExceeded } from '../../errors/index.js';
+import { entitlementSvc, EntitlementLimitExceededError } from '../entitlement/index.js';
 import type { AuthClaims } from '../auth/auth-claims.js';
 import { ParkingLotRepository } from './parking-lot.repository.js';
 import {
@@ -74,6 +75,12 @@ export const parkingLotController: FastifyPluginAsyncZod = async (app) => {
 
   app.post('/', { schema: { body: CreateLotBodySchema } }, async (req, reply) => {
     const user = req.user as AuthClaims;
+    try {
+      await entitlementSvc.assertWithinLimit(user.tenant_id, 'parking_lot.max_count');
+    } catch (err) {
+      if (err instanceof EntitlementLimitExceededError) return sendEntitlementLimitExceeded(reply, err);
+      throw err;
+    }
     const lot = await service.createLot({ ...req.body, tenant_id: user.tenant_id });
     fireAuditEvent({
       tenant_id: user.tenant_id,

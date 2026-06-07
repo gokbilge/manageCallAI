@@ -1,5 +1,6 @@
 import type { FastifyReply } from 'fastify';
 import { ErrorCode } from './error-codes.js';
+import type { EntitlementLimitExceededError } from '../modules/entitlement/entitlement.types.js';
 
 // Use reply.request.id — set at request creation time, always non-empty.
 // Avoids relying on the x-request-id header which is set later in onSend.
@@ -44,6 +45,18 @@ export function sendFailedPrecondition(reply: FastifyReply, message = 'Failed pr
 
 export function sendResourceExhausted(reply: FastifyReply, message = 'Resource exhausted'): void {
   send(reply, 429, ErrorCode.RESOURCE_EXHAUSTED, message);
+}
+
+export function sendEntitlementLimitExceeded(reply: FastifyReply, error: EntitlementLimitExceededError): void {
+  reply.code(429).send({
+    error: ErrorCode.ENTITLEMENT_LIMIT_EXCEEDED,
+    capability: error.capability,
+    plan: error.plan,
+    limit: error.limit,
+    current: error.current,
+    upgrade_hint: 'Upgrade to Pro or Enterprise to increase this limit.',
+    request_id: reply.request.id,
+  });
 }
 
 export function sendInternal(reply: FastifyReply, message = 'Internal server error'): void {

@@ -23,6 +23,7 @@ const ROOT = resolve(fileURLToPath(import.meta.url), '../../');
 
 const ALLOWED_PATH_PATTERNS = [
   /\.env\.example$/,
+  /\.env\.\w+\.example$/,
   /\.env\.sample$/,
   /\.env\.test$/,
   /^docs\//,
