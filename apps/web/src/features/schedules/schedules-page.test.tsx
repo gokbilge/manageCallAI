@@ -34,9 +34,12 @@ const inactiveSchedule = {
   id: 'sched-2',
   name: 'After Hours',
   status: 'inactive' as const,
+  description: null,
   timezone: 'UTC',
   weekly_rules_json: [],
-  holiday_overrides_json: [{ date: '2026-12-25' }],
+  holiday_calendar_name: null,
+  holiday_calendar_json: [],
+  override_windows_json: [],
   created_at: '2026-01-02T00:00:00Z',
 };
 
@@ -49,9 +52,12 @@ describe('SchedulesPage', () => {
             id: 'sched-3',
             name: 'Weekend',
             status: 'active',
+            description: null,
             timezone: 'Europe/London',
             weekly_rules_json: [],
-            holiday_overrides_json: [],
+            holiday_calendar_name: null,
+            holiday_calendar_json: [],
+            override_windows_json: [],
             created_at: '2026-01-03T00:00:00Z',
           },
         };
@@ -124,7 +130,7 @@ describe('SchedulesPage', () => {
         '/schedules',
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ name: 'Weekend', timezone: 'Europe/London' }),
+          body: JSON.stringify({ name: 'Weekend', description: null, timezone: 'Europe/London', holiday_calendar_name: null }),
         }),
       );
     });

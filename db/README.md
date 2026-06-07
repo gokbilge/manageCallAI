@@ -92,6 +92,7 @@ Undocumented duplicate prefixes cause `pnpm check:migrations` to fail CI.
 | `0005` | `0005_relax_inbound_route_match_uniqueness.sql` | `0005_explicit_sip_trunk_fields.sql` | `0007_relax_inbound_route_match_uniqueness.sql` | Filename applied before renaming; partial-index DDL moved to 0007. |
 | `0015` | `0015_outbound_routes.sql` | `0015_add_ivr_flow_session_steps.sql` | `0021_outbound_routes.sql` | Outbound-routes DDL renumbered to avoid collision with session-steps. |
 | `0016` | `0016_outbound_call_requests.sql` | `0016_add_queues_and_voicemail.sql` | `0022_outbound_call_requests.sql` | Outbound-call-requests DDL renumbered for same reason. |
+| `0076` | `0076_schedule_groups_holiday_calendars_and_overrides.sql` | `0076_enterprise_object_versions.sql` | `0076_schedule_groups_holiday_calendars_and_overrides.sql` | Branch feat/issue-311-312-schedules and main both incremented to 0076 independently; schedule DDL applied first, enterprise-object-versions DDL renumbered on main. |
 
 ---
 
