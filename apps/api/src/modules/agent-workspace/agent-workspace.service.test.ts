@@ -64,6 +64,12 @@ describe('AgentWorkspaceService', () => {
     }));
   });
 
+  it('lists profiles for a tenant', async () => {
+    const result = await service.listByTenant(TENANT);
+    expect(result).toHaveLength(1);
+    expect(vi.mocked(repo.findAllByTenant)).toHaveBeenCalledWith(TENANT);
+  });
+
   it('rejects invalid max_concurrent_calls', async () => {
     await expect(service.create({ tenant_id: TENANT, user_id: USER_ID, display_name: 'Alice', max_concurrent_calls: 0 }))
       .rejects.toBeInstanceOf(AgentValidationError);
@@ -75,6 +81,34 @@ describe('AgentWorkspaceService', () => {
     repo = makeRepo({ findById: vi.fn().mockResolvedValue(null) });
     service = new AgentWorkspaceService(repo);
     await expect(service.getById('missing', TENANT)).rejects.toBeInstanceOf(AgentNotFoundError);
+  });
+
+  it('gets workspace for a user', async () => {
+    const result = await service.getWorkspaceForUser(USER_ID, TENANT);
+    expect(result.id).toBe(AGENT_ID);
+    expect(vi.mocked(repo.findByUserId)).toHaveBeenCalledWith(USER_ID, TENANT);
+  });
+
+  it('throws AgentNotFoundError when workspace user is missing', async () => {
+    repo = makeRepo({ findByUserId: vi.fn().mockResolvedValue(null) });
+    service = new AgentWorkspaceService(repo);
+    await expect(service.getWorkspaceForUser('missing-user', TENANT)).rejects.toBeInstanceOf(AgentNotFoundError);
+  });
+
+  it('updates a profile', async () => {
+    const result = await service.update(AGENT_ID, TENANT, { display_name: 'Alice Updated', max_concurrent_calls: 2 });
+    expect(result.display_name).toBe('Alice Support');
+    expect(vi.mocked(repo.update)).toHaveBeenCalledWith(
+      AGENT_ID,
+      TENANT,
+      expect.objectContaining({ display_name: 'Alice Updated', max_concurrent_calls: 2 }),
+    );
+  });
+
+  it('throws when updating a missing profile', async () => {
+    repo = makeRepo({ update: vi.fn().mockResolvedValue(null) });
+    service = new AgentWorkspaceService(repo);
+    await expect(service.update(AGENT_ID, TENANT, { display_name: 'Missing' })).rejects.toBeInstanceOf(AgentNotFoundError);
   });
 
   it('allows valid availability transitions: offline → available', async () => {
@@ -101,5 +135,23 @@ describe('AgentWorkspaceService', () => {
   it('deactivates an agent profile', async () => {
     const result = await service.deactivate(AGENT_ID, TENANT);
     expect(result.status).toBe('inactive');
+  });
+
+  it('sets availability for a user by resolving the profile first', async () => {
+    const result = await service.setAvailabilityForUser(USER_ID, TENANT, { state: 'available' });
+    expect(result.state).toBe('available');
+    expect(vi.mocked(repo.findByUserId)).toHaveBeenCalledWith(USER_ID, TENANT);
+  });
+
+  it('throws when setting availability for a missing user', async () => {
+    repo = makeRepo({ findByUserId: vi.fn().mockResolvedValue(null) });
+    service = new AgentWorkspaceService(repo);
+    await expect(service.setAvailabilityForUser('missing-user', TENANT, { state: 'available' })).rejects.toBeInstanceOf(AgentNotFoundError);
+  });
+
+  it('lists queue-eligible agents', async () => {
+    const result = await service.listAvailableForQueue('queue-1', TENANT);
+    expect(result).toHaveLength(0);
+    expect(vi.mocked(repo.findAvailableByQueue)).toHaveBeenCalledWith('queue-1', TENANT);
   });
 });
