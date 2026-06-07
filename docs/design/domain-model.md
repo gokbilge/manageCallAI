@@ -240,6 +240,12 @@ path is explicitly used.
 Planned in `#311` through `#313` to represent enterprise business-hours,
 closure, and override behavior.
 
+For `v0.7.2` (`#322`-`#324`), enterprise validation and simulation reason across
+existing outbound-route records plus related site defaults, numbering-plan
+rules, calling-policy assignments, schedule context, and trunk/failover state.
+Those checks remain API-owned derived views; they do not become new runtime
+source-of-truth entities.
+
 ## 5.13 Contact-center entities (v0.7.0)
 
 ### AgentProfile

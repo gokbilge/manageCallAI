@@ -5,6 +5,7 @@ import type {
   ResolvedOutboundRoute,
   UpdateOutboundRouteInput,
 } from './outbound-route.types.js';
+import type { EnterpriseRoutingService } from '../enterprise-routing/enterprise-routing.service.js';
 
 export class OutboundRouteNotFoundError extends Error {
   constructor(id: string) { super(`Outbound route not found: ${id}`); this.name = 'OutboundRouteNotFoundError'; }
@@ -47,7 +48,10 @@ function validatePrefixList(list: unknown, field: string): string | null {
 }
 
 export class OutboundRouteService {
-  constructor(private readonly repo: OutboundRouteRepository) {}
+  constructor(
+    private readonly repo: OutboundRouteRepository,
+    private readonly enterpriseRoutingService?: EnterpriseRoutingService,
+  ) {}
 
   listByTenant(tenantId: string): Promise<OutboundRoute[]> {
     return this.repo.findAllByTenant(tenantId);
@@ -142,6 +146,12 @@ export class OutboundRouteService {
     if (!existing) throw new OutboundRouteNotFoundError(id);
     if (existing.status !== 'draft') {
       throw new OutboundRouteValidationError(`Only draft routes can be published. Current status: ${existing.status}`);
+    }
+    if (this.enterpriseRoutingService) {
+      const validation = await this.enterpriseRoutingService.validateOutboundRoute(id, tenantId);
+      if (validation.validation_status === 'failed') {
+        throw new OutboundRouteValidationError(validation.summary);
+      }
     }
     const r = await this.repo.publish(id, tenantId);
     if (!r) throw new OutboundRouteNotFoundError(id);

@@ -6,6 +6,11 @@ import { CAPABILITIES } from '../auth/capabilities.js';
 import { requireCapability } from '../auth/require-capability.js';
 import { authenticateRuntime } from '../runtime/runtime-auth.js';
 import { OutboundRouteRepository } from './outbound-route.repository.js';
+import { EnterpriseRoutingRepository } from '../enterprise-routing/enterprise-routing.repository.js';
+import {
+  EnterpriseRoutingService,
+  EnterpriseRoutingTargetNotFoundError,
+} from '../enterprise-routing/enterprise-routing.service.js';
 import {
   OutboundRouteNotFoundError,
   OutboundRouteService,
@@ -17,12 +22,15 @@ import {
   CreateOutboundRouteBodySchema,
   UpdateOutboundRouteBodySchema,
   ResolveOutboundRouteBodySchema,
+  OutboundRouteEnterpriseCheckBodySchema,
 } from '@managecallai/contracts';
 
-const service = new OutboundRouteService(new OutboundRouteRepository(db));
+const enterpriseRoutingService = new EnterpriseRoutingService(new EnterpriseRoutingRepository(db));
+const service = new OutboundRouteService(new OutboundRouteRepository(db), enterpriseRoutingService);
 
 function replyError(err: unknown, reply: FastifyReply): void {
   if (err instanceof OutboundRouteNotFoundError) return sendNotFound(reply, err.message);
+  if (err instanceof EnterpriseRoutingTargetNotFoundError) return sendNotFound(reply, err.message);
   if (err instanceof OutboundRouteValidationError) return sendInvalidArgument(reply, err.message);
   throw err;
 }
@@ -85,6 +93,27 @@ export const outboundRouteController: FastifyPluginAsyncZod = async (app) => {
       const user = req.user as AuthClaims;
       try {
         return { data: await service.update(req.params.id, user.tenant_id, req.body) };
+      } catch (err) {
+        return replyError(err, reply);
+      }
+    },
+  );
+
+  app.post(
+    '/:id/enterprise-check',
+    {
+      preHandler: requireCapability(CAPABILITIES.TENANT_RISK_ANALYSIS),
+      schema: {
+        params: UuidParamsSchema,
+        body: OutboundRouteEnterpriseCheckBodySchema,
+      },
+    },
+    async (req, reply) => {
+      const user = req.user as AuthClaims;
+      try {
+        return {
+          data: await enterpriseRoutingService.runOutboundRouteCheck(req.params.id, user.tenant_id, req.body),
+        };
       } catch (err) {
         return replyError(err, reply);
       }

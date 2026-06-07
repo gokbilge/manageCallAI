@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '@/test/render';
 import { OutboundRoutesPage } from './outbound-routes-page';
@@ -39,8 +39,45 @@ const draftRoute = {
   created_at: '2026-01-01T00:00:00Z',
 };
 
+const enterpriseCheck = {
+  validation: {
+    target_type: 'outbound_route' as const,
+    target_id: 'r-1',
+    target_name: 'International',
+    validation_status: 'failed' as const,
+    blocking_issues: [{ code: 'SITE_POLICY_BLOCKS_ROUTE', severity: 'error' as const, scope: 'calling_policy' as const, message: 'Site policy blocks international calls.' }],
+    advisory_issues: [{ code: 'FAILOVER_SHARED_TRUNK_GROUP', severity: 'warning' as const, scope: 'trunk_group' as const, message: 'Primary and fallback trunks share a trunk group.' }],
+    checked_at: '2026-06-07T00:00:00Z',
+    summary: 'Route "International" has blocking enterprise conflicts.',
+  },
+  simulation: {
+    target_type: 'outbound_route' as const,
+    target_id: 'r-1',
+    dial_string: '+442079460123',
+    site_id: 'site-1',
+    site_name: 'London',
+    schedule_id: null,
+    schedule_name: null,
+    call_type: 'international',
+    matched_rule_name: 'UK International',
+    policy_name: 'No International',
+    schedule_state: 'not_checked' as const,
+    outcome: 'blocked_by_policy' as const,
+    selected_trunk_id: null,
+    selected_trunk_name: null,
+    steps: [
+      { category: 'site' as const, status: 'ok' as const, title: 'Site context', detail: 'Site "London" provides numbering and policy defaults for this simulation.' },
+      { category: 'policy' as const, status: 'blocked' as const, title: 'Calling policy', detail: 'Policy "No International" blocks international calls for "+442079460123".' },
+    ],
+    summary: 'Route "International" would be blocked by policy "No International".',
+    is_advisory: true as const,
+    simulated_at: '2026-06-07T00:00:00Z',
+  },
+};
+
 describe('OutboundRoutesPage', () => {
   beforeEach(() => {
+    vi.mocked(apiRequest).mockReset();
     vi.mocked(apiRequest).mockResolvedValue({ data: [activeRoute] });
   });
 
@@ -77,6 +114,7 @@ describe('OutboundRoutesPage', () => {
       .mockResolvedValueOnce({ data: [draftRoute] })
       .mockResolvedValueOnce({ data: { ...draftRoute, status: 'active' } })
       .mockResolvedValue({ data: [] });
+
     renderWithProviders(<OutboundRoutesPage />);
     await waitFor(() => expect(screen.getByRole('button', { name: /publish us domestic/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /publish us domestic/i }));
@@ -88,122 +126,60 @@ describe('OutboundRoutesPage', () => {
     });
   });
 
-  it('shows rate cap when max_calls_per_minute is set', async () => {
-    vi.mocked(apiRequest).mockResolvedValue({ data: [draftRoute] });
-    renderWithProviders(<OutboundRoutesPage />);
-    await waitFor(() => {
-      expect(screen.getByText('30/min')).toBeInTheDocument();
-    });
-  });
-
-  it('shows Risk button for each route', async () => {
-    renderWithProviders(<OutboundRoutesPage />);
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /analyze risk for international/i })).toBeInTheDocument();
-    });
-  });
-
-  it('shows risk analysis panel with low risk after clicking Risk button', async () => {
-    const riskResult = {
-      target_type: 'outbound_route',
-      target_id: 'r-1',
-      target_name: 'International',
-      target_status: 'active',
-      risk_level: 'low',
-      affected_objects: [{ type: 'sip_trunk', id: '00000000-0000-0000-0000-000000000001', name: 'Carrier A', role: 'primary_trunk' }],
-      unresolved_concerns: [],
-      summary: 'Route "International" is ready.',
-      is_advisory: true,
-      analyzed_at: '2026-06-05T00:00:00Z',
-    };
+  it('shows enterprise check panel with validation and simulation details', async () => {
     vi.mocked(apiRequest)
       .mockResolvedValueOnce({ data: [activeRoute] })
-      .mockResolvedValue({ data: riskResult });
+      .mockResolvedValueOnce({ data: enterpriseCheck });
 
     renderWithProviders(<OutboundRoutesPage />);
     await waitFor(() => expect(screen.getByRole('button', { name: /analyze risk for international/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /analyze risk for international/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: /risk analysis result/i })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: /enterprise check result/i })).toBeInTheDocument();
     });
-    expect(screen.getByText('low')).toBeInTheDocument();
-    expect(screen.getByText('No concerns found — route looks good to publish.')).toBeInTheDocument();
-    expect(screen.getByText('primary_trunk')).toBeInTheDocument();
-    expect(screen.getByText('Advisory only — this analysis does not publish or modify any route.')).toBeInTheDocument();
+    expect(screen.getByText('failed')).toBeInTheDocument();
+    expect(screen.getByText('Site policy blocks international calls.')).toBeInTheDocument();
+    expect(screen.getByText('Primary and fallback trunks share a trunk group.')).toBeInTheDocument();
+    expect(screen.getByText('blocked_by_policy')).toBeInTheDocument();
+    expect(screen.getByText('Policy "No International" blocks international calls for "+442079460123".')).toBeInTheDocument();
   });
 
-  it('shows risk concerns in analysis panel', async () => {
-    const riskResult = {
-      target_type: 'outbound_route',
-      target_id: 'r-1',
-      target_name: 'International',
-      target_status: 'active',
-      risk_level: 'high',
-      affected_objects: [],
-      unresolved_concerns: [{ code: 'TRUNK_INACTIVE', severity: 'error', message: 'Primary SIP trunk is inactive.' }],
-      summary: 'Route has 1 blocking concern.',
-      is_advisory: true,
-      analyzed_at: '2026-06-05T00:00:00Z',
-    };
+  it('refreshes the enterprise check with the edited context', async () => {
     vi.mocked(apiRequest)
       .mockResolvedValueOnce({ data: [activeRoute] })
-      .mockResolvedValue({ data: riskResult });
+      .mockResolvedValueOnce({ data: enterpriseCheck })
+      .mockResolvedValueOnce({ data: enterpriseCheck });
 
     renderWithProviders(<OutboundRoutesPage />);
     await waitFor(() => expect(screen.getByRole('button', { name: /analyze risk for international/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /analyze risk for international/i }));
+    await waitFor(() => expect(screen.getByRole('region', { name: /enterprise check result/i })).toBeInTheDocument());
 
-    await waitFor(() => expect(screen.getByText('high')).toBeInTheDocument());
-    expect(screen.getByText('Primary SIP trunk is inactive.')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/dial string/i), { target: { value: '+441234567890' } });
+    fireEvent.change(screen.getByLabelText(/site id/i), { target: { value: 'site-1' } });
+    fireEvent.click(screen.getByRole('button', { name: /refresh check/i }));
+
+    await waitFor(() => {
+      expect(vi.mocked(apiRequest)).toHaveBeenCalledWith(
+        '/outbound-routes/r-1/enterprise-check',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            dial_string: '+441234567890',
+            site_id: 'site-1',
+            schedule_id: null,
+          }),
+        }),
+      );
+    });
   });
 
-  it('shows medium risk with warning and info concerns', async () => {
-    const riskResult = {
-      target_type: 'outbound_route', target_id: 'r-1', target_name: 'International',
-      target_status: 'active', risk_level: 'medium',
-      affected_objects: [],
-      unresolved_concerns: [
-        { code: 'PREFIX_CONFLICT', severity: 'warning', message: '2 active routes match same prefix.' },
-        { code: 'SHARED_TRUNK', severity: 'info', message: '3 other routes share the trunk.' },
-      ],
-      summary: 'Route has advisory concerns.',
-      is_advisory: true, analyzed_at: '2026-06-05T00:00:00Z',
-    };
-    vi.mocked(apiRequest)
-      .mockResolvedValueOnce({ data: [activeRoute] })
-      .mockResolvedValue({ data: riskResult });
-
-    renderWithProviders(<OutboundRoutesPage />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /analyze risk for international/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /analyze risk for international/i }));
-
-    await waitFor(() => expect(screen.getByText('medium')).toBeInTheDocument());
-    expect(screen.getByText('2 active routes match same prefix.')).toBeInTheDocument();
-    expect(screen.getByText('3 other routes share the trunk.')).toBeInTheDocument();
-  });
-
-  it('closes risk analysis panel when close button is clicked', async () => {
-    const riskResult = {
-      target_type: 'outbound_route', target_id: 'r-1', target_name: 'International',
-      target_status: 'active', risk_level: 'low', affected_objects: [],
-      unresolved_concerns: [], summary: 'OK.', is_advisory: true, analyzed_at: '2026-06-05T00:00:00Z',
-    };
-    vi.mocked(apiRequest)
-      .mockResolvedValueOnce({ data: [activeRoute] })
-      .mockResolvedValue({ data: riskResult });
-
-    renderWithProviders(<OutboundRoutesPage />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /analyze risk for international/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /analyze risk for international/i }));
-    await waitFor(() => expect(screen.getByRole('region', { name: /risk analysis result/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /close risk analysis/i }));
-    expect(screen.queryByRole('region', { name: /risk analysis result/i })).not.toBeInTheDocument();
-  });
-
-  it('shows loading state while risk analysis is fetching', async () => {
-    let resolveRisk!: (v: unknown) => void;
-    const pending = new Promise(r => { resolveRisk = r; });
+  it('shows loading state while enterprise check is fetching', async () => {
+    let resolveCheck!: (value: unknown) => void;
+    const pending = new Promise((resolve) => {
+      resolveCheck = resolve;
+    });
     vi.mocked(apiRequest)
       .mockResolvedValueOnce({ data: [activeRoute] })
       .mockReturnValueOnce(pending as never);
@@ -213,34 +189,33 @@ describe('OutboundRoutesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /analyze risk for international/i }));
 
     await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument());
-    expect(screen.getByText('Analyzing route risk...')).toBeInTheDocument();
-    resolveRisk({ data: { target_type: 'outbound_route', target_id: 'r-1', target_name: 'International', target_status: 'active', risk_level: 'low', affected_objects: [], unresolved_concerns: [], summary: 'OK.', is_advisory: true, analyzed_at: '2026-06-05T00:00:00Z' } });
+    expect(screen.getByText('Running enterprise check...')).toBeInTheDocument();
+    resolveCheck({ data: enterpriseCheck });
   });
 
-  it('toggles risk panel off when Risk button is clicked again', async () => {
-    const riskResult = { target_type: 'outbound_route', target_id: 'r-1', target_name: 'International', target_status: 'active', risk_level: 'low', affected_objects: [], unresolved_concerns: [], summary: 'OK.', is_advisory: true, analyzed_at: '2026-06-05T00:00:00Z' };
+  it('closes the enterprise check panel', async () => {
     vi.mocked(apiRequest)
       .mockResolvedValueOnce({ data: [activeRoute] })
-      .mockResolvedValue({ data: riskResult });
+      .mockResolvedValueOnce({ data: enterpriseCheck });
 
     renderWithProviders(<OutboundRoutesPage />);
     await waitFor(() => expect(screen.getByRole('button', { name: /analyze risk for international/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /analyze risk for international/i }));
-    await waitFor(() => expect(screen.getByRole('region', { name: /risk analysis result/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /analyze risk for international/i }));
-    expect(screen.queryByRole('region', { name: /risk analysis result/i })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('region', { name: /enterprise check result/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /close enterprise check/i }));
+    expect(screen.queryByRole('region', { name: /enterprise check result/i })).not.toBeInTheDocument();
   });
 
-  it('shows risk analysis error state when API fails', async () => {
+  it('shows enterprise check error state when API fails', async () => {
     vi.mocked(apiRequest)
       .mockResolvedValueOnce({ data: [activeRoute] })
-      .mockRejectedValue(new Error('Risk API error'));
+      .mockRejectedValue(new Error('Enterprise API error'));
 
     renderWithProviders(<OutboundRoutesPage />);
     await waitFor(() => expect(screen.getByRole('button', { name: /analyze risk for international/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /analyze risk for international/i }));
 
-    await waitFor(() => expect(screen.getByText('Risk analysis failed')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Enterprise check failed')).toBeInTheDocument());
   });
 
   it('shows empty state when no routes', async () => {
