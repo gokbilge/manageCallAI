@@ -19,6 +19,9 @@ const empty = (): QueryResult => ({ rows: [] });
 
 describe('Repository coverage', () => {
   beforeAll(() => {
+    process.env.DATABASE_URL ??= 'postgres://managecallai:managecallai@127.0.0.1:5432/managecallai_test';
+    process.env.JWT_SECRET ??= 'test-jwt-secret';
+    process.env.RUNTIME_API_TOKEN ??= 'test-runtime-token';
     process.env.SIP_SECRET_MASTER_KEY ??=
       '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
     process.env.SIP_SECRET_KEY_ID ??= 'test-v1';
@@ -874,5 +877,90 @@ describe('Repository coverage', () => {
     await expect(repo.assignAgent('campaign-1', 'tenant-1', { agent_profile_id: 'agent-1' })).resolves.toMatchObject({ id: 'assign-1' });
     await expect(repo.removeAgent('campaign-1', 'agent-1', 'tenant-1')).resolves.toBe(true);
     await expect(repo.removeAgent('campaign-1', 'missing', 'tenant-1')).resolves.toBe(false);
+  });
+
+  it('covers enterprise routing repository query paths', async () => {
+    const { EnterpriseRoutingRepository } = await import('./enterprise-routing/enterprise-routing.repository.js');
+    const route = {
+      id: 'route-1',
+      tenant_id: 'tenant-1',
+      name: 'International',
+      status: 'draft',
+      match_prefix: '+44',
+      priority: 100,
+      sip_trunk_id: 'trunk-1',
+      fallback_sip_trunk_id: 'trunk-2',
+      max_calls_per_minute: null,
+      allowed_caller_id_numbers_json: null,
+      allowed_destination_prefixes_json: null,
+      blocked_destination_prefixes_json: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    const site = {
+      id: 'site-1',
+      name: 'London',
+      status: 'active',
+      timezone: 'Europe/London',
+      default_calling_policy_id: 'policy-1',
+      default_numbering_plan_id: 'plan-1',
+      default_outbound_route_id: 'route-1',
+    };
+    const plan = { id: 'plan-1', name: 'UK Plan', status: 'active' };
+    const policy = {
+      id: 'policy-1',
+      name: 'Policy',
+      allow_local: true,
+      allow_national: true,
+      allow_mobile: true,
+      allow_international: false,
+      allow_premium_rate: false,
+      allow_toll_free: true,
+      allow_special: false,
+      emergency_always_allowed: true,
+      exceptions: [],
+      status: 'active',
+    };
+    const schedule = {
+      id: 'schedule-1',
+      name: 'Business Hours',
+      status: 'active',
+      timezone: 'UTC',
+      weekly_rules_json: [],
+      holiday_overrides_json: [],
+    };
+    const pool = makePool([
+      row(route),
+      row({ count: '1' }),
+      rows([
+        { id: 'trunk-1', name: 'Primary', status: 'active' },
+        { id: 'trunk-2', name: 'Backup', status: 'inactive' },
+      ]),
+      rows([site]),
+      row(site),
+      row(plan),
+      rows([{ id: 'rule-1', tenant_id: 'tenant-1', plan_id: 'plan-1', name: 'UK', pattern: '^\\+44', call_type: 'international', priority: 10, description: null, created_at: new Date() }]),
+      row(plan),
+      row(policy),
+      row(policy),
+      row(schedule),
+      rows([{ trunk_id: 'trunk-1', trunk_group_id: 'group-1', trunk_group_name: 'Group', trunk_group_status: 'active', priority: 10 }]),
+    ]);
+    const repo = new EnterpriseRoutingRepository(pool);
+
+    await expect(repo.findOutboundRoute('route-1', 'tenant-1')).resolves.toMatchObject({ id: 'route-1' });
+    await expect(repo.countActivePrefixConflicts('tenant-1', '+44', 'route-1')).resolves.toBe(1);
+    expect(await repo.findTrunksByIds('tenant-1', ['trunk-1', 'trunk-2'])).toHaveProperty('size', 2);
+    await expect(repo.findSitesReferencingRoute('tenant-1', 'route-1')).resolves.toHaveLength(1);
+    await expect(repo.findSiteById('tenant-1', 'site-1')).resolves.toMatchObject({ id: 'site-1' });
+    await expect(repo.findNumberingPlanById('tenant-1', 'plan-1')).resolves.toMatchObject({ id: 'plan-1' });
+    await expect(repo.findNumberingRulesForPlan('tenant-1', 'plan-1')).resolves.toHaveLength(1);
+    await expect(repo.findTenantAssignedNumberingPlan('tenant-1')).resolves.toMatchObject({ id: 'plan-1' });
+    await expect(repo.findCallingPolicyById('tenant-1', 'policy-1')).resolves.toMatchObject({ id: 'policy-1' });
+    await expect(repo.findTenantAssignedCallingPolicy('tenant-1')).resolves.toMatchObject({ id: 'policy-1' });
+    await expect(repo.findScheduleById('tenant-1', 'schedule-1')).resolves.toMatchObject({ id: 'schedule-1' });
+    await expect(repo.findTrunkGroupMemberships('tenant-1', ['trunk-1'])).resolves.toHaveLength(1);
+    expect(await repo.findTrunksByIds('tenant-1', [])).toEqual(new Map());
+    await expect(repo.findTrunkGroupMemberships('tenant-1', [])).resolves.toEqual([]);
   });
 });

@@ -142,6 +142,12 @@ Non-responsibilities:
 - direct source-PBX execution or raw dialplan import
 - autonomous publish of imported routes or trunks
 
+Current `v0.7.2` validation/simulation depth adds an API-owned enterprise
+routing check for outbound routes. That service composes site defaults,
+numbering plans, calling policy, schedule context, and failover state before a
+draft route is published, and it returns operator-facing explanation steps for
+the same decision path.
+
 ### 3.11 Migration and adoption toolkit layer
 
 This later lane sits on top of the stabilized enterprise model and remains

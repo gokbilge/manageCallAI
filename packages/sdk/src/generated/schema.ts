@@ -5268,6 +5268,79 @@ export interface components {
             tenant_id: string;
             dial_number: string;
         };
+        EnterpriseConflict: {
+            code: string;
+            /** @enum {string} */
+            severity: "info" | "warning" | "error";
+            /** @enum {string} */
+            scope: "route" | "site" | "numbering_plan" | "calling_policy" | "schedule" | "trunk_group" | "failover";
+            message: string;
+        };
+        EnterpriseValidationReport: {
+            /** @enum {string} */
+            target_type: "outbound_route";
+            /** Format: uuid */
+            target_id: string;
+            target_name: string;
+            /** @enum {string} */
+            validation_status: "passed" | "failed";
+            blocking_issues: components["schemas"]["EnterpriseConflict"][];
+            advisory_issues: components["schemas"]["EnterpriseConflict"][];
+            /** Format: date-time */
+            checked_at: string;
+            summary: string;
+        };
+        EnterpriseSimulationStep: {
+            /** @enum {string} */
+            category: "site" | "schedule" | "numbering" | "policy" | "route" | "failover";
+            /** @enum {string} */
+            status: "ok" | "warning" | "blocked";
+            title: string;
+            detail: string;
+        };
+        EnterpriseSimulationReport: {
+            /** @enum {string} */
+            target_type: "outbound_route";
+            /** Format: uuid */
+            target_id: string;
+            dial_string: string;
+            /** Format: uuid */
+            site_id: string | null;
+            site_name: string | null;
+            /** Format: uuid */
+            schedule_id: string | null;
+            schedule_name: string | null;
+            /** @enum {string|null} */
+            call_type: "local" | "national" | "mobile" | "international" | "premium_rate" | "emergency" | "toll_free" | "special" | null;
+            matched_rule_name: string | null;
+            policy_name: string | null;
+            /** @enum {string} */
+            schedule_state: "in_hours" | "out_of_hours" | "not_checked" | "missing";
+            /** @enum {string} */
+            outcome: "routed_primary" | "routed_fallback" | "blocked_by_policy" | "out_of_hours" | "no_available_trunks" | "schedule_missing";
+            /** Format: uuid */
+            selected_trunk_id: string | null;
+            selected_trunk_name: string | null;
+            steps: components["schemas"]["EnterpriseSimulationStep"][];
+            summary: string;
+            /** @enum {boolean} */
+            is_advisory: true;
+            /** Format: date-time */
+            simulated_at: string;
+        };
+        OutboundRouteEnterpriseCheck: {
+            validation: components["schemas"]["EnterpriseValidationReport"];
+            simulation: components["schemas"]["EnterpriseSimulationReport"];
+        };
+        OutboundRouteEnterpriseCheckBody: {
+            dial_string?: string;
+            /** Format: uuid */
+            site_id?: string | null;
+            /** Format: uuid */
+            schedule_id?: string | null;
+            /** Format: date-time */
+            at?: string | null;
+        };
         TenantUser: {
             /** Format: uuid */
             id: string;

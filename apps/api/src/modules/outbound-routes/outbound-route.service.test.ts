@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OutboundRouteService, OutboundRouteNotFoundError, OutboundRouteValidationError } from './outbound-route.service.js';
 import type { OutboundRouteRepository } from './outbound-route.repository.js';
 import type { OutboundRoute } from './outbound-route.types.js';
+import type { EnterpriseRoutingService } from '../enterprise-routing/enterprise-routing.service.js';
 
 const TENANT = 'tenant-1';
 const TRUNK_A = '00000000-0000-0000-0000-000000000001';
@@ -51,10 +52,23 @@ function makeRepo(overrides: Partial<OutboundRouteRepository> = {}): OutboundRou
 describe('OutboundRouteService', () => {
   let repo: ReturnType<typeof makeRepo>;
   let service: OutboundRouteService;
+  let enterpriseRoutingService: EnterpriseRoutingService;
 
   beforeEach(() => {
     repo = makeRepo();
-    service = new OutboundRouteService(repo);
+    enterpriseRoutingService = {
+      validateOutboundRoute: vi.fn().mockResolvedValue({
+        target_type: 'outbound_route',
+        target_id: draftRoute.id,
+        target_name: draftRoute.name,
+        validation_status: 'passed',
+        blocking_issues: [],
+        advisory_issues: [],
+        checked_at: '2026-06-07T00:00:00.000Z',
+        summary: 'ok',
+      }),
+    } as unknown as EnterpriseRoutingService;
+    service = new OutboundRouteService(repo, enterpriseRoutingService);
   });
 
   it('lists routes by tenant', async () => {
@@ -162,6 +176,24 @@ describe('OutboundRouteService', () => {
     const result = await service.publish('route-draft', TENANT);
     expect(result.status).toBe('active');
     expect(repo.publish).toHaveBeenCalledWith('route-draft', TENANT);
+    expect(enterpriseRoutingService.validateOutboundRoute).toHaveBeenCalledWith('route-draft', TENANT);
+  });
+
+  it('rejects publish when enterprise validation finds blocking conflicts', async () => {
+    vi.mocked(repo.findById).mockResolvedValue(draftRoute);
+    vi.mocked(enterpriseRoutingService.validateOutboundRoute).mockResolvedValue({
+      target_type: 'outbound_route',
+      target_id: draftRoute.id,
+      target_name: draftRoute.name,
+      validation_status: 'failed',
+      blocking_issues: [{ code: 'SITE_POLICY_BLOCKS_ROUTE', severity: 'error', scope: 'calling_policy', message: 'Blocked.' }],
+      advisory_issues: [],
+      checked_at: '2026-06-07T00:00:00.000Z',
+      summary: 'Route "US Domestic" has 1 blocking enterprise conflict(s) and cannot be published until they are resolved.',
+    });
+
+    await expect(service.publish('route-draft', TENANT)).rejects.toThrow(OutboundRouteValidationError);
+    expect(repo.publish).not.toHaveBeenCalled();
   });
 
   it('throws ValidationError when publishing a non-draft route', async () => {
