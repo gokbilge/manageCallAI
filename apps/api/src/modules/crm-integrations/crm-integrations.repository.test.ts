@@ -49,7 +49,7 @@ describe('CrmIntegrationsRepository', () => {
       tenant_id: TENANT, name: 'Salesforce', provider: 'generic_webhook',
       lookup_url_template: 'https://example.com/{caller_id}',
     });
-    expect(result.provider).toBe('generic');
+    expect(result.provider).toBe('generic_webhook');
   });
 
   it('update builds dynamic SET and returns updated integration', async () => {
